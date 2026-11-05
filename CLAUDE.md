@@ -23,6 +23,8 @@
 
 ## 브랜치
 `develop`에서 `feature/<작업명>`·`fix/<작업명>`을 따서 작업하고 PR base는 `develop`. `main`·`develop`에 직접 커밋·푸시하지 않는다(CONTRIBUTING.md).
+- **PR 본문**은 `.github/pull_request_template.md`의 절·체크리스트를 그대로 옮겨 채운다(`gh pr create --body`는 템플릿을 건너뛴다). `fixtures/`·`contract/`를 건드린 PR은 효성(`hyos0415`)·June(`june0103`) 중 작성자가 아닌 쪽을 `--reviewer`로 지정한다.
+- **머지**는 CI 4개(server · app-shared · app-android · copy)가 모두 통과한 걸 확인한 뒤 `gh pr merge --merge --delete-branch`로 한다. 실패나 대기 중이면 머지하지 않고 그대로 보고한다. `develop → main` 릴리스 PR은 사람이 시점을 정할 때만.
 
 ## 끝내기 전에
 ```
