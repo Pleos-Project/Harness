@@ -53,6 +53,7 @@ adb install -r -g app/build/outputs/apk/debug/app-debug.apk        # -g: 권한 
 ## 3. 서버 호출 — Kotlin에서 직접 (열린 결정 2 해결)
 - 요청은 `cardsRequest(...).toJson()`, 응답은 `parseCardsResponse()`. 원시 차량값은 보내지 않는다(`budget` 파생값만, 서버가 422로 막음).
 - 개발: 에뮬에서 `http://10.0.2.2:8000`(`make dev`). **debug 빌드만** `src/debug/res/xml/network_security_config.xml`이 `10.0.2.2` cleartext를 허용한다. release는 cleartext가 기본 차단이라 HTTPS 도메인 하나만(AC-N-3).
+- 배포(release): **`https://api.rangeleft.com`**(Let's Encrypt, 체인 끝 ISRG Root X1 → 안드로이드 7.1.1+). `/v1/cards`·`/v1/cards/swap`·`/v1/prices`. 서버 운영은 `deploy/README.md`(효성).
 - 타임아웃 3초, 실패하면 `DemoServer(candidates)`로 fallback(AC-F5-7·AC-F5-8). 호출은 화면을 연 동안만 — 폴링·백그라운드 호출 금지.
 - PT(12/3)는 네트워크 없이 돌아가야 하므로(AC-C-3) 데모 고정 모드를 기본으로 둔다.
 - HTTP 클라이언트(`HttpURLConnection`·OkHttp 등)는 첫 서버 연동 PR에서 정한다.
