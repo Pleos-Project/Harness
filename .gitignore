@@ -8,6 +8,8 @@ server/*.egg-info/
 node_modules/
 # 빌드 때 app/shared/chagok-engine.js 에서 복사되는 사본 (app/README.md 2절)
 app/android/**/src/main/assets/chagok/engine.js
+# 빌드 때 fixtures/ 에서 복사되는 상수·데모 후보 (syncChagokData)
+app/android/**/src/main/assets/data/
 # 안드로이드
 .gradle/
 build/

@@ -36,11 +36,22 @@ val syncChagokEngine by tasks.registering(Copy::class) {
     from(rootProject.file("../shared/chagok-engine.js")) { rename { "engine.js" } }
     into(layout.projectDirectory.dir("src/main/assets/chagok"))
 }
-tasks.named("preBuild") { dependsOn(syncChagokEngine) }
+// fixtures/constants.json(차종 표·기본 단가)·candidates_demo.json(오프라인 데모 후보) → assets/data/
+// Kotlin 엔진(com.mist.pleos_app.engine)이 읽는다. 사본은 커밋하지 않는다(단일 출처는 fixtures/).
+val repoFixtures = rootProject.file("../../fixtures")
+val syncChagokData by tasks.registering(Copy::class) {
+    from(repoFixtures) { include("constants.json", "candidates_demo.json") }
+    into(layout.projectDirectory.dir("src/main/assets/data"))
+}
+tasks.named("preBuild") { dependsOn(syncChagokEngine, syncChagokData) }
+
+// 엔진 JUnit(FixturesTest)이 fixtures/ 를 읽으므로 fixture가 바뀌면 테스트를 다시 돌린다
+tasks.withType<Test>().configureEach { inputs.dir(repoFixtures).withPropertyName("chagokFixtures") }
 
 dependencies {
     implementation(libs.pleos.vehicle)
     implementation(libs.pleos.navihelper)
     implementation(libs.androidx.webkit)
+    implementation(libs.kotlinx.serialization.json)   // 엔진 JSON(계약·assets 데이터·장부 저장)
     testImplementation(libs.junit)
 }
