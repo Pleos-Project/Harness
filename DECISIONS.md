@@ -39,6 +39,7 @@
 | 11/5 | 브랜치 | `develop`(기본)·`main`(릴리스)·`feature/*`·`fix/*`, PR로만 머지 | 확정 | June이 `App` 레포에 정한 CONTRIBUTING 그대로 |
 | 11/5 | 패키지 | `com.mist.pleos_app` | 제안 → 열린 결정 1 | June `App` 레포 값과 맞춤 |
 | 11/5 | 역할 | 백엔드·AI·서버 효성 / 안드로이드 June / UI·UX·기획(PM) 명준 / 영상 / BX — 디렉토리 주인은 README 표 | 확정 | PRD 12장, 11/5 역할 정리 |
+| 11/5 | BX 파일 | 로고·일러스트·아이콘·브랜드는 `design/`에서 관리. BX는 내보낸 파일을 넘기고 명준이 PR로 올리며 커밋에 `Co-authored-by:`로 BX 표기. 원본은 레포 밖. BX GitHub 계정은 가입하면 추가(필수 아님) | 확정 | BX는 GitHub 작업이 적음, 참여 기록은 남김 |
 
 ## 열린 결정
 

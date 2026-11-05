@@ -24,7 +24,7 @@ adb forward tcp:8088 tcp:8088 && make replay   # Virtual Console로 PT 6단계 �
 | `app/android/` | 안드로이드 프로젝트. 빌드 환경 + 빈 화면, 앱 기능은 여기에 | June |
 | `app/shared/` | 엔진 JS(`chagok-engine.js`, Python 엔진 포팅) + fixture 대조 테스트 | 효성(수식) · June(앱 연동) |
 | `design/tokens.css`, `components/`, `preview.html`, `RULES.md` | 화면 토큰·컴포넌트 조각·미리보기·디자인 규칙 | 명준 (June 리뷰) |
-| `design/illustrations/`, `icons/`, `brand/` | 테마 일러스트 `<theme>-<n>.svg`, 아이콘, 앱 아이콘 | BX 디자이너 (가입 전까지 명준) |
+| `design/illustrations/`, `icons/`, `brand/` | 테마 일러스트 `<theme>-<n>.svg`, 아이콘, 로고·앱 아이콘. 앱이 쓰는 내보낸 파일(SVG·PNG)만, 원본은 레포 밖 | BX 디자이너(제작) · 명준(레포 반영) |
 | `scripts/gen_fixtures.py`, `lint_copy.py`, `check_permissions.py` | fixture 생성 · 문구 검사 · 권한 대조 | 효성 |
 | `scripts/replay.sh` | Virtual Console PT 6단계 주입 | June |
 | `docs/` | 동결된 PRD(명준)·기능 명세서(June), 11/5 기준. 고치지 않음 | — |
@@ -44,13 +44,13 @@ adb forward tcp:8088 tcp:8088 && make replay   # Virtual Console로 PT 6단계 �
 |---|---|---|---|---|---|
 | 1 | 백엔드 · AI · 서버 | 효성 | @hyos0415 | `server/`, `fixtures/`, `contract/` 계약, `app/shared/` 수식, `scripts/` 생성·검사 도구 | 점수 함수·이유 한 줄, 어림 추정기, 정산 수식, 블라인드 검수(11/11), PT 기준 데모 데이터, 기술지원 질문 |
 | 2 | 안드로이드 | June(준) | @june0103 | `app/android/`, `app/shared/` 앱 연동, `contract/permissions.md`, `scripts/replay.sh` | 시연 빌드, Virtual Console 시나리오, 글레오 캡처(11/7) |
-| 3 | UI·UX 디자인 · 기획(PM) | 명준 | @thvlou | `design/` 토큰·컴포넌트·규칙, `DECISIONS.md` 정리, 열린 결정 중 기획 항목 | 화면 확정본, PT 6단계 스크립트, 인터뷰, 기획서 |
+| 3 | UI·UX 디자인 · 기획(PM) | 명준 | @thvlou | `design/` 토큰·컴포넌트·규칙, BX 파일 레포 반영, `DECISIONS.md` 정리, 열린 결정 중 기획 항목 | 화면 확정본, PT 6단계 스크립트, 인터뷰, 기획서 |
 | 4 | 영상 디자인 | — | @EditBin | 레포 작업은 거의 없음. PT 장면은 `scripts/replay.sh pt`로 똑같이 재현해 촬영 | 시연 영상, 숏폼 3편, 주행 중·폰 공유 목업 |
-| 5 | BX 디자인 | — | 아직 없음(작업 시작 전 초대) | `design/illustrations/`·`icons/`·`brand/` | 테마 일러스트(8 × 3~4), 앞면·스택 카드 비주얼, 기록 지도, 키 컬러 |
+| 5 | BX 디자인 | — | 없음(가입하면 추가) | 직접 작업 없음. 내보낸 파일을 피그마·드라이브로 넘기면 명준이 `design/illustrations/`·`icons/`·`brand/`에 올리고, 커밋에 `Co-authored-by:`로 BX를 함께 적는다 | 로고, 테마 일러스트(8 × 3~4), 아이콘, 앞면·스택 카드 비주얼, 기록 지도, 키 컬러 |
 
 **시작점**
 - **효성**: `server/chagok/engine.py` 맨 위 포팅 규칙 → `scripts/gen_fixtures.py` → `DECISIONS.md` 열린 결정 3·4·14·15·17
 - **June**: `app/README.md` → 빌드 환경(1절), 서버 호출 방식(3절) → 열린 결정 1·2·4·16·20·21
 - **명준**: `DECISIONS.md` 열린 결정 1·5~12·16·19 → `design/RULES.md`(Claude Code에 읽히고 `design/`에 PR, `cd design && python -m http.server`로 `preview.html` 확인)
 - **영상**: `scripts/replay.sh pt` 단계별 기대 화면, 화면 구석 "시연용 값" 표기(AC-C-7) 유지
-- **BX**: `design/RULES.md` 3절(파일명·변형 규칙), `design/tokens.css` 색 → 열린 결정 12·13
+- **BX**: `design/RULES.md` 3절의 파일 이름·크기 규칙대로 내보내 명준에게 전달 → 열린 결정 12·13

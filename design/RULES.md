@@ -7,7 +7,7 @@
 | 영역 | 담당 |
 |---|---|
 | 토큰(`tokens.css`)·컴포넌트 조각(`components/`)·미리보기·이 규칙 | UI·UX 디자이너 명준 |
-| 테마 일러스트(`illustrations/`)·아이콘(`icons/`)·앱 아이콘(`brand/`)·키 컬러 | BX 디자이너 (GitHub 가입 전까지 명준이 대신 올림) |
+| 테마 일러스트(`illustrations/`)·아이콘(`icons/`)·로고·앱 아이콘(`brand/`)·키 컬러 | 제작 BX 디자이너, 레포 반영 명준(3절 "BX 파일 올리기") |
 | 연동 리뷰(WebView에 그대로 들어가는지) | June |
 
 ## 1. 값은 전부 tokens.css 변수로 — 기준은 Pleos Connect UI Design Guide
@@ -44,11 +44,22 @@
 | `notice` | X2 안내 문구 9종 상태(잠시 후 다시·위치 확인 중·차량 정보를 읽는 중·범위 안 후보가 적어요 등) | |
 | `empty` | "첫 드라이브를 기다리는 중"(F17) | |
 
-## 3. 일러스트·아이콘
+## 3. 일러스트·아이콘·브랜드
 - 테마 8개 × 변형 3~4장(PRD 7-5). 파일명 `design/illustrations/<theme>-<n>.svg`, `<theme>` = 서버 `theme` 값:
   `sea lake river mountain park city island drive`, `<n>` = 1부터.
 - 같은 장소는 늘 같은 그림: 앱이 장소 ID로 변형을 고른다(`ChagokEngine.illustrationPath`). 변형 수를 바꾸면 PR에 적는다.
-- 실제 장소 사진인 척하지 않는다. 아이콘은 48dp 그리드 SVG, `design/icons/<name>.svg`. 앱 아이콘 512px PNG는 `design/brand/`.
+- 실제 장소 사진인 척하지 않는다. 아이콘은 48dp 그리드 SVG, `design/icons/<name>.svg`. 로고·앱 아이콘(512px PNG)은 `design/brand/`.
+- 레포에는 **앱이 쓰는 내보낸 파일(SVG·PNG)만** 둔다. 원본(피그마·AI·PSD)은 피그마·드라이브에.
+
+### BX 파일 올리기
+BX 디자이너는 GitHub 작업을 하지 않아도 된다. 내보낸 파일을 피그마·드라이브로 넘기면 명준이 위 이름 규칙대로 바꿔 PR로 올린다.
+그 커밋에는 BX 디자이너를 공동 작성자로 적는다 — 깃 이력에 참여가 남고, 나중에 그 이메일로 GitHub에 가입하면 지난 커밋까지 BX 기여로 연결된다.
+
+```
+design: 테마 일러스트 1차(바다·강·산)
+
+Co-authored-by: <BX 디자이너 이름> <GitHub에 쓸 이메일>
+```
 
 ## 4. 차량 제약 (심사 기준)
 - 터치 영역 48px 이상, 글자 최소 12sp, 대비 4.5:1(주간·야간 둘 다).
