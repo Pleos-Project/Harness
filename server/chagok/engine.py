@@ -372,6 +372,16 @@ def charge_amount(start_soc: float, end_soc: float, capacity_kwh: float, price: 
     return kwh, krw, text
 
 
+def full_tank_amount(start_level_pct: float, tank_l: float, price: float) -> tuple[float, int, str]:
+    """F9 내연 금액 시트의 '가득'(PRD v1.3 F9: 3만 / 5만 / 가득 + 1만 원 단위 ±).
+    주유 시작 때 연료 %에서 100%까지 채우는 양 × 단가. 기록·정산처럼 천 원 어림(PRD 5-3).
+    반환: (리터, 원, 문구 "약 8만 4천 원" / 어림이 0이면 "1천 원 미만")"""
+    liters = max(0.0, 100.0 - start_level_pct) / 100.0 * tank_l
+    krw, txt, under = approx(liters * price, 1_000)
+    text = txt if under else f"약 {txt}"
+    return liters, krw, text
+
+
 # ---------------------------------------------------------------- F8·F10·F17 로컬 기록(장부)
 def _dist_km(a: dict, b: dict) -> float:
     r = 6371.0

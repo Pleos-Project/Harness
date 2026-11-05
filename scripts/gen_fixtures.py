@@ -186,6 +186,18 @@ def main() -> None:
         "charge_start_soc": 50, "charge_end_soc": 80, "capacity_kwh": 77.4, "price": 300,
         "expected": {"kwh": E.round1(kwh * 10) / 10, "krw": krw, "text": text, "then": "D1"}})
 
+    # ---------------- 주유 직후 '가득' (D11, F9 내연 금액 시트)
+    tank = CONST["vehicles"]["grandeur_hev"]["capacity"]
+    gas_d11 = CONST["price"]["gasoline_krw_per_l"]
+    liters, krw, text = E.full_tank_amount(25, tank, gas_d11)
+    write(ROOT / "fixtures/cards/D11.json", {
+        "id": "D11", "title": f"내연 주유 직후 '가득': 그랜저 HEV 탱크 {tank:g}L, 시작 연료 25%, 휘발유 {gas_d11:,}원",
+        "note": f"(100 − 25) ÷ 100 × {tank:g} = {liters:g}L × {gas_d11:,} = {liters * gas_d11:,.0f} → 천 원 어림 "
+                f"{krw:,}(PRD v1.3 F9 '가득', 5-3).",
+        "virtual_console": {"settings": "모의 연료 % 25 → 주유 뒤 3%p 이상 상승(AC-F9-3) → 금액 시트"},
+        "fuel_start_pct": 25, "tank_l": tank, "price": gas_d11,
+        "expected": {"liters": E.round1(liters * 10) / 10, "krw": krw, "text": text}})
+
     # ---------------- 앱 로컬 경계 (D7~D10)
     write(ROOT / "fixtures/cards/D7.json", local_fixture(
         "D7", "Remaining Range 0 → 조립식", "AC-F1-2. 61.92kWh × 6.2 × 0.85 ≈ 326km, range_source=assembled.",

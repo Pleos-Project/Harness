@@ -123,6 +123,16 @@ class FixturesTest {
         assertEquals(want.str("text"), c.text)
     }
 
+    @Test
+    fun fullTankD11() {
+        val fx = load(File(root, "cards/D11.json"))
+        val c = fullTankAmount(fx.dbl("fuel_start_pct"), fx.dbl("tank_l"), fx.dbl("price"))
+        val want = fx.getValue("expected").jsonObject
+        assertEquals(want.dbl("liters"), round1(c.liters * 10) / 10, 0.0)
+        assertEquals(want.integer("krw"), c.krw)
+        assertEquals(want.str("text"), c.text)
+    }
+
     // ------------------------------------------------------------ 장부
     @Test
     fun ledgerFixtures() {
