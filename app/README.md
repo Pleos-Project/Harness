@@ -37,6 +37,7 @@ adb install -r -g app/build/outputs/apk/debug/app-debug.apk        # -g: 권한 
 | 서버 응답 읽기 | `parseCardsResponse(json)` — 온라인에서는 `display` 문구 그대로 | F5 |
 | 오프라인 데모·서버 실패 fallback | `DemoServer(candidates).cards(req)` · `.swap(sessionId)` — 서버와 같은 응답 | AC-C-3·AC-F5-7·AC-F5-8 |
 | 충전 직후 | `chargeAmount` | F9, AC-F9-1 |
+| 주유 직후 '가득' 금액 | `fullTankAmount(시작 연료 %, 탱크 L, 단가)` → 리터·원·"약 8만 4천 원" | F9(PRD v1.3 '가득'), fixture D11 |
 | 정산·도착·핀·월 합계(로컬 장부) | `ledgerStep(state, event)` · `monthSummary` | F8·F10·F17 |
 | 일러스트 변형 | `illustrationName(theme, placeId, n)` → `"<theme>-<n>"` | design/RULES.md 3절 |
 

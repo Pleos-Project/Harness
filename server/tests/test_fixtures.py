@@ -75,6 +75,14 @@ def test_ac_f9_1_charge_text():
     assert E.charge_amount(50, 80, 77.4, 300)[2] == "방금 약 7천 원어치 충전"
 
 
+def test_f9_full_tank_amount():
+    """PRD v1.3 F9 '가득': (100 − 25) ÷ 100 × 60L = 45L × 1,856 = 83,520 → 8만 4천."""
+    assert E.full_tank_amount(25, 60, 1856) == (45.0, 84_000, "약 8만 4천 원")
+    assert E.full_tank_amount(100, 60, 1856) == (0.0, 0, "1천 원 미만")      # 이미 가득 → '0 원' 금지
+    assert E.full_tank_amount(120, 60, 1856)[:2] == (0.0, 0)                # 100 넘는 값은 0으로
+    assert E.full_tank_amount(99.5, 60, 1856)[1:] == (1_000, "약 1천 원")   # 0.3L × 1,856 = 556.8 → 1천(반올림)
+
+
 def test_d5_settle_text():
     s = E.settle(E.Snapshot(12_340, 2, 300, EFF, "t"), 12_472, "양평 두물머리")
     assert s.text == "지난번 이후 132km · 약 8천 원 · 마지막 목적지 양평 두물머리"

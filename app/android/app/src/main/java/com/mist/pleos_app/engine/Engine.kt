@@ -329,6 +329,18 @@ fun chargeAmount(startSoc: Double, endSoc: Double, capacityKwh: Double, price: D
     return ChargeResult(kwh, a.value, if (a.under) "방금 ${a.text} 충전" else "방금 약 ${a.text}어치 충전")
 }
 
+data class FullTankResult(val liters: Double, val krw: Int, val text: String)
+
+/**
+ * F9 내연 금액 시트의 '가득'(PRD v1.3 F9: 3만 / 5만 / 가득 + 1만 원 단위 ±). Python full_tank_amount 와 같은 수식.
+ * 주유 시작 때 연료 %에서 100%까지 채우는 양 × 단가. 천 원 어림 "약 8만 4천 원", 어림이 0이면 "1천 원 미만"(PRD 5-3).
+ */
+fun fullTankAmount(startLevelPct: Double, tankL: Double, price: Double): FullTankResult {
+    val liters = max(0.0, 100.0 - startLevelPct) / 100.0 * tankL
+    val a = approx(liters * price, 1000)
+    return FullTankResult(liters, a.value, if (a.under) a.text else "약 ${a.text}")
+}
+
 // ------------------------------------------------------------ 화면 helper (Python 짝 없음)
 /**
  * 테마 일러스트 변형 고르기(design/RULES.md 3절): 같은 장소는 늘 같은 그림.
