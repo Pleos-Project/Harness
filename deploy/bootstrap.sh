@@ -1,8 +1,9 @@
 #!/bin/bash
-# 차곡 서버 인스턴스 준비. Lightsail 시작 스크립트(user-data)로 넣는다. root로 돈다.
+# 차곡 서버 인스턴스 준비. root로 bash에서 돈다. PC에서  deploy/deploy.sh --bootstrap  (ssh로 sudo bash 실행).
+#   Lightsail 시작 스크립트(user-data)로는 넣지 않는다: Lightsail이 자기 #!/bin/sh 스크립트 뒤에 붙여 sh(dash)로 돌려
+#   bash 문법에서 멈춘다(11/5 실제로 겪음). sh로 불리면 아래에서 알리고 멈춘다.
 #   대상: Ubuntu 24.04 LTS. 몇 번 돌려도 결과가 같다(이미 된 단계는 건너뛴다).
 #   수동 실행: sudo bash bootstrap.sh   또는 PC에서  deploy/deploy.sh --bootstrap
-#   진행 로그: /var/log/cloud-init-output.log
 #
 # 하는 일
 #   1. Docker Engine + compose plugin (Docker 공식 apt 저장소)
@@ -10,6 +11,7 @@
 #   3. /opt/chagok/{app,data} (소유자 ubuntu), 크론 로그 파일과 회전 설정
 #   4. 2GB 스왑 파일 (1GB 인스턴스에서 이미지 빌드할 때 대비)
 # 하지 않는 일: ufw(Lightsail 방화벽을 쓴다), 시간대 변경(UTC 유지, deploy/crontab 참고), 키 설치(deploy.sh --push-env)
+if [ -z "${BASH_VERSION:-}" ]; then echo "[chagok-bootstrap] bash로 실행해야 한다: deploy/deploy.sh --bootstrap" >&2; exit 1; fi
 set -euo pipefail
 
 APP_USER=ubuntu

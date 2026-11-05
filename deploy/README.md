@@ -14,7 +14,9 @@
 
 ## 리소스·비용
 
-- 인스턴스 `chagok-api`, 고정 IP `chagok-ip`, AWS CLI 프로필 `--profile chagok`
+- 인스턴스 `pleos-server`, 고정 IP `pleos-server-ip`(13.209.135.60), SSH 키 페어 `pleos-server-key`(개인키 `~/.ssh/pleos-server.pem`, 효성 PC)
+- AWS CLI 프로필 `--profile pleos` = IAM 사용자 `Pleos-server`(인라인 정책 `Pleos-lightsail` = `lightsail:*`만). 같은 계정의 다른 프로젝트 리소스는 건드리지 않는다
+- 도메인 `13-209-135-60.sslip.io` → API `https://13-209-135-60.sslip.io`
 - 번들 `micro_3_0`: 1GB 메모리, 월 7달러(크레딧으로 충당). 고정 IP는 인스턴스에 붙어 있는 동안 무료
 - 메모리가 1GB라 서버에서 이미지를 빌드할 때를 대비해 bootstrap이 스왑 2GB를 만든다
 
@@ -47,7 +49,21 @@ source ~/.bashrc
 
 ## 처음 배포
 
-전제: 인스턴스 `chagok-api`(Ubuntu 24.04, 시작 스크립트로 `bootstrap.sh`), 고정 IP `chagok-ip` 연결, 방화벽 TCP 22·80·443 + UDP 443 열림, SSH 개인키를 PC에 받아 둠.
+### Lightsail 준비 (처음 한 번, 11/5에 이렇게 만들었다)
+
+```bash
+P="--profile pleos"
+( umask 077; aws lightsail create-key-pair $P --key-pair-name pleos-server-key     --query privateKeyBase64 --output text > ~/.ssh/pleos-server.pem )      # 개인키는 화면에 출력하지 않는다
+aws lightsail create-instances $P --instance-names pleos-server --availability-zone ap-northeast-2a     --blueprint-id ubuntu_24_04 --bundle-id micro_3_0 --key-pair-name pleos-server-key --tags key=project,value=pleos
+aws lightsail allocate-static-ip $P --static-ip-name pleos-server-ip
+aws lightsail attach-static-ip $P --static-ip-name pleos-server-ip --instance-name pleos-server
+aws lightsail put-instance-public-ports $P --instance-name pleos-server --port-infos   '[{"fromPort":22,"toPort":22,"protocol":"tcp"},{"fromPort":80,"toPort":80,"protocol":"tcp"},{"fromPort":443,"toPort":443,"protocol":"tcp"},{"fromPort":443,"toPort":443,"protocol":"udp"}]'
+```
+
+- **시작 스크립트(user-data)에 `bootstrap.sh`를 넣지 않는다.** Lightsail은 user-data를 자기 초기화 스크립트(`#!/bin/sh`) 뒤에 붙여 sh(dash)로 돌려서 bash 문법(`set -o pipefail`)에서 멈춘다(11/5 실제로 겪음). 첫 배포 때 `deploy.sh --bootstrap`이 ssh로 bash 실행한다.
+- 윈도우 AWS CLI에 한글이 든 파일을 `file://`로 넘기면 cp949로 읽다 깨진다 → `AWS_CLI_FILE_ENCODING=UTF-8`을 앞에 붙인다.
+
+전제: 위 준비 완료(인스턴스·고정 IP·방화벽 TCP 22·80·443 + UDP 443), SSH 개인키를 PC에 받아 둠.
 
 1. **도메인 정하기.** 처음에는 `<고정IP를 대시로>.sslip.io`를 쓴다. sslip.io는 이름 안의 IP로 그대로 응답하는 공개 DNS라 도메인을 사지 않고도 Let's Encrypt 인증서를 받을 수 있다.
    예: 고정 IP `3.35.10.20` → `3-35-10-20.sslip.io`. `DOMAIN`을 생략하면 `deploy.sh`가 이 값을 만든다.
@@ -55,23 +71,22 @@ source ~/.bashrc
 3. **배포** (레포 루트에서, Git Bash·macOS·Linux):
 
    ```bash
-   HOST=3.35.10.20 SSH_KEY=~/.ssh/chagok.pem bash deploy/deploy.sh --push-env
+   HOST=13.209.135.60 SSH_KEY=~/.ssh/pleos-server.pem bash deploy/deploy.sh --bootstrap --push-env
    ```
 
-   - 첫 부팅 직후라면 시작 스크립트(bootstrap)가 끝날 때까지 기다린 뒤 진행한다.
-   - 시작 스크립트를 못 넣었으면 `--bootstrap`을 붙인다(서버에서 `sudo bash bootstrap.sh`).
+   - `--bootstrap`: 새 인스턴스면 붙인다(Docker·스왑·디렉토리). 몇 번 돌려도 같은 결과라 다시 붙여도 된다.
    - 첫 배포라 `sources refresh`·`prices refresh`를 한 번 돌린다(TourAPI 호출이 많아 몇 분 걸릴 수 있다).
    - 끝에 `https://<도메인>/v1/health` 응답을 출력한다. 첫 인증서 발급에 1분쯤 걸린다.
 4. 앱의 서버 주소를 `https://<도메인>`으로 맞춘다.
 
 `git archive HEAD`로 묶으므로 **커밋한 것만** 배포된다. 커밋 안 된 변경이 있으면 경고만 하고 진행한다.
 
-Windows 메모: Git Bash에서 돌린다. 키 경로는 `~/.ssh/chagok.pem`이나 `/c/Users/<나>/...` 꼴로 쓴다. SSH가 키 권한 경고를 내면 키를 `~/.ssh/` 아래로 옮기고 `chmod 600`을 한다.
+Windows 메모: Git Bash에서 돌린다. 키 경로는 `~/.ssh/pleos-server.pem`이나 `/c/Users/<나>/...` 꼴로 쓴다. SSH가 키 권한 경고를 내면 키를 `~/.ssh/` 아래로 옮기고 `chmod 600`을 한다.
 
 ## 재배포
 
 ```bash
-HOST=3.35.10.20 SSH_KEY=~/.ssh/chagok.pem bash deploy/deploy.sh
+HOST=13.209.135.60 SSH_KEY=~/.ssh/pleos-server.pem bash deploy/deploy.sh
 ```
 
 도메인은 서버의 `compose.env`에 남아 있어 다시 줄 필요가 없다. 이미지가 바뀌면 `api` 컨테이너가 새로 떠서 **메모리에 둔 카드 세션이 사라진다**(앱은 다시 요청하면 된다). refresh는 첫 배포 때만 돈다. 강제로 돌리려면 `--refresh`를 붙인다.
@@ -80,7 +95,7 @@ HOST=3.35.10.20 SSH_KEY=~/.ssh/chagok.pem bash deploy/deploy.sh
 
 ```bash
 # PC: 레포 루트 .env 를 고친 뒤
-HOST=3.35.10.20 SSH_KEY=~/.ssh/chagok.pem bash deploy/deploy.sh --push-env
+HOST=13.209.135.60 SSH_KEY=~/.ssh/pleos-server.pem bash deploy/deploy.sh --push-env
 ```
 
 `.env`만 바꾸고 코드는 그대로 두고 싶으면 서버에서 직접 고친 뒤 `api`를 다시 만든다. 키는 컨테이너가 뜰 때 환경변수로 들어가므로 `restart`로는 반영되지 않는다.
@@ -126,7 +141,7 @@ dc exec -T api python -m chagok.prices refresh
 2. 새 도메인으로 다시 배포한다. `compose.env`가 바뀌어 caddy가 새로 뜨고 인증서를 새로 받는다.
 
    ```bash
-   HOST=3.35.10.20 SSH_KEY=~/.ssh/chagok.pem DOMAIN=api.example.com bash deploy/deploy.sh
+   HOST=13.209.135.60 SSH_KEY=~/.ssh/pleos-server.pem DOMAIN=api.example.com bash deploy/deploy.sh
    ```
 
 3. 앱의 서버 주소를 바꾼다.
@@ -139,7 +154,7 @@ PC에서 이전 커밋을 다시 배포하는 게 기본이다(`deploys.log`에 
 
 ```bash
 cat /opt/chagok/deploys.log                     # 서버에서 이전 커밋 확인
-HOST=3.35.10.20 SSH_KEY=~/.ssh/chagok.pem bash deploy/deploy.sh --ref <이전 커밋>
+HOST=13.209.135.60 SSH_KEY=~/.ssh/pleos-server.pem bash deploy/deploy.sh --ref <이전 커밋>
 ```
 
 PC를 쓸 수 없으면 서버에 남은 직전 코드(`app.prev`)로 바로 되돌린다.

@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # 차곡 서버 배포. 개발 PC(Windows Git Bash·macOS·Linux)에서 레포 안 어디서든 실행한다.
 #
-#   HOST=3.35.10.20 SSH_KEY=~/.ssh/chagok.pem DOMAIN=3-35-10-20.sslip.io bash deploy/deploy.sh [--push-env]
-#   bash deploy/deploy.sh --host 3.35.10.20 --key ~/.ssh/chagok.pem [--domain ...] [옵션]
+#   HOST=13.209.135.60 SSH_KEY=~/.ssh/pleos-server.pem DOMAIN=13-209-135-60.sslip.io bash deploy/deploy.sh [--push-env]
+#   bash deploy/deploy.sh --host 13.209.135.60 --key ~/.ssh/pleos-server.pem [--domain ...] [옵션]
 #
 # 입력(환경변수 또는 인자)
-#   HOST / --host       고정 IP(chagok-ip)
+#   HOST / --host       고정 IP(pleos-server-ip)
 #   SSH_KEY / --key     SSH 개인키 경로
 #   DOMAIN / --domain   생략하면 서버에 저장된 값(/opt/chagok/compose.env), 그것도 없으면 <IP를 대시로>.sslip.io
 #   SSH_USER / --user   기본 ubuntu
@@ -48,7 +48,7 @@ while [ $# -gt 0 ]; do
 done
 
 # ---------------------------------------------------------------- 입력 확인
-[ -n "$HOST" ] || die "HOST(고정 IP)가 필요하다. 예: HOST=3.35.10.20"
+[ -n "$HOST" ] || die "HOST(고정 IP)가 필요하다. 예: HOST=13.209.135.60"
 [[ $HOST =~ ^[A-Za-z0-9.-]+$ ]] || die "HOST 형식이 이상하다: $HOST"
 [ -n "$SSH_KEY" ] || die "SSH_KEY(개인키 경로)가 필요하다"
 SSH_KEY=${SSH_KEY/#\~/$HOME}
