@@ -39,6 +39,7 @@
 | 11/5 | 브랜치 | `develop`(기본)·`main`(릴리스)·`feature/*`·`fix/*`, PR로만 머지 | 확정 | June이 `App` 레포에 정한 CONTRIBUTING 그대로 |
 | 11/5 | 패키지 | `com.mist.pleos_app` | 제안 → 열린 결정 1 | June `App` 레포 값과 맞춤 |
 | 11/5 | 역할 | 백엔드·AI·서버 효성 / 안드로이드 June / UI·UX·기획(PM) 명준 / 영상 / BX — 디렉토리 주인은 README 표 | 확정 | PRD 12장, 11/5 역할 정리 |
+| 11/5 | 제품 이름 | "차곡"은 가제. 코드 식별자는 이름과 무관하게 유지 | 확정 | 11/5 팀 정리, 최종 이름은 열린 결정 22 |
 | 11/5 | BX 파일 | 로고·일러스트·아이콘·브랜드는 `design/`에서 관리. BX는 내보낸 파일을 넘기고 명준이 PR로 올리며 커밋에 `Co-authored-by:`로 BX 표기. 원본은 레포 밖. BX GitHub 계정은 가입하면 추가(필수 아님) | 확정 | BX는 GitHub 작업이 적음, 참여 기록은 남김 |
 
 ## 열린 결정
@@ -66,3 +67,4 @@
 | 19 | 1차 제출용 깃 | Harness는 비공개(docs 포함). 공개 링크가 필요하면 **docs를 뺀 공개 사본** / Harness 공개 전환(docs 정리 후) | 명준 | 11/14 |
 | 20 | `Pleos-Project/App` 레포 | 보관(archive) / 다른 용도 / 삭제 — June 레포라 June이 정함 | June | 11/7 |
 | 21 | 빌드 버전 | **H_Mate 값(AGP 9.3.3·Gradle 9.5.0·targetSdk 36, Pleos SDK로 빌드 확인됨)** / App 레포 값(AGP 9.4.1·Gradle 9.6.0·targetSdk 37) | June | 11/7 |
+| 22 | 제품 이름 | **"차곡"(가제)** / 새 이름. 이름 충돌("차곡 가계부" 앱)·상표 검색은 PRD 13-2·13-4. 바뀌면 화면 문구·`strings.xml` app_name·문서 제목만 바꾸고 코드 식별자는 그대로 | 명준 | 11/14(지원서 전) |

@@ -1,6 +1,7 @@
 # CLAUDE.md — 이 레포에서 일하는 에이전트용 규칙
 
-차곡: Pleos Connect(AAOS) 차량 앱 + 추천 서버. 사람용 안내는 README.md, 결정은 DECISIONS.md.
+차곡(가제): Pleos Connect(AAOS) 차량 앱 + 추천 서버. 사람용 안내는 README.md, 결정은 DECISIONS.md.
+제품 이름은 가제라 바뀔 수 있다. 코드 식별자(`chagok`, `ChagokEngine`, `cg-`)는 이름이 바뀌어도 고치지 않는다.
 
 ## 언어
 - 답변·요약·질문은 **한국어**. 커밋 메시지·PR 본문·코드 주석·문서도 한국어(식별자·명령어·에러 원문은 그대로).
