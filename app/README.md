@@ -51,10 +51,16 @@ adb install -r -g app/build/outputs/apk/debug/app-debug.apk        # -g: 권한 
 - 레이아웃 확인은 `@Preview`로 가로·세로(1:1 분할)를 같이 둔다(`MainActivity.kt`의 `EngineCheckPreview` 참고).
 
 ## 3. 서버 호출 — Kotlin에서 직접 (열린 결정 2 해결)
+- 앱이 부르는 건 `/v1/cards`·`/v1/cards/swap`·`/v1/prices` 셋(`contract/openapi.yaml`).
 - 요청은 `cardsRequest(...).toJson()`, 응답은 `parseCardsResponse()`. 원시 차량값은 보내지 않는다(`budget` 파생값만, 서버가 422로 막음).
 - 개발: 에뮬에서 `http://10.0.2.2:8000`(`make dev`). **debug 빌드만** `src/debug/res/xml/network_security_config.xml`이 `10.0.2.2` cleartext를 허용한다. release는 cleartext가 기본 차단이라 HTTPS 도메인 하나만(AC-N-3).
 - 타임아웃 3초, 실패하면 `DemoServer(candidates)`로 fallback(AC-F5-7·AC-F5-8). 호출은 화면을 연 동안만 — 폴링·백그라운드 호출 금지.
 - PT(12/3)는 네트워크 없이 돌아가야 하므로(AC-C-3) 데모 고정 모드를 기본으로 둔다.
+- **평균 단가 `GET /v1/prices`**(DECISIONS '계약: 단가'): 입력 없음, 응답 `{gasoline, diesel, trade_dt, source}`(원/L 정수).
+  - 사용자 단가가 없을 때만 쓴다. 받은 휘발유 값으로 내장 기본값을 갈아 끼운다(`constants.copy(gasolineKrwPerL = …)`). `price_source`는 `default` 그대로, 화면은 "평균 단가".
+  - 앱 실행·복귀(기어 P) 때 1회, 타임아웃 3초. 실패·503이면 직전에 받은 값, 그것도 없으면 내장값. 데모 고정 모드에서는 부르지 않는다.
+  - 첫 화면은 이 호출을 기다리지 않는다(AC-N-1). 내장값(또는 직전 값)으로 먼저 그리고 응답이 오면 바꾼다.
+  - 전기 단가(원/kWh)는 오피넷에 없다 → EV는 설정·내장값.
 - HTTP 클라이언트(`HttpURLConnection`·OkHttp 등)는 첫 서버 연동 PR에서 정한다.
 
 ## 4. SDK·에뮬 동작 메모 (H_Mate README, June 11/4~5 실측)
