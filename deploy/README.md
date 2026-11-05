@@ -6,7 +6,7 @@
 |---|---|
 | `Dockerfile` | `api` 이미지. `server/`·`fixtures/`만 들어가고 비루트(uid 1000)로 돈다. 키는 넣지 않는다 |
 | `compose.yaml` | `api`(포트는 밖에 열지 않음) + `caddy`(80·443·443/udp). 로그는 json-file 10MB×3 |
-| `Caddyfile` | `{$CHAGOK_DOMAIN}` → `api:8000`. 접근 로그 없음 |
+| `Caddyfile` | `{$CHAGOK_DOMAIN}` → `api:8000`. 접근 로그 없음. 인증서는 RSA 키 + ISRG Root X1 체인(아래 'TLS 체인') |
 | `crontab` | `/etc/cron.d/chagok`. KST 04:10 `sources refresh`, 04:20 `prices refresh` (UTC로 적혀 있음) |
 | `bootstrap.sh` | 인스턴스 시작 스크립트(user-data). Docker·스왑 2GB·디렉토리·로그 회전 |
 | `deploy.sh` | PC에서 실행. 코드 보내기 → 교체 → 크론 → `up --build` → (첫 배포면) refresh → https 헬스 |
@@ -147,6 +147,47 @@ dc exec -T api python -m chagok.prices refresh
 3. 앱의 서버 주소를 바꾼다.
 
 서버에서만 바꾸려면 `echo CHAGOK_DOMAIN=api.example.com > /opt/chagok/compose.env && dc up -d`.
+
+## TLS 체인
+
+- **고른 것**: RSA 2048 키 + 최상위가 **ISRG Root X1**(또는 X1이 교차 서명한 인증서)인 체인. `Caddyfile` 전역 옵션 `key_type rsa2048`과 `cert_issuer acme { preferred_chains { root_common_name "ISRG Root X1" } }`.
+- **이유**: Caddy 기본값(ECDSA 키)이면 Let's Encrypt가 `서버 → YE2 → ISRG Root YE → ISRG Root X2` 체인을 준다(11/5 첫 발급). X2는 최근 안드로이드에만 들어 있다. 앱이 도는 AAOS 에뮬레이터가 X2를 믿는지 모르므로 안드로이드 7.1.1부터 믿는 X1 쪽을 고른다.
+- `root_common_name`은 체인 **마지막 인증서의 발급자(Issuer) CN**과 정확히 같은지로 고른다. 맞는 체인이 없으면 경고만 남기고 첫 체인을 쓴다.
+- `cert_issuer`를 적으면 기본 발급자 목록(Let's Encrypt → ZeroSSL)을 대신해 Let's Encrypt만 쓴다.
+
+### 키 종류·체인 설정을 바꾼 뒤
+
+Caddy는 **이미 받아 둔 인증서가 유효하면 설정이 바뀌어도 다시 받지 않는다**(새 설정은 다음 갱신 때부터). 바로 바꾸려면 저장된 인증서를 옮겨 두고 caddy를 재시작한다. 이렇게 하면 발급이 1회 늘어난다. Let's Encrypt는 같은 이름 묶음에 **주 5회**까지만 발급하니 되풀이하지 않는다.
+
+```bash
+D=13-209-135-60.sslip.io
+C=/data/caddy/certificates/acme-v02.api.letsencrypt.org-directory
+B=/data/cert-backup/$D-$(date -u +%Y%m%dT%H%M)          # caddy_data 볼륨 안(인증서 저장 경로 밖)
+dc exec -T caddy sh -c "mkdir -p /data/cert-backup && mv $C/$D $B"
+dc restart caddy
+dc logs --since 5m caddy | grep -iE 'obtain|certificate|chain|error' | tail
+```
+
+되돌리기(원하는 체인이 안 나왔을 때): 이전 커밋을 다시 배포해 `Caddyfile`을 되돌린 뒤, 옮겨 둔 인증서를 제자리에 놓고 caddy를 재시작한다.
+
+```bash
+dc exec -T caddy sh -c "rm -rf $C/$D && mv $B $C/$D"
+dc restart caddy
+```
+
+### 확인 (서버 안에서)
+
+회사·학교 방화벽이 HTTPS를 가로채 다시 서명하는 PC에서는 로컬 확인이 틀린 체인을 보여 준다. 서버에 ssh로 들어가 본다.
+
+```bash
+echo | openssl s_client -connect 127.0.0.1:443 -servername 13-209-135-60.sslip.io -showcerts 2>/dev/null \
+  | awk '/BEGIN CERT/{c=""} {c=c $0 "\n"} /END CERT/{printf "%s", c | "openssl x509 -noout -subject -issuer"; close("openssl x509 -noout -subject -issuer")}'
+echo | openssl s_client -connect 127.0.0.1:443 -servername 13-209-135-60.sslip.io 2>/dev/null \
+  | openssl x509 -noout -text | grep 'Public Key Algorithm'     # rsaEncryption 이어야 한다
+curl -fsS https://13-209-135-60.sslip.io/v1/health
+```
+
+마지막 줄의 발급자가 `ISRG Root X1`이면 된다(예: `... → ISRG Root YR`(발급자 X1) 또는 `... → R1x`(발급자 X1)).
 
 ## 롤백
 
