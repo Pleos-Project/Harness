@@ -45,8 +45,15 @@ val syncChagokData by tasks.registering(Copy::class) {
 }
 tasks.named("preBuild") { dependsOn(syncChagokEngine, syncChagokData) }
 
-// 엔진 JUnit(FixturesTest)이 fixtures/ 를 읽으므로 fixture가 바뀌면 테스트를 다시 돌린다
-tasks.withType<Test>().configureEach { inputs.dir(repoFixtures).withPropertyName("chagokFixtures") }
+// 엔진 JUnit(FixturesTest)이 fixtures/ 를 읽으므로 fixture가 바뀌면 테스트를 다시 돌린다.
+// 결과는 테스트마다 로그에 찍고, 실패하면 어느 fixture의 어느 값이 다른지 전체 메시지를 보여 준다.
+tasks.withType<Test>().configureEach {
+    inputs.dir(repoFixtures).withPropertyName("chagokFixtures")
+    testLogging {
+        events("passed", "skipped", "failed")
+        exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
+    }
+}
 
 dependencies {
     implementation(libs.pleos.vehicle)
