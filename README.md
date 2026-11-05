@@ -7,6 +7,7 @@
 ## 실행
 ```
 pip install -e "server[dev]"          # 처음 한 번 (Python 3.12+)
+cp .env.example .env                  # 외부 API 키 자리 (TourAPI 등). .env 는 커밋되지 않음
 make check                            # PR 전에: 서버 pytest + 문구 검사 (빠름, JDK 없어도 됨)
 make check-app                        # 앱·엔진을 바꿨으면: 빌드 + Kotlin 엔진 fixture 대조 (JDK 21)
 make dev                              # 서버 http://localhost:8000 (에뮬에서 http://10.0.2.2:8000)
