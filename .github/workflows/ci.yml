@@ -1,0 +1,58 @@
+name: ci
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+
+jobs:
+  server:
+    name: server (pytest · fixtures 재생성 diff)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: pip install -e "server[dev]"
+      - run: cd server && python -m pytest -q
+      - name: fixtures·계약 샘플이 엔진과 일치하는지 (재생성 후 diff 없음)
+        run: |
+          python scripts/gen_fixtures.py
+          git status --porcelain fixtures contract/samples
+          git diff --exit-code fixtures contract/samples
+          test -z "$(git status --porcelain fixtures contract/samples)"
+
+  app-shared:
+    name: app/shared (JS 엔진 = 같은 fixtures)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "22" }
+      - run: node --test "app/shared/test/*.test.js"
+
+  app-android:
+    name: app/android (권한 대조 · 빌드 · 단위 테스트)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - name: 매니페스트 권한 = contract/permissions.md (AC-N-7)
+        run: python scripts/check_permissions.py app/android/app/src/main/AndroidManifest.xml
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: "21" }
+      - uses: gradle/actions/setup-gradle@v4   # wrapper jar 검증 포함
+      - name: assembleDebug · test
+        working-directory: app/android
+        run: |
+          chmod +x gradlew
+          ./gradlew --no-daemon assembleDebug test
+
+  copy:
+    name: 문구 검사 (AC-C-4·AC-C-8)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: python scripts/lint_copy.py

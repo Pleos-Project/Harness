@@ -1,0 +1,169 @@
+{
+  "id": "D9",
+  "title": "잔고 40km < 안전 여유 → 추가 0원 비활성, +1만 기본",
+  "note": "AC-F2-2. zero_available=false → 앱이 extra_krw=10000으로 요청.",
+  "virtual_console": {
+    "PUT /vehicle/ev-battery?field=soc&value=": 12,
+    "PUT /vehicle/odometer?remaining_range_m=": 40000
+  },
+  "app_local": {
+    "inputs": {
+      "model": "ioniq5_lr",
+      "level_pct": 12,
+      "remaining_range_m": 40000,
+      "price": 300,
+      "extra_krw": 10000
+    },
+    "expected": {
+      "fuel_type": "ev",
+      "capacity": 77.4,
+      "efficiency": 5.27,
+      "price_per_unit": 300,
+      "price_source": "user",
+      "balance_km": 40.0,
+      "balance_krw": 3000,
+      "balance_text": "배터리에 3천 원어치 · 약 40km",
+      "margin_km": 50.0,
+      "usable_km": -10.0,
+      "radius_km": 63.7,
+      "range_source": "range_remaining",
+      "zero_available": false
+    }
+  },
+  "request": {
+    "origin": {
+      "lat": 37.4127,
+      "lng": 127.0947
+    },
+    "budget": {
+      "fuel_type": "ev",
+      "usable_km": -10.0,
+      "margin_km": 50.0,
+      "efficiency": 5.27,
+      "price_per_unit": 300,
+      "price_source": "user"
+    },
+    "seats_occupied": 1,
+    "extra_krw": 10000,
+    "days": 1,
+    "themes": [],
+    "recent_visits": [],
+    "demo_seed": "pt-2026-12-03"
+  },
+  "expected": {
+    "session_id": "<session>",
+    "radius_km": 63.7,
+    "candidates_in_range": 9,
+    "hint": null,
+    "picked": {
+      "id": "p_seoul_forest",
+      "name": "서울숲",
+      "theme": "park",
+      "lat": 37.5444,
+      "lng": 127.0374,
+      "route_km": 25,
+      "minutes": 45,
+      "time_label": "75분 안",
+      "cost": {
+        "fuel": 2846,
+        "toll": 0,
+        "parking": 3000,
+        "total": 5846,
+        "per_person": null
+      },
+      "display": {
+        "total_text": "5천 원 안팎",
+        "per_person_text": null,
+        "zero_extra": false,
+        "tight": false,
+        "ring_krw": 10000,
+        "badge_text": "+1만 원 안팎",
+        "margin_km": 50
+      },
+      "reason": "75분 안 · 지난번과 다른 테마 · 공원"
+    },
+    "stack": [
+      {
+        "id": "p_cheongpyeong",
+        "name": "청평호 드라이브길",
+        "theme": "drive",
+        "lat": 37.736,
+        "lng": 127.426,
+        "route_km": 78,
+        "minutes": 82,
+        "time_label": "조금 먼 곳",
+        "cost": {
+          "fuel": 8880,
+          "toll": 4000,
+          "parking": null,
+          "total": 12880,
+          "per_person": null
+        },
+        "display": {
+          "total_text": "1만 5천 원 안팎",
+          "per_person_text": null,
+          "zero_extra": false,
+          "tight": false,
+          "ring_krw": 10000,
+          "badge_text": "+1만 원 안팎",
+          "margin_km": 50
+        },
+        "reason": "지난번과 다른 테마 · 드라이브길"
+      },
+      {
+        "id": "p_namhansanseong",
+        "name": "남한산성",
+        "theme": "mountain",
+        "lat": 37.4785,
+        "lng": 127.1853,
+        "route_km": 15,
+        "minutes": 30,
+        "time_label": "75분 안",
+        "cost": {
+          "fuel": 1708,
+          "toll": 0,
+          "parking": 3000,
+          "total": 4708,
+          "per_person": null
+        },
+        "display": {
+          "total_text": "5천 원 안팎",
+          "per_person_text": null,
+          "zero_extra": false,
+          "tight": false,
+          "ring_krw": 10000,
+          "badge_text": "+1만 원 안팎",
+          "margin_km": 50
+        },
+        "reason": "75분 안 · 지난번과 다른 테마 · 산"
+      },
+      {
+        "id": "p_dumulmeori",
+        "name": "양평 두물머리",
+        "theme": "river",
+        "lat": 37.5363,
+        "lng": 127.314,
+        "route_km": 52,
+        "minutes": 70,
+        "time_label": "75분 안",
+        "cost": {
+          "fuel": 5920,
+          "toll": 0,
+          "parking": 2000,
+          "total": 7920,
+          "per_person": null
+        },
+        "display": {
+          "total_text": "1만 원 안팎",
+          "per_person_text": null,
+          "zero_extra": false,
+          "tight": false,
+          "ring_krw": 10000,
+          "badge_text": "+1만 원 안팎",
+          "margin_km": 50
+        },
+        "reason": "75분 안 · 지난번과 다른 테마 · 강"
+      }
+    ]
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "id": "D7",
+  "title": "Remaining Range 0 → 조립식",
+  "note": "AC-F1-2. 61.92kWh × 6.2 × 0.85 ≈ 326km, range_source=assembled.",
+  "virtual_console": {
+    "PUT /vehicle/odometer?remaining_range_m=": 0
+  },
+  "app_local": {
+    "inputs": {
+      "model": "ioniq5_lr",
+      "level_pct": 80,
+      "remaining_range_m": 0,
+      "price": 300
+    },
+    "expected": {
+      "fuel_type": "ev",
+      "capacity": 77.4,
+      "efficiency": 5.27,
+      "price_per_unit": 300,
+      "price_source": "user",
+      "balance_km": 326.3,
+      "balance_krw": 19000,
+      "balance_text": "배터리에 1만 9천 원어치 · 약 326km",
+      "margin_km": 50.0,
+      "usable_km": 276.3,
+      "radius_km": 106.3,
+      "range_source": "assembled",
+      "zero_available": true
+    }
+  }
+}

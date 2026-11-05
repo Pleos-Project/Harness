@@ -1,0 +1,6 @@
+/* 배지: 누르는 요소가 아니라 터치 영역(48) 대신 내용 높이만. 바탕·글자 색은 tokens.css 의 --cg-badge-* (대비 계산값) */
+.cg-badge { display: inline-flex; align-items: center; justify-self: start; padding: calc(8 * var(--u)) calc(20 * var(--u));
+  border-radius: 999px; font: var(--cg-label-m); font-weight: 700; }
+.cg-badge--zero  { background: var(--cg-badge-zero);  color: var(--cg-badge-zero-text); }
+.cg-badge--extra { background: var(--cg-badge-extra); color: var(--cg-badge-extra-text); }
+.cg-badge--tight { background: var(--cg-badge-tight); color: var(--cg-badge-tight-text); }

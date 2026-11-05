@@ -1,0 +1,22 @@
+{
+  "id": "T4",
+  "title": "최근 목적지 없음 → 핀 없이 금액만",
+  "snapshot_prev": {
+    "odometer_km": 10000,
+    "seats": 1,
+    "price_per_unit": 300,
+    "efficiency": 5.27,
+    "ts": "2026-11-01T09:00:00+09:00"
+  },
+  "odometer_now": 10050,
+  "last_destination": null,
+  "span_days": 0,
+  "expected": {
+    "km": 50,
+    "krw": 3000,
+    "per_person": null,
+    "text": "지난번 이후 50km · 약 3천 원",
+    "skipped": false,
+    "reason": null
+  }
+}

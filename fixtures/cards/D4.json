@@ -1,0 +1,121 @@
+{
+  "id": "D4",
+  "title": "1박 + 테마 바다",
+  "note": "가용 326−50−30 = 246, 반경 ≈ 94.6. 테마는 경계라 바다만 → 후보 2곳 → hint few_candidates(X2).",
+  "virtual_console": {},
+  "app_local": {
+    "inputs": {
+      "model": "ioniq5_lr",
+      "level_pct": 80,
+      "remaining_range_m": 326000,
+      "price": 300,
+      "days": 2
+    },
+    "expected": {
+      "fuel_type": "ev",
+      "capacity": 77.4,
+      "efficiency": 5.27,
+      "price_per_unit": 300,
+      "price_source": "user",
+      "balance_km": 326.0,
+      "balance_krw": 19000,
+      "balance_text": "배터리에 1만 9천 원어치 · 약 326km",
+      "margin_km": 50.0,
+      "usable_km": 246.0,
+      "radius_km": 94.6,
+      "range_source": "range_remaining",
+      "zero_available": true
+    }
+  },
+  "request": {
+    "origin": {
+      "lat": 37.4127,
+      "lng": 127.0947
+    },
+    "budget": {
+      "fuel_type": "ev",
+      "usable_km": 246.0,
+      "margin_km": 50.0,
+      "efficiency": 5.27,
+      "price_per_unit": 300,
+      "price_source": "user"
+    },
+    "seats_occupied": 1,
+    "extra_krw": 0,
+    "days": 2,
+    "themes": [
+      "sea"
+    ],
+    "recent_visits": [],
+    "demo_seed": "pt-2026-12-03"
+  },
+  "expected": {
+    "session_id": "<session>",
+    "radius_km": 94.6,
+    "candidates_in_range": 2,
+    "hint": {
+      "code": "few_candidates",
+      "text": "범위 안 후보가 적어요",
+      "actions": [
+        "clear_themes",
+        "extra_10000"
+      ]
+    },
+    "picked": {
+      "id": "p_daebudo",
+      "name": "대부도 바다향기테마파크",
+      "theme": "sea",
+      "lat": 37.253,
+      "lng": 126.595,
+      "route_km": 70,
+      "minutes": 75,
+      "time_label": "75분 안",
+      "cost": {
+        "fuel": 7970,
+        "toll": 2400,
+        "parking": 0,
+        "total": 10370,
+        "per_person": null
+      },
+      "display": {
+        "total_text": "1만 원 안팎",
+        "per_person_text": null,
+        "zero_extra": true,
+        "tight": false,
+        "ring_krw": 0,
+        "badge_text": "추가 충전 없이 · 여유 50km",
+        "margin_km": 50
+      },
+      "reason": "추가 0원 안 · 75분 안 · 바다"
+    },
+    "stack": [
+      {
+        "id": "p_eulwangri",
+        "name": "인천 을왕리해수욕장",
+        "theme": "sea",
+        "lat": 37.447,
+        "lng": 126.374,
+        "route_km": 85,
+        "minutes": 80,
+        "time_label": "조금 먼 곳",
+        "cost": {
+          "fuel": 9677,
+          "toll": 7000,
+          "parking": 3000,
+          "total": 19677,
+          "per_person": null
+        },
+        "display": {
+          "total_text": "2만 원 안팎",
+          "per_person_text": null,
+          "zero_extra": true,
+          "tight": false,
+          "ring_krw": 0,
+          "badge_text": "추가 충전 없이 · 여유 50km",
+          "margin_km": 50
+        },
+        "reason": "추가 0원 안 · 바다 · 지난번과 다른 테마"
+      }
+    ]
+  }
+}

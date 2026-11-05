@@ -1,0 +1,167 @@
+{
+  "id": "L2",
+  "title": "실차: 출발 뒤 앱이 가려진 채 도착 → 다음 열기가 trip을 닫음(내연, 착석 2)",
+  "note": "도착 이벤트를 못 받아도 다음 정산이 trip을 닫고 목적지는 trip 장소. 110 ÷ 12.5 × 1,856 → 1만 6천, 1인 8천.",
+  "state0": {
+    "snapshot": null,
+    "trip": null,
+    "rows": [],
+    "last_pin": null
+  },
+  "steps": [
+    {
+      "event": {
+        "type": "open",
+        "ts": "2026-11-08T09:00:00+09:00",
+        "odometer_km": 10000,
+        "seats": 2,
+        "price": 1856,
+        "efficiency": 12.5,
+        "price_source": "user",
+        "recent_destination": null
+      },
+      "expected": {
+        "output": {
+          "card": null,
+          "row": null,
+          "skipped": "no_snapshot"
+        },
+        "state": {
+          "snapshot": {
+            "odometer_km": 10000,
+            "seats": 2,
+            "price_per_unit": 1856,
+            "efficiency": 12.5,
+            "ts": "2026-11-08T09:00:00+09:00",
+            "price_source": "user"
+          },
+          "trip": null,
+          "rows": [],
+          "last_pin": null
+        }
+      }
+    },
+    {
+      "event": {
+        "type": "depart",
+        "ts": "2026-11-08T09:02:00+09:00",
+        "odometer_km": 10000,
+        "place": {
+          "id": "p_dumulmeori",
+          "name": "양평 두물머리",
+          "lat": 37.5363,
+          "lng": 127.314
+        },
+        "route_km": 52
+      },
+      "expected": {
+        "output": {
+          "card": null,
+          "row": null,
+          "skipped": null
+        },
+        "state": {
+          "snapshot": {
+            "odometer_km": 10000,
+            "seats": 2,
+            "price_per_unit": 1856,
+            "efficiency": 12.5,
+            "ts": "2026-11-08T09:00:00+09:00",
+            "price_source": "user"
+          },
+          "trip": {
+            "place": {
+              "id": "p_dumulmeori",
+              "name": "양평 두물머리",
+              "lat": 37.5363,
+              "lng": 127.314
+            },
+            "route_km": 52,
+            "start_odometer_km": 10000,
+            "departed_ts": "2026-11-08T09:02:00+09:00"
+          },
+          "rows": [],
+          "last_pin": null
+        }
+      }
+    },
+    {
+      "event": {
+        "type": "open",
+        "ts": "2026-11-08T18:30:00+09:00",
+        "odometer_km": 10110,
+        "seats": 2,
+        "price": 1856,
+        "efficiency": 12.5,
+        "price_source": "user",
+        "recent_destination": {
+          "id": "p_dumulmeori",
+          "name": "양평 두물머리",
+          "lat": 37.5363,
+          "lng": 127.314
+        }
+      },
+      "expected": {
+        "output": {
+          "card": "지난번 이후 110km · 약 1만 6천 원 · 마지막 목적지 양평 두물머리",
+          "row": {
+            "type": "settle",
+            "from_ts": "2026-11-08T09:00:00+09:00",
+            "to_ts": "2026-11-08T18:30:00+09:00",
+            "km": 110,
+            "krw": 16000,
+            "per_person": 8000,
+            "place": {
+              "name": "양평 두물머리",
+              "lat": 37.5363,
+              "lng": 127.314
+            },
+            "pinned": true,
+            "demo": false
+          },
+          "skipped": null
+        },
+        "state": {
+          "snapshot": {
+            "odometer_km": 10110,
+            "seats": 2,
+            "price_per_unit": 1856,
+            "efficiency": 12.5,
+            "ts": "2026-11-08T18:30:00+09:00",
+            "price_source": "user"
+          },
+          "trip": null,
+          "rows": [
+            {
+              "type": "settle",
+              "from_ts": "2026-11-08T09:00:00+09:00",
+              "to_ts": "2026-11-08T18:30:00+09:00",
+              "km": 110,
+              "krw": 16000,
+              "per_person": 8000,
+              "place": {
+                "name": "양평 두물머리",
+                "lat": 37.5363,
+                "lng": 127.314
+              },
+              "pinned": true,
+              "demo": false
+            }
+          ],
+          "last_pin": {
+            "name": "양평 두물머리",
+            "lat": 37.5363,
+            "lng": 127.314
+          }
+        }
+      }
+    }
+  ],
+  "month": "2026-11",
+  "expected_month": {
+    "krw": 16000,
+    "places": 1,
+    "demo": false,
+    "text": "이번 달 이동비 약 1만 6천 원 · 다녀온 곳 1곳"
+  }
+}

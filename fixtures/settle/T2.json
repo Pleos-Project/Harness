@@ -1,0 +1,22 @@
+{
+  "id": "T2",
+  "title": "며칠 만에 열기: 3일 · 412km",
+  "snapshot_prev": {
+    "odometer_km": 10000,
+    "seats": 1,
+    "price_per_unit": 300,
+    "efficiency": 5.27,
+    "ts": "2026-11-01T09:00:00+09:00"
+  },
+  "odometer_now": 10412,
+  "last_destination": "강릉",
+  "span_days": 3,
+  "expected": {
+    "km": 412,
+    "krw": 23000,
+    "per_person": null,
+    "text": "지난번 이후 3일 · 412km · 약 2만 3천 원 · 마지막 목적지 강릉",
+    "skipped": false,
+    "reason": null
+  }
+}

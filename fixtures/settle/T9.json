@@ -1,0 +1,22 @@
+{
+  "id": "T9",
+  "title": "내연: 직전 연비 L/100km 8.0 → 12.5km/L, 휘발유 1,856",
+  "snapshot_prev": {
+    "odometer_km": 10000,
+    "seats": 1,
+    "price_per_unit": 1856,
+    "efficiency": 12.5,
+    "ts": "2026-11-01T09:00:00+09:00"
+  },
+  "odometer_now": 10132,
+  "last_destination": "두물머리",
+  "span_days": 0,
+  "expected": {
+    "km": 132,
+    "krw": 20000,
+    "per_person": null,
+    "text": "지난번 이후 132km · 약 2만 원 · 마지막 목적지 두물머리",
+    "skipped": false,
+    "reason": null
+  }
+}

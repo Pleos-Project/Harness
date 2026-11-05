@@ -1,0 +1,17 @@
+{
+  "_doc": "데모 고정 모드 후보 풀. 출발지 성남 수정구 시흥동 기준 편도 도로 거리·시간은 시연용 값. 서버 TourAPI 캐시가 붙으면 이 파일은 fallback(앱 내장 후보)으로만 쓴다.",
+  "candidates": [
+    {"id": "p_dumulmeori", "name": "양평 두물머리", "theme": "river", "lat": 37.5363, "lng": 127.3140, "route_km": 52, "minutes": 70, "toll_krw": 0, "parking_krw": 2000, "has_parking_info": true},
+    {"id": "p_namhansanseong", "name": "남한산성", "theme": "mountain", "lat": 37.4785, "lng": 127.1853, "route_km": 15, "minutes": 30, "toll_krw": 0, "parking_krw": 3000, "has_parking_info": true},
+    {"id": "p_gwanggyo", "name": "광교호수공원", "theme": "lake", "lat": 37.2842, "lng": 127.0630, "route_km": 20, "minutes": 35, "toll_krw": 0, "parking_krw": null, "has_parking_info": false},
+    {"id": "p_jaraseom", "name": "가평 자라섬", "theme": "island", "lat": 37.8350, "lng": 127.5190, "route_km": 90, "minutes": 85, "toll_krw": 2000, "parking_krw": 0, "has_parking_info": true},
+    {"id": "p_eulwangri", "name": "인천 을왕리해수욕장", "theme": "sea", "lat": 37.4470, "lng": 126.3740, "route_km": 85, "minutes": 80, "toll_krw": 3500, "parking_krw": 3000, "has_parking_info": true},
+    {"id": "p_seoul_forest", "name": "서울숲", "theme": "park", "lat": 37.5444, "lng": 127.0374, "route_km": 25, "minutes": 45, "toll_krw": 0, "parking_krw": 3000, "has_parking_info": true},
+    {"id": "p_namisum", "name": "남이섬", "theme": "island", "lat": 37.7900, "lng": 127.5250, "route_km": 92, "minutes": 95, "toll_krw": 2000, "parking_krw": 4000, "has_parking_info": true},
+    {"id": "p_daebudo", "name": "대부도 바다향기테마파크", "theme": "sea", "lat": 37.2530, "lng": 126.5950, "route_km": 70, "minutes": 75, "toll_krw": 1200, "parking_krw": 0, "has_parking_info": true},
+    {"id": "p_anseong_farm", "name": "안성팜랜드", "theme": "drive", "lat": 37.0130, "lng": 127.1270, "route_km": 58, "minutes": 60, "toll_krw": 2500, "parking_krw": 0, "has_parking_info": true},
+    {"id": "p_hangang_yeouido", "name": "여의도 한강공원", "theme": "river", "lat": 37.5280, "lng": 126.9330, "route_km": 30, "minutes": 50, "toll_krw": 0, "parking_krw": null, "has_parking_info": false},
+    {"id": "p_cheongpyeong", "name": "청평호 드라이브길", "theme": "drive", "lat": 37.7360, "lng": 127.4260, "route_km": 78, "minutes": 82, "toll_krw": 2000, "parking_krw": null, "has_parking_info": false},
+    {"id": "p_songdo", "name": "송도 센트럴파크", "theme": "city", "lat": 37.3930, "lng": 126.6400, "route_km": 62, "minutes": 65, "toll_krw": 1800, "parking_krw": 2000, "has_parking_info": true}
+  ]
+}

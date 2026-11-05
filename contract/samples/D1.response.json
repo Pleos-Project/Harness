@@ -1,0 +1,116 @@
+{
+  "session_id": "<session>",
+  "radius_km": 106.2,
+  "candidates_in_range": 11,
+  "hint": null,
+  "picked": {
+    "id": "p_dumulmeori",
+    "name": "양평 두물머리",
+    "theme": "river",
+    "lat": 37.5363,
+    "lng": 127.314,
+    "route_km": 52,
+    "minutes": 70,
+    "time_label": "75분 안",
+    "cost": {
+      "fuel": 5920,
+      "toll": 0,
+      "parking": 2000,
+      "total": 7920,
+      "per_person": null
+    },
+    "display": {
+      "total_text": "1만 원 안팎",
+      "per_person_text": null,
+      "zero_extra": true,
+      "tight": false,
+      "ring_krw": 0,
+      "badge_text": "추가 충전 없이 · 여유 50km",
+      "margin_km": 50
+    },
+    "reason": "추가 0원 안 · 75분 안 · 지난번과 다른 테마"
+  },
+  "stack": [
+    {
+      "id": "p_eulwangri",
+      "name": "인천 을왕리해수욕장",
+      "theme": "sea",
+      "lat": 37.447,
+      "lng": 126.374,
+      "route_km": 85,
+      "minutes": 80,
+      "time_label": "조금 먼 곳",
+      "cost": {
+        "fuel": 9677,
+        "toll": 7000,
+        "parking": 3000,
+        "total": 19677,
+        "per_person": null
+      },
+      "display": {
+        "total_text": "2만 원 안팎",
+        "per_person_text": null,
+        "zero_extra": true,
+        "tight": false,
+        "ring_krw": 0,
+        "badge_text": "추가 충전 없이 · 여유 50km",
+        "margin_km": 50
+      },
+      "reason": "추가 0원 안 · 지난번과 다른 테마 · 바다"
+    },
+    {
+      "id": "p_anseong_farm",
+      "name": "안성팜랜드",
+      "theme": "drive",
+      "lat": 37.013,
+      "lng": 127.127,
+      "route_km": 58,
+      "minutes": 60,
+      "time_label": "75분 안",
+      "cost": {
+        "fuel": 6603,
+        "toll": 5000,
+        "parking": 0,
+        "total": 11603,
+        "per_person": null
+      },
+      "display": {
+        "total_text": "1만 원 안팎",
+        "per_person_text": null,
+        "zero_extra": true,
+        "tight": false,
+        "ring_krw": 0,
+        "badge_text": "추가 충전 없이 · 여유 50km",
+        "margin_km": 50
+      },
+      "reason": "추가 0원 안 · 75분 안 · 지난번과 다른 테마"
+    },
+    {
+      "id": "p_songdo",
+      "name": "송도 센트럴파크",
+      "theme": "city",
+      "lat": 37.393,
+      "lng": 126.64,
+      "route_km": 62,
+      "minutes": 65,
+      "time_label": "75분 안",
+      "cost": {
+        "fuel": 7059,
+        "toll": 3600,
+        "parking": 2000,
+        "total": 12659,
+        "per_person": null
+      },
+      "display": {
+        "total_text": "1만 5천 원 안팎",
+        "per_person_text": null,
+        "zero_extra": true,
+        "tight": false,
+        "ring_krw": 0,
+        "badge_text": "추가 충전 없이 · 여유 50km",
+        "margin_km": 50
+      },
+      "reason": "추가 0원 안 · 75분 안 · 지난번과 다른 테마"
+    }
+  ]
+}

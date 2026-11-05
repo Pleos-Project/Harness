@@ -1,0 +1,20 @@
+{
+  "_doc": "상수의 단일 출처. 바꾸면 scripts/gen_fixtures.py를 다시 돌린다.",
+  "demo_seed": "pt-2026-12-03",
+  "origin": {"name": "성남 수정구 시흥동", "lat": 37.4127, "lng": 127.0947},
+  "price": {
+    "gasoline_krw_per_l": 1856,
+    "gasoline_basis": "오피넷 전국 주간 평균 2026-10-25~29",
+    "home_charge_krw_per_kwh": 300,
+    "fast_charge_krw_per_kwh": 350
+  },
+  "vehicles": {
+    "ioniq5_lr": {"fuel_type": "ev", "capacity": 77.4, "official_efficiency": 6.2, "note": "77.4kWh, 공인 6.2 km/kWh, 프로토타입 기준"},
+    "ioniq6_lr": {"fuel_type": "ev", "capacity": 77.4, "official_efficiency": 6.2},
+    "grandeur_hev": {"fuel_type": "ice", "capacity": 60, "official_efficiency": 18.0, "note": "탱크 60L, 공인 18.0 km/L [제원 재확인]"},
+    "avante_hev": {"fuel_type": "ice", "capacity": 42, "official_efficiency": 21.1},
+    "tucson_hev": {"fuel_type": "ice", "capacity": 52, "official_efficiency": 16.2},
+    "grandeur_25": {"fuel_type": "ice", "capacity": 70, "official_efficiency": 11.5}
+  },
+  "themes": ["sea", "lake", "river", "mountain", "park", "city", "island", "drive"]
+}

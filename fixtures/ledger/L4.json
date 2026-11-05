@@ -1,0 +1,209 @@
+{
+  "id": "L4",
+  "title": "월 경계: 10월 기록은 11월 합계에서 빠진다",
+  "note": "AC-F17-2. 기록의 to_ts 월 기준.",
+  "state0": {
+    "snapshot": null,
+    "trip": null,
+    "rows": [],
+    "last_pin": null
+  },
+  "steps": [
+    {
+      "event": {
+        "type": "open",
+        "ts": "2026-10-30T09:00:00+09:00",
+        "odometer_km": 20000,
+        "seats": 1,
+        "price": 300,
+        "efficiency": 5.27,
+        "price_source": "user",
+        "recent_destination": null
+      },
+      "expected": {
+        "output": {
+          "card": null,
+          "row": null,
+          "skipped": "no_snapshot"
+        },
+        "state": {
+          "snapshot": {
+            "odometer_km": 20000,
+            "seats": 1,
+            "price_per_unit": 300,
+            "efficiency": 5.27,
+            "ts": "2026-10-30T09:00:00+09:00",
+            "price_source": "user"
+          },
+          "trip": null,
+          "rows": [],
+          "last_pin": null
+        }
+      }
+    },
+    {
+      "event": {
+        "type": "open",
+        "ts": "2026-10-31T19:00:00+09:00",
+        "odometer_km": 20100,
+        "seats": 1,
+        "price": 300,
+        "efficiency": 5.27,
+        "price_source": "user",
+        "recent_destination": {
+          "id": "p_namhansanseong",
+          "name": "남한산성",
+          "lat": 37.4785,
+          "lng": 127.1853
+        }
+      },
+      "expected": {
+        "output": {
+          "card": "지난번 이후 1일 · 100km · 약 6천 원 · 마지막 목적지 남한산성",
+          "row": {
+            "type": "settle",
+            "from_ts": "2026-10-30T09:00:00+09:00",
+            "to_ts": "2026-10-31T19:00:00+09:00",
+            "km": 100,
+            "krw": 6000,
+            "per_person": null,
+            "place": {
+              "name": "남한산성",
+              "lat": 37.4785,
+              "lng": 127.1853
+            },
+            "pinned": true,
+            "demo": false
+          },
+          "skipped": null
+        },
+        "state": {
+          "snapshot": {
+            "odometer_km": 20100,
+            "seats": 1,
+            "price_per_unit": 300,
+            "efficiency": 5.27,
+            "ts": "2026-10-31T19:00:00+09:00",
+            "price_source": "user"
+          },
+          "trip": null,
+          "rows": [
+            {
+              "type": "settle",
+              "from_ts": "2026-10-30T09:00:00+09:00",
+              "to_ts": "2026-10-31T19:00:00+09:00",
+              "km": 100,
+              "krw": 6000,
+              "per_person": null,
+              "place": {
+                "name": "남한산성",
+                "lat": 37.4785,
+                "lng": 127.1853
+              },
+              "pinned": true,
+              "demo": false
+            }
+          ],
+          "last_pin": {
+            "name": "남한산성",
+            "lat": 37.4785,
+            "lng": 127.1853
+          }
+        }
+      }
+    },
+    {
+      "event": {
+        "type": "open",
+        "ts": "2026-11-02T19:00:00+09:00",
+        "odometer_km": 20150,
+        "seats": 1,
+        "price": 300,
+        "efficiency": 5.27,
+        "price_source": "user",
+        "recent_destination": {
+          "id": "p_seoul_forest",
+          "name": "서울숲",
+          "lat": 37.5444,
+          "lng": 127.0374
+        }
+      },
+      "expected": {
+        "output": {
+          "card": "지난번 이후 2일 · 50km · 약 3천 원 · 마지막 목적지 서울숲",
+          "row": {
+            "type": "settle",
+            "from_ts": "2026-10-31T19:00:00+09:00",
+            "to_ts": "2026-11-02T19:00:00+09:00",
+            "km": 50,
+            "krw": 3000,
+            "per_person": null,
+            "place": {
+              "name": "서울숲",
+              "lat": 37.5444,
+              "lng": 127.0374
+            },
+            "pinned": true,
+            "demo": false
+          },
+          "skipped": null
+        },
+        "state": {
+          "snapshot": {
+            "odometer_km": 20150,
+            "seats": 1,
+            "price_per_unit": 300,
+            "efficiency": 5.27,
+            "ts": "2026-11-02T19:00:00+09:00",
+            "price_source": "user"
+          },
+          "trip": null,
+          "rows": [
+            {
+              "type": "settle",
+              "from_ts": "2026-10-30T09:00:00+09:00",
+              "to_ts": "2026-10-31T19:00:00+09:00",
+              "km": 100,
+              "krw": 6000,
+              "per_person": null,
+              "place": {
+                "name": "남한산성",
+                "lat": 37.4785,
+                "lng": 127.1853
+              },
+              "pinned": true,
+              "demo": false
+            },
+            {
+              "type": "settle",
+              "from_ts": "2026-10-31T19:00:00+09:00",
+              "to_ts": "2026-11-02T19:00:00+09:00",
+              "km": 50,
+              "krw": 3000,
+              "per_person": null,
+              "place": {
+                "name": "서울숲",
+                "lat": 37.5444,
+                "lng": 127.0374
+              },
+              "pinned": true,
+              "demo": false
+            }
+          ],
+          "last_pin": {
+            "name": "서울숲",
+            "lat": 37.5444,
+            "lng": 127.0374
+          }
+        }
+      }
+    }
+  ],
+  "month": "2026-11",
+  "expected_month": {
+    "krw": 3000,
+    "places": 1,
+    "demo": false,
+    "text": "이번 달 이동비 약 3천 원 · 다녀온 곳 1곳"
+  }
+}

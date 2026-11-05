@@ -1,0 +1,203 @@
+{
+  "id": "D2",
+  "title": "PT 3단계: SOC 35% + Remaining Range 143km — 같은 카드, 배지만 +1만",
+  "note": "같은 session_id로 재호출(1초 디바운스 1건). 반경 ≈ 36. 두물머리 왕복 104 > 가용 93 → +1만. 재호출 뒤 교체도 이 값 기준(expected_swaps).",
+  "virtual_console": {
+    "PUT /vehicle/ev-battery?field=soc&value=": 35,
+    "PUT /vehicle/odometer?remaining_range_m=": 143000
+  },
+  "app_local": {
+    "inputs": {
+      "model": "ioniq5_lr",
+      "level_pct": 35,
+      "remaining_range_m": 143000,
+      "price": 300
+    },
+    "expected": {
+      "fuel_type": "ev",
+      "capacity": 77.4,
+      "efficiency": 5.27,
+      "price_per_unit": 300,
+      "price_source": "user",
+      "balance_km": 143.0,
+      "balance_krw": 8000,
+      "balance_text": "배터리에 8천 원어치 · 약 143km",
+      "margin_km": 50.0,
+      "usable_km": 93.0,
+      "radius_km": 35.8,
+      "range_source": "range_remaining",
+      "zero_available": true
+    }
+  },
+  "request": {
+    "origin": {
+      "lat": 37.4127,
+      "lng": 127.0947
+    },
+    "budget": {
+      "fuel_type": "ev",
+      "usable_km": 93.0,
+      "margin_km": 50.0,
+      "efficiency": 5.27,
+      "price_per_unit": 300,
+      "price_source": "user"
+    },
+    "seats_occupied": 1,
+    "extra_krw": 0,
+    "days": 1,
+    "themes": [],
+    "recent_visits": [],
+    "demo_seed": "pt-2026-12-03",
+    "session_id": "<session>"
+  },
+  "expected": {
+    "session_id": "<session>",
+    "radius_km": 35.8,
+    "candidates_in_range": 4,
+    "hint": null,
+    "picked": {
+      "id": "p_dumulmeori",
+      "name": "양평 두물머리",
+      "theme": "river",
+      "lat": 37.5363,
+      "lng": 127.314,
+      "route_km": 52,
+      "minutes": 70,
+      "time_label": "75분 안",
+      "cost": {
+        "fuel": 5920,
+        "toll": 0,
+        "parking": 2000,
+        "total": 7920,
+        "per_person": null
+      },
+      "display": {
+        "total_text": "1만 원 안팎",
+        "per_person_text": null,
+        "zero_extra": false,
+        "tight": false,
+        "ring_krw": 10000,
+        "badge_text": "+1만 원 안팎",
+        "margin_km": 50
+      },
+      "reason": "75분 안 · 지난번과 다른 테마 · 강"
+    },
+    "stack": [
+      {
+        "id": "p_namhansanseong",
+        "name": "남한산성",
+        "theme": "mountain",
+        "lat": 37.4785,
+        "lng": 127.1853,
+        "route_km": 15,
+        "minutes": 30,
+        "time_label": "75분 안",
+        "cost": {
+          "fuel": 1708,
+          "toll": 0,
+          "parking": 3000,
+          "total": 4708,
+          "per_person": null
+        },
+        "display": {
+          "total_text": "5천 원 안팎",
+          "per_person_text": null,
+          "zero_extra": true,
+          "tight": false,
+          "ring_krw": 0,
+          "badge_text": "추가 충전 없이 · 여유 50km",
+          "margin_km": 50
+        },
+        "reason": "추가 0원 안 · 75분 안 · 지난번과 다른 테마"
+      },
+      {
+        "id": "p_seoul_forest",
+        "name": "서울숲",
+        "theme": "park",
+        "lat": 37.5444,
+        "lng": 127.0374,
+        "route_km": 25,
+        "minutes": 45,
+        "time_label": "75분 안",
+        "cost": {
+          "fuel": 2846,
+          "toll": 0,
+          "parking": 3000,
+          "total": 5846,
+          "per_person": null
+        },
+        "display": {
+          "total_text": "5천 원 안팎",
+          "per_person_text": null,
+          "zero_extra": true,
+          "tight": false,
+          "ring_krw": 0,
+          "badge_text": "추가 충전 없이 · 여유 50km",
+          "margin_km": 50
+        },
+        "reason": "추가 0원 안 · 75분 안 · 지난번과 다른 테마"
+      },
+      {
+        "id": "p_gwanggyo",
+        "name": "광교호수공원",
+        "theme": "lake",
+        "lat": 37.2842,
+        "lng": 127.063,
+        "route_km": 20,
+        "minutes": 35,
+        "time_label": "75분 안",
+        "cost": {
+          "fuel": 2277,
+          "toll": 0,
+          "parking": null,
+          "total": 2277,
+          "per_person": null
+        },
+        "display": {
+          "total_text": "5천 원 미만",
+          "per_person_text": null,
+          "zero_extra": true,
+          "tight": false,
+          "ring_krw": 0,
+          "badge_text": "추가 충전 없이 · 여유 50km",
+          "margin_km": 50
+        },
+        "reason": "추가 0원 안 · 75분 안 · 지난번과 다른 테마"
+      }
+    ]
+  },
+  "session_from": "D1",
+  "expected_swaps": [
+    {
+      "card": {
+        "id": "p_namhansanseong",
+        "name": "남한산성",
+        "theme": "mountain",
+        "lat": 37.4785,
+        "lng": 127.1853,
+        "route_km": 15,
+        "minutes": 30,
+        "time_label": "75분 안",
+        "cost": {
+          "fuel": 1708,
+          "toll": 0,
+          "parking": 3000,
+          "total": 4708,
+          "per_person": null
+        },
+        "display": {
+          "total_text": "5천 원 안팎",
+          "per_person_text": null,
+          "zero_extra": true,
+          "tight": false,
+          "ring_krw": 0,
+          "badge_text": "추가 충전 없이 · 여유 50km",
+          "margin_km": 50
+        },
+        "reason": "추가 0원 안 · 75분 안 · 지난번과 다른 테마"
+      },
+      "swaps_left": 1,
+      "stack_left": 2
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "id": "D5",
+  "title": "앱 열 때 정산: 12,340 → 12,472km, 직전 착석 2, 마지막 목적지 양평 두물머리 (PT와 같은 EV)",
+  "note": "132 ÷ 5.27 × 300 = 7,514 → 8,000. 1인 몫 ÷2 → 4,000. PRD 대표 문구 '약 1만 8천 원'과 다름 — DECISIONS 열린 결정.",
+  "virtual_console": {
+    "PUT /vehicle/odometer?traveled_distance_km=": "현재값 + 132"
+  },
+  "snapshot_prev": {
+    "odometer_km": 12340,
+    "seats": 2,
+    "price_per_unit": 300,
+    "efficiency": 5.27,
+    "ts": "2026-11-01T09:00:00+09:00",
+    "price_source": "user"
+  },
+  "odometer_now": 12472,
+  "last_destination": "양평 두물머리",
+  "span_days": 0,
+  "expected": {
+    "km": 132,
+    "krw": 8000,
+    "per_person": 4000,
+    "text": "지난번 이후 132km · 약 8천 원 · 마지막 목적지 양평 두물머리",
+    "skipped": false,
+    "reason": null
+  }
+}

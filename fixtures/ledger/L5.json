@@ -1,0 +1,247 @@
+{
+  "id": "L5",
+  "title": "며칠 만에 열기 + 주행거리 감소(콘솔 초기화) 뒤 기준 재설정",
+  "note": "감소하면 정산 없이 스냅샷을 지금 값으로 다시 잡는다(그러지 않으면 원래 값을 넘을 때까지 정산이 멈춤).",
+  "state0": {
+    "snapshot": null,
+    "trip": null,
+    "rows": [],
+    "last_pin": null
+  },
+  "steps": [
+    {
+      "event": {
+        "type": "open",
+        "ts": "2026-11-01T09:00:00+09:00",
+        "odometer_km": 30000,
+        "seats": 1,
+        "price": 300,
+        "efficiency": 5.27,
+        "price_source": "user",
+        "recent_destination": null
+      },
+      "expected": {
+        "output": {
+          "card": null,
+          "row": null,
+          "skipped": "no_snapshot"
+        },
+        "state": {
+          "snapshot": {
+            "odometer_km": 30000,
+            "seats": 1,
+            "price_per_unit": 300,
+            "efficiency": 5.27,
+            "ts": "2026-11-01T09:00:00+09:00",
+            "price_source": "user"
+          },
+          "trip": null,
+          "rows": [],
+          "last_pin": null
+        }
+      }
+    },
+    {
+      "event": {
+        "type": "open",
+        "ts": "2026-11-04T09:30:00+09:00",
+        "odometer_km": 30412,
+        "seats": 1,
+        "price": 300,
+        "efficiency": 5.27,
+        "price_source": "user",
+        "recent_destination": {
+          "name": "강릉 경포해변",
+          "lat": 37.8055,
+          "lng": 128.9087
+        }
+      },
+      "expected": {
+        "output": {
+          "card": "지난번 이후 3일 · 412km · 약 2만 3천 원 · 마지막 목적지 강릉 경포해변",
+          "row": {
+            "type": "settle",
+            "from_ts": "2026-11-01T09:00:00+09:00",
+            "to_ts": "2026-11-04T09:30:00+09:00",
+            "km": 412,
+            "krw": 23000,
+            "per_person": null,
+            "place": {
+              "name": "강릉 경포해변",
+              "lat": 37.8055,
+              "lng": 128.9087
+            },
+            "pinned": true,
+            "demo": false
+          },
+          "skipped": null
+        },
+        "state": {
+          "snapshot": {
+            "odometer_km": 30412,
+            "seats": 1,
+            "price_per_unit": 300,
+            "efficiency": 5.27,
+            "ts": "2026-11-04T09:30:00+09:00",
+            "price_source": "user"
+          },
+          "trip": null,
+          "rows": [
+            {
+              "type": "settle",
+              "from_ts": "2026-11-01T09:00:00+09:00",
+              "to_ts": "2026-11-04T09:30:00+09:00",
+              "km": 412,
+              "krw": 23000,
+              "per_person": null,
+              "place": {
+                "name": "강릉 경포해변",
+                "lat": 37.8055,
+                "lng": 128.9087
+              },
+              "pinned": true,
+              "demo": false
+            }
+          ],
+          "last_pin": {
+            "name": "강릉 경포해변",
+            "lat": 37.8055,
+            "lng": 128.9087
+          }
+        }
+      }
+    },
+    {
+      "event": {
+        "type": "open",
+        "ts": "2026-11-04T10:00:00+09:00",
+        "odometer_km": 500,
+        "seats": 1,
+        "price": 300,
+        "efficiency": 5.27,
+        "price_source": "user",
+        "recent_destination": null
+      },
+      "expected": {
+        "output": {
+          "card": null,
+          "row": null,
+          "skipped": "odometer_decreased"
+        },
+        "state": {
+          "snapshot": {
+            "odometer_km": 500,
+            "seats": 1,
+            "price_per_unit": 300,
+            "efficiency": 5.27,
+            "ts": "2026-11-04T10:00:00+09:00",
+            "price_source": "user"
+          },
+          "trip": null,
+          "rows": [
+            {
+              "type": "settle",
+              "from_ts": "2026-11-01T09:00:00+09:00",
+              "to_ts": "2026-11-04T09:30:00+09:00",
+              "km": 412,
+              "krw": 23000,
+              "per_person": null,
+              "place": {
+                "name": "강릉 경포해변",
+                "lat": 37.8055,
+                "lng": 128.9087
+              },
+              "pinned": true,
+              "demo": false
+            }
+          ],
+          "last_pin": {
+            "name": "강릉 경포해변",
+            "lat": 37.8055,
+            "lng": 128.9087
+          }
+        }
+      }
+    },
+    {
+      "event": {
+        "type": "open",
+        "ts": "2026-11-04T18:00:00+09:00",
+        "odometer_km": 510,
+        "seats": 1,
+        "price": 300,
+        "efficiency": 5.27,
+        "price_source": "user",
+        "recent_destination": null
+      },
+      "expected": {
+        "output": {
+          "card": "지난번 이후 10km · 약 1천 원",
+          "row": {
+            "type": "settle",
+            "from_ts": "2026-11-04T10:00:00+09:00",
+            "to_ts": "2026-11-04T18:00:00+09:00",
+            "km": 10,
+            "krw": 1000,
+            "per_person": null,
+            "place": null,
+            "pinned": false,
+            "demo": false
+          },
+          "skipped": null
+        },
+        "state": {
+          "snapshot": {
+            "odometer_km": 510,
+            "seats": 1,
+            "price_per_unit": 300,
+            "efficiency": 5.27,
+            "ts": "2026-11-04T18:00:00+09:00",
+            "price_source": "user"
+          },
+          "trip": null,
+          "rows": [
+            {
+              "type": "settle",
+              "from_ts": "2026-11-01T09:00:00+09:00",
+              "to_ts": "2026-11-04T09:30:00+09:00",
+              "km": 412,
+              "krw": 23000,
+              "per_person": null,
+              "place": {
+                "name": "강릉 경포해변",
+                "lat": 37.8055,
+                "lng": 128.9087
+              },
+              "pinned": true,
+              "demo": false
+            },
+            {
+              "type": "settle",
+              "from_ts": "2026-11-04T10:00:00+09:00",
+              "to_ts": "2026-11-04T18:00:00+09:00",
+              "km": 10,
+              "krw": 1000,
+              "per_person": null,
+              "place": null,
+              "pinned": false,
+              "demo": false
+            }
+          ],
+          "last_pin": {
+            "name": "강릉 경포해변",
+            "lat": 37.8055,
+            "lng": 128.9087
+          }
+        }
+      }
+    }
+  ],
+  "month": "2026-11",
+  "expected_month": {
+    "krw": 24000,
+    "places": 1,
+    "demo": false,
+    "text": "이번 달 이동비 약 2만 4천 원 · 다녀온 곳 1곳"
+  }
+}

@@ -1,0 +1,166 @@
+{
+  "id": "D10",
+  "title": "내연: 아반떼 HEV, 모의 연료 50%, 단가 미설정(앱 기본값), 착석 2",
+  "note": "에뮬은 내연 연료 %가 없어 설정 모의 값. Remaining Range 0 → 조립식. 배지는 '추가 주유 없이'.",
+  "virtual_console": {
+    "settings": "모의 연료 % = 50"
+  },
+  "app_local": {
+    "inputs": {
+      "model": "avante_hev",
+      "level_pct": 50,
+      "remaining_range_m": 0
+    },
+    "expected": {
+      "fuel_type": "ice",
+      "capacity": 42,
+      "efficiency": 17.935000000000002,
+      "price_per_unit": 1856,
+      "price_source": "default",
+      "balance_km": 376.6,
+      "balance_krw": 39000,
+      "balance_text": "탱크에 3만 9천 원어치 · 약 377km",
+      "margin_km": 56.5,
+      "usable_km": 320.1,
+      "radius_km": 123.1,
+      "range_source": "assembled",
+      "zero_available": true
+    }
+  },
+  "request": {
+    "origin": {
+      "lat": 37.4127,
+      "lng": 127.0947
+    },
+    "budget": {
+      "fuel_type": "ice",
+      "usable_km": 320.13975000000005,
+      "margin_km": 56.495250000000006,
+      "efficiency": 17.935000000000002,
+      "price_per_unit": 1856,
+      "price_source": "default"
+    },
+    "seats_occupied": 2,
+    "extra_krw": 0,
+    "days": 1,
+    "themes": [],
+    "recent_visits": [],
+    "demo_seed": "pt-2026-12-03"
+  },
+  "expected": {
+    "session_id": "<session>",
+    "radius_km": 123.1,
+    "candidates_in_range": 11,
+    "hint": null,
+    "picked": {
+      "id": "p_songdo",
+      "name": "송도 센트럴파크",
+      "theme": "city",
+      "lat": 37.393,
+      "lng": 126.64,
+      "route_km": 62,
+      "minutes": 65,
+      "time_label": "75분 안",
+      "cost": {
+        "fuel": 12832,
+        "toll": 3600,
+        "parking": 2000,
+        "total": 18432,
+        "per_person": 9000
+      },
+      "display": {
+        "total_text": "2만 원 안팎",
+        "per_person_text": "1인 9천 원 안팎",
+        "zero_extra": true,
+        "tight": false,
+        "ring_krw": 0,
+        "badge_text": "추가 주유 없이 · 여유 56km",
+        "margin_km": 56
+      },
+      "reason": "추가 0원 안 · 75분 안 · 지난번과 다른 테마"
+    },
+    "stack": [
+      {
+        "id": "p_eulwangri",
+        "name": "인천 을왕리해수욕장",
+        "theme": "sea",
+        "lat": 37.447,
+        "lng": 126.374,
+        "route_km": 85,
+        "minutes": 80,
+        "time_label": "조금 먼 곳",
+        "cost": {
+          "fuel": 17592,
+          "toll": 7000,
+          "parking": 3000,
+          "total": 27592,
+          "per_person": 14000
+        },
+        "display": {
+          "total_text": "3만 원 안팎",
+          "per_person_text": "1인 1만 4천 원 안팎",
+          "zero_extra": true,
+          "tight": false,
+          "ring_krw": 0,
+          "badge_text": "추가 주유 없이 · 여유 56km",
+          "margin_km": 56
+        },
+        "reason": "추가 0원 안 · 지난번과 다른 테마 · 바다"
+      },
+      {
+        "id": "p_anseong_farm",
+        "name": "안성팜랜드",
+        "theme": "drive",
+        "lat": 37.013,
+        "lng": 127.127,
+        "route_km": 58,
+        "minutes": 60,
+        "time_label": "75분 안",
+        "cost": {
+          "fuel": 12004,
+          "toll": 5000,
+          "parking": 0,
+          "total": 17004,
+          "per_person": 9000
+        },
+        "display": {
+          "total_text": "1만 5천 원 안팎",
+          "per_person_text": "1인 9천 원 안팎",
+          "zero_extra": true,
+          "tight": false,
+          "ring_krw": 0,
+          "badge_text": "추가 주유 없이 · 여유 56km",
+          "margin_km": 56
+        },
+        "reason": "추가 0원 안 · 75분 안 · 지난번과 다른 테마"
+      },
+      {
+        "id": "p_dumulmeori",
+        "name": "양평 두물머리",
+        "theme": "river",
+        "lat": 37.5363,
+        "lng": 127.314,
+        "route_km": 52,
+        "minutes": 70,
+        "time_label": "75분 안",
+        "cost": {
+          "fuel": 10762,
+          "toll": 0,
+          "parking": 2000,
+          "total": 12762,
+          "per_person": 6000
+        },
+        "display": {
+          "total_text": "1만 5천 원 안팎",
+          "per_person_text": "1인 6천 원 안팎",
+          "zero_extra": true,
+          "tight": false,
+          "ring_krw": 0,
+          "badge_text": "추가 주유 없이 · 여유 56km",
+          "margin_km": 56
+        },
+        "reason": "추가 0원 안 · 75분 안 · 지난번과 다른 테마"
+      }
+    ]
+  }
+}

@@ -1,0 +1,15 @@
+.cg-card { background: var(--cg-surface-high); color: var(--cg-text-primary); border-radius: var(--cg-radius-l);
+  padding: var(--cg-space-l); display: grid; gap: var(--cg-space-s); font: var(--cg-body-s); max-width: 560px; }
+.cg-card__art { width: 100%; aspect-ratio: 16/9; object-fit: cover; border-radius: var(--cg-radius-m); }
+.cg-card__meta { margin: 0; color: var(--cg-text-tertiary); font: var(--cg-label-m); }
+.cg-card__name { margin: 0; font: var(--cg-title-s); }
+.cg-card__reason { margin: 0; color: var(--cg-text-secondary); font: var(--cg-body-s); }
+.cg-card__actions { display: flex; gap: var(--cg-space-s); margin-top: var(--cg-space-s); }
+/* Basic button(가이드): basic = 반투명, filled = 강조 */
+.cg-btn { min-height: var(--cg-touch); padding: 0 var(--cg-pad-btn); border-radius: 999px; border: 0; cursor: pointer;
+  font: var(--cg-body-s); font-weight: 600; background: var(--cg-btn-basic); color: var(--cg-text-primary); }
+.cg-btn:active { background: var(--cg-btn-basic-pressed); }
+.cg-btn:disabled { background: var(--cg-btn-disabled); color: var(--cg-text-quaternary); }
+.cg-btn--primary { background: var(--cg-btn-filled); color: var(--cg-btn-filled-text); flex: 1; }
+.cg-btn--primary:active { background: var(--cg-btn-filled-pressed); }
+.cg-btn--ghost { background: transparent; box-shadow: inset 0 0 0 1px var(--cg-line); }

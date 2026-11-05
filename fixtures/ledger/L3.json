@@ -1,0 +1,187 @@
+{
+  "id": "L3",
+  "title": "핀 중복: 직전 핀과 같은 최근 목적지 → 금액만 쌓음, 다른 곳이면 핀 추가",
+  "note": "AC-F10-6. 같은 장소 = 이름 같음 또는 300m 안.",
+  "state0": {
+    "snapshot": {
+      "odometer_km": 10000,
+      "seats": 1,
+      "price_per_unit": 300,
+      "efficiency": 5.27,
+      "ts": "2026-11-01T09:00:00+09:00"
+    },
+    "trip": null,
+    "rows": [],
+    "last_pin": {
+      "name": "양평 두물머리",
+      "lat": 37.5363,
+      "lng": 127.314
+    }
+  },
+  "steps": [
+    {
+      "event": {
+        "type": "open",
+        "ts": "2026-11-02T10:00:00+09:00",
+        "odometer_km": 10132,
+        "seats": 1,
+        "price": 300,
+        "efficiency": 5.27,
+        "price_source": "user",
+        "recent_destination": {
+          "id": "p_dumulmeori",
+          "name": "양평 두물머리",
+          "lat": 37.5363,
+          "lng": 127.314
+        }
+      },
+      "expected": {
+        "output": {
+          "card": "지난번 이후 1일 · 132km · 약 8천 원 · 마지막 목적지 양평 두물머리",
+          "row": {
+            "type": "settle",
+            "from_ts": "2026-11-01T09:00:00+09:00",
+            "to_ts": "2026-11-02T10:00:00+09:00",
+            "km": 132,
+            "krw": 8000,
+            "per_person": null,
+            "place": {
+              "name": "양평 두물머리",
+              "lat": 37.5363,
+              "lng": 127.314
+            },
+            "pinned": false,
+            "demo": false
+          },
+          "skipped": null
+        },
+        "state": {
+          "snapshot": {
+            "odometer_km": 10132,
+            "seats": 1,
+            "price_per_unit": 300,
+            "efficiency": 5.27,
+            "ts": "2026-11-02T10:00:00+09:00",
+            "price_source": "user"
+          },
+          "trip": null,
+          "rows": [
+            {
+              "type": "settle",
+              "from_ts": "2026-11-01T09:00:00+09:00",
+              "to_ts": "2026-11-02T10:00:00+09:00",
+              "km": 132,
+              "krw": 8000,
+              "per_person": null,
+              "place": {
+                "name": "양평 두물머리",
+                "lat": 37.5363,
+                "lng": 127.314
+              },
+              "pinned": false,
+              "demo": false
+            }
+          ],
+          "last_pin": {
+            "name": "양평 두물머리",
+            "lat": 37.5363,
+            "lng": 127.314
+          }
+        }
+      }
+    },
+    {
+      "event": {
+        "type": "open",
+        "ts": "2026-11-03T10:00:00+09:00",
+        "odometer_km": 10200,
+        "seats": 1,
+        "price": 300,
+        "efficiency": 5.27,
+        "price_source": "user",
+        "recent_destination": {
+          "id": "p_namhansanseong",
+          "name": "남한산성",
+          "lat": 37.4785,
+          "lng": 127.1853
+        }
+      },
+      "expected": {
+        "output": {
+          "card": "지난번 이후 1일 · 68km · 약 4천 원 · 마지막 목적지 남한산성",
+          "row": {
+            "type": "settle",
+            "from_ts": "2026-11-02T10:00:00+09:00",
+            "to_ts": "2026-11-03T10:00:00+09:00",
+            "km": 68,
+            "krw": 4000,
+            "per_person": null,
+            "place": {
+              "name": "남한산성",
+              "lat": 37.4785,
+              "lng": 127.1853
+            },
+            "pinned": true,
+            "demo": false
+          },
+          "skipped": null
+        },
+        "state": {
+          "snapshot": {
+            "odometer_km": 10200,
+            "seats": 1,
+            "price_per_unit": 300,
+            "efficiency": 5.27,
+            "ts": "2026-11-03T10:00:00+09:00",
+            "price_source": "user"
+          },
+          "trip": null,
+          "rows": [
+            {
+              "type": "settle",
+              "from_ts": "2026-11-01T09:00:00+09:00",
+              "to_ts": "2026-11-02T10:00:00+09:00",
+              "km": 132,
+              "krw": 8000,
+              "per_person": null,
+              "place": {
+                "name": "양평 두물머리",
+                "lat": 37.5363,
+                "lng": 127.314
+              },
+              "pinned": false,
+              "demo": false
+            },
+            {
+              "type": "settle",
+              "from_ts": "2026-11-02T10:00:00+09:00",
+              "to_ts": "2026-11-03T10:00:00+09:00",
+              "km": 68,
+              "krw": 4000,
+              "per_person": null,
+              "place": {
+                "name": "남한산성",
+                "lat": 37.4785,
+                "lng": 127.1853
+              },
+              "pinned": true,
+              "demo": false
+            }
+          ],
+          "last_pin": {
+            "name": "남한산성",
+            "lat": 37.4785,
+            "lng": 127.1853
+          }
+        }
+      }
+    }
+  ],
+  "month": "2026-11",
+  "expected_month": {
+    "krw": 12000,
+    "places": 1,
+    "demo": false,
+    "text": "이번 달 이동비 약 1만 2천 원 · 다녀온 곳 1곳"
+  }
+}

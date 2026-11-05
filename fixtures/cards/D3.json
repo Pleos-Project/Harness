@@ -1,0 +1,169 @@
+{
+  "id": "D3",
+  "title": "PT 4단계: 착석 4 — 1인 몫",
+  "note": "같은 세션 재호출. per_person = total ÷ 4, 천 원 어림(AC-F11-1).",
+  "virtual_console": {
+    "console_ui": "착석 4 (API 경로 미확인)"
+  },
+  "app_local": {
+    "inputs": {
+      "model": "ioniq5_lr",
+      "level_pct": 80,
+      "remaining_range_m": 326000,
+      "price": 300
+    },
+    "expected": {
+      "fuel_type": "ev",
+      "capacity": 77.4,
+      "efficiency": 5.27,
+      "price_per_unit": 300,
+      "price_source": "user",
+      "balance_km": 326.0,
+      "balance_krw": 19000,
+      "balance_text": "배터리에 1만 9천 원어치 · 약 326km",
+      "margin_km": 50.0,
+      "usable_km": 276.0,
+      "radius_km": 106.2,
+      "range_source": "range_remaining",
+      "zero_available": true
+    }
+  },
+  "request": {
+    "origin": {
+      "lat": 37.4127,
+      "lng": 127.0947
+    },
+    "budget": {
+      "fuel_type": "ev",
+      "usable_km": 276.0,
+      "margin_km": 50.0,
+      "efficiency": 5.27,
+      "price_per_unit": 300,
+      "price_source": "user"
+    },
+    "seats_occupied": 4,
+    "extra_krw": 0,
+    "days": 1,
+    "themes": [],
+    "recent_visits": [],
+    "demo_seed": "pt-2026-12-03",
+    "session_id": "<session>"
+  },
+  "expected": {
+    "session_id": "<session>",
+    "radius_km": 106.2,
+    "candidates_in_range": 11,
+    "hint": null,
+    "picked": {
+      "id": "p_dumulmeori",
+      "name": "양평 두물머리",
+      "theme": "river",
+      "lat": 37.5363,
+      "lng": 127.314,
+      "route_km": 52,
+      "minutes": 70,
+      "time_label": "75분 안",
+      "cost": {
+        "fuel": 5920,
+        "toll": 0,
+        "parking": 2000,
+        "total": 7920,
+        "per_person": 2000
+      },
+      "display": {
+        "total_text": "1만 원 안팎",
+        "per_person_text": "1인 2천 원 안팎",
+        "zero_extra": true,
+        "tight": false,
+        "ring_krw": 0,
+        "badge_text": "추가 충전 없이 · 여유 50km",
+        "margin_km": 50
+      },
+      "reason": "추가 0원 안 · 75분 안 · 지난번과 다른 테마"
+    },
+    "stack": [
+      {
+        "id": "p_eulwangri",
+        "name": "인천 을왕리해수욕장",
+        "theme": "sea",
+        "lat": 37.447,
+        "lng": 126.374,
+        "route_km": 85,
+        "minutes": 80,
+        "time_label": "조금 먼 곳",
+        "cost": {
+          "fuel": 9677,
+          "toll": 7000,
+          "parking": 3000,
+          "total": 19677,
+          "per_person": 5000
+        },
+        "display": {
+          "total_text": "2만 원 안팎",
+          "per_person_text": "1인 5천 원 안팎",
+          "zero_extra": true,
+          "tight": false,
+          "ring_krw": 0,
+          "badge_text": "추가 충전 없이 · 여유 50km",
+          "margin_km": 50
+        },
+        "reason": "추가 0원 안 · 지난번과 다른 테마 · 바다"
+      },
+      {
+        "id": "p_anseong_farm",
+        "name": "안성팜랜드",
+        "theme": "drive",
+        "lat": 37.013,
+        "lng": 127.127,
+        "route_km": 58,
+        "minutes": 60,
+        "time_label": "75분 안",
+        "cost": {
+          "fuel": 6603,
+          "toll": 5000,
+          "parking": 0,
+          "total": 11603,
+          "per_person": 3000
+        },
+        "display": {
+          "total_text": "1만 원 안팎",
+          "per_person_text": "1인 3천 원 안팎",
+          "zero_extra": true,
+          "tight": false,
+          "ring_krw": 0,
+          "badge_text": "추가 충전 없이 · 여유 50km",
+          "margin_km": 50
+        },
+        "reason": "추가 0원 안 · 75분 안 · 지난번과 다른 테마"
+      },
+      {
+        "id": "p_songdo",
+        "name": "송도 센트럴파크",
+        "theme": "city",
+        "lat": 37.393,
+        "lng": 126.64,
+        "route_km": 62,
+        "minutes": 65,
+        "time_label": "75분 안",
+        "cost": {
+          "fuel": 7059,
+          "toll": 3600,
+          "parking": 2000,
+          "total": 12659,
+          "per_person": 3000
+        },
+        "display": {
+          "total_text": "1만 5천 원 안팎",
+          "per_person_text": "1인 3천 원 안팎",
+          "zero_extra": true,
+          "tight": false,
+          "ring_krw": 0,
+          "badge_text": "추가 충전 없이 · 여유 50km",
+          "margin_km": 50
+        },
+        "reason": "추가 0원 안 · 75분 안 · 지난번과 다른 테마"
+      }
+    ]
+  },
+  "session_from": "D1"
+}

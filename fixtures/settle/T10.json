@@ -1,0 +1,22 @@
+{
+  "id": "T10",
+  "title": "1km만 이동 → '1천 원 미만'(0 원 표기 금지)",
+  "snapshot_prev": {
+    "odometer_km": 10000,
+    "seats": 1,
+    "price_per_unit": 300,
+    "efficiency": 5.27,
+    "ts": "2026-11-01T09:00:00+09:00"
+  },
+  "odometer_now": 10001,
+  "last_destination": "두물머리",
+  "span_days": 0,
+  "expected": {
+    "km": 1,
+    "krw": 0,
+    "per_person": null,
+    "text": "지난번 이후 1km · 1천 원 미만 · 마지막 목적지 두물머리",
+    "skipped": false,
+    "reason": null
+  }
+}

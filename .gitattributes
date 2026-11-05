@@ -1,0 +1,8 @@
+# 윈도우에서 체크아웃해도 줄바꿈을 LF로 고정 (replay.sh가 CRLF면 bash에서 깨지고, fixture diff가 생긴다)
+* text=auto eol=lf
+*.bat text eol=crlf
+*.png binary
+*.webp binary
+*.ttf binary
+*.woff2 binary
+*.jar binary

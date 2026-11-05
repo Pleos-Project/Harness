@@ -1,0 +1,20 @@
+{
+  "origin": {
+    "lat": 37.4127,
+    "lng": 127.0947
+  },
+  "budget": {
+    "fuel_type": "ev",
+    "usable_km": 276.0,
+    "margin_km": 50.0,
+    "efficiency": 5.27,
+    "price_per_unit": 300,
+    "price_source": "user"
+  },
+  "seats_occupied": 1,
+  "extra_krw": 0,
+  "days": 1,
+  "themes": [],
+  "recent_visits": [],
+  "demo_seed": "pt-2026-12-03"
+}

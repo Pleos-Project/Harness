@@ -1,0 +1,16 @@
+{
+  "id": "T7",
+  "title": "직전 스냅샷 없음 → 저장만",
+  "snapshot_prev": null,
+  "odometer_now": 10132,
+  "last_destination": "두물머리",
+  "span_days": 0,
+  "expected": {
+    "km": 0,
+    "krw": 0,
+    "per_person": null,
+    "text": "",
+    "skipped": true,
+    "reason": "no_snapshot"
+  }
+}

@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><title>차곡 컴포넌트 미리보기</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="components/badge.css">
+<link rel="stylesheet" href="components/card-front.css">
+<style>
+  /* 프레임 크기는 디스플레이 실제 픽셀. 그래서 미리보기에서는 --u = 1px (tokens.css 기본값) */
+  body { margin: 0; background: var(--cg-bg-secondary); color: var(--cg-text-primary); font: var(--cg-body-s); padding: 24px; }
+  .bar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+  .bar button { min-height: 40px; padding: 0 14px; border-radius: 8px; border: 1px solid var(--cg-line); background: var(--cg-surface-high); color: var(--cg-text-primary); }
+  .frame { border: 2px dashed var(--cg-line); border-radius: 12px; padding: 16px; margin-bottom: 24px; overflow: auto; }
+  .frame h3 { margin: 0 0 8px; font: var(--cg-label-m); color: var(--cg-text-tertiary); }
+  .viewport { background: var(--cg-bg-primary); padding: 16px; box-sizing: border-box; display: flex; flex-wrap: wrap;
+    align-items: center; justify-content: center; align-content: center; gap: 12px; overflow: auto; }
+  .s17 { width: 1920px; height: 720px; }   /* Connect-S 17" 근사 */
+  .s12 { width: 1280px; height: 720px; }   /* 12.9" 근사 */
+  .portrait { width: 720px; height: 1280px; }
+  .multi { width: 640px; height: 720px; }  /* 멀티윈도우: 한 장만 */
+</style></head>
+<body>
+<div class="bar">
+  <button onclick="toggleTheme()">주간/야간</button>
+  <button onclick="document.querySelectorAll('.frame').forEach(f=>f.hidden=false)">전체</button>
+  <button onclick="show('s17')">17인치 가로</button>
+  <button onclick="show('s12')">12.9인치 가로</button>
+  <button onclick="show('portrait')">세로</button>
+  <button onclick="show('multi')">멀티윈도우</button>
+</div>
+<section class="frame" data-size="s17"><h3>17인치 가로 (1920×720)</h3><div class="viewport s17" data-slot></div></section>
+<section class="frame" data-size="s12"><h3>12.9인치 가로 (1280×720)</h3><div class="viewport s12" data-slot></div></section>
+<section class="frame" data-size="portrait"><h3>세로 (720×1280)</h3><div class="viewport portrait" data-slot></div></section>
+<section class="frame" data-size="multi"><h3>멀티윈도우 — 한 장만 (640×720)</h3><div class="viewport multi" data-slot></div></section>
+<script>
+  // components/*.html 조각을 모든 뷰포트에 넣는다. file:// 에서 fetch가 막히면 design/ 에서 python -m http.server 로 연다.
+  const parts = ['card-front.html', 'badge.html'];
+  Promise.all(parts.map(p => fetch('components/' + p).then(r => r.text()))).then(htmls => {
+    document.querySelectorAll('[data-slot]').forEach(slot => { slot.innerHTML = htmls.join('\n'); });
+  }).catch(() => { document.body.insertAdjacentHTML('afterbegin', '<p>조각을 못 읽었습니다. design/ 에서 <code>python -m http.server</code> 로 여세요.</p>'); });
+  function show(size) { document.querySelectorAll('.frame').forEach(f => f.hidden = f.dataset.size !== size); }
+  // 주소로 고정: preview.html?theme=light / ?theme=dark, &size=multi
+  const q = new URLSearchParams(location.search);
+  if (q.get('theme')) document.documentElement.setAttribute('data-theme', q.get('theme'));
+  if (q.get('size')) show(q.get('size'));
+  // 기본은 시스템 설정(야간 기본, 시스템이 주간이면 주간). 버튼은 지금 보이는 반대쪽으로 고정한다.
+  function toggleTheme() {
+    const el = document.documentElement;
+    const nowDark = getComputedStyle(el).getPropertyValue('--cg-bg-secondary').trim().toUpperCase() === '#131417';
+    el.setAttribute('data-theme', nowDark ? 'light' : 'dark');
+  }
+</script>
+</body></html>

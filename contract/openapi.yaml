@@ -1,0 +1,157 @@
+openapi: 3.1.0
+info:
+  title: chagok server
+  version: 0.2.0
+  description: |
+    앱이 부르는 엔드포인트는 /v1/cards, /v1/cards/swap 둘뿐.
+    /v1/range, /v1/settle 은 검증용 참조 구현 — 앱은 부르지 않는다 (11/5 안건 1).
+
+    원칙 (PRD 5-2, 7-1)
+    - 앱은 잔량·주행가능거리·누적 주행거리·VIN 같은 원시 차량값을 보내지 않는다.
+      잔고·범위는 앱이 로컬에서 계산하고, 카드에 필요한 파생값(budget)만 보낸다.
+    - 서버는 모르는 필드를 422로 거절한다(실수로 원시값이 실려도 받지 않음).
+    - 세션은 서버 메모리 30분, 디스크·로그에 남기지 않는다.
+
+    기준 구현: server/chagok/engine.py·cards.py, 앱 오프라인 데모: app/shared/chagok-engine.js.
+    기대값: fixtures/cards/D*.json. 샘플: contract/samples/ (gen_fixtures.py가 생성, 손으로 고치지 않음).
+    필드가 바뀌면 이 파일 · 엔진 두 벌 · fixtures 를 같은 PR에서 바꾼다.
+servers:
+  - url: http://10.0.2.2:8000
+    description: 개발용 — 에뮬레이터에서 보는 호스트 PC. 배포는 HTTPS(AC-N-3), app/README.md 네트워크 절 참고
+paths:
+  /v1/cards:
+    post:
+      summary: 차가 고른 한 장 + 뒤집힌 스택
+      description: |
+        session_id 없이 → 새 세션. 고른 프리셋(extra_krw)·테마 안의 후보만 뽑는다(PRD F2·F3 경계).
+        session_id 와 함께 → 차량 값이 바뀐 재호출(1초 디바운스). 같은 picked를 유지하고 배지·1인 몫·이유만 새로.
+        picked가 +3만 범위를 벗어날 때만 다시 뽑는다. 세션에 이 값을 저장해 이후 교체도 이 값 기준.
+        후보가 3곳 미만이면 hint(X2 "범위 안 후보가 적어요")를 준다.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CardsRequest' }
+            examples:
+              D1: { externalValue: ./samples/D1.request.json }
+              D2_recall: { externalValue: ./samples/D2.recall.request.json }
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CardsResponse' }
+              examples:
+                D1: { externalValue: ./samples/D1.response.json }
+        '422': { description: 'validation error — 모르는 필드(원시 차량값 등), 프리셋·테마 값 오류' }
+  /v1/cards/swap:
+    post:
+      summary: 교체 (최대 2회). 화면 스택 순서대로 다음 카드
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [session_id]
+              properties:
+                session_id: { type: string }
+                exclude_ids: { type: array, items: { type: string } }
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  session_id: { type: string }
+                  card: { $ref: '#/components/schemas/Card' }
+                  swaps_used: { type: integer }
+                  swaps_left: { type: integer }
+                  stack_left: { type: integer, description: '뒤집힌 스택에 남은 장 수("다른 후보 n")' }
+        '404': { description: 'session_not_found (만료 30분 포함) → 앱은 새로 /v1/cards' }
+        '409': { description: 'swap_limit 또는 no_more_candidates. detail.hint = "테마를 바꿔 볼까요?"' }
+  /v1/health:
+    get:
+      responses: { '200': { description: ok } }
+components:
+  schemas:
+    Budget:
+      type: object
+      additionalProperties: false
+      description: 앱 로컬 E1(engine.compute_range) 결과에서 만든 파생값. 원시 잔량·주행가능거리가 아니다.
+      required: [fuel_type, usable_km, margin_km, efficiency, price_per_unit]
+      properties:
+        fuel_type: { type: string, enum: [ev, ice], description: 'AAOS INFO_FUEL_TYPE으로 판별' }
+        usable_km: { type: number, description: '잔고 km − 안전 여유 − (1박 30). 음수 가능(추가 0원 불가)' }
+        margin_km: { type: number, minimum: 0, description: '안전 여유 = max(50, 잔고 km × 15%). 배지 "여유 {n}km"' }
+        efficiency: { type: number, exclusiveMinimum: 0, description: '실연비 km/kWh·km/L (SDK 값, 없으면 차종 표 × 0.85)' }
+        price_per_unit: { type: number, exclusiveMinimum: 0, description: '원/kWh·원/L' }
+        price_source: { type: string, enum: [user, default], default: user, description: 'default = 앱 내장 기본값 → "평균 단가"' }
+    CardsRequest:
+      type: object
+      additionalProperties: false
+      required: [origin, budget]
+      properties:
+        origin:
+          type: object
+          additionalProperties: false
+          required: [lat, lng]
+          properties: { lat: { type: number }, lng: { type: number } }
+          description: 'NaviHelper 현재 위치(없으면 직전 위치 → 설정 집 위치). 서버는 저장하지 않는다'
+        budget: { $ref: '#/components/schemas/Budget' }
+        seats_occupied: { type: integer, minimum: 1, maximum: 9, default: 1, description: '탄 사람 수(에뮬 반전 처리는 앱 안에서)' }
+        extra_krw: { type: integer, enum: [0, 10000, 30000], default: 0 }
+        days: { type: integer, enum: [1, 2], default: 1 }
+        themes:
+          type: array
+          maxItems: 2
+          items: { type: string, enum: [sea, lake, river, mountain, park, city, island, drive] }
+        recent_visits: { type: array, maxItems: 10, items: { type: string }, description: '장소 ID, 최근 10개' }
+        demo_seed: { type: [string, 'null'] }
+        session_id: { type: [string, 'null'] }
+    Card:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        theme: { type: string, description: 'sea|lake|river|mountain|park|city|island|drive = design/illustrations/<theme>-<n>.svg' }
+        lat: { type: number }
+        lng: { type: number }
+        route_km: { type: number, description: '편도 도로 거리. 도착 Δodo 0일 때 편도 추정(F17)에 씀' }
+        minutes: { type: integer, description: '편도. 90분 넘는 곳은 카드로 오지 않는다' }
+        time_label: { type: string, enum: ['75분 안', '조금 먼 곳'] }
+        cost:
+          type: object
+          properties:
+            fuel: { type: integer }
+            toll: { type: integer }
+            parking: { type: [integer, 'null'], description: 'null = 정보 없음' }
+            total: { type: integer }
+            per_person: { type: [integer, 'null'] }
+        display:
+          type: object
+          description: 온라인에서는 이 문구를 그대로 쓴다. 금액을 다시 계산하지 않는다.
+          properties:
+            total_text: { type: string, examples: ['1만 원 안팎', '5천 원 미만'] }
+            per_person_text: { type: [string, 'null'], examples: ['1인 2천 원 안팎'] }
+            zero_extra: { type: boolean }
+            tight: { type: boolean }
+            ring_krw: { type: integer, enum: [0, 10000, 30000] }
+            badge_text: { type: string, examples: ['추가 충전 없이 · 여유 50km', '빠듯', '+1만 원 안팎'] }
+            margin_km: { type: integer }
+        reason: { type: string, examples: ['추가 0원 안 · 75분 안 · 지난번과 다른 테마'] }
+    CardsResponse:
+      type: object
+      properties:
+        session_id: { type: [string, 'null'], description: 'picked가 없으면 null' }
+        radius_km: { type: number, description: '서버가 쓴 반경(앱 화면 반경과 같아야 함, 대조용)' }
+        candidates_in_range: { type: integer, description: '고른 프리셋·테마 안 후보 수' }
+        hint:
+          type: [object, 'null']
+          properties:
+            code: { type: string, enum: [few_candidates] }
+            text: { type: string, examples: ['범위 안 후보가 적어요'] }
+            actions: { type: array, items: { type: string, enum: [clear_themes, extra_10000, extra_30000] } }
+        picked: { oneOf: [{ $ref: '#/components/schemas/Card' }, { type: 'null' }] }
+        stack: { type: array, items: { $ref: '#/components/schemas/Card' }, maxItems: 3 }

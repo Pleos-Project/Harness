@@ -1,0 +1,23 @@
+{
+  "id": "T6",
+  "title": "단가 결측 → 앱 기본값 + '평균 단가'",
+  "snapshot_prev": {
+    "odometer_km": 10000,
+    "seats": 1,
+    "price_per_unit": 300,
+    "efficiency": 5.27,
+    "ts": "2026-11-01T09:00:00+09:00",
+    "price_source": "default"
+  },
+  "odometer_now": 10132,
+  "last_destination": "두물머리",
+  "span_days": 0,
+  "expected": {
+    "km": 132,
+    "krw": 8000,
+    "per_person": null,
+    "text": "지난번 이후 132km · 약 8천 원 (평균 단가) · 마지막 목적지 두물머리",
+    "skipped": false,
+    "reason": null
+  }
+}

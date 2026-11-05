@@ -1,0 +1,22 @@
+{
+  "id": "T1",
+  "title": "중간 주유·충전: Δodo 300, 잔량 상승 — 주행거리 기준 그대로",
+  "snapshot_prev": {
+    "odometer_km": 10000,
+    "seats": 1,
+    "price_per_unit": 300,
+    "efficiency": 5.27,
+    "ts": "2026-11-01T09:00:00+09:00"
+  },
+  "odometer_now": 10300,
+  "last_destination": "두물머리",
+  "span_days": 0,
+  "expected": {
+    "km": 300,
+    "krw": 17000,
+    "per_person": null,
+    "text": "지난번 이후 300km · 약 1만 7천 원 · 마지막 목적지 두물머리",
+    "skipped": false,
+    "reason": null
+  }
+}

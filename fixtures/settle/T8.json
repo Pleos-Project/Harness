@@ -1,0 +1,22 @@
+{
+  "id": "T8",
+  "title": "주행거리 감소(콘솔 오입력·초기화) → 생략",
+  "snapshot_prev": {
+    "odometer_km": 10000,
+    "seats": 1,
+    "price_per_unit": 300,
+    "efficiency": 5.27,
+    "ts": "2026-11-01T09:00:00+09:00"
+  },
+  "odometer_now": 9900,
+  "last_destination": "두물머리",
+  "span_days": 0,
+  "expected": {
+    "km": 0,
+    "krw": 0,
+    "per_person": null,
+    "text": "",
+    "skipped": true,
+    "reason": "odometer_decreased"
+  }
+}

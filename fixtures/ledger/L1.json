@@ -1,0 +1,217 @@
+{
+  "id": "L1",
+  "title": "PT 5~6단계(에뮬): 출발 → 기어 P에서 운전석 문(Δodo 0) → 다시 열기",
+  "note": "도착 Δodo 0 → 편도 52km 추정, demo=true('시연용 값'). 도착이 스냅샷을 갱신해 다음 열기는 정산 없음(AC-F17-4).",
+  "state0": {
+    "snapshot": null,
+    "trip": null,
+    "rows": [],
+    "last_pin": null
+  },
+  "steps": [
+    {
+      "event": {
+        "type": "open",
+        "ts": "2026-12-03T14:00:00+09:00",
+        "odometer_km": 12472,
+        "seats": 4,
+        "price": 300,
+        "efficiency": 5.27,
+        "price_source": "user",
+        "recent_destination": null
+      },
+      "expected": {
+        "output": {
+          "card": null,
+          "row": null,
+          "skipped": "no_snapshot"
+        },
+        "state": {
+          "snapshot": {
+            "odometer_km": 12472,
+            "seats": 4,
+            "price_per_unit": 300,
+            "efficiency": 5.27,
+            "ts": "2026-12-03T14:00:00+09:00",
+            "price_source": "user"
+          },
+          "trip": null,
+          "rows": [],
+          "last_pin": null
+        }
+      }
+    },
+    {
+      "event": {
+        "type": "depart",
+        "ts": "2026-12-03T14:05:00+09:00",
+        "odometer_km": 12472,
+        "place": {
+          "id": "p_dumulmeori",
+          "name": "양평 두물머리",
+          "lat": 37.5363,
+          "lng": 127.314
+        },
+        "route_km": 52
+      },
+      "expected": {
+        "output": {
+          "card": null,
+          "row": null,
+          "skipped": null
+        },
+        "state": {
+          "snapshot": {
+            "odometer_km": 12472,
+            "seats": 4,
+            "price_per_unit": 300,
+            "efficiency": 5.27,
+            "ts": "2026-12-03T14:00:00+09:00",
+            "price_source": "user"
+          },
+          "trip": {
+            "place": {
+              "id": "p_dumulmeori",
+              "name": "양평 두물머리",
+              "lat": 37.5363,
+              "lng": 127.314
+            },
+            "route_km": 52,
+            "start_odometer_km": 12472,
+            "departed_ts": "2026-12-03T14:05:00+09:00"
+          },
+          "rows": [],
+          "last_pin": null
+        }
+      }
+    },
+    {
+      "event": {
+        "type": "arrive",
+        "ts": "2026-12-03T14:06:00+09:00",
+        "odometer_km": 12472,
+        "seats": 4,
+        "price": 300,
+        "efficiency": 5.27
+      },
+      "expected": {
+        "output": {
+          "card": null,
+          "row": {
+            "type": "arrive",
+            "from_ts": "2026-12-03T14:05:00+09:00",
+            "to_ts": "2026-12-03T14:06:00+09:00",
+            "km": 52,
+            "krw": 3000,
+            "per_person": null,
+            "place": {
+              "name": "양평 두물머리",
+              "lat": 37.5363,
+              "lng": 127.314
+            },
+            "pinned": true,
+            "demo": true
+          },
+          "skipped": null
+        },
+        "state": {
+          "snapshot": {
+            "odometer_km": 12472,
+            "seats": 4,
+            "price_per_unit": 300,
+            "efficiency": 5.27,
+            "ts": "2026-12-03T14:06:00+09:00",
+            "price_source": "user"
+          },
+          "trip": null,
+          "rows": [
+            {
+              "type": "arrive",
+              "from_ts": "2026-12-03T14:05:00+09:00",
+              "to_ts": "2026-12-03T14:06:00+09:00",
+              "km": 52,
+              "krw": 3000,
+              "per_person": null,
+              "place": {
+                "name": "양평 두물머리",
+                "lat": 37.5363,
+                "lng": 127.314
+              },
+              "pinned": true,
+              "demo": true
+            }
+          ],
+          "last_pin": {
+            "name": "양평 두물머리",
+            "lat": 37.5363,
+            "lng": 127.314
+          }
+        }
+      }
+    },
+    {
+      "event": {
+        "type": "open",
+        "ts": "2026-12-03T14:10:00+09:00",
+        "odometer_km": 12472,
+        "seats": 4,
+        "price": 300,
+        "efficiency": 5.27,
+        "price_source": "user",
+        "recent_destination": {
+          "id": "p_dumulmeori",
+          "name": "양평 두물머리",
+          "lat": 37.5363,
+          "lng": 127.314
+        }
+      },
+      "expected": {
+        "output": {
+          "card": null,
+          "row": null,
+          "skipped": "no_distance"
+        },
+        "state": {
+          "snapshot": {
+            "odometer_km": 12472,
+            "seats": 4,
+            "price_per_unit": 300,
+            "efficiency": 5.27,
+            "ts": "2026-12-03T14:06:00+09:00",
+            "price_source": "user"
+          },
+          "trip": null,
+          "rows": [
+            {
+              "type": "arrive",
+              "from_ts": "2026-12-03T14:05:00+09:00",
+              "to_ts": "2026-12-03T14:06:00+09:00",
+              "km": 52,
+              "krw": 3000,
+              "per_person": null,
+              "place": {
+                "name": "양평 두물머리",
+                "lat": 37.5363,
+                "lng": 127.314
+              },
+              "pinned": true,
+              "demo": true
+            }
+          ],
+          "last_pin": {
+            "name": "양평 두물머리",
+            "lat": 37.5363,
+            "lng": 127.314
+          }
+        }
+      }
+    }
+  ],
+  "month": "2026-12",
+  "expected_month": {
+    "krw": 3000,
+    "places": 1,
+    "demo": true,
+    "text": "이번 달 이동비 약 3천 원 · 다녀온 곳 1곳"
+  }
+}

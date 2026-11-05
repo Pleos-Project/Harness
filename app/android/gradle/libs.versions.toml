@@ -1,0 +1,19 @@
+# 버전은 H_Mate(11/4, June 에뮬에서 빌드·실행 확인)와 같게 맞춤. 올릴 때는 PR에 적는다.
+[versions]
+agp = "9.3.3"
+pleosVehicle = "2.3.2"
+pleosNaviHelper = "3.0.5"
+webkit = "1.12.1"
+kotlinxSerialization = "1.6.3"
+junit = "4.13.2"
+
+[libraries]
+pleos-vehicle = { group = "ai.pleos.playground", name = "Vehicle", version.ref = "pleosVehicle" }
+pleos-navihelper = { group = "ai.pleos.playground", name = "NaviHelper", version.ref = "pleosNaviHelper" }
+androidx-webkit = { group = "androidx.webkit", name = "webkit", version.ref = "webkit" }
+# 내비 데이터(@Serializable)를 JSON으로 WebView에 넘길 때(H_Mate 브리지 방식)
+kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinxSerialization" }
+junit = { group = "junit", name = "junit", version.ref = "junit" }
+
+[plugins]
+android-application = { id = "com.android.application", version.ref = "agp" }
