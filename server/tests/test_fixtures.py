@@ -72,7 +72,7 @@ def test_ac_f2_3_overnight_minus_11_5km():
 
 
 def test_ac_f9_1_charge_text():
-    assert E.charge_amount(50, 80, 77.4, 300)[2] == "방금 약 7천 원어치 충전"
+    assert E.charge_amount(20, 80, 77.4, 300)[2] == "방금 약 1만 4천 원어치 충전"
 
 
 def test_f9_full_tank_amount():

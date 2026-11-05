@@ -178,12 +178,12 @@ def main() -> None:
         "virtual_console": {"PUT /vehicle/odometer?traveled_distance_km=": "현재값 + 132"},
         "snapshot_prev": vars(prev), "odometer_now": 12_472, "last_destination": "양평 두물머리", "span_days": 0,
         "expected": vars(s)})
-    kwh, krw, text = E.charge_amount(50, 80, 77.4, 300)
+    kwh, krw, text = E.charge_amount(20, 80, 77.4, 300)
     write(ROOT / "fixtures/cards/D6.json", {
-        "id": "D6", "title": "PT 1단계 충전 직후: SOC 50 → 80, 집 단가 300 → 바로 한 장",
-        "note": "23.22kWh × 300 = 6,966 → 7,000 (AC-F9-1). 이어서 F2 기본값으로 /v1/cards → D1과 같은 picked.",
+        "id": "D6", "title": "PT 1단계 충전 직후: SOC 20 → 80, 집 단가 300 → 바로 한 장",
+        "note": "46.44kWh × 300 = 13,932 → 14,000 (AC-F9-1, DECISIONS 열린 결정 8 해결). 이어서 F2 기본값으로 /v1/cards → D1과 같은 picked.",
         "virtual_console": {"charge_on": True, "PUT /vehicle/ev-battery?field=soc&value=": 80, "charge_off": True},
-        "charge_start_soc": 50, "charge_end_soc": 80, "capacity_kwh": 77.4, "price": 300,
+        "charge_start_soc": 20, "charge_end_soc": 80, "capacity_kwh": 77.4, "price": 300,
         "expected": {"kwh": E.round1(kwh * 10) / 10, "krw": krw, "text": text, "then": "D1"}})
 
     # ---------------- 주유 직후 '가득' (D11, F9 내연 금액 시트)
