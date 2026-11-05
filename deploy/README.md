@@ -6,7 +6,7 @@
 |---|---|
 | `Dockerfile` | `api` 이미지. `server/`·`fixtures/`만 들어가고 비루트(uid 1000)로 돈다. 키는 넣지 않는다 |
 | `compose.yaml` | `api`(포트는 밖에 열지 않음) + `caddy`(80·443·443/udp). 로그는 json-file 10MB×3 |
-| `Caddyfile` | `{$CHAGOK_DOMAIN}` → `api:8000`. 접근 로그 없음 |
+| `Caddyfile` | `{$CHAGOK_DOMAIN}` → `api:8000`. 접근 로그 없음. 인증서는 RSA 키 + ISRG Root X1 체인(아래 'TLS 체인') |
 | `crontab` | `/etc/cron.d/chagok`. KST 04:10 `sources refresh`, 04:20 `prices refresh` (UTC로 적혀 있음) |
 | `bootstrap.sh` | 인스턴스 시작 스크립트(user-data). Docker·스왑 2GB·디렉토리·로그 회전 |
 | `deploy.sh` | PC에서 실행. 코드 보내기 → 교체 → 크론 → `up --build` → (첫 배포면) refresh → https 헬스 |
@@ -14,7 +14,9 @@
 
 ## 리소스·비용
 
-- 인스턴스 `chagok-api`, 고정 IP `chagok-ip`, AWS CLI 프로필 `--profile chagok`
+- 인스턴스 `pleos-server`, 고정 IP `pleos-server-ip`(13.209.135.60), SSH 키 페어 `pleos-server-key`(개인키 `~/.ssh/pleos-server.pem`, 효성 PC)
+- AWS CLI 프로필 `--profile pleos` = IAM 사용자 `Pleos-server`(인라인 정책 `Pleos-lightsail` = `lightsail:*`만). 같은 계정의 다른 프로젝트 리소스는 건드리지 않는다
+- 도메인 `13-209-135-60.sslip.io` → API `https://13-209-135-60.sslip.io`
 - 번들 `micro_3_0`: 1GB 메모리, 월 7달러(크레딧으로 충당). 고정 IP는 인스턴스에 붙어 있는 동안 무료
 - 메모리가 1GB라 서버에서 이미지를 빌드할 때를 대비해 bootstrap이 스왑 2GB를 만든다
 
@@ -47,7 +49,21 @@ source ~/.bashrc
 
 ## 처음 배포
 
-전제: 인스턴스 `chagok-api`(Ubuntu 24.04, 시작 스크립트로 `bootstrap.sh`), 고정 IP `chagok-ip` 연결, 방화벽 TCP 22·80·443 + UDP 443 열림, SSH 개인키를 PC에 받아 둠.
+### Lightsail 준비 (처음 한 번, 11/5에 이렇게 만들었다)
+
+```bash
+P="--profile pleos"
+( umask 077; aws lightsail create-key-pair $P --key-pair-name pleos-server-key     --query privateKeyBase64 --output text > ~/.ssh/pleos-server.pem )      # 개인키는 화면에 출력하지 않는다
+aws lightsail create-instances $P --instance-names pleos-server --availability-zone ap-northeast-2a     --blueprint-id ubuntu_24_04 --bundle-id micro_3_0 --key-pair-name pleos-server-key --tags key=project,value=pleos
+aws lightsail allocate-static-ip $P --static-ip-name pleos-server-ip
+aws lightsail attach-static-ip $P --static-ip-name pleos-server-ip --instance-name pleos-server
+aws lightsail put-instance-public-ports $P --instance-name pleos-server --port-infos   '[{"fromPort":22,"toPort":22,"protocol":"tcp"},{"fromPort":80,"toPort":80,"protocol":"tcp"},{"fromPort":443,"toPort":443,"protocol":"tcp"},{"fromPort":443,"toPort":443,"protocol":"udp"}]'
+```
+
+- **시작 스크립트(user-data)에 `bootstrap.sh`를 넣지 않는다.** Lightsail은 user-data를 자기 초기화 스크립트(`#!/bin/sh`) 뒤에 붙여 sh(dash)로 돌려서 bash 문법(`set -o pipefail`)에서 멈춘다(11/5 실제로 겪음). 첫 배포 때 `deploy.sh --bootstrap`이 ssh로 bash 실행한다.
+- 윈도우 AWS CLI에 한글이 든 파일을 `file://`로 넘기면 cp949로 읽다 깨진다 → `AWS_CLI_FILE_ENCODING=UTF-8`을 앞에 붙인다.
+
+전제: 위 준비 완료(인스턴스·고정 IP·방화벽 TCP 22·80·443 + UDP 443), SSH 개인키를 PC에 받아 둠.
 
 1. **도메인 정하기.** 처음에는 `<고정IP를 대시로>.sslip.io`를 쓴다. sslip.io는 이름 안의 IP로 그대로 응답하는 공개 DNS라 도메인을 사지 않고도 Let's Encrypt 인증서를 받을 수 있다.
    예: 고정 IP `3.35.10.20` → `3-35-10-20.sslip.io`. `DOMAIN`을 생략하면 `deploy.sh`가 이 값을 만든다.
@@ -55,23 +71,22 @@ source ~/.bashrc
 3. **배포** (레포 루트에서, Git Bash·macOS·Linux):
 
    ```bash
-   HOST=3.35.10.20 SSH_KEY=~/.ssh/chagok.pem bash deploy/deploy.sh --push-env
+   HOST=13.209.135.60 SSH_KEY=~/.ssh/pleos-server.pem bash deploy/deploy.sh --bootstrap --push-env
    ```
 
-   - 첫 부팅 직후라면 시작 스크립트(bootstrap)가 끝날 때까지 기다린 뒤 진행한다.
-   - 시작 스크립트를 못 넣었으면 `--bootstrap`을 붙인다(서버에서 `sudo bash bootstrap.sh`).
+   - `--bootstrap`: 새 인스턴스면 붙인다(Docker·스왑·디렉토리). 몇 번 돌려도 같은 결과라 다시 붙여도 된다.
    - 첫 배포라 `sources refresh`·`prices refresh`를 한 번 돌린다(TourAPI 호출이 많아 몇 분 걸릴 수 있다).
    - 끝에 `https://<도메인>/v1/health` 응답을 출력한다. 첫 인증서 발급에 1분쯤 걸린다.
 4. 앱의 서버 주소를 `https://<도메인>`으로 맞춘다.
 
 `git archive HEAD`로 묶으므로 **커밋한 것만** 배포된다. 커밋 안 된 변경이 있으면 경고만 하고 진행한다.
 
-Windows 메모: Git Bash에서 돌린다. 키 경로는 `~/.ssh/chagok.pem`이나 `/c/Users/<나>/...` 꼴로 쓴다. SSH가 키 권한 경고를 내면 키를 `~/.ssh/` 아래로 옮기고 `chmod 600`을 한다.
+Windows 메모: Git Bash에서 돌린다. 키 경로는 `~/.ssh/pleos-server.pem`이나 `/c/Users/<나>/...` 꼴로 쓴다. SSH가 키 권한 경고를 내면 키를 `~/.ssh/` 아래로 옮기고 `chmod 600`을 한다.
 
 ## 재배포
 
 ```bash
-HOST=3.35.10.20 SSH_KEY=~/.ssh/chagok.pem bash deploy/deploy.sh
+HOST=13.209.135.60 SSH_KEY=~/.ssh/pleos-server.pem bash deploy/deploy.sh
 ```
 
 도메인은 서버의 `compose.env`에 남아 있어 다시 줄 필요가 없다. 이미지가 바뀌면 `api` 컨테이너가 새로 떠서 **메모리에 둔 카드 세션이 사라진다**(앱은 다시 요청하면 된다). refresh는 첫 배포 때만 돈다. 강제로 돌리려면 `--refresh`를 붙인다.
@@ -80,7 +95,7 @@ HOST=3.35.10.20 SSH_KEY=~/.ssh/chagok.pem bash deploy/deploy.sh
 
 ```bash
 # PC: 레포 루트 .env 를 고친 뒤
-HOST=3.35.10.20 SSH_KEY=~/.ssh/chagok.pem bash deploy/deploy.sh --push-env
+HOST=13.209.135.60 SSH_KEY=~/.ssh/pleos-server.pem bash deploy/deploy.sh --push-env
 ```
 
 `.env`만 바꾸고 코드는 그대로 두고 싶으면 서버에서 직접 고친 뒤 `api`를 다시 만든다. 키는 컨테이너가 뜰 때 환경변수로 들어가므로 `restart`로는 반영되지 않는다.
@@ -126,12 +141,53 @@ dc exec -T api python -m chagok.prices refresh
 2. 새 도메인으로 다시 배포한다. `compose.env`가 바뀌어 caddy가 새로 뜨고 인증서를 새로 받는다.
 
    ```bash
-   HOST=3.35.10.20 SSH_KEY=~/.ssh/chagok.pem DOMAIN=api.example.com bash deploy/deploy.sh
+   HOST=13.209.135.60 SSH_KEY=~/.ssh/pleos-server.pem DOMAIN=api.example.com bash deploy/deploy.sh
    ```
 
 3. 앱의 서버 주소를 바꾼다.
 
 서버에서만 바꾸려면 `echo CHAGOK_DOMAIN=api.example.com > /opt/chagok/compose.env && dc up -d`.
+
+## TLS 체인
+
+- **고른 것**: RSA 2048 키 + 최상위가 **ISRG Root X1**(또는 X1이 교차 서명한 인증서)인 체인. `Caddyfile` 전역 옵션 `key_type rsa2048`과 `cert_issuer acme { preferred_chains { root_common_name "ISRG Root X1" } }`.
+- **이유**: Caddy 기본값(ECDSA 키)이면 Let's Encrypt가 `서버 → YE2 → ISRG Root YE → ISRG Root X2` 체인을 준다(11/5 첫 발급). X2는 최근 안드로이드에만 들어 있다. 앱이 도는 AAOS 에뮬레이터가 X2를 믿는지 모르므로 안드로이드 7.1.1부터 믿는 X1 쪽을 고른다.
+- `root_common_name`은 체인 **마지막 인증서의 발급자(Issuer) CN**과 정확히 같은지로 고른다. 맞는 체인이 없으면 경고만 남기고 첫 체인을 쓴다.
+- `cert_issuer`를 적으면 기본 발급자 목록(Let's Encrypt → ZeroSSL)을 대신해 Let's Encrypt만 쓴다.
+
+### 키 종류·체인 설정을 바꾼 뒤
+
+Caddy는 **이미 받아 둔 인증서가 유효하면 설정이 바뀌어도 다시 받지 않는다**(새 설정은 다음 갱신 때부터). 바로 바꾸려면 저장된 인증서를 옮겨 두고 caddy를 재시작한다. 이렇게 하면 발급이 1회 늘어난다. Let's Encrypt는 같은 이름 묶음에 **주 5회**까지만 발급하니 되풀이하지 않는다.
+
+```bash
+D=13-209-135-60.sslip.io
+C=/data/caddy/certificates/acme-v02.api.letsencrypt.org-directory
+B=/data/cert-backup/$D-$(date -u +%Y%m%dT%H%M)          # caddy_data 볼륨 안(인증서 저장 경로 밖)
+dc exec -T caddy sh -c "mkdir -p /data/cert-backup && mv $C/$D $B"
+dc restart caddy
+dc logs --since 5m caddy | grep -iE 'obtain|certificate|chain|error' | tail
+```
+
+되돌리기(원하는 체인이 안 나왔을 때): 이전 커밋을 다시 배포해 `Caddyfile`을 되돌린 뒤, 옮겨 둔 인증서를 제자리에 놓고 caddy를 재시작한다.
+
+```bash
+dc exec -T caddy sh -c "rm -rf $C/$D && mv $B $C/$D"
+dc restart caddy
+```
+
+### 확인 (서버 안에서)
+
+회사·학교 방화벽이 HTTPS를 가로채 다시 서명하는 PC에서는 로컬 확인이 틀린 체인을 보여 준다. 서버에 ssh로 들어가 본다.
+
+```bash
+echo | openssl s_client -connect 127.0.0.1:443 -servername 13-209-135-60.sslip.io -showcerts 2>/dev/null \
+  | awk '/BEGIN CERT/{c=""} {c=c $0 "\n"} /END CERT/{printf "%s", c | "openssl x509 -noout -subject -issuer"; close("openssl x509 -noout -subject -issuer")}'
+echo | openssl s_client -connect 127.0.0.1:443 -servername 13-209-135-60.sslip.io 2>/dev/null \
+  | openssl x509 -noout -text | grep 'Public Key Algorithm'     # rsaEncryption 이어야 한다
+curl -fsS https://13-209-135-60.sslip.io/v1/health
+```
+
+마지막 줄의 발급자가 `ISRG Root X1`이면 된다(예: `... → ISRG Root YR`(발급자 X1) 또는 `... → R1x`(발급자 X1)).
 
 ## 롤백
 
@@ -139,7 +195,7 @@ PC에서 이전 커밋을 다시 배포하는 게 기본이다(`deploys.log`에 
 
 ```bash
 cat /opt/chagok/deploys.log                     # 서버에서 이전 커밋 확인
-HOST=3.35.10.20 SSH_KEY=~/.ssh/chagok.pem bash deploy/deploy.sh --ref <이전 커밋>
+HOST=13.209.135.60 SSH_KEY=~/.ssh/pleos-server.pem bash deploy/deploy.sh --ref <이전 커밋>
 ```
 
 PC를 쓸 수 없으면 서버에 남은 직전 코드(`app.prev`)로 바로 되돌린다.
