@@ -7,6 +7,9 @@
     python scripts/refresh_demo_routes.py --dry    # 바뀔 값만 보기
 
 시간은 조회 시점 교통 상황이 반영된 값이라 다시 돌리면 몇 분씩 달라질 수 있다. 바뀌면 PT 콘솔 값(DECISIONS)도 확인한다.
+
+길찾기 호출·변환은 서버 실서비스 모드와 같은 `chagok.routes.fetch_kakao` 를 쓴다
+(route_km = round1(m/1000), minutes = round_half_up(s/60) — 내장 round() 금지, 데모 값과 실경로 값이 같은 규칙).
 """
 
 from __future__ import annotations
@@ -15,15 +18,14 @@ import datetime as dt
 import json
 import os
 import sys
-import urllib.error
-import urllib.parse
-import urllib.request
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 CANDS = ROOT / "fixtures/candidates_demo.json"
 CONST = ROOT / "fixtures/constants.json"
-URL = "https://apis-navi.kakaomobility.com/v1/directions"
+
+sys.path.insert(0, str(ROOT / "server"))
+from chagok import routes as R  # noqa: E402
 
 
 def load_env() -> dict[str, str]:
@@ -39,18 +41,11 @@ def load_env() -> dict[str, str]:
 
 
 def route(key: str, origin: dict, c: dict) -> tuple[float, int, int]:
-    q = urllib.parse.urlencode({"origin": f"{origin['lng']},{origin['lat']}", "destination": f"{c['lng']},{c['lat']}",
-                                "priority": "RECOMMEND", "summary": "true"})
-    req = urllib.request.Request(f"{URL}?{q}", headers={"Authorization": f"KakaoAK {key}"})
     try:
-        data = json.loads(urllib.request.urlopen(req, timeout=20).read().decode("utf-8"))
-    except urllib.error.HTTPError as e:
-        raise SystemExit(f"{c['name']}: HTTP {e.code} {e.read().decode('utf-8', 'replace')[:200]}".replace(key, "<KEY>"))
-    r = data["routes"][0]
-    if r.get("result_code") != 0:
-        raise SystemExit(f"{c['name']}: {r.get('result_msg')}")
-    s = r["summary"]
-    return round(s["distance"] / 1000, 1), round(s["duration"] / 60), int(s.get("fare", {}).get("toll", 0))
+        r = R.fetch_kakao(key, origin["lat"], origin["lng"], c["lat"], c["lng"], timeout=20)
+    except R.RouteError as e:  # 메시지에서 키·출발지 좌표는 fetch_kakao 가 이미 지움
+        raise SystemExit(f"{c['name']}: {e}") from None
+    return r.route_km, r.minutes, r.toll_krw
 
 
 def main() -> int:
