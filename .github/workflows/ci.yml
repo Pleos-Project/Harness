@@ -44,6 +44,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with: { fetch-depth: 2 }   # PR 머지 커밋 + base 쪽 부모(HEAD^1)
       - uses: actions/setup-python@v5
         with: { python-version: "3.12" }
       - run: python scripts/lint_copy.py
+      - name: 디자인 반영 PR 금지 경로 (design-handoff 한 방향, design/RULES.md 5절)
+        if: startsWith(github.head_ref, 'feature/design-apply-pr-')
+        run: |
+          bad=$(git diff --name-only HEAD^1 HEAD -- design docs fixtures contract server scripts .github \
+            app/android/app/src/main/java/com/mist/pleos_app/ui/theme)
+          if [ -n "$bad" ]; then echo "::error::금지 경로 변경: $bad"; exit 1; fi
+          echo "금지 경로 변경 없음"
