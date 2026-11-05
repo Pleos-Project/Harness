@@ -30,20 +30,21 @@ def load(p):
     return json.loads(p.read_text(encoding="utf-8"))
 
 
-def ev(level=80, rr=326_000, cap=77.4):
+def ev(level=80, rr=245_000, cap=77.4):
     return E.Vehicle("ev", level, cap, EFF, 300, remaining_range_m=rr)
 
 
 # ---------------------------------------------------------------- 1부: 손 검산 (명세서 AC와 1:1)
 def test_ac_f2_1_radius_d1_d2():
-    assert abs(E.compute_range(ev()).radius_km - 106) < 2
-    assert abs(E.compute_range(ev(35, 143_000)).radius_km - 36) < 2
+    # PT 콘솔 값(DECISIONS): D1 245km → 반경 75, D2 100km → 반경 19 (명세 AC-F2-1의 326·143km를 대체)
+    assert abs(E.compute_range(ev()).radius_km - 75) < 1
+    assert abs(E.compute_range(ev(35, 100_000)).radius_km - 19.2) < 0.5
 
 
 def test_ac_f1_1_balance_krw_rounding():
     r = E.compute_range(ev())
     assert r.balance_krw == 19_000  # 18,576 → 반올림
-    assert r.balance_text == "배터리에 1만 9천 원어치 · 약 326km"
+    assert r.balance_text == "배터리에 1만 9천 원어치 · 약 245km"
 
 
 def test_ac_f1_2_assembled_fallback():
@@ -183,7 +184,8 @@ def test_swap_follows_visible_stack_order():
 def test_swap_after_recall_uses_latest_vehicle_values():
     d2 = load(ROOT / "fixtures/cards/D2.json")
     card = d2["expected_swaps"][0]["card"]
-    assert not card["display"]["zero_extra"] or card["route_km"] * 2 <= 93  # D2 가용 93km 안일 때만 0원
+    usable = d2["app_local"]["expected"]["usable_km"]
+    assert not card["display"]["zero_extra"] or card["route_km"] * 2 <= usable  # D2 가용 거리 안일 때만 0원
 
 
 def test_reason_never_mentions_parking():

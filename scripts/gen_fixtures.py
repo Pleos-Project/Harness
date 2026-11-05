@@ -123,6 +123,8 @@ def ledger_fixture(fid: str, title: str, note: str, events: list[dict], month: s
 
 PLACE = {c.id: {"id": c.id, "name": c.name, "lat": c.lat, "lng": c.lng} for c in CANDS}
 DUMUL = PLACE["p_dumulmeori"]
+DUMUL_KM = next(c.route_km for c in CANDS if c.id == "p_dumulmeori")
+DUMUL_MIN = next(c.minutes for c in CANDS if c.id == "p_dumulmeori")
 EV_EFF = E.vehicle_inputs(CONST, "ioniq5_lr", 80).efficiency
 
 
@@ -134,22 +136,24 @@ def ev_open(ts: str, odo: float, seats: int = 1, recent: dict | None = None, **k
 
 def main() -> None:
     # ---------------- 카드 (D1~D4: 엔진 PRD 7절, D7~: 하네스 추가)
-    d1_in = {"model": "ioniq5_lr", "level_pct": 80, "remaining_range_m": 326_000, "price": 300}
+    # PT 콘솔 값(DECISIONS "PT 콘솔 값"): 두물머리가 앞면이 되는 D1 범위 200~280km의 가운데, 같은 카드가 +1만이 되는 D2 범위 60~120km의 가운데
+    d1_in = {"model": "ioniq5_lr", "level_pct": 80, "remaining_range_m": 245_000, "price": 300}
     d1 = card_fixture(
-        "D1", "기본: 아이오닉 5 LR, SOC 80%, Remaining Range 326km, 착석 1, 집 단가 300",
-        "AC-F1-1·AC-F2-1·AC-F5-1. 반경 (326−50)÷2÷1.3 ≈ 106. 교체 2번 뒤 3번째는 swap_limit.",
+        "D1", "기본: 아이오닉 5 LR, SOC 80%, Remaining Range 245km, 착석 1, 집 단가 300",
+        f"AC-F1-1·AC-F2-1·AC-F5-1. 반경 (245−50)÷2÷1.3 ≈ 75. 앞면 양평 두물머리(편도 {DUMUL_KM}km·{DUMUL_MIN}분, 추가 0원). "
+        "교체 2번 뒤 3번째는 swap_limit.",
         {"PUT /vehicle/ev-battery?field=capacity&value=": 77.4,
          "PUT /vehicle/ev-battery?field=soc&value=": 80,
-         "PUT /vehicle/odometer?remaining_range_m=": 326_000},
+         "PUT /vehicle/odometer?remaining_range_m=": 245_000},
         d1_in, swaps=3)
     write(ROOT / "fixtures/cards/D1.json", d1)
 
     d2 = card_fixture(
-        "D2", "PT 3단계: SOC 35% + Remaining Range 143km — 같은 카드, 배지만 +1만",
-        "같은 session_id로 재호출(1초 디바운스 1건). 반경 ≈ 36. 두물머리 왕복 104 > 가용 93 → +1만. "
+        "D2", "PT 3단계: SOC 35% + Remaining Range 100km — 같은 카드, 배지만 +1만",
+        f"같은 session_id로 재호출(1초 디바운스 1건). 반경 (100−50)÷2÷1.3 ≈ 19. 두물머리 왕복 {2 * DUMUL_KM:.1f} > 가용 50 → +1만. "
         "재호출 뒤 교체도 이 값 기준(expected_swaps).",
-        {"PUT /vehicle/ev-battery?field=soc&value=": 35, "PUT /vehicle/odometer?remaining_range_m=": 143_000},
-        dict(d1_in, level_pct=35, remaining_range_m=143_000), after=d1, swap_after=True)
+        {"PUT /vehicle/ev-battery?field=soc&value=": 35, "PUT /vehicle/odometer?remaining_range_m=": 100_000},
+        dict(d1_in, level_pct=35, remaining_range_m=100_000), after=d1, swap_after=True)
     write(ROOT / "fixtures/cards/D2.json", d2)
 
     d3 = card_fixture(
@@ -225,9 +229,9 @@ def main() -> None:
     # ---------------- L1~L5 로컬 장부 (F8·F10·F17)
     write(ROOT / "fixtures/ledger/L1.json", ledger_fixture(
         "L1", "PT 5~6단계(에뮬): 출발 → 기어 P에서 운전석 문(Δodo 0) → 다시 열기",
-        "도착 Δodo 0 → 편도 52km 추정, demo=true('시연용 값'). 도착이 스냅샷을 갱신해 다음 열기는 정산 없음(AC-F17-4).",
+        f"도착 Δodo 0 → 편도 {DUMUL_KM}km 추정, demo=true('시연용 값'). 도착이 스냅샷을 갱신해 다음 열기는 정산 없음(AC-F17-4).",
         [ev_open("2026-12-03T14:00:00+09:00", 12_472, seats=4),
-         {"type": "depart", "ts": "2026-12-03T14:05:00+09:00", "odometer_km": 12_472, "place": DUMUL, "route_km": 52},
+         {"type": "depart", "ts": "2026-12-03T14:05:00+09:00", "odometer_km": 12_472, "place": DUMUL, "route_km": DUMUL_KM},
          {"type": "arrive", "ts": "2026-12-03T14:06:00+09:00", "odometer_km": 12_472, "seats": 4,
           "price": 300, "efficiency": EV_EFF},
          ev_open("2026-12-03T14:10:00+09:00", 12_472, seats=4, recent=DUMUL)],
@@ -236,7 +240,7 @@ def main() -> None:
         "L2", "실차: 출발 뒤 앱이 가려진 채 도착 → 다음 열기가 trip을 닫음(내연, 착석 2)",
         "도착 이벤트를 못 받아도 다음 정산이 trip을 닫고 목적지는 trip 장소. 110 ÷ 12.5 × 1,856 → 1만 6천, 1인 8천.",
         [ev_open("2026-11-08T09:00:00+09:00", 10_000, seats=2, price=gas, eff=12.5),
-         {"type": "depart", "ts": "2026-11-08T09:02:00+09:00", "odometer_km": 10_000, "place": DUMUL, "route_km": 52},
+         {"type": "depart", "ts": "2026-11-08T09:02:00+09:00", "odometer_km": 10_000, "place": DUMUL, "route_km": DUMUL_KM},
          ev_open("2026-11-08T18:30:00+09:00", 10_110, seats=2, recent=DUMUL, price=gas, eff=12.5)],
         "2026-11"))
     write(ROOT / "fixtures/ledger/L3.json", ledger_fixture(

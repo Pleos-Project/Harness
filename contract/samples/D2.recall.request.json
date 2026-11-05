@@ -5,7 +5,7 @@
   },
   "budget": {
     "fuel_type": "ev",
-    "usable_km": 93.0,
+    "usable_km": 50.0,
     "margin_km": 50.0,
     "efficiency": 5.27,
     "price_per_unit": 300,
