@@ -21,17 +21,8 @@ jobs:
           git diff --exit-code fixtures contract/samples
           test -z "$(git status --porcelain fixtures contract/samples)"
 
-  app-shared:
-    name: app/shared (JS 엔진 = 같은 fixtures)
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with: { node-version: "22" }
-      - run: node --test "app/shared/test/*.test.js"
-
   app-android:
-    name: app/android (권한 대조 · 빌드 · 단위 테스트)
+    name: app/android (권한 대조 · 빌드 · 엔진 fixture 대조)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -42,7 +33,7 @@ jobs:
       - uses: actions/setup-java@v4
         with: { distribution: temurin, java-version: "21" }
       - uses: gradle/actions/setup-gradle@v4   # wrapper jar 검증 포함
-      - name: assembleDebug · test
+      - name: assembleDebug · test (FixturesTest = Kotlin 엔진이 서버와 같은 fixtures를 통과하는지)
         working-directory: app/android
         run: |
           chmod +x gradlew

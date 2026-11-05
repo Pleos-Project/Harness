@@ -1,12 +1,12 @@
 """차곡 추정 엔진 — 수식의 기준 구현(Python).
 
 기준: 서버·추정 엔진 PRD v0.1 4절, 기능 명세서 v0.4, PRD v1.2 5-3(표기)·5-4(계산).
-앱은 같은 수식을 app/shared/chagok-engine.js 로 갖는다. 둘 다 fixtures/ 를 통과해야 하고,
-이 파일을 바꾸면 `make fixtures` 로 fixture를 다시 만들고 JS도 같은 PR에서 고친다.
+앱은 같은 수식을 Kotlin(app/android/app/src/main/java/com/mist/pleos_app/engine/Engine.kt·Ledger.kt)으로 갖는다. 둘 다 fixtures/ 를 통과해야 하고,
+이 파일을 바꾸면 `make fixtures` 로 fixture를 다시 만들고 Kotlin도 같은 PR에서 고친다.
 
-포팅 규칙(JS와 숫자가 1원까지 같게):
+포팅 규칙(Kotlin과 숫자가 1원까지 같게):
 - 반올림은 round_half_up / round_to / round1 만 쓴다. 파이썬 내장 round()는 은행가 반올림이라 쓰지 않는다.
-- 나눗셈·곱셈 순서를 JS와 똑같이 적는다(부동소수 결과가 순서에 따라 달라진다).
+- 나눗셈·곱셈 순서를 Kotlin과 똑같이 적는다(부동소수 결과가 순서에 따라 달라진다).
 
 단위: 거리 km, 금액 원(정수), 전비 km/kWh, 연비 km/L(내연 SDK값 L/100km는 l_per_100km_to_km_per_l로 환산).
 """

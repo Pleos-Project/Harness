@@ -2,8 +2,9 @@
 
 검사 대상
 - fixtures/**/*.json, contract/samples/*.json 안의 화면 문구 필드(text·*_text·reason·card)
-- design/components/*.html 의 보이는 글자
-- app/ 아래 .html·.js (앱이 이관되면 자동으로 포함)
+- design/**/*.html, app/**/*.html 의 보이는 글자
+- app/**/res/values*/strings.xml 의 문자열 (Compose 화면 문구)
+- app/**/*.kt 의 문자열 리터럴(주석 제외, 테스트 폴더 제외) — 엔진 문구 템플릿·화면 코드
 
 사용: python scripts/lint_copy.py   (문제 있으면 exit 1)
 docs/ 는 검사하지 않는다(금지 문구를 '하지 않는 것'으로 설명하는 문서라서).
@@ -67,6 +68,37 @@ class Text(HTMLParser):
             self.parts.append(data.strip())
 
 
+def is_test_path(p: Path) -> bool:
+    parts = set(p.relative_to(ROOT).parts)
+    return bool(parts & {"test", "androidTest", "build"})
+
+
+def xml_strings(p: Path):
+    """strings.xml 의 <string>·<string-array>/<item>·<plurals>/<item> 글자."""
+    import xml.etree.ElementTree as ET
+    root = ET.parse(p).getroot()
+    for el in root:
+        name = el.get("name", "?")
+        if el.tag == "string":
+            yield name, "".join(el.itertext())
+        elif el.tag in ("string-array", "plurals"):
+            for i, item in enumerate(el.findall("item")):
+                yield f"{name}[{i}]", "".join(item.itertext())
+
+
+# 문자열 리터럴과 주석을 한 번에 훑고 리터럴만 남긴다("https://…" 안의 //를 주석으로 보지 않게)
+KT_TOKEN = re.compile(r'"""[\s\S]*?"""|"(?:\\.|[^"\\\n])*"|//[^\n]*|/\*[\s\S]*?\*/')
+
+
+def kotlin_literals(src: str):
+    for m in KT_TOKEN.finditer(src):
+        tok = m.group(0)
+        if tok.startswith(("//", "/*")):
+            continue
+        body = tok[3:-3] if tok.startswith('"""') else tok[1:-1]
+        yield src.count("\n", 0, m.start()) + 1, body
+
+
 def check(where: str, s: str, rules) -> list[str]:
     return [f"{where}: {msg}\n    → {s}" for rx, msg in rules if rx.search(s)]
 
@@ -82,8 +114,16 @@ def main() -> int:
         t.feed(p.read_text(encoding="utf-8"))
         for s in t.parts:
             problems += check(p.relative_to(ROOT).as_posix(), s, FORBIDDEN + COPY_RULES)
+    for p in sorted(ROOT.glob("app/**/res/values*/strings.xml")):
+        for name, s in xml_strings(p):
+            problems += check(f"{p.relative_to(ROOT).as_posix()}#{name}", s, FORBIDDEN + COPY_RULES)
+    for p in sorted(ROOT.glob("app/**/*.kt")):
+        if is_test_path(p):
+            continue
+        for line, s in kotlin_literals(p.read_text(encoding="utf-8")):
+            problems += check(f"{p.relative_to(ROOT).as_posix()}:{line}", s, FORBIDDEN + COPY_RULES)
     for p in sorted(ROOT.glob("app/**/*.js")):
-        if "node_modules" in p.parts or "/test/" in p.as_posix():
+        if "node_modules" in p.parts or is_test_path(p) or p.parent.name == "chagok" and p.name == "engine.js":
             continue
         for i, line in enumerate(p.read_text(encoding="utf-8").splitlines(), 1):
             problems += check(f"{p.relative_to(ROOT).as_posix()}:{i}", line, FORBIDDEN)

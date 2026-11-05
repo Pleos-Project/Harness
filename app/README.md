@@ -1,10 +1,12 @@
 # app/ — 차 앱
 
 ```
-app/android/                    안드로이드 프로젝트. 지금은 빌드 환경 + 빈 화면뿐, 앱 기능은 여기에 짓는다
-app/shared/chagok-engine.js     엔진 JS (server/chagok/engine.py·cards.py 포팅). 브라우저 전역 ChagokEngine / Node require
-app/shared/test/*.test.js       fixtures/ 대조 테스트 — node --test "app/shared/test/*.test.js"
+app/android/                                                안드로이드 프로젝트(Kotlin). 앱 기능은 여기에 짓는다
+app/android/app/src/main/java/com/mist/pleos_app/engine/    Kotlin 엔진 (server/chagok/engine.py·cards.py 포팅)
+app/android/app/src/test/.../engine/FixturesTest.kt         fixtures/ 대조 JUnit — cd app/android && ./gradlew test
 ```
+
+> **Compose 전환 중(June, ③ PR):** 아래 1절의 WebView 행, 3절 서버 호출, 2절 끝의 `--u`·localStorage 설명은 ③에서 Compose 기준으로 다시 쓴다. 엔진(2절 표)은 이미 Kotlin이다.
 
 H_Mate(github.com/june0103/H_Mate)는 June의 실험 레포로, 참고용이다. 레포를 통째로 옮기지 않는다. 그 안의 차곡 데모 화면·브리지(`ChagokBridge.kt`)를 가져다 쓸지는 June이 판단한다. 빌드 환경·디자인 가이드 토큰·콘솔 기어 경로·SDK 동작 메모만 이 레포로 가져왔다(아래 1·4절, `design/tokens.css`, `scripts/replay.sh`).
 
@@ -20,26 +22,27 @@ H_Mate(github.com/june0103/H_Mate)는 June의 실험 레포로, 참고용이다.
 
 ```bash
 cd app/android
-./gradlew assembleDebug                                            # 엔진 JS가 assets/chagok/engine.js로 복사된다
+./gradlew assembleDebug test                                       # 상수·데모 후보가 assets/data/로 복사되고 엔진 fixture 대조
 adb install -r -g app/build/outputs/apk/debug/app-debug.apk        # -g: 권한 미리 부여(에뮬)
 ```
 **검증 상태:** 하네스를 만든 PC에는 JDK·Android SDK가 없어 빌드를 돌려 보지 못했다. 값은 June PC에서 빌드되던 H_Mate와 같다. 첫 확인은 CI `app-android` job이다.
 `applicationId`는 June `App` 레포와 같은 `com.mist.pleos_app`이고, App Market 등록 전에 확정한다(DECISIONS 열린 결정 1). 빌드 버전을 App 레포 값(AGP 9.4.1 등)으로 올릴지는 열린 결정 21.
 
-## 2. 엔진을 WebView에서 쓰기
-빌드 때 `syncChagokEngine` 태스크가 `app/shared/chagok-engine.js`를 `assets/chagok/engine.js`로 복사한다(사본은 커밋하지 않음). 페이지에서 `<script src="chagok/engine.js"></script>` → `window.ChagokEngine`.
-오프라인 데모 모드는 `fixtures/candidates_demo.json`의 `candidates`를 앱에 넣고 `ChagokEngine.createDemoServer({ candidates })`를 쓴다. 온라인 응답과 같은 문구가 나오는 건 node 테스트가 보장한다.
+## 2. Kotlin 엔진 쓰기 (`com.mist.pleos_app.engine`)
+계산은 전부 엔진이 한다. 화면 코드에 금액·거리 수식을 적지 않는다. 엔진이 서버와 같은 숫자를 내는지는 `FixturesTest`가 `fixtures/`로 대조한다.
+상수(차종 표·기본 단가)와 데모 후보는 빌드 때 `syncChagokData`가 `fixtures/`에서 `assets/data/constants.json`·`candidates_demo.json`으로 복사한다(사본은 커밋하지 않음). 앱에서는 `parseConstants(assets 문자열)`·`parseCandidates(…)`로 읽는다.
 
 | 기능 | 함수 | 명세 |
 |---|---|---|
 | 잔고·범위(로컬) | `vehicleInputs` → `computeRange` | F1·F2, AC-F1-1·2·5, AC-F2-1·2·3 |
-| 서버 요청 만들기 | `cardsRequest` (원시 차량값 대신 `budget` 파생값) | F5, `contract/openapi.yaml` |
-| 오프라인 데모·서버 실패 fallback | `createDemoServer({candidates}).cards(req) / .swap(sid)` — 서버와 같은 응답 | AC-C-3·AC-F5-7·AC-F5-8 |
+| 서버 요청 만들기 | `cardsRequest(...).toJson()` (원시 차량값 대신 `budget` 파생값) | F5, `contract/openapi.yaml` |
+| 서버 응답 읽기 | `parseCardsResponse(json)` — 온라인에서는 `display` 문구 그대로 | F5 |
+| 오프라인 데모·서버 실패 fallback | `DemoServer(candidates).cards(req)` · `.swap(sessionId)` — 서버와 같은 응답 | AC-C-3·AC-F5-7·AC-F5-8 |
 | 충전 직후 | `chargeAmount` | F9, AC-F9-1 |
 | 정산·도착·핀·월 합계(로컬 장부) | `ledgerStep(state, event)` · `monthSummary` | F8·F10·F17 |
-| 일러스트 변형 | `illustrationPath(theme, id, n)` | design/RULES.md 3절 |
+| 일러스트 변형 | `illustrationName(theme, placeId, n)` → `"<theme>-<n>"` | design/RULES.md 3절 |
 
-장부 이벤트는 3개다: `open`(앱 실행·복귀, 기어 P) / `depart`(출발 1탭) / `arrive`(기어 P + 운전석 문, `onDestinationArrived`). state는 JSON이라 localStorage에 그대로 넣는다.
+장부 이벤트는 3개다: `LedgerEvent.Open`(앱 실행·복귀, 기어 P) / `Depart`(출발 1탭) / `Arrive`(기어 P + 운전석 문, `onDestinationArrived`). state는 `toJson()`/`parseLedgerState()`로 문자열 저장한다(저장소는 ③에서 Room·DataStore 중 June이 정함).
 디자인 가이드 크기 단위(`--u`)는 페이지 시작 때 `1 / devicePixelRatio px`로 맞춘다(`assets/index.html` 참고).
 
 ## 3. 서버 호출 — June 결정 필요

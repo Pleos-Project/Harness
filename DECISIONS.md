@@ -15,7 +15,7 @@
 | 11/5 | 천 원 단위 | 반올림 | 제안 | [11/7 결정] 제안값 |
 | 11/5 | 배지 재계산 | 온라인: 같은 session_id로 /v1/cards 재호출(1초 디바운스). 오프라인: 데모 고정 모드 | 제안 | [11/7 결정] 제안값 |
 | 11/5 | F9 충전 증가분 | SOC 기준 | 제안 | [11/7 결정] 제안값 |
-| 11/5 | 구현 형태 | 11/15까지 WebView 유지, 네이티브는 1차 결과 후 | 제안 | [11/7 결정] 제안값 |
+| 11/5 | 구현 형태 | ~~11/15까지 WebView 유지, 네이티브는 1차 결과 후~~ → **June 제안: Jetpack Compose**(엔진은 아래 '앱 엔진'대로 Kotlin) | 제안 → 11/7 안건 | [11/7 결정] 제안값, June 11/5 슬랙 |
 | 11/5 | 동점 처리 | 점수 같으면 "반경의 절반쯤 쓰는 곳" 우선 | 제안 | cards.py sort_ranked |
 | 11/5 | D5 | PT와 같은 EV 조건(5.27km/kWh·300원) → 132km ≈ 8천 원 | 제안 | fixtures/cards/D5.json, 대표 문구는 열린 결정 7 |
 | 11/5 | 계약: 요청 | /v1/cards 요청 = origin + **budget**(usable_km·margin_km·efficiency·price_per_unit·fuel_type 파생값) + 프리셋·인원·테마·최근 방문. 잔량·주행가능거리 원시값은 보내지 않고, 모르는 필드는 422 | 제안(11/7 인터페이스 합의) | PRD 5-2·7-1. 명세 9절 `radius_km`만으로는 서버가 배지(빠듯·여유)·연료비를 못 냄 |
@@ -29,11 +29,11 @@
 | 11/5 | 장부: 열기가 trip을 닫음 | 진행 중 trip이 있으면 다음 정산이 trip을 닫고 목적지 = trip 장소(명세 F10 "건너뜀" 대신 F8 "F10 정산 또는 도착 때 닫힘") | 제안 → 열린 결정 16 | 실차는 도착 때 앱이 가려져 arrive 이벤트를 못 받음 → trip이 영원히 열림 |
 | 11/5 | 장부: 주행거리 감소 | 정산 없이 스냅샷을 지금 값으로 다시 잡음 | 제안 | 콘솔 초기화 후 정산이 멈추는 것 방지(fixtures/ledger/L5) |
 | 11/5 | 휘발유 기본 단가 | 1,856원/L (오피넷 전국 주간 평균 10/25~29) | 제안 → 열린 결정 17 | 명세 S1 데모값 1,680과 다름 |
-| 11/5 | 앱 엔진 | `app/shared/chagok-engine.js` = Python 엔진 포팅. 같은 fixtures를 CI에서 둘 다 통과 | 제안 | "수식은 engine.py에만"은 앱 로컬 계산·오프라인 모드 때문에 지킬 수 없음 |
-| 11/5 | 오프라인 데모 | `createDemoServer` = 서버와 같은 순위·스택·교체. 서버 실패 fallback ②에도 사용 | 제안 | AC-C-3·AC-F5-7·AC-F5-8 |
+| 11/5 | 앱 엔진 | **Kotlin**(`app/android/app/src/main/java/com/mist/pleos_app/engine/`) = Python 엔진 포팅. 같은 fixtures를 CI에서 둘 다 통과(`FixturesTest`). JS 엔진(`app/shared/`)은 은퇴 | 확정 | 슬랙 11/5 효성·June(A안). B안(javascriptengine)은 Pleos WebView의 JS 격리 지원 미확인·비동기라 제외 |
+| 11/5 | 오프라인 데모 | Kotlin `DemoServer` = 서버와 같은 순위·스택·교체. 서버 실패 fallback ②에도 사용. 후보·상수는 빌드 때 `fixtures/` → `assets/data/`(`syncChagokData`) | 제안 | AC-C-3·AC-F5-7·AC-F5-8 |
 | 11/5 | fixture 추가 | D7~D10(앱 로컬 경계·내연), L1~L5(장부), T10을 "1km → 1천 원 미만"으로 교체(핀 중복은 L3) | 제안 | 하네스 추가분, D1~D6·T1~T9 번호는 엔진 PRD 그대로 |
 | 11/5 | H_Mate | 레포를 옮기지 않음. 빌드 환경(Pleos SDK 저장소·버전·툴체인·SDK 레벨)·디자인 가이드 토큰·콘솔 기어 경로·SDK 동작 메모만 가져옴 → `app/android/`, `design/tokens.css`, `scripts/replay.sh`, `app/README.md` 4절 | 확정 | 하네스 정비(11/5). H_Mate는 June 실험 레포(참고용) |
-| 11/5 | 디자인 토큰 | Pleos Connect UI 가이드 값(H_Mate 구현). 크기 = 가이드 px × `--u`, 야간 기본 + `prefers-color-scheme`, 배지 = 색 바탕 + 대비 계산한 글자색, 일러스트 `<theme>-<n>.svg` | 제안(값 확정은 디자이너) | design/RULES.md 1절 |
+| 11/5 | 디자인 토큰 | Pleos Connect UI 가이드 값(H_Mate 구현). 크기 = 가이드 px × `--u`, 야간 기본 + `prefers-color-scheme`, 배지 = 색 바탕 + 대비 계산한 글자색, 일러스트 `<theme>-<n>.svg` | 제안(값 확정은 디자이너). Compose 전환 시 `--u`·`prefers-color-scheme` 부분은 ④ 디자인 규칙 PR에서 dp·`isSystemInDarkTheme()`로 | design/RULES.md 1절 |
 | 11/5 | 폰트 | Asta Sans 파일은 넣지 않고 글꼴 목록 맨 앞에만 | 확정 | 심사 기준에 글꼴 지정 없음, Pleos 시스템 UI 폰트 |
 | 11/5 | 레포 | `Pleos-Project/Harness` 비공개 모노레포(서버·앱·디자인·fixture 한 곳). 앱도 여기 `app/android/`에서 개발 | 확정 | 하네스 정비(11/5). `Pleos-Project/App`은 빈 템플릿(11/5 기준) |
 | 11/5 | 브랜치 | `develop`(기본)·`main`(릴리스)·`feature/*`·`fix/*`, PR로만 머지 | 확정 | June이 `App` 레포에 정한 CONTRIBUTING 그대로 |
@@ -47,7 +47,7 @@
 | # | 항목 | 선택지 (하네스 현재 기본값 **굵게**) | 담당 | 기한 |
 |---|---|---|---|---|
 | 1 | applicationId | **`com.mist.pleos_app`(June App 레포 값)** / 다른 값 | 명준·June | App Market 등록 전 |
-| 2 | 서버 호출 경로 | **Kotlin 브리지** / JS fetch + HTTPS 서버 | June | 11/7 |
+| 2 | ~~서버 호출 경로~~ | **해결(11/5)**: Compose 전환으로 Kotlin HTTP 직접 호출, 개발 빌드만 `10.0.2.2` cleartext 허용(June 제안). 구현 형태가 11/7에 뒤집히면 다시 연다 | June | — |
 | 3 | 서버 배포 | **PT는 데모 고정 모드 기본, 서버는 로컬 PC** / HTTPS 도메인 배포 | 효성 | 11/10 |
 | 4 | 계약 변경(budget) 합의 | **위 '계약: 요청'안** / 명세 9절 radius_km안 + 보완 | 효성·June | 11/7 |
 | 5 | 테마·프리셋이 필터인가 | **필터(경계)** / 점수 가산만 | 명준 | 11/7 |

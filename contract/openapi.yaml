@@ -12,7 +12,7 @@ info:
     - 서버는 모르는 필드를 422로 거절한다(실수로 원시값이 실려도 받지 않음).
     - 세션은 서버 메모리 30분, 디스크·로그에 남기지 않는다.
 
-    기준 구현: server/chagok/engine.py·cards.py, 앱 오프라인 데모: app/shared/chagok-engine.js.
+    기준 구현: server/chagok/engine.py·cards.py, 앱 로컬·오프라인 데모: app/android/app/src/main/java/com/mist/pleos_app/engine/(Kotlin, FixturesTest로 대조).
     기대값: fixtures/cards/D*.json. 샘플: contract/samples/ (gen_fixtures.py가 생성, 손으로 고치지 않음).
     필드가 바뀌면 이 파일 · 엔진 두 벌 · fixtures 를 같은 PR에서 바꾼다.
 servers:

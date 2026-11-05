@@ -2,7 +2,7 @@
 
 엔진(server/chagok/*.py)이나 상수(fixtures/constants.json)·후보(fixtures/candidates_demo.json)가 바뀌면:
     python scripts/gen_fixtures.py        (= make fixtures)
-서버 pytest와 앱 node 테스트(app/shared/test)가 같은 파일을 읽는다. CI는 재생성 후 diff가 없어야 통과한다.
+서버 pytest와 앱 JUnit(app/android/app/src/test/.../FixturesTest)이 같은 파일을 읽는다. CI는 재생성 후 diff가 없어야 통과한다.
 
 fixture 종류
 - cards/D*.json   app_local(앱 로컬 E1 기대값) → request(앱이 보낼 요청) → expected(서버·오프라인 데모 응답)
