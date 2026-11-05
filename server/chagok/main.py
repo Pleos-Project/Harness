@@ -1,4 +1,4 @@
-"""차곡 서버. 앱이 부르는 건 /v1/cards, /v1/cards/swap 둘뿐.
+"""차곡 서버. 앱이 부르는 건 /v1/cards, /v1/cards/swap, /v1/prices(평균 단가, 읽기 전용).
 /v1/range, /v1/settle 은 검증용 참조 구현(앱 로컬 계산과 fixture 대조용) — 앱은 부르지 않는다.
 
 모드: 요청에 demo_seed가 있으면 데모 고정(후보 = fixtures, 네트워크 없음),
@@ -15,11 +15,12 @@ import time
 from contextlib import asynccontextmanager
 from typing import Literal
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from pydantic import BaseModel, ConfigDict, Field
 
 from . import engine as E
 from . import live
+from . import prices as P
 from . import routes as R
 from . import sources as S
 from .cards import SessionStore, build_cards, few_hint, load_constants, load_demo_candidates, swap
@@ -43,6 +44,7 @@ INDEX = live.CandidateIndex()
 POOLS = live.LivePools()
 ROUTE_CACHE = R.RouteCache()
 KAKAO = R.kakao_fetcher(ENV["KAKAO_REST_API_KEY"], timeout=live.ROUTE_TIMEOUT_S) if ENV.get("KAKAO_REST_API_KEY") else None
+PRICES = P.PriceReader()  # 오피넷 전국 평균(크론 KST 04:20 갱신). DB 없으면 /v1/prices 503
 
 Theme = Literal["sea", "lake", "river", "mountain", "park", "city", "island", "drive"]
 
@@ -115,6 +117,23 @@ def health() -> dict:
 
 def _ms(t0: float) -> int:
     return int((time.perf_counter() - t0) * 1000)
+
+
+@app.get("/v1/prices")
+def prices_latest(request: Request) -> dict:
+    """오피넷 전국 평균 단가(읽기 전용). 앱은 사용자 단가가 없을 때 이 값을 '평균 단가'(price_source=default)로 쓴다.
+    입력이 없다. 쿼리 문자열이 붙으면 422 — /v1/cards 의 extra="forbid"처럼 원시 차량값이 실려 와도 받지 않는다(PRD 5-2).
+    아직 한 번도 못 받았으면 503 → 앱은 내장 기본값(fixtures/constants.json)."""
+    t0 = time.perf_counter()
+    if request.query_params:
+        log("prices", status=422, ms=_ms(t0), err="unexpected_query")
+        raise HTTPException(status_code=422, detail={"error": "unexpected_query"})
+    res = PRICES.public()
+    if res is None:
+        log("prices", status=503, ms=_ms(t0), err="prices_not_ready")
+        raise HTTPException(status_code=503, detail={"error": "prices_not_ready"})
+    log("prices", status=200, ms=_ms(t0), trade_dt=res["trade_dt"])
+    return res
 
 
 @app.post("/v1/cards")
