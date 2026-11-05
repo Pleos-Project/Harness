@@ -7,9 +7,10 @@
 ## 실행
 ```
 pip install -e "server[dev]"          # 처음 한 번 (Python 3.12+)
+cp .env.example .env                  # 외부 API 키 자리 (TourAPI 등). .env 는 커밋되지 않음
 make check                            # PR 전에: 서버 pytest + 문구 검사 (빠름, JDK 없어도 됨)
 make check-app                        # 앱·엔진을 바꿨으면: 빌드 + Kotlin 엔진 fixture 대조 (JDK 21)
-make dev                              # 서버 http://localhost:8000 (에뮬에서 http://10.0.2.2:8000)
+make dev                              # 서버 http://localhost:8000 (에뮬에서 http://10.0.2.2:8000). 배포는 deploy/README.md
 adb forward tcp:8088 tcp:8088 && make replay   # Virtual Console로 PT 6단계 주입
 ```
 `make`가 없으면(윈도우): `cd server && python -m pytest -q`, `python scripts/lint_copy.py`, 앱은 `cd app/android && gradlew.bat assembleDebug test`.
@@ -20,6 +21,7 @@ adb forward tcp:8088 tcp:8088 && make replay   # Virtual Console로 PT 6단계 �
 | 경로 | 내용 | 주인 |
 |---|---|---|
 | `server/` | FastAPI. `chagok/engine.py`(수식)·`cards.py`(순위·세션)가 기준 구현. `tests/`는 fixture 대조 + 표기 규칙 불변식 | 효성 |
+| `deploy/` | 서버 배포(Lightsail + Docker + Caddy HTTPS + 크론). `deploy/README.md` | 효성 |
 | `fixtures/` | **기대값의 단일 출처.** `constants.json`(단가·차종·좌표·seed), `candidates_demo.json`, `cards/D*`, `settle/T*`, `ledger/L*`. 생성물이라 손으로 안 고침 | 효성 (June 리뷰) |
 | `contract/openapi.yaml`, `samples/` | 앱 ↔ 서버 계약. `samples/`는 생성물 | 효성 (June 리뷰) |
 | `contract/permissions.md` | 권한 신청 목록 = 매니페스트(AC-N-7) | June |

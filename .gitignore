@@ -3,8 +3,12 @@ __pycache__/
 .pytest_cache/
 .venv/
 .env
+.env.*
+!.env.example
 *.local.json
 server/*.egg-info/
+# 서버 캐시(TourAPI 후보 SQLite 등). 배포 서버는 /opt/chagok/data
+server/data/
 node_modules/
 # 빌드 때 fixtures/ 에서 복사되는 상수·데모 후보 (syncChagokData)
 app/android/**/src/main/assets/data/
