@@ -1,16 +1,16 @@
 {
   "id": "D2",
-  "title": "PT 3단계: SOC 35% + Remaining Range 143km — 같은 카드, 배지만 +1만",
-  "note": "같은 session_id로 재호출(1초 디바운스 1건). 반경 ≈ 36. 두물머리 왕복 104 > 가용 93 → +1만. 재호출 뒤 교체도 이 값 기준(expected_swaps).",
+  "title": "PT 3단계: SOC 35% + Remaining Range 100km — 같은 카드, 배지만 +1만",
+  "note": "같은 session_id로 재호출(1초 디바운스 1건). 반경 (100−50)÷2÷1.3 ≈ 19. 두물머리 왕복 74.4 > 가용 50 → +1만. 재호출 뒤 교체도 이 값 기준(expected_swaps).",
   "virtual_console": {
     "PUT /vehicle/ev-battery?field=soc&value=": 35,
-    "PUT /vehicle/odometer?remaining_range_m=": 143000
+    "PUT /vehicle/odometer?remaining_range_m=": 100000
   },
   "app_local": {
     "inputs": {
       "model": "ioniq5_lr",
       "level_pct": 35,
-      "remaining_range_m": 143000,
+      "remaining_range_m": 100000,
       "price": 300
     },
     "expected": {
@@ -19,12 +19,12 @@
       "efficiency": 5.27,
       "price_per_unit": 300,
       "price_source": "user",
-      "balance_km": 143.0,
+      "balance_km": 100.0,
       "balance_krw": 8000,
-      "balance_text": "배터리에 8천 원어치 · 약 143km",
+      "balance_text": "배터리에 8천 원어치 · 약 100km",
       "margin_km": 50.0,
-      "usable_km": 93.0,
-      "radius_km": 35.8,
+      "usable_km": 50.0,
+      "radius_km": 19.2,
       "range_source": "range_remaining",
       "zero_available": true
     }
@@ -36,7 +36,7 @@
     },
     "budget": {
       "fuel_type": "ev",
-      "usable_km": 93.0,
+      "usable_km": 50.0,
       "margin_km": 50.0,
       "efficiency": 5.27,
       "price_per_unit": 300,
@@ -52,7 +52,7 @@
   },
   "expected": {
     "session_id": "<session>",
-    "radius_km": 35.8,
+    "radius_km": 19.2,
     "candidates_in_range": 4,
     "hint": null,
     "picked": {
@@ -61,14 +61,14 @@
       "theme": "river",
       "lat": 37.5363,
       "lng": 127.314,
-      "route_km": 52,
-      "minutes": 70,
+      "route_km": 37.2,
+      "minutes": 42,
       "time_label": "75분 안",
       "cost": {
-        "fuel": 5920,
-        "toll": 0,
+        "fuel": 4235,
+        "toll": 3600,
         "parking": 2000,
-        "total": 7920,
+        "total": 9835,
         "per_person": null
       },
       "display": {
@@ -89,14 +89,14 @@
         "theme": "mountain",
         "lat": 37.4785,
         "lng": 127.1853,
-        "route_km": 15,
-        "minutes": 30,
+        "route_km": 15.7,
+        "minutes": 31,
         "time_label": "75분 안",
         "cost": {
-          "fuel": 1708,
+          "fuel": 1787,
           "toll": 0,
           "parking": 3000,
-          "total": 4708,
+          "total": 4787,
           "per_person": null
         },
         "display": {
@@ -116,14 +116,14 @@
         "theme": "park",
         "lat": 37.5444,
         "lng": 127.0374,
-        "route_km": 25,
-        "minutes": 45,
+        "route_km": 19.1,
+        "minutes": 37,
         "time_label": "75분 안",
         "cost": {
-          "fuel": 2846,
+          "fuel": 2175,
           "toll": 0,
           "parking": 3000,
-          "total": 5846,
+          "total": 5175,
           "per_person": null
         },
         "display": {
@@ -143,18 +143,18 @@
         "theme": "lake",
         "lat": 37.2842,
         "lng": 127.063,
-        "route_km": 20,
-        "minutes": 35,
+        "route_km": 20.1,
+        "minutes": 30,
         "time_label": "75분 안",
         "cost": {
-          "fuel": 2277,
-          "toll": 0,
+          "fuel": 2288,
+          "toll": 2000,
           "parking": null,
-          "total": 2277,
+          "total": 4288,
           "per_person": null
         },
         "display": {
-          "total_text": "5천 원 미만",
+          "total_text": "5천 원 안팎",
           "per_person_text": null,
           "zero_extra": true,
           "tight": false,
@@ -175,14 +175,14 @@
         "theme": "mountain",
         "lat": 37.4785,
         "lng": 127.1853,
-        "route_km": 15,
-        "minutes": 30,
+        "route_km": 15.7,
+        "minutes": 31,
         "time_label": "75분 안",
         "cost": {
-          "fuel": 1708,
+          "fuel": 1787,
           "toll": 0,
           "parking": 3000,
-          "total": 4708,
+          "total": 4787,
           "per_person": null
         },
         "display": {
