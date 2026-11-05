@@ -53,8 +53,8 @@ adb forward tcp:8088 tcp:8088 && make replay   # Virtual Console로 PT 6단계 �
 | 5 | BX 디자인 | — | 없음(가입하면 추가) | 직접 작업 없음. 내보낸 파일을 피그마·드라이브로 넘기면 명준이 `design/illustrations/`·`icons/`·`brand/`에 올리고, 커밋에 `Co-authored-by:`로 BX를 함께 적는다 | 로고, 테마 일러스트(8 × 3~4), 아이콘, 앞면·스택 카드 비주얼, 기록 지도, 키 컬러 |
 
 **시작점**
-- **효성**: `server/chagok/engine.py` 맨 위 포팅 규칙 → Kotlin `engine/Engine.kt` → `scripts/gen_fixtures.py` → `DECISIONS.md` 열린 결정 3·4·14·15·17
-- **June**: `app/README.md` → 빌드 환경(1절), 서버 호출 방식(3절) → 열린 결정 1·2·4·16·20·21
-- **명준**: `DECISIONS.md` 열린 결정 1·5~12·16·19 → `design/RULES.md`(Claude Code에 읽히고 `design/`에 PR, `cd design && python -m http.server`로 `preview.html` 확인)
+- **효성**: `server/chagok/engine.py` 맨 위 포팅 규칙 → Kotlin `engine/Engine.kt` → `scripts/gen_fixtures.py` → `DECISIONS.md` 열린 결정 4·14·15·17
+- **June**: `app/README.md` → 빌드 환경(1절), 서버 호출 방식(3절) → 열린 결정 1·4·16·20·21
+- **명준**: `DECISIONS.md` 열린 결정 1·5~9·11·12·16·19·22 → `design/RULES.md`(Claude Code에 읽히고 `design/`에 PR, `cd design && python -m http.server`로 `preview.html` 확인)
 - **영상**: `scripts/replay.sh pt` 단계별 기대 화면, 화면 구석 "시연용 값" 표기(AC-C-7) 유지
 - **BX**: `design/RULES.md` 3절의 파일 이름·크기 규칙대로 내보내 명준에게 전달 → 열린 결정 12·13
