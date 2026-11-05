@@ -69,4 +69,10 @@ Co-authored-by: <BX 디자이너 이름> <GitHub에 쓸 이메일>
 
 ## 5. 넘기는 방법
 - PR 제목 `design: <무엇>`. 리뷰는 June(연동) 1명.
+- PR 본문의 **"앱 반영 요청"** 절을 채운다(바뀐 조각·토큰, 새 `data-field`·`data-derived`, 앱에서 할 일).
+- **자동 반영:** `design/`을 바꾼 PR이 `develop`에 머지되면 `.github/workflows/design-handoff.yml`이 돈다. Claude Code가 그 변경과 "앱 반영 요청" 절을 읽고 `app/android`(Compose)에 반영해 `feature/design-apply-pr-<번호>` PR을 연다. 리뷰어는 June·효성이고 자동 머지는 하지 않는다.
+  - **화면 구조만** 맡는다(components·preview 등). 토큰(`tokens.json`·`tokens.css`)과 앱 테마(`ui/theme/`)는 토큰 생성 스크립트가 맡고, 반영 PR은 테마를 고치지 않는다(워크플로가 검사). 토큰만 바뀐 PR이면 Claude를 돌리지 않고 디자인 PR에 안내 코멘트만 남긴다. 생성 스크립트가 생기기 전까지 테마 반영은 June이 한다.
+  - 머지된 디자인만 반영한다. 리뷰 중인 시안은 반영하지 않는다.
+  - 한 방향이다. 반영 PR은 `design/`을 고치지 않는다(워크플로가 검사). 디자인 문제는 디자인 PR 코멘트로 넘긴다.
+  - 다시 돌리려면 Actions → design-handoff → Run workflow에서 디자인 PR 번호를 넣는다.
 - 피그마를 쓴다면 Variables·Component·프레임 이름(테마 키) 세 가지만 지키고, PR 또는 팀 채널에 "토큰 갱신"을 남기면 개발이 가져간다.

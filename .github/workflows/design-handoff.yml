@@ -1,0 +1,139 @@
+# 디자인 → 앱 자동 반영 (design/RULES.md 5절)
+#
+# design/ 를 바꾼 PR이 develop에 머지되면, Claude Code(GitHub Action)가 그 변경을 읽고
+# app/android 의 Compose 화면에 반영한 뒤 feature/design-apply-pr-<번호> 브랜치로 PR을 연다(리뷰 June·효성).
+# - 머지된 디자인만 반영한다(리뷰 중인 시안으로 앱 코드를 고치지 않음).
+# - 한 방향: 이 워크플로는 design/ 을 고치지 않는다. 디자인 문제는 디자인 PR 코멘트로 넘긴다.
+# - 자동 머지는 하지 않는다. 반영 PR은 사람이 CI 3개를 보고 머지한다.
+# - 이 워크플로는 화면 구조(components·preview 등)만 맡는다. 토큰(tokens.json·tokens.css)과
+#   앱 테마(ui/theme/)는 토큰 생성 스크립트가 맡는다. 토큰만 바뀐 PR이면 Claude를 돌리지 않는다.
+#
+# 준비(레포 관리자 1회):
+#   1. Claude GitHub App 설치: https://github.com/apps/claude → Pleos-Project → Harness 선택
+#      (앱 토큰으로 연 PR이라야 ci 워크플로가 돈다. GITHUB_TOKEN으로 연 PR은 CI가 안 돈다)
+#   2. 시크릿 하나 등록: CLAUDE_CODE_OAUTH_TOKEN(`claude setup-token`, Pro·Max 구독) 또는 ANTHROPIC_API_KEY
+# 다시 돌리기: Actions → design-handoff → Run workflow → 디자인 PR 번호 입력
+
+name: design-handoff
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [develop]
+    paths: ["design/**"]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: "반영할 디자인 PR 번호(머지된 것)"
+        required: true
+
+concurrency:
+  group: design-handoff   # 디자인 PR이 연달아 머지돼도 하나씩 차례로 반영
+  cancel-in-progress: false
+
+jobs:
+  apply:
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+      id-token: write   # Claude GitHub App 인증(OIDC)
+    env:
+      PR: ${{ github.event.pull_request.number || inputs.pr_number }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: develop
+          fetch-depth: 0
+
+      - name: 디자인 PR 정보 모으기
+        id: info
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh pr view "$PR" --json state,mergeCommit,baseRefOid,title -q '.state' | grep -qx MERGED \
+            || { echo "::error::PR #$PR 이 머지되지 않았다. 머지된 디자인만 반영한다."; exit 1; }
+          echo "merge=$(gh pr view "$PR" --json mergeCommit -q .mergeCommit.oid)" >> "$GITHUB_OUTPUT"
+          echo "branch=feature/design-apply-pr-$PR" >> "$GITHUB_OUTPUT"
+          if git ls-remote --exit-code origin "refs/heads/feature/design-apply-pr-$PR" >/dev/null; then
+            echo "::error::feature/design-apply-pr-$PR 브랜치가 이미 있다. 반영 PR을 먼저 정리하고 다시 돌린다."; exit 1
+          fi
+          # 화면 구조 변경이 있는지: design/ 안에서 토큰 파일을 뺀 나머지가 하나라도 바뀌었나
+          screen=$(gh pr view "$PR" --json files -q '.files[].path' \
+            | grep '^design/' | grep -v -x -e 'design/tokens.json' -e 'design/tokens.css' || true)
+          if [ -z "$screen" ]; then
+            echo "screen=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "screen=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: 토큰만 바뀐 PR — 화면 반영 없이 안내만
+        if: steps.info.outputs.screen == 'false'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh pr comment "$PR" --body "토큰만 바뀐 PR이라 화면 자동 반영은 건너뛴다. 앱 테마는 토큰 생성 스크립트가 맡는다(design/RULES.md 5절)."
+
+      # 반영 결과를 빌드·테스트로 확인하려면 CI app-android 와 같은 환경이 필요하다
+      - if: steps.info.outputs.screen == 'true'
+        uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - if: steps.info.outputs.screen == 'true'
+        uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: "21" }
+      - if: steps.info.outputs.screen == 'true'
+        uses: gradle/actions/setup-gradle@v4
+      - if: steps.info.outputs.screen == 'true'
+        run: chmod +x app/android/gradlew
+
+      - if: steps.info.outputs.screen == 'true'
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          prompt: |
+            레포: ${{ github.repository }}
+            반영할 디자인 PR: #${{ env.PR }} (develop에 머지됨, 머지 커밋 ${{ steps.info.outputs.merge }})
+            작업 브랜치: ${{ steps.info.outputs.branch }} (develop에서 새로 만든다)
+
+            너는 차곡 앱의 안드로이드(Compose) 구현 담당 June을 돕는다. 디자이너(명준)가 design/ 을 바꿨고,
+            그 변경을 app/android 에 반영하는 PR을 하나 연다.
+
+            1. 규칙을 읽는다: CLAUDE.md, design/RULES.md, app/README.md, DECISIONS.md.
+            2. 무엇이 바뀌었는지 본다.
+               - `gh pr view ${{ env.PR }} --json title,body,files` — 본문의 "앱 반영 요청" 절이 작업 지시다.
+               - `git diff ${{ steps.info.outputs.merge }}^1 ${{ steps.info.outputs.merge }} -- design/`
+            3. `git switch -c ${{ steps.info.outputs.branch }}` 후 app/android 에만 반영한다.
+               - design/components/<name>.html·.css 는 시안이다. 같은 모양의 Composable을 만든다/고친다.
+                 기존 패키지 구조(ui/theme 등)를 따르고, 화면마다 @Preview(가로·세로·멀티윈도우 한 장)를 둔다.
+               - 색·글자·간격은 테마에서만 가져온다. 크기는 가이드 px → `48.gpx`, 글자는 `26.gsp`. 터치 영역 48처럼 dp 기준 값만 `.dp`.
+               - 너는 화면 구조만 맡는다. 토큰(design/tokens.json·tokens.css)과 앱 테마(ui/theme/)는 토큰 생성 스크립트 담당이라 고치지 않는다.
+                 시안이 테마에 아직 없는 토큰을 쓰면 가장 가까운 기존 테마 값을 쓰고 PR 본문 "확인 필요"에 적는다. 색·크기 값을 화면 코드에 직접 적지 않는다.
+               - `data-field` = 서버 응답 Card 필드(contract/openapi.yaml), `data-derived` = 앱이 엔진(engine 패키지)으로 만드는 값. 샘플 글자를 하드코딩하지 않는다.
+               - 화면 문구는 strings.xml. 표기 규칙(PRD 5-3)과 금지 문구를 지킨다.
+               - 주간/야간은 isSystemInDarkTheme(). 일러스트 SVG는 지금 단계에서 앱으로 옮기지 않는다(방식 미정).
+            4. 고치지 말 것: design/, docs/, fixtures/, contract/, server/, scripts/, .github/, app/android/app/src/main/java/com/mist/pleos_app/ui/theme/. 원시 차량값 서버 전송, 백그라운드 폴링, 권한 추가 금지.
+               시안이 모호하거나 앱 구조 결정이 필요하면 추측하지 말고 기본값으로 최소 구현만 하고 PR 본문 "확인 필요"에 적는다.
+            5. 확인: `app/android/gradlew -p app/android --no-daemon assembleDebug test` 와 `python scripts/lint_copy.py`.
+               실패하면 고쳐 본다. 끝내 실패하면 숨기지 말고 PR 본문에 그대로 적는다.
+            6. 커밋(한국어, 관련 AC 번호) → `git push -u origin ${{ steps.info.outputs.branch }}` →
+               `gh pr create --base develop --head ${{ steps.info.outputs.branch }} --reviewer june0103,hyos0415 --title "앱: 디자인 반영 — <디자인 PR 제목> (#${{ env.PR }})" --body-file <파일>`
+               본문은 .github/pull_request_template.md 의 절·체크리스트를 그대로 옮겨 채우고, 맨 위에 "디자인 PR #${{ env.PR }} 자동 반영"과 "확인 필요" 절을 둔다.
+               에뮬레이터 확인 체크는 비워 둔다(June이 확인).
+            7. 디자인 PR #${{ env.PR }} 에 반영 PR 링크를 코멘트한다(`gh pr comment`).
+               앱에 반영할 것이 없으면 PR을 만들지 않고 그 이유만 디자인 PR에 코멘트한다.
+          claude_args: |
+            --max-turns 80
+            --allowedTools "Read,Edit,Write,Glob,Grep,Bash(git:*),Bash(gh pr:*),Bash(app/android/gradlew:*),Bash(python scripts/lint_copy.py),Bash(ls:*),Bash(cat:*),Bash(mkdir:*)"
+
+      - name: 한 방향 확인 — 반영 브랜치가 design/·테마 등 금지 경로를 건드리지 않았는지
+        if: always() && steps.info.outputs.screen == 'true'
+        run: |
+          git fetch -q origin "${{ steps.info.outputs.branch }}" 2>/dev/null || { echo "반영 브랜치 없음(반영할 것이 없었거나 실패)"; exit 0; }
+          bad=$(git diff --name-only origin/develop...FETCH_HEAD -- design docs fixtures contract server scripts .github \
+            app/android/app/src/main/java/com/mist/pleos_app/ui/theme)
+          if [ -n "$bad" ]; then echo "::error::금지 경로 변경: $bad"; exit 1; fi
+          echo "금지 경로 변경 없음"
