@@ -1,0 +1,44 @@
+# docker build 컨텍스트(레포 루트)에서 뺄 것. deploy/Dockerfile 이 실제로 복사하는 건 server/·fixtures/ 뿐이다.
+# 키 파일(.env)은 어느 경로에 있든 컨텍스트에 들어가지 않게 한다(이미지에 키를 넣지 않는다, CLAUDE.md).
+.env
+.env.*
+**/.env
+**/.env.*
+*.pem
+**/*.pem
+*.key
+**/*.key
+
+# 저장소·CI·문서·앱(서버 이미지와 무관)
+.git
+.github
+.gitattributes
+app/
+design/
+docs/
+contract/
+scripts/
+Makefile
+*.md
+
+# 배포 스크립트·설정(이미지에 넣지 않는다)
+deploy/*.sh
+deploy/crontab
+deploy/Caddyfile
+deploy/compose.yaml
+
+# 서버 로컬 산출물
+server/data
+server/tests
+server/build
+**/*.egg-info
+**/__pycache__
+**/*.pyc
+.pytest_cache
+**/.pytest_cache
+.venv
+**/.venv
+*.sqlite3
+**/*.sqlite3
+*.local.json
+node_modules
