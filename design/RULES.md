@@ -2,11 +2,17 @@
 
 디자이너가 Claude Code로 HTML·CSS·SVG를 만들어 `design/`에 PR 한다. 이 파일을 Claude Code에 먼저 읽힌다.
 앱은 WebView라 여기 있는 조각이 거의 그대로 들어간다. 동작(JS)은 개발이 붙인다.
-피그마로만 작업한다면 4절만 지키고, 코드 변환은 개발(June)이 한다 — 어느 쪽으로 할지는 디자이너가 정한다(DECISIONS 열린 결정).
+피그마로만 작업한다면 4절만 지키고, 코드 변환은 개발(June)이 한다 — 어느 쪽으로 할지는 디자이너가 정한다(DECISIONS 열린 결정 12).
+
+| 영역 | 담당 |
+|---|---|
+| 토큰(`tokens.css`)·컴포넌트 조각(`components/`)·미리보기·이 규칙 | UI·UX 디자이너 명준 |
+| 테마 일러스트(`illustrations/`)·아이콘(`icons/`)·앱 아이콘(`brand/`)·키 컬러 | BX 디자이너 (GitHub 가입 전까지 명준이 대신 올림) |
+| 연동 리뷰(WebView에 그대로 들어가는지) | June |
 
 ## 1. 값은 전부 tokens.css 변수로 — 기준은 Pleos Connect UI Design Guide
 - 색·글자·간격은 `design/tokens.css`의 `--cg-*` 변수만. 하드코딩 금지.
-- 기준은 [Pleos Connect UI Design Guide](https://document.pleos.ai/docs/connect/guide/docs-design/Introduction/intro)의 Foundations(Colors·Typography)와 Basic button. 지금 값은 H_Mate(June)가 가이드에서 옮긴 것이고, 확정은 디자이너가 한다.
+- 기준은 [Pleos Connect UI Design Guide](https://document.pleos.ai/docs/connect/guide/docs-design/Introduction/intro)의 Foundations(Colors·Typography)와 Basic button. 지금 값은 H_Mate(June)가 가이드에서 옮긴 것이고, 확정은 명준이 한다(키 컬러는 BX와 함께).
 - **크기 단위:** 가이드 크기는 디스플레이 실제 픽셀이다 → `calc(가이드값 * var(--u))`. 글자는 `font: var(--cg-body-s)`처럼 타이포 토큰을 통째로 쓴다(Headline 60/56/48 · Title 40/36/32 · Body 30/28/26 · Label 24/20). 터치 영역(48)처럼 dp 기준 값만 그냥 px. CSS에는 `sp`가 없다.
 - **주간/야간:** 기본은 Dark, 시스템이 Light면 Light(`prefers-color-scheme`). 앱이 따로 할 일은 없다. `preview.html`의 버튼만 `data-theme`로 강제한다.
 - **대비 4.5:1**은 주간·야간 둘 다 계산해서 확인한다. 가이드 informative 색(초록·파랑·빨강)은 주간 바탕 위 글자색으로 쓰면 미달이라 배지는 색 바탕 + `--cg-badge-*-text`로 쓴다.
