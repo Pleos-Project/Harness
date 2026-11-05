@@ -6,7 +6,8 @@
 # - 한 방향: 이 워크플로는 design/ 을 고치지 않는다. 디자인 문제는 디자인 PR 코멘트로 넘긴다.
 # - 자동 머지는 하지 않는다. 반영 PR은 사람이 CI 3개를 보고 머지한다.
 # - 이 워크플로는 화면 구조(components·preview 등)만 맡는다. 토큰(tokens.json·tokens.css)과
-#   앱 테마(ui/theme/)는 토큰 생성 스크립트가 맡는다. 토큰만 바뀐 PR이면 Claude를 돌리지 않는다.
+#   앱 테마(ui/theme/)는 토큰 생성 스크립트가 맡는다. components·preview.html이 안 바뀐 PR이면 돌지 않는다.
+# - 마지막 "한 방향 확인"은 반영 PR이 열린 뒤에 돈다. 막지는 못하고 실패(빨간 표시)로 알린다.
 #
 # 준비(레포 관리자 1회):
 #   1. Claude GitHub App 설치: https://github.com/apps/claude → Pleos-Project → Harness 선택
@@ -20,7 +21,8 @@ on:
   pull_request:
     types: [closed]
     branches: [develop]
-    paths: ["design/**"]
+    # 화면 구조 시안만. 토큰(tokens.*)은 생성 스크립트, 규칙 문서(*.md)는 반영 대상 아님. 일러스트는 방식 정해지면 추가
+    paths: ["design/components/**", "design/preview.html", "!design/**/*.md"]
   workflow_dispatch:
     inputs:
       pr_number:
@@ -44,6 +46,7 @@ jobs:
     env:
       PR: ${{ github.event.pull_request.number || inputs.pr_number }}
     steps:
+      # 첫 실행 때 확인: 반영 PR이 기본 GITHUB_TOKEN으로 열려 CI 3개가 안 돌면 persist-credentials: false 검토
       - uses: actions/checkout@v4
         with:
           ref: develop
@@ -61,21 +64,18 @@ jobs:
           if git ls-remote --exit-code origin "refs/heads/feature/design-apply-pr-$PR" >/dev/null; then
             echo "::error::feature/design-apply-pr-$PR 브랜치가 이미 있다. 반영 PR을 먼저 정리하고 다시 돌린다."; exit 1
           fi
-          # 화면 구조 변경이 있는지: design/ 안에서 토큰 파일을 뺀 나머지가 하나라도 바뀌었나
+          # 화면 구조 변경이 있는지(트리거 paths와 같은 기준 — 수동 실행에도 적용)
           screen=$(gh pr view "$PR" --json files -q '.files[].path' \
-            | grep '^design/' | grep -v -x -e 'design/tokens.json' -e 'design/tokens.css' || true)
+            | grep -E '^design/(components/|preview\.html$)' | grep -v '\.md$' || true)
           if [ -z "$screen" ]; then
             echo "screen=false" >> "$GITHUB_OUTPUT"
           else
             echo "screen=true" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: 토큰만 바뀐 PR — 화면 반영 없이 안내만
+      - name: 화면 변경 없음 — 건너뜀
         if: steps.info.outputs.screen == 'false'
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          gh pr comment "$PR" --body "토큰만 바뀐 PR이라 화면 자동 반영은 건너뛴다. 앱 테마는 토큰 생성 스크립트가 맡는다(design/RULES.md 5절)."
+        run: echo "PR #$PR 에 design/components·preview.html 변경이 없어 화면 자동 반영을 건너뛴다(토큰은 생성 스크립트 담당)."
 
       # 반영 결과를 빌드·테스트로 확인하려면 CI app-android 와 같은 환경이 필요하다
       - if: steps.info.outputs.screen == 'true'
@@ -125,9 +125,11 @@ jobs:
                에뮬레이터 확인 체크는 비워 둔다(June이 확인).
             7. 디자인 PR #${{ env.PR }} 에 반영 PR 링크를 코멘트한다(`gh pr comment`).
                앱에 반영할 것이 없으면 PR을 만들지 않고 그 이유만 디자인 PR에 코멘트한다.
+          # 허용 명령을 좁혀 실제로 막는다(무료 요금제라 브랜치 보호가 없음):
+          # gh pr merge·develop 푸시 불가, push는 이 반영 브랜치 하나만
           claude_args: |
             --max-turns 80
-            --allowedTools "Read,Edit,Write,Glob,Grep,Bash(git:*),Bash(gh pr:*),Bash(app/android/gradlew:*),Bash(python scripts/lint_copy.py),Bash(ls:*),Bash(cat:*),Bash(mkdir:*)"
+            --allowedTools "Read,Edit,Write,Glob,Grep,Bash(git status:*),Bash(git diff:*),Bash(git log:*),Bash(git switch:*),Bash(git add:*),Bash(git commit:*),Bash(git push -u origin ${{ steps.info.outputs.branch }}),Bash(gh pr view:*),Bash(gh pr create:*),Bash(gh pr comment:*),Bash(app/android/gradlew:*),Bash(python scripts/lint_copy.py),Bash(ls:*),Bash(cat:*),Bash(mkdir:*)"
 
       - name: 한 방향 확인 — 반영 브랜치가 design/·테마 등 금지 경로를 건드리지 않았는지
         if: always() && steps.info.outputs.screen == 'true'
