@@ -69,4 +69,13 @@ Co-authored-by: <BX 디자이너 이름> <GitHub에 쓸 이메일>
 
 ## 5. 넘기는 방법
 - PR 제목 `design: <무엇>`. 리뷰는 June(연동) 1명.
+- PR 본문의 **"앱 반영 요청"** 절을 채운다(바뀐 조각·토큰, 새 `data-field`·`data-derived`, 앱에서 할 일).
+- **자동 반영:** `design/`을 바꾼 PR이 `develop`에 머지되면 `.github/workflows/design-handoff.yml`이 돈다. Claude Code가 그 변경과 "앱 반영 요청" 절을 읽고 `app/android`(Compose)에 반영해 `feature/design-apply-pr-<번호>` PR을 연다. 리뷰어는 June·효성이고 자동 머지는 하지 않는다.
+  - **화면 구조만** 맡는다. `design/components/`·`design/preview.html`이 바뀐 PR에서만 돈다(`*.md`·토큰만 바뀐 PR은 돌지 않음, 일러스트는 방식이 정해지면 추가). 토큰(`tokens.json`·`tokens.css`)과 앱 테마(`ui/theme/`)는 토큰 생성 스크립트가 맡고, 반영 PR은 테마를 고치지 않는다. 생성 스크립트가 생기기 전까지 테마 반영은 June이 한다.
+  - Claude가 쓸 수 있는 명령은 좁혀 두었다: 머지(`gh pr merge`)·develop 푸시는 못 하고, 푸시는 그 반영 브랜치 하나만.
+  - 금지 경로(design/·테마 등) 검사는 CI `copy`(문구 검사) 잡이 반영 PR의 체크로 돌린다. 반영 PR에 빨간 X로 뜨고 커밋마다 다시 검사한다. 브랜치 보호가 없어 머지를 강제로 막지는 못하니, 리뷰 때 그 표시를 본다.
+  - 디자인 PR마다 따로 실행한다. 여러 개가 연달아 머지되면 반영 PR도 각각 생긴다(서로의 반영은 들어 있지 않으니 차례로 머지하며 충돌을 푼다).
+  - 머지된 디자인만 반영한다. 리뷰 중인 시안은 반영하지 않는다.
+  - 한 방향이다. 반영 PR은 `design/`을 고치지 않는다(워크플로가 검사). 디자인 문제는 디자인 PR 코멘트로 넘긴다.
+  - 다시 돌리려면 Actions → design-handoff → Run workflow에서 디자인 PR 번호를 넣는다.
 - 피그마를 쓴다면 Variables·Component·프레임 이름(테마 키) 세 가지만 지키고, PR 또는 팀 채널에 "토큰 갱신"을 남기면 개발이 가져간다.

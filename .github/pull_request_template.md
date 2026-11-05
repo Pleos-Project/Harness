@@ -7,6 +7,13 @@
 
 ## 확인 방법
 
+## 앱 반영 요청 (design/ PR만 — 다른 PR은 지우기)
+<!-- 머지되면 design-handoff 워크플로가 이 절을 작업 지시로 읽고 앱(Compose) 반영 PR을 자동으로 연다. 비우면 diff만 보고 반영한다. -->
+- 바뀐 조각·토큰:
+- 새로 생긴·바뀐 `data-field`·`data-derived`:
+- 앱에서 할 일(화면·상태·인터랙션):
+- 반영하지 않을 것(시안 전용·나중에):
+
 ## 체크리스트
 - [ ] base 브랜치가 `develop`인지 확인
 - [ ] `make check` 통과 (서버 pytest · 문구 검사), 앱·엔진을 바꿨으면 `make check-app`(또는 CI app-android)
