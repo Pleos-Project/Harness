@@ -203,3 +203,99 @@ def test_cli_refresh_and_show(monkeypatch, tmp_path, capsys):
     assert "1855.25" in out and "2026-11-05" in out and KEY not in out
     assert P.main(["prices", "show"]) == 0
     assert "B027 휘발유 1855.25원/L · 기준일 2026-11-05" in capsys.readouterr().out
+
+
+# ------------------------------------------------------------ GET /v1/prices (앱에 넘기는 값)
+def test_public_prices_rounds_half_up_to_won():
+    rows = {"B027": (1855.25, "2026-11-05"), "D047": (1841.77, "2026-11-05"), "B034": (2395.13, "2026-11-05")}
+    assert P.public_prices(rows) == {"gasoline": 1855, "diesel": 1842, "trade_dt": "2026-11-05", "source": "opinet"}
+    # .5는 올린다(내장 round()면 1854 → 짝수 쪽으로 내려간다)
+    assert P.public_prices({"B027": (1854.5, "2026-11-05")})["gasoline"] == 1855
+
+
+def test_public_prices_missing_product_is_null_and_oldest_trade_dt():
+    assert P.public_prices({"B027": (1800.0, "2026-11-05"), "D047": (1700.0, "2026-11-04")})["trade_dt"] == "2026-11-04"
+    only_gas = P.public_prices({"B027": (1800.0, "2026-11-05"), "K015": (1177.53, "2026-11-05")})
+    assert only_gas == {"gasoline": 1800, "diesel": None, "trade_dt": "2026-11-05", "source": "opinet"}
+
+
+def test_public_prices_none_when_no_gasoline_or_diesel():
+    assert P.public_prices({}) is None
+    assert P.public_prices({"B034": (2395.13, "2026-11-05")}) is None
+
+
+def _db_with_prices(path, rows):
+    c = sqlite3.connect(path)
+    P.ensure_schema(c)
+    P.refresh(c, lambda: rows, now="t")
+    c.close()
+    return path
+
+
+def test_reader_missing_db_is_none_and_not_created(tmp_path):
+    p = tmp_path / "nope" / "p.sqlite3"
+    assert P.PriceReader(p).public() is None
+    assert not p.exists() and not p.parent.exists()
+
+
+def test_reader_without_price_table_is_none_and_read_only(tmp_path):
+    p = tmp_path / "p.sqlite3"
+    sqlite3.connect(p).close()                       # 빈 DB(첫 refresh 전)
+    assert P.PriceReader(p).public() is None
+    c = sqlite3.connect(p)
+    assert c.execute("SELECT name FROM sqlite_master WHERE name='price'").fetchone() is None   # 표를 만들지 않음
+    c.close()
+
+
+def test_reader_reads_saved_prices(tmp_path):
+    p = _db_with_prices(tmp_path / "p.sqlite3", P.parse_avg_all(json.dumps(OK, ensure_ascii=False)))
+    assert P.PriceReader(p).public() == {"gasoline": 1855, "diesel": 1842, "trade_dt": "2026-11-05", "source": "opinet"}
+
+
+@pytest.fixture
+def api(tmp_path, monkeypatch):
+    from fastapi.testclient import TestClient
+
+    from chagok import main as M
+    p = tmp_path / "p.sqlite3"
+    monkeypatch.setattr(M, "PRICES", P.PriceReader(p))
+    return TestClient(M.app), p
+
+
+def test_get_prices_200_exact_shape(api):
+    client, p = api
+    _db_with_prices(p, P.parse_avg_all(json.dumps(OK, ensure_ascii=False)))
+    r = client.get("/v1/prices")
+    assert r.status_code == 200
+    assert r.json() == {"gasoline": 1855, "diesel": 1842, "trade_dt": "2026-11-05", "source": "opinet"}
+
+
+def test_get_prices_503_before_first_refresh(api):
+    client, p = api
+    r = client.get("/v1/prices")
+    assert r.status_code == 503 and r.json()["detail"]["error"] == "prices_not_ready"
+    assert not p.exists()
+
+
+@pytest.mark.parametrize("query", ["level_pct=80", "remaining_range_m=326000", "vin=KMH", "x"])
+def test_get_prices_rejects_any_query(api, query):
+    """원시 차량값(잔량·주행가능거리·VIN)이 쿼리로 실려 와도 받지 않는다(PRD 5-2) — /v1/cards 422와 같은 원칙."""
+    client, p = api
+    _db_with_prices(p, P.parse_avg_all(json.dumps(OK, ensure_ascii=False)))
+    r = client.get(f"/v1/prices?{query}")
+    assert r.status_code == 422 and r.json()["detail"]["error"] == "unexpected_query"
+
+
+def test_prices_is_read_only_endpoint(api):
+    client, _ = api
+    assert client.post("/v1/prices", json={}).status_code == 405
+
+
+def test_get_prices_log_has_no_price_body(api, capsys):
+    client, p = api
+    _db_with_prices(p, P.parse_avg_all(json.dumps(OK, ensure_ascii=False)))
+    capsys.readouterr()
+    client.get("/v1/prices")
+    out = capsys.readouterr().out
+    rec = json.loads([ln for ln in out.splitlines() if '"ev": "prices"' in ln][-1])
+    assert set(rec) == {"t", "ev", "status", "ms", "trade_dt"}

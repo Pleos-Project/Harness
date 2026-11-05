@@ -2,7 +2,7 @@
 
 PRD v1.3 7-3: 내연 단가 기본값은 오피넷 전국 평균을 하루 1회 받아 서버에 캐시한다.
 키는 .env(OPINET_API_KEY)에만 둔다. 화면·로그·DB에 키를 남기지 않는다.
-앱에 단가를 넘기는 엔드포인트·응답 필드는 아직 없다(계약 변경이라 별도 PR).
+앱에는 읽기 전용 GET /v1/prices(main.py)로 휘발유·경유 원/L 정수와 기준일만 넘긴다(PriceReader.public).
 
     python -m chagok.prices refresh     # 오피넷 avgAllPrice 1회 호출 → price 테이블 갱신 (server/ 에서)
     python -m chagok.prices show        # 저장된 단가·기준일
@@ -20,8 +20,10 @@ import urllib.error
 import urllib.parse
 import urllib.request
 from collections.abc import Callable
+from pathlib import Path
 
 from . import sources
+from .engine import round_half_up
 
 URL = "https://www.opinet.co.kr/api/avgAllPrice.do"
 GASOLINE = "B027"
@@ -145,6 +147,48 @@ def latest(con: sqlite3.Connection, prodcd: str) -> dict | None:
     if row is None:
         return None
     return {"prodcd": row[0], "name": row[1], "price": row[2], "trade_dt": row[3], "updated_at": row[4]}
+
+
+# ------------------------------------------------------------ 앱에 넘기는 값 (GET /v1/prices)
+def public_prices(rows: dict[str, tuple[float, str]]) -> dict | None:
+    """{prodcd: (단가, 기준일)} → GET /v1/prices 응답. 휘발유·경유가 둘 다 없으면 None(→ 503).
+
+    - 단가: 원/L 정수. 오피넷 값(소수 둘째 자리)을 round_half_up(내장 round()는 은행가 반올림이라 쓰지 않는다).
+    - trade_dt: 있는 기준일 중 이른 날(두 제품의 기준일이 다르면 오래된 쪽을 알린다).
+    """
+    got = {code: rows[code] for code in (GASOLINE, DIESEL) if code in rows}
+    if not got:
+        return None
+    dates = sorted(d for _, d in got.values() if d)
+    return {"gasoline": round_half_up(got[GASOLINE][0]) if GASOLINE in got else None,
+            "diesel": round_half_up(got[DIESEL][0]) if DIESEL in got else None,
+            "trade_dt": dates[0] if dates else None,
+            "source": "opinet"}
+
+
+class PriceReader:
+    """GET /v1/prices 용. 요청마다 DB를 읽기 전용으로 연다(크론이 하루 1회 바꾸는 2행이라 메모리 캐시를 두지 않는다).
+    DB 파일이나 price 표가 없으면 아무것도 만들지 않고 None(→ 503, 앱은 내장 기본 단가)."""
+
+    def __init__(self, path: Path | None = None) -> None:
+        self._path = path
+
+    def public(self) -> dict | None:
+        p = Path(self._path) if self._path else sources.db_path()
+        if not p.exists():
+            return None
+        try:
+            con = sqlite3.connect(f"{p.resolve().as_uri()}?mode=ro", uri=True)
+        except sqlite3.Error:
+            return None
+        try:
+            found = con.execute("SELECT prodcd, price, trade_dt FROM price WHERE prodcd IN (?, ?)",
+                                (GASOLINE, DIESEL)).fetchall()
+        except sqlite3.Error:
+            return None                 # 첫 refresh 전(표 없음)이거나 갱신 중 → 앱은 내장 기본 단가
+        finally:
+            con.close()
+        return public_prices({code: (price, trade_dt) for code, price, trade_dt in found})
 
 
 # ------------------------------------------------------------ CLI
