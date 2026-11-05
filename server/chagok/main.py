@@ -1,24 +1,48 @@
 """차곡 서버. 앱이 부르는 건 /v1/cards, /v1/cards/swap 둘뿐.
 /v1/range, /v1/settle 은 검증용 참조 구현(앱 로컬 계산과 fixture 대조용) — 앱은 부르지 않는다.
 
+모드: 요청에 demo_seed가 있으면 데모 고정(후보 = fixtures, 네트워크 없음),
+      없으면 실서비스(TourAPI 캐시 + 상위 후보만 카카오 실경로, chagok/live.py). 캐시가 비어 있으면 503 → 앱은 데모 fallback.
+
 실행:  make dev    (개발, --reload. 코드가 바뀌면 세션이 날아간다)
        make serve  (리허설·PT, reload 없음)
+       배포: deploy/README.md
 """
 
 from __future__ import annotations
 
+import time
+from contextlib import asynccontextmanager
 from typing import Literal
 
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, ConfigDict, Field
 
 from . import engine as E
-from .cards import SessionStore, build_cards, load_constants, load_demo_candidates, swap
+from . import live
+from . import routes as R
+from . import sources as S
+from .cards import SessionStore, build_cards, few_hint, load_constants, load_demo_candidates, swap
+from .obs import log
 
-app = FastAPI(title="chagok", version="0.2.0")
+@asynccontextmanager
+async def _lifespan(_app):
+    rows, refreshed = INDEX.rows()
+    log("start", live_candidates=len(rows), tourapi_refreshed=refreshed, kakao=KAKAO is not None)
+    yield
+
+
+app = FastAPI(title="chagok", version="0.3.0", lifespan=_lifespan)
 CONST = load_constants()
 DEMO = load_demo_candidates()
 STORE = SessionStore()
+
+# 실서비스 모드(demo_seed 없음). 키는 서버 .env 에만(CLAUDE.md). 카카오 키가 없으면 추정값만 쓴다.
+ENV = S.load_env()
+INDEX = live.CandidateIndex()
+POOLS = live.LivePools()
+ROUTE_CACHE = R.RouteCache()
+KAKAO = R.kakao_fetcher(ENV["KAKAO_REST_API_KEY"], timeout=live.ROUTE_TIMEOUT_S) if ENV.get("KAKAO_REST_API_KEY") else None
 
 Theme = Literal["sea", "lake", "river", "mountain", "park", "city", "island", "drive"]
 
@@ -84,20 +108,66 @@ class SettleRequest(Strict):
 
 @app.get("/v1/health")
 def health() -> dict:
-    return {"ok": True, "demo_candidates": len(DEMO), "constants_seed": CONST["demo_seed"]}
+    rows, refreshed = INDEX.rows()
+    return {"ok": True, "demo_candidates": len(DEMO), "constants_seed": CONST["demo_seed"],
+            "live_candidates": len(rows), "tourapi_refreshed": refreshed, "kakao": KAKAO is not None}
+
+
+def _ms(t0: float) -> int:
+    return int((time.perf_counter() - t0) * 1000)
 
 
 @app.post("/v1/cards")
 def cards(req: CardsRequest) -> dict:
-    # 1차는 데모 고정 모드뿐(후보 풀 = fixtures). 실서비스 모드는 demo_seed가 없을 때 TourAPI 캐시로 교체.
-    return build_cards(req.model_dump(), DEMO, STORE)
+    t0 = time.perf_counter()
+    body = req.model_dump()
+    common = {"recall": req.session_id is not None, "extra_krw": req.extra_krw, "days": req.days, "themes": len(req.themes)}
+    if req.demo_seed is not None:
+        # 데모 고정 모드: 후보 = fixtures, 네트워크 없음, 같은 입력 → 같은 출력(fixtures/cards/D*.json)
+        res = build_cards(body, DEMO, STORE)
+        log("cards", mode="demo", status=200, ms=_ms(t0), in_range=res["candidates_in_range"],
+            picked=res["picked"] is not None, **common)
+        return res
+    rows, _ = INDEX.rows()
+    if not rows:
+        log("cards", mode="live", status=503, ms=_ms(t0), err="candidates_not_ready", **common)
+        raise HTTPException(status_code=503, detail={"error": "candidates_not_ready"})
+    try:
+        sess = STORE.get(req.session_id) if req.session_id else None
+        keep = [i for i in ([sess["picked_id"]] + sess["stack_ids"]) if i] if sess else []
+        prev = POOLS.get(req.session_id) if sess else None
+        cands, refined, st = live.candidates_for(body, rows, fetch=KAKAO, cache=ROUTE_CACHE, keep_ids=keep, refined=prev)
+        res = build_cards(body, cands, STORE)
+        # 순위는 실경로 후보끼리 매기지만, '범위 안 후보'·힌트는 추정 기준 전체 수로(후보가 12곳뿐인 게 아니므로)
+        res["candidates_in_range"] = st.in_range
+        res["hint"] = few_hint(st.in_range, req.extra_krw, req.themes)
+        if res["session_id"]:
+            POOLS.put(res["session_id"], refined)
+    except Exception as e:
+        log("cards", mode="live", status=500, ms=_ms(t0), err=type(e).__name__, **common)
+        raise
+    log("cards", mode="live", status=200, ms=_ms(t0), pool=st.pool, in_range=st.in_range, ranked=len(cands),
+        ranked_on=st.ranked_on, picked=res["picked"] is not None, route_calls=st.calls, route_hits=st.hits,
+        route_fail=st.failures, **common)
+    return res
 
 
 @app.post("/v1/cards/swap")
 def cards_swap(req: SwapRequest) -> dict:
-    res = swap(req.session_id, req.exclude_ids, DEMO, STORE)
+    t0 = time.perf_counter()
+    refined = POOLS.get(req.session_id)
+    mode = "demo" if refined is None else "live"
+    if refined is None:
+        candidates = DEMO
+    else:
+        sess = STORE.get(req.session_id)
+        candidates = live.swap_candidates(sess["request"], INDEX.rows()[0], refined) if sess else []
+    res = swap(req.session_id, req.exclude_ids, candidates, STORE)
     if "error" in res:
-        raise HTTPException(status_code=404 if res["error"] == "session_not_found" else 409, detail=res)
+        code = 404 if res["error"] == "session_not_found" else 409
+        log("swap", mode=mode, status=code, ms=_ms(t0), err=res["error"])
+        raise HTTPException(status_code=code, detail=res)
+    log("swap", mode=mode, status=200, ms=_ms(t0), swaps_used=res["swaps_used"])
     return res
 
 

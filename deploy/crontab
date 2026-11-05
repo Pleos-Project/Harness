@@ -1,0 +1,18 @@
+# /etc/cron.d/chagok — 차곡 서버 하루 1회 갱신. deploy.sh가 root:root 644로 설치한다.
+#
+# 시간대: 서버 시계는 UTC(Lightsail Ubuntu 기본값. bootstrap.sh는 바꾸지 않는다).
+#   Ubuntu(Debian) cron의 CRON_TZ 지원에 기대지 않고 UTC로 적는다. KST = UTC + 9.
+#   KST 04:10 = UTC 19:10(전날)   sources refresh  (TourAPI 후보 캐시)
+#   KST 04:20 = UTC 19:20(전날)   prices refresh   (오피넷 유가)
+#   서버 시간대를 Asia/Seoul로 바꾸면 아래 시각을 10 4 / 20 4 로 고친다.
+#
+# 두 작업은 같은 잠금(flock)을 써서 겹치지 않는다(sources가 10분을 넘겨도 prices가 기다린다).
+# 출력은 /var/log/chagok-cron.log (회전: /etc/logrotate.d/chagok, deploy/README.md 참고).
+# 키는 컨테이너 환경변수로만 쓰고 이 파일·로그에 남기지 않는다.
+# 주의: cron 명령 줄에서 % 는 줄바꿈으로 바뀐다. 쓰지 않는다.
+
+SHELL=/bin/sh
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
+10 19 * * * ubuntu { echo "== $(date -Iseconds) sources refresh"; flock -w 3600 /opt/chagok/.cron.lock docker compose --env-file /opt/chagok/compose.env -f /opt/chagok/app/deploy/compose.yaml exec -T api python -m chagok.sources refresh; echo "== 종료 코드 $?"; } >> /var/log/chagok-cron.log 2>&1
+20 19 * * * ubuntu { echo "== $(date -Iseconds) prices refresh"; flock -w 3600 /opt/chagok/.cron.lock docker compose --env-file /opt/chagok/compose.env -f /opt/chagok/app/deploy/compose.yaml exec -T api python -m chagok.prices refresh; echo "== 종료 코드 $?"; } >> /var/log/chagok-cron.log 2>&1
