@@ -143,6 +143,19 @@ class FixturesTest {
         }
     }
 
+    /** 비교 함수가 느슨해서 아무거나 통과시키지 않는지(값 하나만 달라도 잡는다, 326 == 326.0 은 같다). */
+    @Test
+    fun comparatorCatchesDifferences() {
+        val expected = load(File(root, "cards/D1.json")).getValue("expected").jsonObject
+        val picked = expected.getValue("picked").jsonObject
+        val display = picked.getValue("display").jsonObject
+        val broken = JsonObject(expected + ("picked" to JsonObject(picked + ("display" to JsonObject(display + ("badge_text" to JsonPrimitive("빠듯")))))))
+        assertTrue("배지 문구 하나 다른 걸 못 잡음", jsonDiff(expected, broken, "$") != null)
+        assertTrue("키 하나 빠진 걸 못 잡음", jsonDiff(expected, JsonObject(expected - "hint"), "$") != null)
+        assertTrue("정수·실수 같은 값을 다르다고 봄", jsonDiff(JsonPrimitive(326), JsonPrimitive(326.0), "$") == null)
+        assertTrue("1원 차이를 못 잡음", jsonDiff(JsonPrimitive(7920), JsonPrimitive(7921), "$") != null)
+    }
+
     // ------------------------------------------------------------ helpers
     private fun load(f: File): JsonObject = parseObject(f.readText())
 
