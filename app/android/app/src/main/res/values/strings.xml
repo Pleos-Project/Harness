@@ -1,4 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- 화면 문구는 여기에. scripts/lint_copy.py가 PRD 5-3 표기·AC-C-8 금지 문구를 검사한다. -->
 <resources>
     <string name="app_name">차곡</string>
+    <string name="build_check">빌드 환경 확인</string>
+    <string name="engine_ok">엔진 OK · %1$s</string>
+    <string name="engine_data_missing">엔진 데이터 없음 — Gradle syncChagokData 확인</string>
 </resources>
