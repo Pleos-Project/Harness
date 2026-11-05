@@ -328,3 +328,14 @@ fun chargeAmount(startSoc: Double, endSoc: Double, capacityKwh: Double, price: D
     val a = approx(kwh * price, 1000)
     return ChargeResult(kwh, a.value, if (a.under) "방금 ${a.text} 충전" else "방금 약 ${a.text}어치 충전")
 }
+
+// ------------------------------------------------------------ 화면 helper (Python 짝 없음)
+/**
+ * 테마 일러스트 변형 고르기(design/RULES.md 3절): 같은 장소는 늘 같은 그림.
+ * 반환은 확장자 없는 이름 "<theme>-<n>"(n = 1..variants). SVG·VectorDrawable 등 리소스 연결은 화면 쪽에서.
+ */
+fun illustrationName(theme: String, placeId: String, variants: Int = 1): String {
+    var h = 0
+    for (ch in placeId) h = (h + ch.code) % 9973
+    return "$theme-${h % maxOf(1, variants) + 1}"
+}

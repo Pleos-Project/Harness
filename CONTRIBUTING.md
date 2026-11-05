@@ -16,7 +16,8 @@ git switch develop
 git pull
 git switch -c feature/<작업명>
 # 작업 후
-make check                      # = CI. 엔진·상수·후보를 바꿨으면 먼저 make fixtures
+make check                      # 서버 테스트·문구 검사. 엔진·상수·후보를 바꿨으면 먼저 make fixtures
+make check-app                  # 앱·Kotlin 엔진을 바꿨으면 (JDK 21, 없으면 PR의 CI app-android로 확인)
 git push -u origin feature/<작업명>
 gh pr create --base develop
 ```

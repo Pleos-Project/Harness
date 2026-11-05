@@ -143,6 +143,17 @@ class FixturesTest {
         }
     }
 
+    /** 일러스트 변형: 같은 장소 → 같은 그림, 범위는 1..variants. */
+    @Test
+    fun illustrationVariantIsStable() {
+        assertEquals(illustrationName("river", "p_dumulmeori", 4), illustrationName("river", "p_dumulmeori", 4))
+        for (c in candidates) {
+            val n = illustrationName(c.theme, c.id, 3).substringAfterLast('-').toInt()
+            assertTrue("${c.id} → $n", n in 1..3)
+        }
+        assertEquals("sea-1", illustrationName("sea", "p_eulwangri", 1))
+    }
+
     /** 비교 함수가 느슨해서 아무거나 통과시키지 않는지(값 하나만 달라도 잡는다, 326 == 326.0 은 같다). */
     @Test
     fun comparatorCatchesDifferences() {

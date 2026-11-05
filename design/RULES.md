@@ -47,7 +47,7 @@
 ## 3. 일러스트·아이콘·브랜드
 - 테마 8개 × 변형 3~4장(PRD 7-5). 파일명 `design/illustrations/<theme>-<n>.svg`, `<theme>` = 서버 `theme` 값:
   `sea lake river mountain park city island drive`, `<n>` = 1부터.
-- 같은 장소는 늘 같은 그림: 앱이 장소 ID로 변형을 고른다(`ChagokEngine.illustrationPath`). 변형 수를 바꾸면 PR에 적는다.
+- 같은 장소는 늘 같은 그림: 앱이 장소 ID로 변형을 고른다(Kotlin `illustrationName`). 변형 수를 바꾸면 PR에 적는다.
 - 실제 장소 사진인 척하지 않는다. 아이콘은 48dp 그리드 SVG, `design/icons/<name>.svg`. 로고·앱 아이콘(512px PNG)은 `design/brand/`.
 - 레포에는 **앱이 쓰는 내보낸 파일(SVG·PNG)만** 둔다. 원본(피그마·AI·PSD)은 피그마·드라이브에.
 

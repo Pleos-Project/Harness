@@ -9,7 +9,7 @@
 
 ## 체크리스트
 - [ ] base 브랜치가 `develop`인지 확인
-- [ ] `make check` 통과 (서버 pytest · 앱 엔진 node 테스트 · 문구 검사)
-- [ ] 엔진·상수·후보를 바꿨다면 `make fixtures`로 재생성해 같이 올림, 수식은 Python·JS 두 벌 다 고침
+- [ ] `make check` 통과 (서버 pytest · 문구 검사), 앱·엔진을 바꿨으면 `make check-app`(또는 CI app-android)
+- [ ] 엔진·상수·후보를 바꿨다면 `make fixtures`로 재생성해 같이 올림, 수식은 Python·Kotlin 두 벌 다 고침
 - [ ] 문서와 다르게 가는 결정이면 `DECISIONS.md`에 한 줄
 - [ ] 앱 변경이면 Pleos Connect 에뮬레이터에서 동작 확인

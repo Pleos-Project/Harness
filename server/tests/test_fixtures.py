@@ -1,4 +1,4 @@
-"""fixtures/ 가 엔진·서버와 일치하는지. 앱(app/shared/test)도 같은 JSON을 읽는다.
+"""fixtures/ 가 엔진·서버와 일치하는지. 앱(Kotlin FixturesTest)도 같은 JSON을 읽는다.
 
 1부: 명세서 AC 숫자를 손으로 검산한 값(엔진 출력과 독립된 기대값)
 2부: fixture 전수 — app_local → request → 서버 응답이 저장된 기대값과 같은가
