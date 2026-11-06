@@ -15,9 +15,16 @@ android {
         targetSdk = 36
         versionCode = 1
         versionName = "0.1.0"
+        // 서버 주소(app/README 3절). release = HTTPS 도메인 하나(AC-N-3)
+        buildConfigField("String", "API_BASE_URL", "\"https://api.rangeleft.com\"")
     }
 
     buildTypes {
+        debug {
+            // 에뮬 → PC 로컬 서버(make dev). 배포 서버로 시험할 때만 -PchagokApi=https://api.rangeleft.com
+            val api = (project.findProperty("chagokApi") as String?) ?: "http://10.0.2.2:8000"
+            buildConfigField("String", "API_BASE_URL", "\"$api\"")
+        }
         release {
             optimization {
                 enable = false
@@ -32,6 +39,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 // fixtures/constants.json(차종 표·기본 단가)·candidates_demo.json(오프라인 데모 후보) → assets/data/

@@ -18,7 +18,11 @@ import com.mist.pleos_app.engine.parseConstants
 import com.mist.pleos_app.util.ChagokLog
 import com.mist.pleos_app.vehicle.VehicleSnapshot
 import com.mist.pleos_app.vehicle.seatCount
+import com.mist.pleos_app.BuildConfig
+import com.mist.pleos_app.net.ChagokApi
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
@@ -39,10 +43,51 @@ enum class Screen { HOME, RANGE, CARD, RECORD, SETTINGS }
 class AppViewModel(app: Application, private val saved: SavedStateHandle) : AndroidViewModel(app) {
 
     /** 차종 표·기본 단가·데모 후보(빌드 때 fixtures/ → assets/data/, syncChagokData). 없으면 null. */
-    val constants: Constants? = readAsset(app, "data/constants.json")?.let { runCatching { parseConstants(it) }.getOrNull() }
+    private val baseConstants: Constants? = readAsset(app, "data/constants.json")?.let { runCatching { parseConstants(it) }.getOrNull() }
     private val candidates: List<Candidate> = readAsset(app, "data/candidates_demo.json")?.let { runCatching { parseCandidates(it) }.getOrNull() }.orEmpty()
-    private val flow: CardFlow? = constants?.let { CardFlow(it, DemoServer(candidates)) }?.also {
+
+    // ------------------------------------------------------------ 서버(app/README 3절)
+    /** 데모 고정 모드(설정, 기본 켜짐)면 네트워크 없이 DemoServer, 끄면 서버 실서비스 + 실패 시 DemoServer. */
+    private val demoServer = DemoServer(candidates)
+    private val api = ChagokApi(BuildConfig.API_BASE_URL)
+    private val demoSource = DemoSource(demoServer)
+    private val liveSource = LiveSource(api, demoServer)
+    /** 서버 호출은 IO에서 한 줄로(DemoServer 세션이 스레드 안전하지 않음). */
+    private val io = Dispatchers.IO.limitedParallelism(1)
+
+    private val flow: CardFlow? = baseConstants?.let { c -> CardFlow(c) { if (settingsFlow.value.demoFixed) demoSource else liveSource } }?.also {
         it.recentVisits = saved.get<List<String>>(KEY_RECENT).orEmpty()
+    }
+
+    /**
+     * 평균 휘발유 단가(GET /v1/prices). 사용자 단가가 없을 때 내장 기본값을 이 값으로 갈아 끼운다(price_source는 default 그대로 → "평균 단가").
+     * 실패·503이면 직전 값, 없으면 내장값. 데모 고정 모드에서는 부르지 않는다. 전기 단가는 오피넷에 없어 그대로.
+     */
+    private val avgGas = MutableStateFlow(prefs(app).getFloat(KEY_AVG_GAS, 0f).takeIf { it > 0f }?.toDouble())
+    val avgGasPrice: StateFlow<Double?> = avgGas.asStateFlow()
+    private var pricesJob: Job? = null
+    private var pricesVisit = -1
+
+    /** 지금 쓰는 상수: 내장값 + (서버 모드면) 받은 평균 휘발유 단가. */
+    val constants: Constants?
+        get() = baseConstants?.let { c ->
+            val gas = avgGas.value
+            if (gas != null && !settingsFlow.value.demoFixed) c.copy(gasolineKrwPerL = gas) else c
+        }
+
+    /** 앱 실행·복귀(기어 P) 때 1회. 첫 화면은 기다리지 않는다(AC-N-1): 응답이 오면 [avgGasPrice]가 바뀌어 다시 그린다. */
+    fun refreshPrices() {
+        if (settingsFlow.value.demoFixed || pricesJob?.isActive == true || pricesVisit == visits.value) return
+        pricesVisit = visits.value                                   // 화면이 보일 때마다 1번(폴링 아님)
+        val app = getApplication<Application>()
+        pricesJob = viewModelScope.launch {
+            val p = withContext(Dispatchers.IO) { runCatching { api.prices() } }
+            p.onSuccess {
+                avgGas.value = it.gasoline
+                prefs(app).edit().putFloat(KEY_AVG_GAS, it.gasoline.toFloat()).apply()
+                ChagokLog.event("prices", "ok" to true, "trade_dt" to it.tradeDt)
+            }.onFailure { ChagokLog.event("prices", "ok" to false, "err" to it.javaClass.simpleName) }
+        }
     }
 
     // ------------------------------------------------------------ 설정(S1)
@@ -107,23 +152,38 @@ class AppViewModel(app: Application, private val saved: SavedStateHandle) : Andr
     private val card = MutableStateFlow<CardUi?>(null)
     val cardUi: StateFlow<CardUi?> = card.asStateFlow()
 
+    private var loadJob: Job? = null
+
     /** 오늘의 한 곳: 범위 화면 없이 한 장(자동 +1만·+3만). */
     fun openToday(s: VehicleSnapshot, model: String) {
         saved[KEY_CARD_FROM_TODAY] = true
-        card.value = load(s, model, today = true)
+        startLoad(s, model, today = true)
         open(Screen.CARD)
     }
 
     /** 범위 화면 "한 장 뽑기". */
     fun openPicked(s: VehicleSnapshot, model: String) {
         saved[KEY_CARD_FROM_TODAY] = false
-        card.value = load(s, model, today = false)
+        startLoad(s, model, today = false)
         open(Screen.CARD)
     }
 
     /** 한 장 화면인데 세션이 없음(프로세스 재생성) → 같은 경로로 다시 뽑는다. */
     fun ensureCard(s: VehicleSnapshot, model: String) {
-        if (card.value == null) card.value = load(s, model, today = saved.get<Boolean>(KEY_CARD_FROM_TODAY) ?: true)
+        if (card.value == null) startLoad(s, model, today = saved.get<Boolean>(KEY_CARD_FROM_TODAY) ?: true)
+    }
+
+    /** "잠시 후 다시 볼까요?"의 다시 보기: 같은 경로로 서버부터 다시(X2). */
+    fun retryCard(s: VehicleSnapshot, model: String) = startLoad(s, model, today = saved.get<Boolean>(KEY_CARD_FROM_TODAY) ?: true)
+
+    /** 화면은 바로 넘기고(Loading) 서버 응답(최대 3초, 실패하면 내장 후보)이 오면 바꾼다. */
+    private fun startLoad(s: VehicleSnapshot, model: String, today: Boolean) {
+        loadJob?.cancel()
+        recallJob?.cancel()
+        card.value = CardUi.Loading
+        loadJob = viewModelScope.launch {
+            card.value = withContext(io) { load(s, model, today) }
+        }
     }
 
     // ------------------------------------------------------------ 재계산(F5 유지·재계산, F11 1인 몫)
@@ -147,7 +207,8 @@ class AppViewModel(app: Application, private val saved: SavedStateHandle) : Andr
             delay(RECALL_DEBOUNCE_MS)
             val cur = card.value as? CardUi.Shown ?: return@launch
             val f = flow ?: return@launch
-            card.value = f.recall(cur, v, seats)
+            val next = withContext(io) { f.recall(cur, v, seats) }
+            if (card.value === cur) card.value = next          // 기다리는 사이 교체·새로 뽑기가 있었으면 버린다
             ChagokLog.event("card_recall", "seats" to seats, "zero" to (card.value as? CardUi.Shown)?.card?.display?.zeroExtra)
         }
     }
@@ -267,8 +328,13 @@ class AppViewModel(app: Application, private val saved: SavedStateHandle) : Andr
 
     fun swap() {
         val cur = card.value as? CardUi.Shown ?: return
-        card.value = flow?.swap(cur)
-        ChagokLog.event("card_swap", "left" to (card.value as? CardUi.Shown)?.swapsLeft, "ask_theme" to (card.value is CardUi.AskTheme))
+        val f = flow ?: return
+        recallJob?.cancel()
+        loadJob = viewModelScope.launch {
+            val next = withContext(io) { f.swap(cur) }
+            if (card.value === cur) card.value = next
+            ChagokLog.event("card_swap", "left" to (next as? CardUi.Shown)?.swapsLeft, "ask_theme" to (next is CardUi.AskTheme), "offline" to (next as? CardUi.Shown)?.offline)
+        }
     }
 
     private fun load(s: VehicleSnapshot, model: String, today: Boolean): CardUi? {
@@ -287,6 +353,9 @@ class AppViewModel(app: Application, private val saved: SavedStateHandle) : Andr
         const val KEY_THEMES = "cond_themes"
         const val KEY_CARD_FROM_TODAY = "card_from_today"
         const val KEY_RECENT = "recent_visits"
+        const val KEY_AVG_GAS = "avg_gasoline"
+
+        fun prefs(app: Application) = app.getSharedPreferences("chagok_prices", android.content.Context.MODE_PRIVATE)
 
         fun readAsset(app: Application, path: String): String? =
             runCatching { app.assets.open(path).bufferedReader().use { it.readText() } }

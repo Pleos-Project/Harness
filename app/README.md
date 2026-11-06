@@ -61,18 +61,23 @@ adb install -r -g app/build/outputs/apk/debug/app-debug.apk        # -g: 권한 
 - 범위·한 장 흐름은 `app/CardModel.kt`(`CardFlow`·`presets`·`toggleTheme`, JUnit `CardModelTest`). 지금은 오프라인 `DemoServer`만, 서버 호출은 같은 자리에 붙인다.
 
 ## 3. 서버 호출 — Kotlin에서 직접 (열린 결정 2 해결)
-- 앱이 부르는 건 `/v1/cards`·`/v1/cards/swap`·`/v1/prices` 셋(`contract/openapi.yaml`).
+- 앱이 부르는 건 `/v1/cards`·`/v1/cards/swap`·`/v1/prices` 셋(`contract/openapi.yaml`). 클라이언트는 `net/ChagokApi`(플랫폼 `HttpURLConnection`, 새 의존성 없음).
 - 요청은 `cardsRequest(...).toJson()`, 응답은 `parseCardsResponse()`. 원시 차량값은 보내지 않는다(`budget` 파생값만, 서버가 422로 막음).
-- 개발: 에뮬에서 `http://10.0.2.2:8000`(`make dev`). **debug 빌드만** `src/debug/res/xml/network_security_config.xml`이 `10.0.2.2` cleartext를 허용한다. release는 cleartext가 기본 차단이라 HTTPS 도메인 하나만(AC-N-3).
-- 배포(release): **`https://api.rangeleft.com`**(Let's Encrypt, 체인 끝 ISRG Root X1 → 안드로이드 7.1.1+). `/v1/cards`·`/v1/cards/swap`·`/v1/prices`. 서버 운영은 `deploy/README.md`(효성).
-- 타임아웃 3초, 실패하면 `DemoServer(candidates)`로 fallback(AC-F5-7·AC-F5-8). 호출은 화면을 연 동안만 — 폴링·백그라운드 호출 금지.
-- PT(12/3)는 네트워크 없이 돌아가야 하므로(AC-C-3) 데모 고정 모드를 기본으로 둔다.
+- 주소는 `BuildConfig.API_BASE_URL`.
+  - release: **`https://api.rangeleft.com`**(Let's Encrypt, 체인 끝 ISRG Root X1 → 안드로이드 7.1.1+). 서버 운영은 `deploy/README.md`(효성).
+  - debug: `http://10.0.2.2:8000`(`make dev`). **debug 빌드만** `src/debug/res/xml/network_security_config.xml`이 `10.0.2.2` cleartext를 허용한다. release는 cleartext가 기본 차단이라 HTTPS 도메인 하나만(AC-N-3).
+  - 배포 서버로 시험할 때만 `./gradlew assembleDebug -PchagokApi=https://api.rangeleft.com`.
+- **모드**(설정 S1 "데모 고정 모드", 기본 켜짐): 켜짐 = 네트워크 없이 `DemoServer`(PT는 네트워크 없이 돌아가야 함, AC-C-3). 끔 = 서버 실서비스(`demo_seed` 없음).
+- 타임아웃 3초. 실패(연결·타임아웃·5xx·503 `candidates_not_ready`)면 `DemoServer(candidates)`로 fallback(AC-F5-7·AC-F5-8, `app/CardSource`).
+  - 한 장 화면 스택 자리에 "잠시 후 다시 볼까요?" + [다시 보기](X2). 같은 뽑기 안에서는 서버를 다시 기다리지 않는다(오늘의 한 곳 +1만·+3만 자동 전환 포함).
+  - fallback으로 만든 세션의 재호출·교체는 계속 `DemoServer`로. 서버 세션의 재호출·교체가 네트워크로 실패하면 앞면을 그대로 두고 같은 안내.
+  - 명세 fallback ①(직전 응답 캐시)과 `requestTrip` 거리 보정은 아직 없다(내장 후보의 거리·시간 그대로).
+- 호출은 화면을 연 동안만, IO 스레드 한 줄로(`DemoServer` 세션이 스레드 안전하지 않음). 화면은 바로 넘기고("갈 곳을 고르는 중") 응답이 오면 바꾼다. 폴링·백그라운드 호출 금지.
 - **평균 단가 `GET /v1/prices`**(DECISIONS '계약: 단가'): 입력 없음, 응답 `{gasoline, diesel, trade_dt, source}`(원/L 정수).
-  - 사용자 단가가 없을 때만 쓴다. 받은 휘발유 값으로 내장 기본값을 갈아 끼운다(`constants.copy(gasolineKrwPerL = …)`). `price_source`는 `default` 그대로, 화면은 "평균 단가".
-  - 앱 실행·복귀(기어 P) 때 1회, 타임아웃 3초. 실패·503이면 직전에 받은 값, 그것도 없으면 내장값. 데모 고정 모드에서는 부르지 않는다.
+  - 사용자 단가가 없을 때만 쓴다. 받은 휘발유 값으로 내장 기본값을 갈아 끼운다(`AppViewModel.constants` = `copy(gasolineKrwPerL = …)`). `price_source`는 `default` 그대로, 화면은 "평균 단가".
+  - 화면이 보일 때(앱 실행·복귀)마다 1회, 타임아웃 3초. 실패·503이면 직전에 받은 값(SharedPreferences), 그것도 없으면 내장값. 데모 고정 모드에서는 부르지 않는다.
   - 첫 화면은 이 호출을 기다리지 않는다(AC-N-1). 내장값(또는 직전 값)으로 먼저 그리고 응답이 오면 바꾼다.
   - 전기 단가(원/kWh)는 오피넷에 없다 → EV는 설정·내장값.
-- HTTP 클라이언트(`HttpURLConnection`·OkHttp 등)는 첫 서버 연동 PR에서 정한다.
 
 ## 4. SDK·에뮬 동작 메모 (H_Mate README, June 11/4~5 실측)
 명세서 8절 신호 표에 없는 것만 적는다.
