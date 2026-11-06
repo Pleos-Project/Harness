@@ -5,7 +5,7 @@
 
 | 파일 | 문서 | 기준 범위 |
 |---|---|---|
-| `PRD_v1.3.md` | 차곡 PRD v1.3 (명준, 11/5. v1.2에서 교체, DECISIONS 11/5 "PRD 기준") | 기능·화면·문구·일정 |
+| `PRD_v1.6.md` | 차곡 PRD v1.6 (명준, 11/6. v1.2 → v1.3 → v1.5 → v1.6으로 교체, DECISIONS "PRD 기준") | 기능·화면·문구·일정 |
 | `기능명세서_v0.4.md` | 차곡 기능 명세서 v0.4 (June, 11/5) | 구현 기준본. AC 번호 |
 | (링크) | [서버·추정 엔진 PRD v0.1](https://claude.ai/artifact/M6ZJW24C9XCv86MYzmskcf) (효성, 11/4) | 수식·API·fixture 원안. 이후 수식은 `server/chagok/engine.py` |
 | (링크) | [PRD v1.2 개발 가능성 검토](https://claude.ai/artifact/3tDCZKcGyEZwzwGSrRjWy1) (11/5) | 참고 |

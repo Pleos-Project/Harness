@@ -9,7 +9,7 @@
 ## 기준 문서 (읽기 순서)
 1. `DECISIONS.md` — 동결 문서와 다르게 가는 것·열린 결정. **문서와 충돌하면 이쪽이 이긴다.**
 2. `docs/기능명세서_v0.4.md` — 구현 기준, AC 번호(AC-F5-1 등). 작업·커밋에 AC 번호를 적는다.
-3. `docs/PRD_v1.3.md` — 기능·화면·문구. 특히 5-2(하지 않는 것)·5-3(숫자 표기)·5-4(계산).
+3. `docs/PRD_v1.6.md` — 기능·화면·문구. 특히 5-2(하지 않는 것)·5-3(숫자 표기)·5-4(계산).
 `docs/`는 고치지 않는다.
 
 ## 꼭 지킬 것
@@ -26,7 +26,11 @@
 
 ## 브랜치
 `develop`에서 `feature/<작업명>`·`fix/<작업명>`을 따서 작업하고 PR base는 `develop`. `main`·`develop`에 직접 커밋·푸시하지 않는다(CONTRIBUTING.md).
-- **PR 본문**은 `.github/pull_request_template.md`의 절·체크리스트를 그대로 옮겨 채운다(`gh pr create --body`는 템플릿을 건너뛴다). `fixtures/`·`contract/`를 건드린 PR은 효성(`hyos0415`)·June(`june0103`) 중 작성자가 아닌 쪽을 `--reviewer`로 지정한다.
+- **PR 본문**은 `.github/pull_request_template.md`의 절·체크리스트를 그대로 옮겨 채운다(`gh pr create --body`는 템플릿을 건너뛴다).
+- **리뷰어·멘션은 담당자 확인이 필요한 PR에만** 단다. 앱만 바꾼 PR(`app/` 화면·SDK 연동·앱 테스트)에는 리뷰어도 멘션도 달지 않는다.
+  - 다는 경우: 다른 파트의 영역을 건드리거나 그 담당자가 정해야 할 것이 있을 때. 예: `fixtures/`·`contract/`(효성·June 중 작성자가 아닌 쪽), Kotlin 엔진 수식·`FixturesTest`(효성), 서버(효성), 문구·디자인·`DECISIONS.md`(명준), 이 규칙 자체.
+  - 에이전트는 `--reviewer` 없이 PR을 올리고, 리뷰어를 달기 전에 작성자에게 "누구에게 무엇을 확인받을지" 먼저 묻는다.
+  - 리뷰어를 달면 PR 본문에 `## @<아이디> 확인 부탁` 절을 두고, 항목마다 파일·줄(또는 화면·문구)과 정해 줄 것(선택지·지금 기본값)을 적는다. 아이디: 효성 `hyos0415`, June `june0103`, 명준 `thvlou`.
 - **머지**는 CI 3개(server · app-android · copy)가 모두 통과한 걸 확인한 뒤 `gh pr merge --merge --delete-branch`로 한다. 실패나 대기 중이면 머지하지 않고 그대로 보고한다. `develop → main` 릴리스 PR은 사람이 시점을 정할 때만.
 
 ## 끝내기 전에

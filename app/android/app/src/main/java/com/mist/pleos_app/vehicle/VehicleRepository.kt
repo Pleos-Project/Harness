@@ -41,7 +41,9 @@ class FakeVehicleRepository(initial: VehicleSnapshot = VehicleSnapshot()) : Vehi
  *
  * 수명주기(Activity에 observer로 붙인다):
  * - onCreate: SDK·Car 연결만
- * - onStart(화면이 보임): 진입 때 값(용량·연료 종류·연비·충전 스위치·누적 주행거리)을 1회 읽고, 리스너를 등록
+ * - onStart(화면이 보임): 기어·주행 규제 리스너(관문)를 등록하고, 정차면 진입 때 값(용량·연료 종류·연비·충전 스위치·
+ *   누적 주행거리)을 1회 읽은 뒤 나머지 리스너(데이터)를 등록
+ * - 주행 전환(X1: 규제 ON 또는 기어 ≠ P): 데이터 리스너를 해제하고 관문만 남긴다(AC-X1-2). 정차로 돌아오면 다시 읽고 등록
  * - onStop(화면이 가려짐): 리스너를 **모두** 해제(AC-C-2: 백그라운드 SDK·AAOS 콜백 0건). 타이머·폴링 없음
  * - onDestroy: 연결 해제
  *
@@ -58,7 +60,9 @@ class PleosVehicleRepository(context: Context) : VehicleRepository, DefaultLifec
     private var car: Car? = null
     private var props: CarPropertyManager? = null
     private var ux: CarUxRestrictionsManager? = null
-    private var listening = false
+    private var started = false
+    private var gateOn = false
+    private var dataOn = false
 
     override fun onCreate(owner: LifecycleOwner) {
         vehicle = runCatching { Vehicle(app).also { it.initialize() } }
@@ -69,15 +73,23 @@ class PleosVehicleRepository(context: Context) : VehicleRepository, DefaultLifec
         ux = car?.let { runCatching { it.getCarManager(Car.CAR_UX_RESTRICTION_SERVICE) as CarUxRestrictionsManager }.getOrNull() }
     }
 
+    @Synchronized
     override fun onStart(owner: LifecycleOwner) {
-        readOnEntry()
-        register()
+        started = true
+        readGate()
+        registerGate()
+        onGateChanged()
     }
 
-    override fun onStop(owner: LifecycleOwner) = unregister()
+    @Synchronized
+    override fun onStop(owner: LifecycleOwner) {
+        started = false
+        unregisterData()
+        unregisterGate()
+    }
 
     override fun onDestroy(owner: LifecycleOwner) {
-        unregister()
+        onStop(owner)
         runCatching { vehicle?.release() }
         runCatching { car?.disconnect() }
         vehicle = null; car = null; props = null; ux = null
@@ -97,8 +109,34 @@ class PleosVehicleRepository(context: Context) : VehicleRepository, DefaultLifec
         try { block() } catch (e: Exception) { fail(name, e) }
     }
 
-    // ------------------------------------------------------------ 진입 때 1회
-    private fun readOnEntry() {
+    // ------------------------------------------------------------ 관문: 기어·주행 규제 (화면이 보이는 동안 늘)
+    private fun readGate() {
+        refreshGear()
+        ux?.let { m -> guard("ux_restrictions") { flow.update { it.copy(uxRestricted = m.currentCarUxRestrictions?.isRequiresDistractionOptimization) } } }
+    }
+
+    /** 기어·규제가 바뀔 때마다: 주행이면 데이터 리스너를 끊고, 정차면 다시 읽고 붙인다(X1). */
+    @Synchronized
+    private fun onGateChanged() {
+        if (!started) return
+        val s = flow.value
+        val driving = isDriving(s)
+        ChagokLog.event("gate", "gear" to s.gear.name, "restricted" to s.uxRestricted, "driving" to driving)
+        if (driving && dataOn) {
+            unregisterData()
+            ChagokLog.event("driving", "on" to true)
+        } else if (!driving && !dataOn) {
+            readData()
+            registerData()
+            ChagokLog.event("driving", "on" to false)
+        }
+    }
+
+    // ------------------------------------------------------------ 데이터: 정차 화면에 들어올 때 1회
+    private fun readData() {
+        // 누적 주행거리는 들어올 때마다 새로 읽는다. 읽기 전에는 비워 둬서, 예전 값으로 정산(F10)이 먼저 돌지 않게 한다
+        // (11/6 콘솔 실측: 주행거리를 올린 뒤 복귀하면 첫 정산이 예전 값으로 0km가 됨).
+        flow.update { it.copy(odometerKm = null) }
         val v = vehicle
         if (v != null) {
             guard("ev_efficiency") {
@@ -124,8 +162,6 @@ class PleosVehicleRepository(context: Context) : VehicleRepository, DefaultLifec
             // 리스너 등록 즉시 현재값이 1회 오지만(실측), 첫 화면을 빨리 채우려고 Get도 한 번 부른다.
             guard("soc") { v.getEvBattery().getEvBatteryStateOfCharge({ x -> ok("soc"); flow.update { it.copy(socPct = x) } }, { e -> fail("soc", e) }) }
             guard("fuel_pct") { v.getFuel().getFuelPercent({ x -> ok("fuel_pct"); flow.update { it.copy(fuelPct = x) } }, { e -> fail("fuel_pct", e) }) }
-            @Suppress("DEPRECATION")
-            guard("gear") { v.getGear().getCurrentGearSelectionState({ g -> ok("gear"); flow.update { it.copy(gear = g.toState()) } }, { e -> fail("gear", e) }) }
         }
         val p = props
         if (p != null) {
@@ -137,7 +173,6 @@ class PleosVehicleRepository(context: Context) : VehicleRepository, DefaultLifec
             }
             readProp(p, VehiclePropertyIds.RANGE_REMAINING, "range_remaining") { x -> flow.update { it.copy(rangeRemainingM = (x as? Number)?.toDouble()) } }
         }
-        ux?.let { m -> guard("ux_restrictions") { flow.update { it.copy(uxRestricted = m.currentCarUxRestrictions?.isRequiresDistractionOptimization) } } }
     }
 
     private fun readProp(p: CarPropertyManager, id: Int, name: String, set: (Any?) -> Unit) = guard(name) {
@@ -159,12 +194,12 @@ class PleosVehicleRepository(context: Context) : VehicleRepository, DefaultLifec
     // 그 속성은 A CAR_POWERTRAIN 권한이라 권한 목록(contract/permissions.md)에 없다 → 권한을 늘리지 않고 이걸 쓴다.
     @Suppress("DEPRECATION")
     private val gearListener = object : GearSelectionListener {
-        override fun onSelected(gear: VehicleGear?) { ok("gear"); flow.update { it.copy(gear = gear.toState()) } }
+        override fun onSelected(gear: VehicleGear?) { ok("gear"); flow.update { it.copy(gear = gear.toState()) }; onGateChanged() }
         override fun onFailed(e: Exception) = fail("gear", e)
     }
     private val doorArea = DoorArea(DoorValue.ROW_1_LEFT)
     private val doorListener = object : DoorPositionListener {
-        override fun onPositionUpdated(pos: Int?) { ok("driver_door"); flow.update { it.copy(driverDoorOpen = pos?.let { p -> p > 0 }) } }
+        override fun onPositionUpdated(pos: Int?) { ok("driver_door"); flow.update { it.copy(driverDoorOpen = pos?.let { p -> p > 0 }) }; ChagokLog.event("door", "pos" to pos) }
         override fun onFailed(e: Exception) = fail("driver_door", e)
     }
 
@@ -194,18 +229,44 @@ class PleosVehicleRepository(context: Context) : VehicleRepository, DefaultLifec
         }
     }
 
+    /**
+     * 규제가 꺼질 때 기어를 Get으로 다시 읽는다. 에뮬(콘솔 D → P)에서 Pleos 기어 리스너가 PARK를 놓치는 일이
+     * 3번 중 3번 있었다(11/6 실측: 규제는 false로 오는데 기어가 DRIVE에 머물러 화면이 계속 가려짐).
+     */
     private val uxListener = CarUxRestrictionsManager.OnUxRestrictionsChangedListener { r ->
         flow.update { it.copy(uxRestricted = r?.isRequiresDistractionOptimization) }
+        onGateChanged()
+        // P 복귀를 놓치는 경우만 다시 읽는다. 규제가 켜지면 기어와 상관없이 주행이라 Get이 필요 없다(주행 중 Get 0건, AC-X1-2)
+        if (r?.isRequiresDistractionOptimization == false) refreshGear()
     }
 
-    private fun register() {
-        if (listening) return
-        listening = true
+    private fun refreshGear() {
+        @Suppress("DEPRECATION")
+        vehicle?.let { v -> guard("gear") { v.getGear().getCurrentGearSelectionState({ g -> ok("gear"); flow.update { it.copy(gear = g.toState()) }; onGateChanged() }, { e -> fail("gear", e) }) } }
+    }
+
+    private fun registerGate() {
+        if (gateOn) return
+        gateOn = true
+        @Suppress("DEPRECATION")
+        vehicle?.let { v -> guard("gear") { v.getGear().registerGearSelection(gearListener) } }
+        ux?.let { m -> guard("ux_restrictions") { m.registerListener(uxListener) } }
+    }
+
+    private fun unregisterGate() {
+        if (!gateOn) return
+        gateOn = false
+        @Suppress("DEPRECATION")
+        vehicle?.let { v -> runCatching { v.getGear().unregisterGearSelection(gearListener) } }
+        ux?.let { m -> runCatching { m.unregisterListener() } }
+    }
+
+    private fun registerData() {
+        if (dataOn) return
+        dataOn = true
         vehicle?.let { v ->
             guard("soc") { v.getEvBattery().registerEvBatteryStateOfCharge(socListener) }
             guard("fuel_pct") { v.getFuel().registerFuelPercent(fuelListener) }
-            @Suppress("DEPRECATION")
-            guard("gear") { v.getGear().registerGearSelection(gearListener) }
             guard("driver_door") { v.getDoor().registerDoorPosition(doorArea, doorListener) }
             seatListeners.forEach { (sv, l) -> guard("seats") { v.getSeat().registerSeatOccupancy(SeatArea(sv), l) } }
         }
@@ -215,18 +276,15 @@ class PleosVehicleRepository(context: Context) : VehicleRepository, DefaultLifec
                 p.registerCallback(propCallback, VehiclePropertyIds.RANGE_REMAINING, CarPropertyManager.SENSOR_RATE_ONCHANGE)
             }
         }
-        ux?.let { m -> guard("ux_restrictions") { m.registerListener(uxListener) } }
         ChagokLog.event("vehicle_listen", "on" to true)
     }
 
-    private fun unregister() {
-        if (!listening) return
-        listening = false
+    private fun unregisterData() {
+        if (!dataOn) return
+        dataOn = false
         vehicle?.let { v ->
             runCatching { v.getEvBattery().unregisterEvBatteryStateOfCharge(socListener) }
             runCatching { v.getFuel().unregisterFuelPercent(fuelListener) }
-            @Suppress("DEPRECATION")
-            runCatching { v.getGear().unregisterGearSelection(gearListener) }
             runCatching { v.getDoor().unregisterDoorPosition(doorArea, doorListener) }
             seatListeners.forEach { (sv, l) -> runCatching { v.getSeat().unregisterSeatOccupancy(SeatArea(sv), l) } }
         }
@@ -234,7 +292,6 @@ class PleosVehicleRepository(context: Context) : VehicleRepository, DefaultLifec
             @Suppress("DEPRECATION")
             runCatching { p.unregisterCallback(propCallback) }
         }
-        ux?.let { m -> runCatching { m.unregisterListener() } }
         ChagokLog.event("vehicle_listen", "on" to false)
     }
 }

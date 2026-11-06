@@ -52,6 +52,8 @@ jobs:
         if: startsWith(github.head_ref, 'feature/design-apply-pr-')
         run: |
           bad=$(git diff --name-only HEAD^1 HEAD -- design docs fixtures contract server scripts .github \
-            app/android/app/src/main/java/com/mist/pleos_app/ui/theme)
+            app/android/app/src/main/java/com/mist/pleos_app/ui/theme \
+            app/android/app/src/main/java/com/mist/pleos_app/engine \
+            app/android/app/src/main/assets app/android/app/src/main/AndroidManifest.xml)
           if [ -n "$bad" ]; then echo "::error::금지 경로 변경: $bad"; exit 1; fi
           echo "금지 경로 변경 없음"

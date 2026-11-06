@@ -25,6 +25,7 @@ gh pr create --base develop
 - `main`, `develop`에는 직접 푸시하지 않고 PR로만 머지한다.
 - 작업 PR의 base는 항상 `develop`. 릴리스(11/10 시연, 11/15 제출, 12/3 PT 직전)는 `develop` → `main` PR.
 - `fixtures/`·`contract/`를 건드리는 PR은 서버(효성)·앱(June) 둘 다 리뷰.
+- 리뷰어·멘션은 해당 파트 담당자의 확인이 필요한 PR에만 단다. 앱만 바꾼 PR에는 달지 않는다. 달 때는 본문에 `## @<아이디> 확인 부탁` 절로 무엇을 확인할지 적는다(자세히는 CLAUDE.md '브랜치').
 - PR 제목·커밋 메시지는 한국어. 관련 AC 번호(예: AC-F5-1)를 적는다.
 - 문서(`docs/`)와 다르게 가는 결정은 같은 PR에서 `DECISIONS.md`에 한 줄.
 

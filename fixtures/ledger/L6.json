@@ -1,0 +1,234 @@
+{
+  "id": "L6",
+  "title": "평균 단가로 출발·도착 → 다음 열기 정산에도 '(평균 단가)'",
+  "note": "도착 이벤트도 단가 출처(price_source)를 스냅샷에 남긴다. 37 ÷ 5.27 × 300 = 2,106 → 약 2천 원 (평균 단가). 도착 스냅샷을 user로 고정하면 이 문구에서 '(평균 단가)'가 빠진다(PR #28 리뷰).",
+  "state0": {
+    "snapshot": null,
+    "trip": null,
+    "rows": [],
+    "last_pin": null
+  },
+  "steps": [
+    {
+      "event": {
+        "type": "open",
+        "ts": "2026-11-07T09:00:00+09:00",
+        "odometer_km": 15000,
+        "seats": 1,
+        "price": 300,
+        "efficiency": 5.27,
+        "price_source": "default",
+        "recent_destination": null
+      },
+      "expected": {
+        "output": {
+          "card": null,
+          "row": null,
+          "skipped": "no_snapshot"
+        },
+        "state": {
+          "snapshot": {
+            "odometer_km": 15000,
+            "seats": 1,
+            "price_per_unit": 300,
+            "efficiency": 5.27,
+            "ts": "2026-11-07T09:00:00+09:00",
+            "price_source": "default"
+          },
+          "trip": null,
+          "rows": [],
+          "last_pin": null
+        }
+      }
+    },
+    {
+      "event": {
+        "type": "depart",
+        "ts": "2026-11-07T09:05:00+09:00",
+        "odometer_km": 15000,
+        "place": {
+          "id": "p_dumulmeori",
+          "name": "양평 두물머리",
+          "lat": 37.5363,
+          "lng": 127.314
+        },
+        "route_km": 37.2
+      },
+      "expected": {
+        "output": {
+          "card": null,
+          "row": null,
+          "skipped": null
+        },
+        "state": {
+          "snapshot": {
+            "odometer_km": 15000,
+            "seats": 1,
+            "price_per_unit": 300,
+            "efficiency": 5.27,
+            "ts": "2026-11-07T09:00:00+09:00",
+            "price_source": "default"
+          },
+          "trip": {
+            "place": {
+              "id": "p_dumulmeori",
+              "name": "양평 두물머리",
+              "lat": 37.5363,
+              "lng": 127.314
+            },
+            "route_km": 37.2,
+            "start_odometer_km": 15000,
+            "departed_ts": "2026-11-07T09:05:00+09:00"
+          },
+          "rows": [],
+          "last_pin": null
+        }
+      }
+    },
+    {
+      "event": {
+        "type": "arrive",
+        "ts": "2026-11-07T10:00:00+09:00",
+        "odometer_km": 15037,
+        "seats": 1,
+        "price": 300,
+        "efficiency": 5.27,
+        "price_source": "default"
+      },
+      "expected": {
+        "output": {
+          "card": null,
+          "row": {
+            "type": "arrive",
+            "from_ts": "2026-11-07T09:05:00+09:00",
+            "to_ts": "2026-11-07T10:00:00+09:00",
+            "km": 37,
+            "krw": 2000,
+            "per_person": null,
+            "place": {
+              "name": "양평 두물머리",
+              "lat": 37.5363,
+              "lng": 127.314
+            },
+            "pinned": true,
+            "demo": false
+          },
+          "skipped": null
+        },
+        "state": {
+          "snapshot": {
+            "odometer_km": 15037,
+            "seats": 1,
+            "price_per_unit": 300,
+            "efficiency": 5.27,
+            "ts": "2026-11-07T10:00:00+09:00",
+            "price_source": "default"
+          },
+          "trip": null,
+          "rows": [
+            {
+              "type": "arrive",
+              "from_ts": "2026-11-07T09:05:00+09:00",
+              "to_ts": "2026-11-07T10:00:00+09:00",
+              "km": 37,
+              "krw": 2000,
+              "per_person": null,
+              "place": {
+                "name": "양평 두물머리",
+                "lat": 37.5363,
+                "lng": 127.314
+              },
+              "pinned": true,
+              "demo": false
+            }
+          ],
+          "last_pin": {
+            "name": "양평 두물머리",
+            "lat": 37.5363,
+            "lng": 127.314
+          }
+        }
+      }
+    },
+    {
+      "event": {
+        "type": "open",
+        "ts": "2026-11-07T18:00:00+09:00",
+        "odometer_km": 15074,
+        "seats": 1,
+        "price": 300,
+        "efficiency": 5.27,
+        "price_source": "default",
+        "recent_destination": null
+      },
+      "expected": {
+        "output": {
+          "card": "지난번 이후 37km · 약 2천 원 (평균 단가)",
+          "row": {
+            "type": "settle",
+            "from_ts": "2026-11-07T10:00:00+09:00",
+            "to_ts": "2026-11-07T18:00:00+09:00",
+            "km": 37,
+            "krw": 2000,
+            "per_person": null,
+            "place": null,
+            "pinned": false,
+            "demo": false
+          },
+          "skipped": null
+        },
+        "state": {
+          "snapshot": {
+            "odometer_km": 15074,
+            "seats": 1,
+            "price_per_unit": 300,
+            "efficiency": 5.27,
+            "ts": "2026-11-07T18:00:00+09:00",
+            "price_source": "default"
+          },
+          "trip": null,
+          "rows": [
+            {
+              "type": "arrive",
+              "from_ts": "2026-11-07T09:05:00+09:00",
+              "to_ts": "2026-11-07T10:00:00+09:00",
+              "km": 37,
+              "krw": 2000,
+              "per_person": null,
+              "place": {
+                "name": "양평 두물머리",
+                "lat": 37.5363,
+                "lng": 127.314
+              },
+              "pinned": true,
+              "demo": false
+            },
+            {
+              "type": "settle",
+              "from_ts": "2026-11-07T10:00:00+09:00",
+              "to_ts": "2026-11-07T18:00:00+09:00",
+              "km": 37,
+              "krw": 2000,
+              "per_person": null,
+              "place": null,
+              "pinned": false,
+              "demo": false
+            }
+          ],
+          "last_pin": {
+            "name": "양평 두물머리",
+            "lat": 37.5363,
+            "lng": 127.314
+          }
+        }
+      }
+    }
+  ],
+  "month": "2026-11",
+  "expected_month": {
+    "krw": 4000,
+    "places": 1,
+    "demo": false,
+    "text": "이번 달 이동비 약 4천 원 · 다녀온 곳 1곳"
+  }
+}

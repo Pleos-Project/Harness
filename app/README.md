@@ -42,7 +42,7 @@ adb install -r -g app/build/outputs/apk/debug/app-debug.apk        # -g: 권한 
 | 서버 응답 읽기 | `parseCardsResponse(json)` — 온라인에서는 `display` 문구 그대로 | F5 |
 | 오프라인 데모·서버 실패 fallback | `DemoServer(candidates).cards(req)` · `.swap(sessionId)` — 서버와 같은 응답 | AC-C-3·AC-F5-7·AC-F5-8 |
 | 충전 직후 | `chargeAmount` | F9, AC-F9-1 |
-| 주유 직후 '가득' 금액 | `fullTankAmount(시작 연료 %, 탱크 L, 단가)` → 리터·원·"약 8만 4천 원" | F9(PRD v1.3 '가득'), fixture D11 |
+| 주유 직후 '가득' 금액 | `fullTankAmount(시작 연료 %, 탱크 L, 단가)` → 리터·원·"약 7만 원"(그랜저 HEV 50L·25%) | F9(PRD v1.3 '가득'), fixture D11 |
 | 정산·도착·핀·월 합계(로컬 장부) | `ledgerStep(state, event)` · `monthSummary` | F8·F10·F17 |
 | 일러스트 변형 | `illustrationName(theme, placeId, n)` → `"<theme>-<n>"` | design/RULES.md 3절 |
 
@@ -55,7 +55,10 @@ adb install -r -g app/build/outputs/apk/debug/app-debug.apk        # -g: 권한 
 - 화면 문구는 `res/values/strings.xml`에 둔다(`scripts/lint_copy.py`가 검사). 엔진이 만든 문구(`balanceText`·`display.*`)는 그대로 보여 준다.
 - 색·글자는 `Chagok.colors.*`·`Chagok.type.*`(tokens.css 값, Pleos 가이드 위계)만 쓴다. 버튼·칩·카드·안내 문구·"시연용 값"은 `ui/components`의 `CgButton`·`CgChip`·`CgCard`·`CgNotice`·`DemoMark`. 명준 시안이 나오면 이 부품만 바꾼다.
 - 창 폭이 900px 이하면 한 단(`LocalNarrow`). 레이아웃 확인은 `@Preview`로 가로·세로(1:1 분할)·주간을 같이 둔다(`ChagokApp.kt` 참고).
+- **화면 상태는 `remember`가 아니라 ViewModel(SavedStateHandle)에 둔다.** 주행 중에는 화면 composable이 가림 화면으로 바뀌어 composition에서 빠지므로 `remember`·`rememberSaveable` 값이 버려진다. 카드·프리셋·인원·테마 선택처럼 정차 뒤 그대로 돌아와야 하는 값(명세 X1 "세션·입력 저장", AC-X1-1·AC-F5-6)은 ViewModel에. 펼침·스크롤처럼 사라져도 되는 것만 `remember`.
 - 화면 이동은 `AppViewModel`의 화면 스택(SavedStateHandle, AC-C-11). CCP Back은 홈에서 `moveTaskToBack(true)`(finish 금지, Pleos 앱 개발 가이드).
+- 버튼·칩·카드·아이콘 버튼은 누르면 95%로 줄고 배경이 바뀐다(가이드 Button interaction). 칩은 가이드 Toggle button, 교체는 Icon button(아이콘 SVG가 나오기 전까지 글자).
+- 범위·한 장 흐름은 `app/CardModel.kt`(`CardFlow`·`presets`·`toggleTheme`, JUnit `CardModelTest`). 지금은 오프라인 `DemoServer`만, 서버 호출은 같은 자리에 붙인다.
 
 ## 3. 서버 호출 — Kotlin에서 직접 (열린 결정 2 해결)
 - 앱이 부르는 건 `/v1/cards`·`/v1/cards/swap`·`/v1/prices` 셋(`contract/openapi.yaml`).
@@ -80,11 +83,31 @@ adb install -r -g app/build/outputs/apk/debug/app-debug.apk        # -g: 권한 
 - 기어 P = 규제 없음, D = 속도 0이어도 규제. 규제 중 시스템이 앱을 가린다. adb 설치본은 `distractionOptimized`를 선언해도 가려진다.
 
 ## 4-1. 차량값 읽기 (`vehicle/PleosVehicleRepository`)
-- Activity 수명주기 observer. `onStart`에 진입 때 값(용량·연료 종류·연비·충전 스위치·누적 주행거리)을 1회 읽고 리스너(SOC·연료 %·기어·운전석 문·착석·`RANGE_REMAINING`·주행 규제)를 등록, `onStop`에 전부 해제(AC-C-2).
+- Activity 수명주기 observer. 리스너는 두 묶음이다.
+  - **관문**(기어·주행 규제): 화면이 보이는 동안 늘 듣는다.
+  - **데이터**(SOC·연료 %·운전석 문·착석·`RANGE_REMAINING`): 정차일 때만. 등록 전에 진입 때 값(용량·연료 종류·연비·충전 스위치·누적 주행거리)을 1회 읽는다.
+  - `onStop`에 둘 다 해제(AC-C-2).
+- **주행 중(X1)** = 규제 ON 또는 기어 ≠ P(`isDriving`, 기어를 아직 모르면 아님): 데이터 리스너를 끊고(AC-X1-2) 앱 안에서도 화면을 가린다(`DrivingCover`, 금액 없음). 화면 스택은 그대로라 정차하면 같은 화면으로 돌아온다(AC-X1-1).
 - `onFailed`는 `SecurityException`(권한 없음)과 그 밖(미지원)을 나눠 `VehicleSnapshot.failures`에 남긴다. `VehicleException`은 공개 클래스가 아니라 못 쓴다.
 - 기어는 Pleos `Gear` API(P `CAR_DRIVE`). SDK가 AAOS `GEAR_SELECTION`을 권하지만 그건 A `CAR_POWERTRAIN` 권한이라 쓰지 않는다.
 - **충전 스위치는 Pleos SDK에 리스너가 없다**(AAR 2.3.2). 지금은 진입 때만 읽는다. F9는 AAOS `EV_CHARGE_SWITCH` 콜백 가능 여부를 확인하고 정한다.
 - SDK 사용법·실측은 Pleos 문서 묶음(`docs/pleos` 사본, June PC)의 11-sdk-verification을 기준으로 했다.
+
+## 4-2. 출발(F8)·1인 몫(F11)
+- `navi/NaviRepository`: 출발을 누를 때만 `NaviHelper.initialize` → `onConnected` → `requestRoute(RouteInfo)`. 성공 판정은 `onRouteStarted`(실측 약 9초 뒤, 그 사이 내비가 앞으로 와서 앱은 보통 `onStop`), 실패는 `onError`·초기화 실패 → "내비를 열 수 없어요" + 같은 버튼으로 재시도. `onStop`에 `removeListener`·`release`(AC-C-2). 주소는 계약 Card에 없어 장소명으로 채운다.
+- 출발한 곳은 최근 방문(10곳, `recent_visits`)에 들어가 다음 뽑기에서 빠진다. **PT 리허설 뒤에는 기록 초기화(S1)가 필요하다**(설정 화면 P7 전까지는 앱 강제 종료로 비움).
+- 차량값·착석이 바뀌면(SOC 1%p·주행가능거리 1km·착석 수) 마지막 변화 1초 뒤 같은 세션으로 다시 불러 앞면은 그대로, 배지·1인 몫만 갱신(`AppViewModel.onVehicle`, AC-F5-2·AC-F11-1). 1인 몫 문구는 엔진 `display.perPersonText` 그대로.
+- 착석 3명 이상이면 홈에 "N명 · 1인 기준으로 볼까요?"(AC-F11-3). 콘솔 착석: `PUT /vehicle/seat?kind=occupied&area=driver|passenger|rear_left|rear_right&value=true`.
+
+## 4-3. 장부(F10 정산 · F17 기록 · F8 trip)
+- 규칙은 `engine/Ledger.kt`(fixtures/ledger L1~L5), 언제 넣나는 `app/LedgerFlow.kt`(JUnit `LedgerFlowTest`).
+  - **Open**: 화면이 보이고 정차이며 누적 주행거리를 이번 방문에 새로 읽은 뒤 1번. 마지막 목적지는 내비 `getRecentDestinationInfo`(2초 안 없으면 목적지 없이). 홈 맨 위 정산 카드(닫기, 탭 → 기록)
+  - **Depart**: 출발 1탭 → trip(장소·편도·출발 때 누적 주행거리)
+  - **Arrive**: trip이 있고 정차 중 운전석 문 닫힘 → 열림. Δodo 0(에뮬)이면 편도 추정 + "시연용 값"
+- 저장: `ledger/EncryptedLedgerStore` — 앱 내부 파일, Android Keystore AES-256-GCM(AC-N-4, 장소 좌표는 장소당 1개, 현재 위치·궤적 없음). 깨지면 빈 장부로 시작
+- 복귀했는데 차량값이 그대로면 상태 흐름이 새 값을 내보내지 않는다 → 정산 확인은 `visit`(화면이 보인 횟수)도 키로 다시 돌리고, 문 기준값은 복귀 때 지우지 않는다. 누적 주행거리는 들어올 때마다 비우고 새로 읽는다(예전 값으로 0km 정산 방지)
+- 콘솔: 문 `PUT /vehicle/body?door_fl=true|false`, 주행거리 올리기 `PUT /vehicle/odometer?traveled_distance_km=<지금+132>`(줄일 수 없음)
+- 에뮬 앱은 사용자 10으로 돈다 → 데이터 비우기는 `adb uninstall` 뒤 `install -g`(그냥 `pm clear`는 안 지워짐). 앱 안 기록 초기화는 설정(S1, P7)
 
 ## 5. 앱을 지을 때 지킬 것
 - 차량 값은 리스너로 받는다. 타이머 반복 읽기 금지, 화면이 가려지면 내비·규제 리스너까지 해제(AC-C-2). H_Mate의 2초 폴링은 가져오지 않는다.

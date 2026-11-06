@@ -490,7 +490,7 @@ data class FullTankResult(val liters: Double, val krw: Int, val text: String)
 
 /**
  * F9 내연 금액 시트의 '가득'(PRD v1.3 F9: 3만 / 5만 / 가득 + 1만 원 단위 ±). Python full_tank_amount 와 같은 수식.
- * 주유 시작 때 연료 %에서 100%까지 채우는 양 × 단가. 천 원 어림 "약 8만 4천 원", 어림이 0이면 "1천 원 미만"(PRD 5-3).
+ * 주유 시작 때 연료 %에서 100%까지 채우는 양 × 단가. 천 원 어림 "약 7만 원"(그랜저 HEV 50L·25%·1,856원, fixture D11), 어림이 0이면 "1천 원 미만"(PRD 5-3).
  */
 fun fullTankAmount(startLevelPct: Double, tankL: Double, price: Double): FullTankResult {
     val liters = max(0.0, 100.0 - startLevelPct) / 100.0 * tankL

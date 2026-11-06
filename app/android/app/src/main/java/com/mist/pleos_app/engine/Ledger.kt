@@ -64,7 +64,15 @@ sealed class LedgerEvent {
 
     data class Depart(override val ts: String, val odometerKm: Double, val place: Place, val routeKm: Double) : LedgerEvent()
 
-    data class Arrive(override val ts: String, val odometerKm: Double, val seats: Int, val price: Double, val efficiency: Double) : LedgerEvent()
+    /** [priceSource]는 Open과 같다: 앱 내장 기본값 단가면 "default" → 도착이 남긴 스냅샷으로 다음 정산할 때도 "(평균 단가)". */
+    data class Arrive(
+        override val ts: String,
+        val odometerKm: Double,
+        val seats: Int,
+        val price: Double,
+        val efficiency: Double,
+        val priceSource: String? = "user",
+    ) : LedgerEvent()
 }
 
 /** card = 정산 카드 문구(없으면 null), row = 새 기록, skipped = 정산을 건너뛴 이유. */
@@ -104,7 +112,7 @@ private fun snapshotOf(ev: LedgerEvent.Open) =
     Snapshot(ev.odometerKm, ev.seats, ev.price, ev.efficiency, ev.ts, ev.priceSource ?: "user")
 
 private fun snapshotOf(ev: LedgerEvent.Arrive) =
-    Snapshot(ev.odometerKm, ev.seats, ev.price, ev.efficiency, ev.ts, "user")
+    Snapshot(ev.odometerKm, ev.seats, ev.price, ev.efficiency, ev.ts, ev.priceSource ?: "user")
 
 fun ledgerStep(state: LedgerState, event: LedgerEvent): Pair<LedgerState, LedgerOutput> = when (event) {
     is LedgerEvent.Depart -> Pair(

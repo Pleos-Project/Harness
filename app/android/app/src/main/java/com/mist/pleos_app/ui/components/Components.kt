@@ -18,7 +18,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
@@ -31,6 +34,15 @@ import com.mist.pleos_app.ui.theme.gpx
  * Pleos Connect UI Design Guide(Foundations·Basic button)를 따르는 공통 부품.
  * 명준 시안이 나오면 모양은 여기서만 바꾼다. 화면 코드는 색·크기를 직접 적지 않는다.
  */
+
+/**
+ * 가이드 Button interaction: 누르면 95%로 줄어들고(shrink) 배경색이 바뀐다. 손가락이 영역 밖으로 나가면 취소.
+ * 터치 가능한 부품(버튼·칩·카드·아이콘 버튼)에 같은 효과를 준다.
+ */
+private fun Modifier.pressScale(pressed: Boolean): Modifier = graphicsLayer {
+    val k = if (pressed) 0.95f else 1f
+    scaleX = k; scaleY = k
+}
 
 /** 버튼 종류: 가이드 Basic button의 filled(주요)·basic(보조). */
 enum class CgButtonKind { Filled, Basic }
@@ -53,6 +65,7 @@ fun CgButton(
     }
     Box(
         modifier
+            .pressScale(pressed)
             .defaultMinSize(minWidth = MinTouch, minHeight = 80.gpx.coerceAtLeast(MinTouch))
             .background(bg, RoundedCornerShape(16.gpx))
             .clickable(source, indication = null, enabled = enabled, role = Role.Button, onClick = onClick)
@@ -63,7 +76,7 @@ fun CgButton(
     }
 }
 
-/** 프리셋·당일/1박·인원·테마 칩. 비활성(예: 추가 0원 불가)은 enabled=false. */
+/** 프리셋·당일/1박·인원·테마 칩 = 가이드 Toggle button(Toggled 상태). 비활성(예: 추가 0원 불가)은 enabled=false. */
 @Composable
 fun CgChip(
     text: String,
@@ -73,10 +86,12 @@ fun CgChip(
     enabled: Boolean = true,
 ) {
     val c = Chagok.colors
+    val source = remember { MutableInteractionSource() }
+    val pressed by source.collectIsPressedAsState()
     val bg = when {
         !enabled -> c.btnDisabled
-        selected -> c.btnFilled
-        else -> c.btnBasic
+        selected -> if (pressed) c.btnFilledPressed else c.btnFilled
+        else -> if (pressed) c.btnBasicPressed else c.btnBasic
     }
     val fg = when {
         !enabled -> c.textTertiary
@@ -85,10 +100,11 @@ fun CgChip(
     }
     Box(
         modifier
+            .pressScale(pressed)
             .defaultMinSize(minWidth = MinTouch, minHeight = 64.gpx.coerceAtLeast(MinTouch))
             .background(bg, RoundedCornerShape(32.gpx))
             .semantics { this.selected = selected }
-            .clickable(enabled = enabled, role = Role.Tab, onClick = onClick)
+            .clickable(source, indication = null, enabled = enabled, role = Role.Tab, onClick = onClick)
             .padding(horizontal = 28.gpx, vertical = 12.gpx),
         contentAlignment = Alignment.Center,
     ) {
@@ -104,11 +120,14 @@ fun CgCard(
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val c = Chagok.colors
+    val source = remember { MutableInteractionSource() }
+    val pressed by source.collectIsPressedAsState()
     val base = modifier
+        .pressScale(onClick != null && pressed)
         .background(c.surfaceHigh, RoundedCornerShape(24.gpx))
         .border(1.gpx, c.line, RoundedCornerShape(24.gpx))
     Column(
-        (if (onClick != null) base.clickable(role = Role.Button, onClick = onClick) else base).padding(32.gpx),
+        (if (onClick != null) base.clickable(source, indication = null, role = Role.Button, onClick = onClick) else base).padding(32.gpx),
         verticalArrangement = Arrangement.spacedBy(12.gpx),
         content = content,
     )
@@ -153,3 +172,45 @@ fun CgBody(text: String, modifier: Modifier = Modifier, secondary: Boolean = fal
 @Composable
 fun CgCaption(text: String, modifier: Modifier = Modifier) =
     Text(text, modifier, style = Chagok.type.labelM, color = Chagok.colors.textTertiary)
+
+/**
+ * 가이드 Icon button(Circle 스타일). 아이콘 SVG가 아직 없어(BX, design/icons) 글자 한 자로 대신한다.
+ * [label]은 접근성 이름(화면 낭독).
+ */
+@Composable
+fun CgIconButton(glyph: String, label: String, onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true) {
+    val c = Chagok.colors
+    val source = remember { MutableInteractionSource() }
+    val pressed by source.collectIsPressedAsState()
+    Box(
+        modifier
+            .pressScale(pressed)
+            .defaultMinSize(minWidth = 80.gpx.coerceAtLeast(MinTouch), minHeight = 80.gpx.coerceAtLeast(MinTouch))
+            .background(if (!enabled) c.btnDisabled else if (pressed) c.btnBasicPressed else c.btnBasic, RoundedCornerShape(50))
+            .semantics { contentDescription = label }
+            .clickable(source, indication = null, enabled = enabled, role = Role.Button, onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(glyph, style = Chagok.type.titleS, color = if (enabled) c.textPrimary else c.textTertiary)
+    }
+}
+
+/** 금액 배지 3변형(design/components/badge): 추가 0원 · +1만/+3만 · 빠듯. 색 바탕 + 대비 계산한 글자색. */
+enum class BadgeKind { Zero, Extra, Tight, Neutral }
+
+@Composable
+fun CgBadge(text: String, kind: BadgeKind, modifier: Modifier = Modifier) {
+    val c = Chagok.colors
+    val (bg: Color, fg: Color) = when (kind) {
+        BadgeKind.Zero -> c.badgeZero to c.badgeZeroText
+        BadgeKind.Extra -> c.badgeExtra to c.badgeExtraText
+        BadgeKind.Tight -> c.badgeTight to c.badgeTightText
+        BadgeKind.Neutral -> c.surfaceAccent to c.textPrimary      // 1인 몫(design/components per-person)
+    }
+    Text(
+        text,
+        modifier.background(bg, RoundedCornerShape(12.gpx)).padding(horizontal = 20.gpx, vertical = 8.gpx),
+        style = Chagok.type.bodyS,
+        color = fg,
+    )
+}

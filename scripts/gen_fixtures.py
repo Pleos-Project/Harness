@@ -311,6 +311,16 @@ def main() -> None:
          ev_open("2026-11-04T18:00:00+09:00", 510)],
         "2026-11"))
 
+    write(ROOT / "fixtures/ledger/L6.json", ledger_fixture(
+        "L6", "평균 단가로 출발·도착 → 다음 열기 정산에도 '(평균 단가)'",
+        "도착 이벤트도 단가 출처(price_source)를 스냅샷에 남긴다. 37 ÷ 5.27 × 300 = 2,106 → 약 2천 원 (평균 단가). "
+        "도착 스냅샷을 user로 고정하면 이 문구에서 '(평균 단가)'가 빠진다(PR #28 리뷰).",
+        [ev_open("2026-11-07T09:00:00+09:00", 15_000, src="default"),
+         {"type": "depart", "ts": "2026-11-07T09:05:00+09:00", "odometer_km": 15_000, "place": DUMUL, "route_km": DUMUL_KM},
+         {"type": "arrive", "ts": "2026-11-07T10:00:00+09:00", "odometer_km": 15_037, "seats": 1,
+          "price": 300, "efficiency": EV_EFF, "price_source": "default"},
+         ev_open("2026-11-07T18:00:00+09:00", 15_074, src="default")],
+        "2026-11"))
     # ---------------- 순위 A1·B (fixtures/ranking) — 실서비스 후보 모양, 데모 후보에는 없는 소분류·날씨·행사·평판
     sea = [rcand("r_beach", "모래해변", "sea", "NA020900", 45.0, 55),
            rcand("r_port", "큰포구", "sea", "NA020700", 40.0, 50),

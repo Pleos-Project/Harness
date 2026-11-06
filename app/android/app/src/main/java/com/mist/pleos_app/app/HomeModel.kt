@@ -1,6 +1,7 @@
 package com.mist.pleos_app.app
 
 import com.mist.pleos_app.engine.Constants
+import com.mist.pleos_app.engine.Vehicle
 import com.mist.pleos_app.engine.computeRange
 import com.mist.pleos_app.engine.lPer100kmToKmPerL
 import com.mist.pleos_app.engine.vehicleInputs
@@ -44,18 +45,32 @@ fun homeBalance(
     val efficiencySdk = if (ev) s.evEfficiencyKmPerKwh else s.fuelEconomyLPer100km?.let { lPer100kmToKmPerL(it) }?.takeIf { it > 0 }
     val usedMockLevel = !ev && s.fuelPct == null && mockFuelPct != null
     val demo = efficiencySdk == null || capacitySdk == null || usedMockLevel
-    if (level == null) return HomeBalance(null, price == null, demo, sdkEv != null && sdkEv != ev)
-    val v = vehicleInputs(
-        constants, model, level.toDouble(),
-        remainingRangeM = s.rangeRemainingM ?: 0.0,
-        capacitySdk = capacitySdk,
-        efficiencySdk = efficiencySdk,
-        price = price,
-    )
+    val v = engineVehicle(constants, model, s, mockFuelPct, price)
+        ?: return HomeBalance(null, price == null, demo, sdkEv != null && sdkEv != ev)
     return HomeBalance(
         balanceText = computeRange(v).balanceText,
         averagePrice = v.priceSource == "default",
         demoValues = demo,
         fuelTypeMismatch = sdkEv != null && sdkEv != ev,
+    )
+}
+
+/** 차량값 → 엔진 [Vehicle]. 잔량을 아직 못 읽었으면 null. 규칙은 [homeBalance] 설명과 같다(잔고·범위·카드 요청이 모두 이걸 쓴다). */
+fun engineVehicle(
+    constants: Constants?,
+    model: String,
+    s: VehicleSnapshot,
+    mockFuelPct: Int? = null,
+    price: Double? = null,
+): Vehicle? {
+    val spec = constants?.vehicles?.get(model) ?: return null
+    val ev = spec.fuelType == "ev"
+    val level = (if (ev) s.socPct else (s.fuelPct ?: mockFuelPct)) ?: return null
+    return vehicleInputs(
+        constants, model, level.toDouble(),
+        remainingRangeM = s.rangeRemainingM ?: 0.0,
+        capacitySdk = if (ev) s.evCapacityWh?.takeIf { it > 0 }?.div(1000.0) else null,
+        efficiencySdk = if (ev) s.evEfficiencyKmPerKwh else s.fuelEconomyLPer100km?.let { lPer100kmToKmPerL(it) }?.takeIf { it > 0 },
+        price = price,
     )
 }

@@ -539,7 +539,7 @@ def charge_amount(start_soc: float, end_soc: float, capacity_kwh: float, price: 
 def full_tank_amount(start_level_pct: float, tank_l: float, price: float) -> tuple[float, int, str]:
     """F9 내연 금액 시트의 '가득'(PRD v1.3 F9: 3만 / 5만 / 가득 + 1만 원 단위 ±).
     주유 시작 때 연료 %에서 100%까지 채우는 양 × 단가. 기록·정산처럼 천 원 어림(PRD 5-3).
-    반환: (리터, 원, 문구 "약 8만 4천 원" / 어림이 0이면 "1천 원 미만")"""
+    반환: (리터, 원, 문구 "약 7만 원"(그랜저 HEV 50L·25%·1,856원, fixture D11) / 어림이 0이면 "1천 원 미만")"""
     liters = max(0.0, 100.0 - start_level_pct) / 100.0 * tank_l
     krw, txt, under = approx(liters * price, 1_000)
     text = txt if under else f"약 {txt}"
@@ -591,7 +591,8 @@ def ledger_step(state: dict, event: dict) -> tuple[dict, dict]:
     event.type:
       open   — 앱 실행·복귀(기어 P). {ts, odometer_km, seats, price, efficiency, price_source, recent_destination?}
       depart — F8 출발 1탭. {ts, odometer_km, place{id,name,lat,lng}, route_km}
-      arrive — F17 도착(기어 P + 운전석 문 / onDestinationArrived, 앱이 보일 때). {ts, odometer_km, seats, price, efficiency}
+      arrive — F17 도착(기어 P + 운전석 문 / onDestinationArrived, 앱이 보일 때). {ts, odometer_km, seats, price, efficiency, price_source}
+               price_source는 open과 같다(없으면 user). 도착이 남긴 스냅샷으로 다음 정산할 때 '(평균 단가)' 판단에 쓴다(fixture L6).
 
     규칙:
     - open: 직전 스냅샷 이후 주행거리로 정산(E4). 진행 중 trip이 있으면 그 trip을 이 정산으로 닫고

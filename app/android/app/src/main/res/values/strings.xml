@@ -22,6 +22,92 @@
     <string name="today_pick_conditions">추가 0원 · 당일 · 인원 자동</string>
     <string name="change_conditions">조건 바꾸기</string>
 
+    <!-- 범위(F2·F3) -->
+    <string name="range_extra_label">추가로 쓸 돈</string>
+    <string name="preset_zero">추가 0원 · 약 %1$dkm</string>
+    <string name="preset_zero_only">추가 0원</string>
+    <string name="preset_10k">+1만 원 · 약 %1$dkm</string>
+    <string name="preset_30k">+3만 원 · 약 %1$dkm</string>
+    <string name="range_zero_unavailable">추가 0원 범위가 없어요. +1만 원부터 볼게요</string>
+    <string name="range_days_label">일정</string>
+    <string name="range_day_trip">당일</string>
+    <string name="range_overnight">1박</string>
+    <string name="range_people_label">인원</string>
+    <string name="range_people_auto">%1$d명 · 자동</string>
+    <string name="range_theme_label">테마 (0~2개)</string>
+    <string name="range_pick">한 장 뽑기</string>
+
+    <!-- 한 장(F5) -->
+    <string name="raised_10k">추가 0원으로 갈 곳이 없어 +1만 원 기준이에요</string>
+    <string name="raised_30k">추가 0원으로 갈 곳이 없어 +3만 원 기준이에요</string>
+    <string name="only_nearby">가까운 곳만 볼 수 있어요</string>
+    <string name="few_candidates">범위 안 후보가 적어요</string>
+    <string name="ask_theme">테마를 바꿔 볼까요?</string>
+    <string name="ask_theme_sub">조건을 바꾸면 다른 곳을 뽑아 볼게요</string>
+    <string name="swap_label">다른 곳 보기</string>
+    <string name="stack_left">다른 후보 %1$d</string>
+    <string name="swaps_left">교체 %1$d번 남음</string>
+    <string name="depart">출발</string>
+    <string name="depart_requesting">내비를 여는 중</string>
+    <string name="navi_failed">내비를 열 수 없어요</string>
+    <!-- F11 인원 확인 토스트(PRD v1.5 6-3). "무게 감지" 표현 쓰지 않음 -->
+    <string name="payer_toast">%1$d명이 탔어요 · 나눠 낼 인원</string>
+    <string name="payer_minus">나눠 낼 인원 줄이기</string>
+    <string name="payer_plus">나눠 낼 인원 늘리기</string>
+    <string name="confirm">확인</string>
+    <string name="cost_tap_hint">눌러서 비용 보기</string>
+    <string name="cost_fuel">연료</string>
+    <string name="cost_toll">통행료(왕복)</string>
+    <string name="cost_parking">주차</string>
+    <string name="cost_total">합계</string>
+    <string name="cost_per_person">1인</string>
+    <string name="cost_none">없음</string>
+    <string name="cost_unknown">정보 없음</string>
+
+    <!-- 기록·정산(F10·F17) -->
+    <string name="close">닫기</string>
+    <string name="record_no_place">목적지 없음</string>
+    <string name="record_meta">%1$s · %2$dkm</string>
+
+    <!-- X1 주행 중 가림: 금액·카드 없이 한 줄 -->
+    <string name="driving_hidden">정차하면 다시 보여 드릴게요</string>
+
     <!-- X2 예외 -->
     <string name="reading_vehicle">차량 정보를 읽는 중</string>
+
+    <!-- S1 설정 -->
+    <string name="settings_model">차종</string>
+    <string name="model_grandeur_25">그랜저 2.5</string>
+    <string name="model_grandeur_hev">그랜저 HEV</string>
+    <string name="model_avante_hev">아반떼 HEV</string>
+    <string name="model_tucson_hev">투싼 HEV</string>
+    <string name="model_ioniq5_lr">아이오닉 5 LR</string>
+    <string name="model_ioniq6_lr">아이오닉 6 LR</string>
+    <string name="settings_price">단가</string>
+    <string name="settings_price_gas">휘발유</string>
+    <string name="settings_price_home">집 충전</string>
+    <string name="settings_price_fast">급속 충전</string>
+    <string name="settings_price_default">평균 %1$s</string>
+    <string name="settings_price_hint">비워 두면 평균 단가로 계산해요</string>
+    <string name="unit_krw_per_l">원/L</string>
+    <string name="unit_krw_per_kwh">원/kWh</string>
+    <string name="settings_margin">안전 여유</string>
+    <string name="settings_margin_value">50km와 남은 거리의 15% 중 큰 값을 남겨 둬요</string>
+    <string name="settings_people">인원</string>
+    <string name="settings_people_value">좌석 센서로 감지해요. 나눠 낼 인원은 탈 때 위쪽 알림에서 확인해요</string>
+    <string name="settings_mock">시연용 값(에뮬)</string>
+    <string name="settings_mock_fuel">모의 연료 %</string>
+    <string name="settings_mock_fuel_minus">모의 연료 % 줄이기</string>
+    <string name="settings_mock_fuel_plus">모의 연료 % 늘리기</string>
+    <string name="settings_mock_fuel_hint">내연 차종인데 연료 %를 읽지 못할 때 써요</string>
+    <string name="settings_seat_invert">착석 값 반전</string>
+    <string name="on">켜기</string>
+    <string name="off">끄기</string>
+    <string name="settings_records">기록</string>
+    <string name="settings_reset">기록 초기화</string>
+    <string name="settings_reset_title">기록을 지울까요?</string>
+    <string name="settings_reset_body">지난번 정산 기준, 정산 기록, 다녀온 곳 핀, 최근 방문이 지워져요</string>
+    <string name="settings_reset_confirm">지우기</string>
+    <string name="settings_reset_done">기록을 지웠어요</string>
+    <string name="cancel">취소</string>
 </resources>
