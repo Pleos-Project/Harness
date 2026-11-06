@@ -427,7 +427,8 @@ def ledger_step(state: dict, event: dict) -> tuple[dict, dict]:
     event.type:
       open   — 앱 실행·복귀(기어 P). {ts, odometer_km, seats, price, efficiency, price_source, recent_destination?}
       depart — F8 출발 1탭. {ts, odometer_km, place{id,name,lat,lng}, route_km}
-      arrive — F17 도착(기어 P + 운전석 문 / onDestinationArrived, 앱이 보일 때). {ts, odometer_km, seats, price, efficiency}
+      arrive — F17 도착(기어 P + 운전석 문 / onDestinationArrived, 앱이 보일 때). {ts, odometer_km, seats, price, efficiency, price_source}
+               price_source는 open과 같다(없으면 user). 도착이 남긴 스냅샷으로 다음 정산할 때 '(평균 단가)' 판단에 쓴다(fixture L6).
 
     규칙:
     - open: 직전 스냅샷 이후 주행거리로 정산(E4). 진행 중 trip이 있으면 그 trip을 이 정산으로 닫고
