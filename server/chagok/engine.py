@@ -375,7 +375,7 @@ def charge_amount(start_soc: float, end_soc: float, capacity_kwh: float, price: 
 def full_tank_amount(start_level_pct: float, tank_l: float, price: float) -> tuple[float, int, str]:
     """F9 내연 금액 시트의 '가득'(PRD v1.3 F9: 3만 / 5만 / 가득 + 1만 원 단위 ±).
     주유 시작 때 연료 %에서 100%까지 채우는 양 × 단가. 기록·정산처럼 천 원 어림(PRD 5-3).
-    반환: (리터, 원, 문구 "약 8만 4천 원" / 어림이 0이면 "1천 원 미만")"""
+    반환: (리터, 원, 문구 "약 7만 원"(그랜저 HEV 50L·25%·1,856원, fixture D11) / 어림이 0이면 "1천 원 미만")"""
     liters = max(0.0, 100.0 - start_level_pct) / 100.0 * tank_l
     krw, txt, under = approx(liters * price, 1_000)
     text = txt if under else f"약 {txt}"
