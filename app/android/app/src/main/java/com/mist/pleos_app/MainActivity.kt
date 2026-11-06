@@ -43,10 +43,14 @@ class MainActivity : ComponentActivity() {
         setContent {
             val snapshot by vehicle.state.collectAsStateWithLifecycle()
             val depart by navi.state.collectAsStateWithLifecycle()
-            // 차종·단가·모의 연료 %는 설정(S1, P7)에서 받는다. 그 전까지 에뮬 기본값 아이오닉 5 LR(명세 S1).
-            val balance = remember(snapshot) { homeBalance(vm.constants, DEFAULT_MODEL, snapshot) }
+            // 차종·단가·모의 연료 %는 설정(S1). 바꾸고 홈으로 돌아오면 바로 다시 계산(AC-F1-3·AC-S1-1)
+            val settings by vm.settings.collectAsStateWithLifecycle()
+            val model = settings.model
+            val balance = remember(snapshot, settings) {
+                homeBalance(vm.constants, model, snapshot, mockFuelPct = settings.mockFuelPct, price = settings.priceFor(vm.constants))
+            }
             ChagokTheme {
-                ChagokApp(vm, snapshot, DEFAULT_MODEL, balance, driving = isDriving(snapshot), depart = depart, onDepart = { card ->
+                ChagokApp(vm, snapshot, model, balance, driving = isDriving(snapshot), depart = depart, onDepart = { card ->
                     // F8: 출발 1탭 → 순정 내비. 최근 방문에 넣고(다음 뽑기에서 빠짐) 경로 요청
                     vm.recordDeparture(card, snapshot)
                     navi.depart(Destination(card.id, card.name, card.lat, card.lng))
@@ -58,5 +62,4 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private companion object { const val DEFAULT_MODEL = "ioniq5_lr" }
 }

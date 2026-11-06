@@ -28,7 +28,6 @@ import com.mist.pleos_app.R
 import com.mist.pleos_app.app.AppViewModel
 import com.mist.pleos_app.app.HomeBalance
 import com.mist.pleos_app.app.Screen
-import com.mist.pleos_app.app.engineVehicle
 import com.mist.pleos_app.engine.Card
 import com.mist.pleos_app.engine.Place
 import com.mist.pleos_app.navi.DepartState
@@ -72,7 +71,8 @@ fun ChagokApp(
     val ledger by vm.ledgerState.collectAsStateWithLifecycle()
     val visit by vm.visit.collectAsStateWithLifecycle()
     val payer by vm.payerState.collectAsStateWithLifecycle()
-    val vehicle = remember(snapshot) { engineVehicle(vm.constants, model, snapshot) }
+    val settings by vm.settings.collectAsStateWithLifecycle()
+    val vehicle = remember(snapshot, settings) { vm.vehicleOf(snapshot, model) }
     // CCP Back: 최상단(홈)에서는 finish 하지 않고 숨긴다(Pleos 앱 개발 가이드, 심사 반려 사유)
     BackHandler { if (!driving && !vm.back()) onExit() }   // 주행 중 Back은 받아서 무시(가림 화면 유지, 앱이 뒤로 숨지 않게)
     if (screen == Screen.CARD && !driving) LaunchedEffect(Unit) { vm.ensureCard(snapshot, model) }
@@ -100,7 +100,7 @@ fun ChagokApp(
             }
             Screen.CARD -> CardScreen(card, depart, onSwap = vm::swap, onRange = { vm.open(Screen.RANGE) }, onDepart = onDepart)
             Screen.RECORD -> RecordScreen(ledger)
-            Screen.SETTINGS -> Placeholder(stringResource(R.string.screen_settings)) { if (!vm.back()) onExit() }
+            Screen.SETTINGS -> SettingsScreen(settings, vm.constants, onChange = vm::updateSettings, onReset = vm::resetRecords)
         }
     }
     // F11: 2명 이상 + 지난번 확인값과 다르면 위쪽 토스트(정차 화면 어디서나, 주행 중에는 가림 화면만)
@@ -188,16 +188,6 @@ private fun TodayPickCard(onClick: () -> Unit, modifier: Modifier) {
 private fun DrivingCover() {
     Box(Modifier.fillMaxSize().background(Chagok.colors.bgSecondary), contentAlignment = Alignment.Center) {
         CgBody(stringResource(R.string.driving_hidden), secondary = true)
-    }
-}
-
-// ------------------------------------------------------------ 아직 안 지은 화면 (P3~P7)
-@Composable
-private fun Placeholder(title: String, back: () -> Unit) {
-    Column(verticalArrangement = Arrangement.spacedBy(24.gpx)) {
-        CgTitle(title)
-        CgNotice(stringResource(R.string.preparing))
-        CgButton(stringResource(R.string.back), back, kind = CgButtonKind.Basic)
     }
 }
 

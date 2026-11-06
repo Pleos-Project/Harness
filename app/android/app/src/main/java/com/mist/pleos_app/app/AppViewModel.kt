@@ -45,6 +45,20 @@ class AppViewModel(app: Application, private val saved: SavedStateHandle) : Andr
         it.recentVisits = saved.get<List<String>>(KEY_RECENT).orEmpty()
     }
 
+    // ------------------------------------------------------------ 설정(S1)
+    private val settingsStore = PrefsSettingsStore(app)
+    private val settingsFlow = MutableStateFlow(settingsStore.load())
+    val settings: StateFlow<Settings> = settingsFlow.asStateFlow()
+
+    fun updateSettings(next: Settings) {
+        settingsStore.save(next); settingsFlow.value = next
+        ChagokLog.event("settings", "model" to next.model, "user_price" to (next.priceFor(constants) != null), "invert" to next.seatInvert)
+    }
+
+    /** 엔진 [com.mist.pleos_app.engine.Vehicle]: 설정의 단가·모의 연료 %를 넣는다(잔고·범위·카드·장부가 모두 이걸 쓴다). */
+    fun vehicleOf(s: VehicleSnapshot, model: String = settingsFlow.value.model) =
+        settingsFlow.value.let { engineVehicle(constants, model, s, mockFuelPct = it.mockFuelPct, price = it.priceFor(constants)) }
+
     // ------------------------------------------------------------ 화면 스택
     val stack: StateFlow<List<Screen>> = saved.getStateFlow(KEY_STACK, listOf(Screen.HOME.name))
         .map { names -> names.mapNotNull { n -> Screen.entries.firstOrNull { it.name == n } }.ifEmpty { listOf(Screen.HOME) } }
@@ -72,7 +86,7 @@ class AppViewModel(app: Application, private val saved: SavedStateHandle) : Andr
     /** 범위 화면에 들어올 때: 저장된 조건이 없으면 추가 0원(안 되면 +1만, AC-F2-2). */
     fun conditionsFor(s: VehicleSnapshot, model: String): Conditions {
         if (saved.get<Int>(KEY_EXTRA) != null) return cond.value
-        val v = engineVehicle(constants, model, s) ?: return cond.value
+        val v = vehicleOf(s, model) ?: return cond.value
         return cond.value.copy(extraKrw = defaultExtra(v, cond.value.days))
     }
 
@@ -121,7 +135,7 @@ class AppViewModel(app: Application, private val saved: SavedStateHandle) : Andr
      * 마지막 변화 1초 뒤에 같은 세션으로 다시 불러 배지·1인 몫만 갱신한다(AC-F5-2·AC-F11-1, 재호출 1건).
      */
     fun onVehicle(s: VehicleSnapshot, model: String) {
-        val v = engineVehicle(constants, model, s) ?: return
+        val v = vehicleOf(s, model) ?: return
         val seats = payersOf(s)
         val key = recallKey(v.levelPct.toInt(), s.rangeRemainingM, seats)
         val prev = lastKey
@@ -165,7 +179,7 @@ class AppViewModel(app: Application, private val saved: SavedStateHandle) : Andr
     fun maybeSettle(s: VehicleSnapshot, model: String, fetchRecent: ((Place?) -> Unit) -> Unit) {
         if (opening || !isParked(s)) return
         val odo = s.odometerKm ?: return
-        val v = engineVehicle(constants, model, s) ?: return
+        val v = vehicleOf(s, model) ?: return
         if (!ledger.needsOpen) return
         opening = true
         val seats = payersOf(s)
@@ -181,7 +195,7 @@ class AppViewModel(app: Application, private val saved: SavedStateHandle) : Andr
 
     /** 운전석 문·기어가 바뀔 때: trip이 있으면 정차 중 문 열림 = 도착(F17). */
     fun onDoor(s: VehicleSnapshot, model: String) {
-        val v = engineVehicle(constants, model, s)
+        val v = vehicleOf(s, model)
         if (ledger.onDoor(s.driverDoorOpen, isParked(s), v, s.odometerKm, payersOf(s))) refreshLedger()
     }
 
@@ -210,7 +224,7 @@ class AppViewModel(app: Application, private val saved: SavedStateHandle) : Andr
 
     /** 엔진에 넘기는 인원(카드 1인 몫·정산 스냅샷). 엔진의 seats 자리에 나눠 낼 인원을 넣는다(DECISIONS 11/6). */
     fun payersOf(s: VehicleSnapshot): Int = payers.payersFor(seatsOf(s))
-    fun seatsOf(s: VehicleSnapshot): Int = seatCount(s.seatsOccupied, invert = SEAT_INVERT_EMULATOR)
+    fun seatsOf(s: VehicleSnapshot): Int = seatCount(s.seatsOccupied, invert = settingsFlow.value.seatInvert)
     fun shouldAskPayers(s: VehicleSnapshot): Boolean = payers.shouldAsk(seatsOf(s))
 
     fun confirmPayers(seats: Int, n: Int) {
@@ -231,7 +245,7 @@ class AppViewModel(app: Application, private val saved: SavedStateHandle) : Andr
 
     private fun load(s: VehicleSnapshot, model: String, today: Boolean): CardUi? {
         val f = flow ?: return null
-        val v = engineVehicle(constants, model, s) ?: return null
+        val v = vehicleOf(s, model) ?: return null
         val seats = payersOf(s)
         val ui = if (today) f.today(v, seats) else f.pick(v, seats, conditions.value)
         ChagokLog.event("card_open", "today" to today, "shown" to (ui is CardUi.Shown), "raised" to (ui as? CardUi.Shown)?.raisedTo)
@@ -245,8 +259,6 @@ class AppViewModel(app: Application, private val saved: SavedStateHandle) : Andr
         const val KEY_THEMES = "cond_themes"
         const val KEY_CARD_FROM_TODAY = "card_from_today"
         const val KEY_RECENT = "recent_visits"
-        /** 착석 반전(설정 seat_invert, 에뮬 ON). 설정 화면(S1)이 생기면 그 값을 쓴다. */
-        const val SEAT_INVERT_EMULATOR = true
 
         fun readAsset(app: Application, path: String): String? =
             runCatching { app.assets.open(path).bufferedReader().use { it.readText() } }
