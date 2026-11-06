@@ -1,14 +1,31 @@
 # 차곡 디자인 규칙 (코드로 넘길 때)
 
-디자이너가 Claude Code로 HTML·CSS·SVG를 만들어 `design/`에 PR 한다. 이 파일을 Claude Code에 먼저 읽힌다.
-앱은 WebView라 여기 있는 조각이 거의 그대로 들어간다. 동작(JS)은 개발이 붙인다.
-피그마로만 작업한다면 4절만 지키고, 코드 변환은 개발(June)이 한다 — 어느 쪽으로 할지는 디자이너가 정한다(DECISIONS 열린 결정 12).
+디자이너가 Claude Code(아티팩트)로 HTML·CSS·SVG 시안을 만들어 `design/`에 PR 한다. 이 파일을 Claude Code에 먼저 읽힌다.
+앱은 Jetpack Compose다. 여기 시안은 앱에 그대로 들어가지 않고, 머지되면 자동 반영 PR(5절)이 Compose 화면을 시안대로 고친다.
 
 | 영역 | 담당 |
 |---|---|
-| 토큰(`tokens.css`)·컴포넌트 조각(`components/`)·미리보기·이 규칙 | UI·UX 디자이너 명준 |
+| 화면 시안(`screens/`)·토큰·컴포넌트 조각(`components/`)·미리보기·이 규칙 | UI·UX 디자이너 명준 |
 | 테마 일러스트(`illustrations/`)·아이콘(`icons/`)·로고·앱 아이콘(`brand/`)·키 컬러 | 제작 BX 디자이너, 레포 반영 명준(3절 "BX 파일 올리기") |
-| 연동 리뷰(WebView에 그대로 들어가는지) | June |
+| 반영 PR 리뷰(Compose 연결·동작) | June·효성 |
+
+## 0. 화면의 기준은 design/ (11/6 명준 결정)
+- 화면에 보이는 것(배치·부품·문구 자리·상태별 모양·인터랙션)의 기준은 `design/`이다. 개발이 PRD를 보고 먼저 만든 화면은 임시 구현이고, 디자인 PR이 머지되면 자동 반영 PR이 그 화면을 시안대로 고친다.
+- 개발 쪽이 정하는 것: 상태(ViewModel)·화면 스택 이동·엔진 연결·주행 중 가림·리스너 수명·권한. 반영 PR은 이 연결을 그대로 두고 보이는 부분만 시안에 맞춘다.
+- 시안에 없는 앱 요소가 기능(AC 번호가 있는 것)이면 반영 PR이 지우지 않고 "확인 필요"로 남긴다. 디자이너가 다음 디자인 PR에서 자리를 정한다.
+- 화면 시안은 `design/screens/<화면>.html`(+ 같은 이름 `.css`), 상태가 여럿이면 한 파일 안에 `data-state="기본|정산 닫음|…"` 블록으로 나눈다. 부품은 `design/components/`.
+
+### 시안 ↔ 앱 파일 대응표 (반영 PR이 고칠 곳)
+| 시안 | 앱(Compose) | 비고 |
+|---|---|---|
+| `screens/home.html` | `ui/ChagokApp.kt` `HomeScreen`·`BalanceCard`·`TodayPickCard`, `ui/RecordScreen.kt` `SettleCard` | 정산 카드·잔고·오늘의 한 곳·상황 카드 자리 |
+| `screens/people-toast.html` | 홈 위 겹침(새로) · `ui/components` | 동승 인원 확인 토스트(F11, 토스트형 확정) |
+| `screens/range.html` | `ui/RangeScreen.kt` | 조건 바꾸기 |
+| `screens/card.html` | `ui/CardScreen.kt` `Shown`·`FrontCard`·`CostBreakdown` | 한 장 · 교체 · 3번째 넘김 · 비용 분해 |
+| `screens/record.html` | `ui/RecordScreen.kt` `RecordScreen` | 기록 |
+| `screens/charge.html` · `fuel.html` · `settings.html` · `error.html` | 없으면 새 화면(`Placeholder` 교체) | 충전 끝 · 주유 확인 · 설정 · 불러오기 실패 |
+| `components/<부품>.html` | `ui/components/Components.kt` `Cg*` | 버튼·칩·카드·배지·안내 등. 화면마다 따로 만들지 않는다 |
+- 대응표에 없는 시안이 오면 반영 PR이 가장 가까운 파일을 고르고 PR 본문에 적는다. 화면 파일 이름이 바뀌면 이 표를 같이 고친다(개발 PR에서).
 
 ## 1. 값은 전부 tokens.css 변수로 — 기준은 Pleos Connect UI Design Guide
 - 색·글자·간격은 `design/tokens.css`의 `--cg-*` 변수만. 하드코딩 금지.
@@ -68,10 +85,10 @@ Co-authored-by: <BX 디자이너 이름> <GitHub에 쓸 이메일>
 - 가로·세로·멀티윈도우(한 장만) 세 레이아웃. `design/preview.html`에서 셋 다 확인하고 PR.
 
 ## 5. 넘기는 방법
-- PR 제목 `design: <무엇>`. 리뷰는 June(연동) 1명.
+- PR 제목 `design: <무엇>`. 리뷰는 June(연동). 시안 자체는 디자이너가 정하므로 리뷰는 Compose로 옮길 수 있는지·빠진 기능이 없는지를 본다.
 - PR 본문의 **"앱 반영 요청"** 절을 채운다(바뀐 조각·토큰, 새 `data-field`·`data-derived`, 앱에서 할 일).
 - **자동 반영:** `design/`을 바꾼 PR이 `develop`에 머지되면 `.github/workflows/design-handoff.yml`이 돈다. Claude Code가 그 변경과 "앱 반영 요청" 절을 읽고 `app/android`(Compose)에 반영해 `feature/design-apply-pr-<번호>` PR을 연다. 리뷰어는 June·효성이고 자동 머지는 하지 않는다.
-  - **화면 구조만** 맡는다. `design/components/`·`design/preview.html`이 바뀐 PR에서만 돈다(`*.md`·토큰만 바뀐 PR은 돌지 않음, 일러스트는 방식이 정해지면 추가). 토큰(`tokens.json`·`tokens.css`)과 앱 테마(`ui/theme/`)는 토큰 생성 스크립트가 맡고, 반영 PR은 테마를 고치지 않는다. 생성 스크립트가 생기기 전까지 테마 반영은 June이 한다.
+  - **화면 구조만** 맡는다. `design/screens/`·`design/components/`·`design/preview.html`이 바뀐 PR에서만 돈다(`*.md`·토큰만 바뀐 PR은 돌지 않음, 일러스트는 방식이 정해지면 추가). 토큰(`tokens.json`·`tokens.css`)과 앱 테마(`ui/theme/`)는 토큰 생성 스크립트가 맡고, 반영 PR은 테마를 고치지 않는다. 생성 스크립트가 생기기 전까지 테마 반영은 June이 한다.
   - Claude가 쓸 수 있는 명령은 좁혀 두었다: 머지(`gh pr merge`)·develop 푸시는 못 하고, 푸시는 그 반영 브랜치 하나만.
   - 금지 경로(design/·테마 등) 검사는 CI `copy`(문구 검사) 잡이 반영 PR의 체크로 돌린다. 반영 PR에 빨간 X로 뜨고 커밋마다 다시 검사한다. 브랜치 보호가 없어 머지를 강제로 막지는 못하니, 리뷰 때 그 표시를 본다.
   - 디자인 PR마다 따로 실행한다. 여러 개가 연달아 머지되면 반영 PR도 각각 생긴다(서로의 반영은 들어 있지 않으니 차례로 머지하며 충돌을 푼다).
