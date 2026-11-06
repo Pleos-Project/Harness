@@ -51,16 +51,24 @@ sealed class SwapResult {
 // ------------------------------------------------------------ 순위
 internal data class Ranked(val card: Card, val score: Double, val routeKm: Double)
 
-/** 후보를 카드로. 최근 방문·90분 초과·+3만 밖은 뺀다. */
-internal fun evaluate(candidates: List<Candidate>, b: Budget, seats: Int, themes: List<String>, recentIds: List<String>): List<Ranked> {
+/**
+ * 후보를 카드로. 최근 방문·90분 초과·+3만 밖은 뺀다.
+ * ctx가 있으면 A1 규칙: 제외 이름·소분류, 나들이 날 안 열리는 행사도 빼고 목적지성·날씨(B는 평판)를 점수에 더한다.
+ */
+internal fun evaluate(
+    candidates: List<Candidate>, b: Budget, seats: Int, themes: List<String>, recentIds: List<String>,
+    ctx: RankContext? = null, days: Int = 1,
+): List<Ranked> {
     val recentThemes = candidates.filter { it.id in recentIds }.map { it.theme }
+    val cfg = ctx?.cfg
     val out = mutableListOf<Ranked>()
     for (c in candidates) {
         if (c.id in recentIds || timeLabel(c.minutes) == null) continue
+        if (ctx != null && (excluded(c, ctx.cfg) || !eventActive(c, ctx.tripDate, days))) continue
         val badge = computeBadge(c, b)
         if (badge.ringKrw == null) continue
-        val s = score(c, badge, themes, recentThemes)
-        out.add(Ranked(cardOf(c, computeCost(c, b, seats), badge, reasonLine(c, s, badge)), weighted(s), c.routeKm))
+        val s = score(c, badge, themes, recentThemes, ctx)
+        out.add(Ranked(cardOf(c, computeCost(c, b, seats), badge, reasonLine(c, s, badge, ctx), ctx), weighted(s, cfg), c.routeKm))
     }
     return out
 }
@@ -100,6 +108,14 @@ internal fun buildStack(picked: Ranked, pool: List<Ranked>, size: Int = STACK_SI
     return stack
 }
 
+/** 응답 hint 하나. '후보가 적어요'가 먼저, 아니면 비 예보인데 야외 테마를 골라 야외 카드가 나온 경우 '실내로 바꿔 볼까요?'. */
+internal fun pickHint(n: Int, extraKrw: Int, themes: List<String>, picked: Card?, ctx: RankContext?): Hint? {
+    val h = fewHint(n, extraKrw, themes)
+    if (h != null || ctx == null || picked == null) return h
+    if (themes.isNotEmpty() && "indoor" !in themes && picked.indoor != true && (picked.rainLevel ?: 0.0) >= 0.5) return ctx.cfg.rainHint
+    return null
+}
+
 /** X2 '범위 안 후보가 적어요' + 테마 해제 / 다음 프리셋. */
 internal fun fewHint(n: Int, extraKrw: Int, themes: List<String>): Hint? {
     if (n >= 3) return null
@@ -110,16 +126,21 @@ internal fun fewHint(n: Int, extraKrw: Int, themes: List<String>): Hint? {
     return Hint("few_candidates", "범위 안 후보가 적어요", actions)
 }
 
-internal fun ranked(req: CardsRequest, candidates: List<Candidate>): Triple<List<Ranked>, List<Ranked>, Double> {
+internal fun ranked(req: CardsRequest, candidates: List<Candidate>, ctx: RankContext? = null): Triple<List<Ranked>, List<Ranked>, Double> {
     val radius = radiusKm(req.budget, req.extraKrw)
-    val all = sortRanked(evaluate(candidates, req.budget, req.seatsOccupied, req.themes, req.recentVisits), radius)
+    val all = sortRanked(evaluate(candidates, req.budget, req.seatsOccupied, req.themes, req.recentVisits, ctx, req.days), radius)
     return Triple(all, all.filter { eligible(it.card, req.extraKrw, req.themes) }, radius)
 }
 
 // ------------------------------------------------------------ 세션
-/** 메모리 세션(30분). 서버 cards.py 의 build_cards·swap 과 같은 규칙. */
+/**
+ * 메모리 세션(30분). 서버 cards.py 의 build_cards·swap 과 같은 규칙.
+ * ranking = constants.json "ranking"(A1·B 값). 데모 고정 모드 ctx = 날씨 맑음 고정·행사 날짜 안 봄·variant a1
+ * → 데모 후보는 소분류가 없어 기존 규칙과 같은 결과(fixtures/cards/D*.json 그대로).
+ */
 class DemoServer(
     private val candidates: List<Candidate>,
+    private val ranking: RankingConfig,
     private val now: () -> Long = { System.currentTimeMillis() },
     ids: (() -> String)? = null,
 ) {
@@ -129,8 +150,12 @@ class DemoServer(
         var excluded: List<String>,
         var swaps: Int,
         var request: CardsRequest,
+        var ctx: RankContext,
         var t: Long,
     )
+
+    /** 데모 고정 모드 순위 조건(서버 cards.demo_ctx). */
+    fun demoCtx(variant: String = "a1"): RankContext = RankContext(cfg = ranking, variant = variant)
 
     private var counter = 0
     private val nextId: () -> String = ids ?: { "demo-${++counter}" }
@@ -148,14 +173,19 @@ class DemoServer(
         return s
     }
 
-    /** POST /v1/cards 와 같은 응답. sessionId가 있으면 재호출(같은 picked에 새 배지·1인 몫·이유). */
-    fun cards(req: CardsRequest): CardsResponse {
-        val (all, pool, radius) = ranked(req, candidates)
+    /**
+     * POST /v1/cards 와 같은 응답. sessionId가 있으면 재호출(같은 picked에 새 배지·1인 몫·이유).
+     * ctx = 순위 조건. 없으면 재호출은 세션 ctx, 새로 뽑을 때는 데모 ctx.
+     */
+    fun cards(req: CardsRequest, ctx: RankContext? = null): CardsResponse {
         var sid = req.sessionId
         val sess = sid?.let { get(it) }
+        val use = ctx ?: sess?.ctx ?: demoCtx()
+        val (all, pool, radius) = ranked(req, candidates, use)
         val picked: Ranked?
         val stack: List<Ranked>
         if (sess != null) {
+            sess.ctx = use
             sess.request = req.copy(sessionId = null)
             val live = pool.filter { it.card.id !in sess.excluded }
             var p = all.firstOrNull { it.card.id == sess.pickedId }
@@ -173,18 +203,18 @@ class DemoServer(
             if (picked != null) {
                 prune()
                 val newId = nextId()
-                sessions[newId] = Session(picked.card.id, stack.map { it.card.id }, emptyList(), 0, req.copy(sessionId = null), now())
+                sessions[newId] = Session(picked.card.id, stack.map { it.card.id }, emptyList(), 0, req.copy(sessionId = null), use, now())
                 sid = newId
             }
         }
-        return CardsResponse(sid, round1(radius), pool.size, fewHint(pool.size, req.extraKrw, req.themes), picked?.card, stack.map { it.card })
+        return CardsResponse(sid, round1(radius), pool.size, pickHint(pool.size, req.extraKrw, req.themes, picked?.card, use), picked?.card, stack.map { it.card })
     }
 
     /** POST /v1/cards/swap 과 같은 규칙: 화면 스택 순서대로 다음 카드, 세션의 최신 값으로 배지. */
     fun swap(sessionId: String, excludeIds: List<String> = emptyList()): SwapResult {
         val sess = get(sessionId) ?: return SwapResult.Error("session_not_found")
         if (sess.swaps >= MAX_SWAPS) return SwapResult.Error("swap_limit", "테마를 바꿔 볼까요?")
-        val (all, pool, _) = ranked(sess.request, candidates)
+        val (all, pool, _) = ranked(sess.request, candidates, sess.ctx)
         val byId = all.associateBy { it.card.id }
         val excluded = (sess.excluded + excludeIds + listOfNotNull(sess.pickedId)).distinct()
         val nxt = sess.stackIds.firstOrNull { it in byId && it !in excluded }?.let { byId.getValue(it) }

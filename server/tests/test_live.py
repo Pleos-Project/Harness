@@ -35,7 +35,8 @@ def make_db(path: Path, n: int = 40, day: str = "2026-11-05") -> Path:
     with con:
         con.execute("DELETE FROM candidate")
         for i in range(n):
-            con.execute("INSERT INTO candidate VALUES (?,?,?,?,?,?,?,?,?,?,?)",
+            con.execute("INSERT INTO candidate (id, contentid, name, theme, lcls3, region, addr, lat, lng, image, updated_at)"
+                        " VALUES (?,?,?,?,?,?,?,?,?,?,?)",
                         (f"ta_{i:03d}", str(i), f"장소{i}", THEMES[i % len(THEMES)], "X", "41", "",
                          O["lat"], O["lng"] + 0.017 * (i + 1), 0, day))
         con.execute("INSERT OR REPLACE INTO meta VALUES ('tourapi_refreshed', ?)", (day,))

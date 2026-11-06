@@ -38,7 +38,10 @@ class CandidateIndex:
         self._check_s = check_s
         self._clock = clock
         self._rows: list[S.Row] = []
+        self._meta: dict[str, S.Meta] = {}
+        self._cur: dict[str, S.Curation] = {}
         self._refreshed: str | None = None
+        self._curated: str | None = None
         self._checked: float | None = None
         self._lock = threading.Lock()
 
@@ -46,6 +49,11 @@ class CandidateIndex:
         return Path(self._path) if self._path else S.db_path()
 
     def rows(self) -> tuple[list[S.Row], str | None]:
+        rows, _, _, refreshed = self.snapshot()
+        return rows, refreshed
+
+    def snapshot(self) -> tuple[list[S.Row], dict[str, S.Meta], dict[str, S.Curation], str | None]:
+        """(후보 행, 소분류·시군구·행사 날짜, A2 큐레이션, 갱신일). 큐레이션은 meta.curation_updated가 바뀌면 다시 읽는다."""
         with self._lock:
             now = self._clock()
             if self._checked is None or now - self._checked >= self._check_s:
@@ -58,11 +66,16 @@ class CandidateIndex:
                         when = when[0] if when else None
                         if when != self._refreshed or not self._rows:
                             self._rows, self._refreshed = S.load_rows(con)
+                            self._meta = S.load_meta(con)
+                        cur = con.execute("SELECT value FROM meta WHERE key='curation_updated'").fetchone()
+                        cur = cur[0] if cur else None
+                        if cur != self._curated:
+                            self._cur, self._curated = S.load_curation(con), cur
                     except sqlite3.Error:
                         pass  # 갱신 중이거나 스키마 전 → 지난 값 유지
                     finally:
                         con.close()
-            return self._rows, self._refreshed
+            return self._rows, self._meta, self._cur, self._refreshed
 
 
 class LivePools:
@@ -142,19 +155,22 @@ def window(pool: list[dict], n: int = REFINE_WINDOW, far: int = FAR_IN_WINDOW) -
     return [x["id"] for x in out]
 
 
-def estimates(req: dict, rows: list[S.Row]) -> list[E.Candidate]:
+def estimates(req: dict, rows: list[S.Row], meta: dict[str, S.Meta] | None = None,
+              cur: dict[str, S.Curation] | None = None) -> list[E.Candidate]:
     o = req["origin"]
-    return S.estimate(o["lat"], o["lng"], rows)
+    return S.estimate(o["lat"], o["lng"], rows, meta, cur)
 
 
 def candidates_for(req: dict, rows: list[S.Row], *, fetch, cache: R.RouteCache, keep_ids: list[str] = (),
-                   refined: dict[str, E.Candidate] | None = None
+                   refined: dict[str, E.Candidate] | None = None, ctx: E.RankContext | None = None,
+                   meta: dict[str, S.Meta] | None = None, cur: dict[str, S.Curation] | None = None
                    ) -> tuple[list[E.Candidate], dict[str, E.Candidate], LiveStats]:
     """(순위에 넣을 후보, 이 세션에서 실경로를 받은 후보, 통계).
-    keep_ids = 세션의 지금 카드·스택(재호출 때 같은 카드가 순위에 남게). refined = 세션에서 이미 받은 실경로."""
+    keep_ids = 세션의 지금 카드·스택(재호출 때 같은 카드가 순위에 남게). refined = 세션에서 이미 받은 실경로.
+    ctx = 순위 조건(A1·B, 날씨, 나들이 날). 실경로로 바꿀 후보(window)도 이 순위로 고른다."""
     refined = dict(refined or {})
-    est = estimates(req, rows)
-    _, pool, _ = C._ranked(req, est)
+    est = estimates(req, rows, meta, cur)
+    _, pool, _ = C._ranked(req, est, ctx)
     st = LiveStats(pool=len(est), in_range=len(pool))
     if fetch is None:
         return est, refined, st
@@ -168,12 +184,14 @@ def candidates_for(req: dict, rows: list[S.Row], *, fetch, cache: R.RouteCache, 
         # 실패한 후보(추정값 그대로)는 넣지 않는다 — 캐시에 있는 것 = 실경로를 받은 것
         refined.update({c.id: c for c in new if cache.get(R.grid_key(o["lat"], o["lng"], c.id)) is not None})
     ranked = list(refined.values())
-    if not ranked or not C._ranked(req, ranked)[1]:   # 실경로 후보가 없거나 전부 범위 밖 → 추정값 전체로
+    if not ranked or not C._ranked(req, ranked, ctx)[1]:   # 실경로 후보가 없거나 전부 범위 밖 → 추정값 전체로
         return est, refined, st
     st.ranked_on = "route"
     return ranked, refined, st
 
 
-def swap_candidates(req: dict, rows: list[S.Row], refined: dict[str, E.Candidate]) -> list[E.Candidate]:
+def swap_candidates(req: dict, rows: list[S.Row], refined: dict[str, E.Candidate],
+                    meta: dict[str, S.Meta] | None = None, cur: dict[str, S.Curation] | None = None
+                    ) -> list[E.Candidate]:
     """교체 때 순위에 넣을 후보: 카드를 만들 때와 같은 집합."""
-    return list(refined.values()) if refined else estimates(req, rows)
+    return list(refined.values()) if refined else estimates(req, rows, meta, cur)

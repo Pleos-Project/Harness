@@ -7,6 +7,7 @@ import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.boolean
+import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.double
 import kotlinx.serialization.json.doubleOrNull
@@ -65,6 +66,31 @@ fun parseConstants(text: String): Constants {
         homeChargeKrwPerKwh = price.dbl("home_charge_krw_per_kwh"),
         fastChargeKrwPerKwh = price.dbl("fast_charge_krw_per_kwh"),
         vehicles = vehicles,
+        ranking = parseRanking(o.getValue("ranking").jsonObject),
+    )
+}
+
+/** constants.json "ranking" → RankingConfig(서버 engine.py RankingConfig.from_json과 같은 키). */
+fun parseRanking(o: JsonObject): RankingConfig {
+    val penalty = o.getValue("name_penalty").jsonObject
+    val ex = o.getValue("exclude").jsonObject
+    val long = o.getValue("long_event").jsonObject
+    val hint = o.getValue("rain_hint").jsonObject
+    return RankingConfig(
+        weights = o.getValue("weights").jsonObject.mapValues { it.value.jsonPrimitive.double },
+        qualityDefault = o.dbl("quality_default"),
+        quality = o.getValue("quality").jsonObject.mapValues { it.value.jsonPrimitive.double },
+        subcategoryKo = o.getValue("subcategory_ko").jsonObject.mapValues { it.value.jsonPrimitive.content },
+        penaltyWords = penalty.strList("words"), penaltyFactor = penalty.dbl("factor"),
+        excludeNames = ex.strList("names"), excludeSubcategories = ex.strList("subcategories"),
+        excludePrefixes = ex.strList("prefixes"),
+        longEventDays = long.integer("days"), longEventFactor = long.dbl("factor"),
+        indoor = o.strList("indoor").toSet(),
+        indoorClear = o.dbl("indoor_clear"),
+        rainPhrase = o.str("rain_phrase"),
+        reputationMissing = o.dbl("reputation_missing"),
+        offSeasonFactor = o.dbl("off_season_factor"),
+        rainHint = Hint(hint.str("code"), hint.str("text"), hint.strList("actions")),
     )
 }
 
@@ -76,6 +102,10 @@ fun parseCandidates(text: String): List<Candidate> =
             lat = c.dbl("lat"), lng = c.dbl("lng"), routeKm = c.dbl("route_km"), minutes = c.integer("minutes"),
             tollKrw = c.integerOrNull("toll_krw") ?: 0, parkingKrw = c.integerOrNull("parking_krw"),
             hasParkingInfo = c["has_parking_info"]?.jsonPrimitive?.let { it.contentOrNull == "true" } ?: false,
+            lcls3 = c.strOrNull("lcls3"),
+            eventStart = c.strOrNull("event_start"), eventEnd = c.strOrNull("event_end"),
+            reputation = c.dblOrNull("reputation"), intro = c.strOrNull("intro"),
+            months = c["months"]?.takeIf { it !is JsonNull }?.jsonArray?.map { it.jsonPrimitive.int },
         )
     }
 
@@ -115,20 +145,29 @@ fun parseCardsRequest(o: JsonObject): CardsRequest {
     )
 }
 
-fun Card.toJson(): JsonObject = obj(
-    "id" to id, "name" to name, "theme" to theme, "lat" to lat, "lng" to lng,
-    "route_km" to routeKm, "minutes" to minutes, "time_label" to timeLabel,
-    "cost" to obj(
-        "fuel" to cost.fuel, "toll" to cost.toll, "parking" to cost.parking,
-        "total" to cost.total, "per_person" to cost.perPerson,
-    ),
-    "display" to obj(
-        "total_text" to display.totalText, "per_person_text" to display.perPersonText,
-        "zero_extra" to display.zeroExtra, "tight" to display.tight, "ring_krw" to display.ringKrw,
-        "badge_text" to display.badgeText, "margin_km" to display.marginKm,
-    ),
-    "reason" to reason,
-)
+/** 실서비스 후보만 갖는 값(subcategory·indoor·event_*·rain_level)은 있을 때만 넣는다(서버 card_json과 같게). */
+fun Card.toJson(): JsonObject {
+    val pairs = mutableListOf<Pair<String, Any?>>(
+        "id" to id, "name" to name, "theme" to theme, "lat" to lat, "lng" to lng,
+        "route_km" to routeKm, "minutes" to minutes, "time_label" to timeLabel,
+        "cost" to obj(
+            "fuel" to cost.fuel, "toll" to cost.toll, "parking" to cost.parking,
+            "total" to cost.total, "per_person" to cost.perPerson,
+        ),
+        "display" to obj(
+            "total_text" to display.totalText, "per_person_text" to display.perPersonText,
+            "zero_extra" to display.zeroExtra, "tight" to display.tight, "ring_krw" to display.ringKrw,
+            "badge_text" to display.badgeText, "margin_km" to display.marginKm,
+        ),
+        "reason" to reason,
+    )
+    if (subcategory != null) pairs.add("subcategory" to subcategory)
+    if (indoor != null) pairs.add("indoor" to indoor)
+    if (eventStart != null) pairs.add("event_start" to eventStart)
+    if (eventEnd != null) pairs.add("event_end" to eventEnd)
+    if (rainLevel != null) pairs.add("rain_level" to rainLevel)
+    return obj(*pairs.toTypedArray())
+}
 
 fun parseCard(o: JsonObject): Card {
     val cost = o.getValue("cost").jsonObject
@@ -142,6 +181,11 @@ fun parseCard(o: JsonObject): Card {
             d.integerOrNull("ring_krw"), d.str("badge_text"), d.integer("margin_km"),
         ),
         o.str("reason"),
+        subcategory = o.strOrNull("subcategory"),
+        indoor = o["indoor"]?.takeIf { it !is JsonNull }?.jsonPrimitive?.booleanOrNull,
+        eventStart = o.strOrNull("event_start"),
+        eventEnd = o.strOrNull("event_end"),
+        rainLevel = o.dblOrNull("rain_level"),
     )
 }
 

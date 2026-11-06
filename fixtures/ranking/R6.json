@@ -1,0 +1,193 @@
+{
+  "id": "R6",
+  "title": "B: A2 평판이 등급 차이를 뒤집고, 이유는 A2 소개",
+  "note": "평판 0.30: (점수−1)÷4, 근거 없음 0.25, 좋은 시기 아닌 달 × 0.6. 유명 포구(0.6, 평판 5)가 근거 없는 해변(1.0)보다 앞.",
+  "context": {
+    "variant": "b",
+    "trip_date": "2026-11-08",
+    "rain": {}
+  },
+  "candidates": [
+    {
+      "id": "r_port_famous",
+      "name": "유명포구",
+      "theme": "sea",
+      "lat": 37.4927,
+      "lng": 127.1147,
+      "route_km": 40.0,
+      "minutes": 50,
+      "toll_krw": 0,
+      "parking_krw": null,
+      "has_parking_info": false,
+      "lcls3": "NA020700",
+      "reputation": 5.0,
+      "intro": "갓 잡은 해산물 시장을 둘러보는 포구 산책"
+    },
+    {
+      "id": "r_beach",
+      "name": "모래해변",
+      "theme": "sea",
+      "lat": 37.4927,
+      "lng": 127.1147,
+      "route_km": 45.0,
+      "minutes": 55,
+      "toll_krw": 0,
+      "parking_krw": null,
+      "has_parking_info": false,
+      "lcls3": "NA020900"
+    },
+    {
+      "id": "r_beach_summer",
+      "name": "여름 해변",
+      "theme": "sea",
+      "lat": 37.5927,
+      "lng": 127.1147,
+      "route_km": 42.0,
+      "minutes": 52,
+      "toll_krw": 0,
+      "parking_krw": null,
+      "has_parking_info": false,
+      "lcls3": "NA020900",
+      "reputation": 4.0,
+      "intro": "여름 물놀이로 붐비는 넓은 백사장",
+      "months": [
+        6,
+        7,
+        8
+      ]
+    }
+  ],
+  "request": {
+    "origin": {
+      "lat": 37.4127,
+      "lng": 127.0947
+    },
+    "budget": {
+      "fuel_type": "ev",
+      "usable_km": 195.0,
+      "margin_km": 50.0,
+      "efficiency": 5.27,
+      "price_per_unit": 300,
+      "price_source": "user"
+    },
+    "seats_occupied": 1,
+    "extra_krw": 0,
+    "days": 1,
+    "themes": [
+      "sea"
+    ],
+    "recent_visits": []
+  },
+  "expected": {
+    "session_id": "<session>",
+    "radius_km": 75.0,
+    "candidates_in_range": 3,
+    "hint": null,
+    "picked": {
+      "id": "r_port_famous",
+      "name": "유명포구",
+      "theme": "sea",
+      "lat": 37.4927,
+      "lng": 127.1147,
+      "route_km": 40.0,
+      "minutes": 50,
+      "time_label": "75분 안",
+      "cost": {
+        "fuel": 4554,
+        "toll": 0,
+        "parking": null,
+        "total": 4554,
+        "per_person": null
+      },
+      "display": {
+        "total_text": "5천 원 안팎",
+        "per_person_text": null,
+        "zero_extra": true,
+        "tight": false,
+        "ring_krw": 0,
+        "badge_text": "추가 충전 없이 · 여유 50km",
+        "margin_km": 50
+      },
+      "reason": "갓 잡은 해산물 시장을 둘러보는 포구 산책",
+      "subcategory": "포구",
+      "indoor": false
+    },
+    "stack": [
+      {
+        "id": "r_beach_summer",
+        "name": "여름 해변",
+        "theme": "sea",
+        "lat": 37.5927,
+        "lng": 127.1147,
+        "route_km": 42.0,
+        "minutes": 52,
+        "time_label": "75분 안",
+        "cost": {
+          "fuel": 4782,
+          "toll": 0,
+          "parking": null,
+          "total": 4782,
+          "per_person": null
+        },
+        "display": {
+          "total_text": "5천 원 안팎",
+          "per_person_text": null,
+          "zero_extra": true,
+          "tight": false,
+          "ring_krw": 0,
+          "badge_text": "추가 충전 없이 · 여유 50km",
+          "margin_km": 50
+        },
+        "reason": "여름 물놀이로 붐비는 넓은 백사장",
+        "subcategory": "해변",
+        "indoor": false
+      },
+      {
+        "id": "r_beach",
+        "name": "모래해변",
+        "theme": "sea",
+        "lat": 37.4927,
+        "lng": 127.1147,
+        "route_km": 45.0,
+        "minutes": 55,
+        "time_label": "75분 안",
+        "cost": {
+          "fuel": 5123,
+          "toll": 0,
+          "parking": null,
+          "total": 5123,
+          "per_person": null
+        },
+        "display": {
+          "total_text": "5천 원 안팎",
+          "per_person_text": null,
+          "zero_extra": true,
+          "tight": false,
+          "ring_krw": 0,
+          "badge_text": "추가 충전 없이 · 여유 50km",
+          "margin_km": 50
+        },
+        "reason": "해변 · 추가 0원 안 · 75분 안",
+        "subcategory": "해변",
+        "indoor": false
+      }
+    ]
+  },
+  "expected_ranked": [
+    {
+      "id": "r_port_famous",
+      "score": 1.68,
+      "reason": "갓 잡은 해산물 시장을 둘러보는 포구 산책"
+    },
+    {
+      "id": "r_beach_summer",
+      "score": 1.635,
+      "reason": "여름 물놀이로 붐비는 넓은 백사장"
+    },
+    {
+      "id": "r_beach",
+      "score": 1.575,
+      "reason": "해변 · 추가 0원 안 · 75분 안"
+    }
+  ]
+}

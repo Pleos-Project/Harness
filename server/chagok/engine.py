@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass
+from datetime import date, timedelta
 
 ROAD_FACTOR = 1.3          # 직선 → 도로 굴곡 계수 [가정]
 MARGIN_MIN_KM = 50.0       # 안전 여유 하한 [가정]
@@ -184,6 +185,13 @@ class Candidate:
     toll_krw: int = 0              # 편도
     parking_krw: int | None = None  # None → 정보 없음
     has_parking_info: bool = False
+    # 실서비스 후보만 갖는 값(데모 후보는 비어 있음 → 점수·이유·카드가 지금 그대로)
+    lcls3: str | None = None        # TourAPI 신분류 소분류 코드 → 목적지성·실내 여부
+    event_start: str | None = None  # 행사 시작일 YYYY-MM-DD(축제만)
+    event_end: str | None = None
+    reputation: float | None = None  # A2 큐레이션 평판 1~5(근거 없음 = None). B 순위만 쓴다
+    intro: str | None = None         # A2 한 줄 소개(근거 있는 것만). B 이유 한 줄
+    months: tuple[int, ...] | None = None  # A2 '좋은 시기'(월). 없으면 연중
 
 
 @dataclass
@@ -254,10 +262,125 @@ def time_label(minutes: int) -> str | None:
 WEIGHTS = {"zero": 0.30, "time": 0.25, "theme": 0.20, "diversity": 0.15, "parking": 0.10}
 PHRASE = {"zero": "추가 0원 안", "time": "75분 안", "diversity": "지난번과 다른 테마"}
 THEME_KO = {"sea": "바다", "lake": "호수", "river": "강", "mountain": "산",
-            "park": "공원", "city": "도시", "island": "섬", "drive": "드라이브길"}
+            "park": "공원", "city": "도시", "island": "섬", "drive": "드라이브길",
+            "indoor": "실내", "festival": "축제"}
 
 
-def score(c: Candidate, b: Badge, themes: list[str], recent_themes: list[str]) -> dict[str, float]:
+@dataclass(frozen=True)
+class RankingConfig:
+    """A1 점수(목적지성·날씨)와 B(A2 평판)의 값. fixtures/constants.json 의 "ranking" 이 단일 출처이고
+    Kotlin(Engine.kt RankingConfig)도 같은 파일을 읽는다. 기존 5항목 가중(WEIGHTS)은 코드에 그대로 둔다(데모·PT 결과 고정)."""
+    weights: dict[str, float]              # quality · weather · reputation
+    quality_default: float                 # 소분류를 모름(데모 후보) → 중립
+    quality: dict[str, float]              # 소분류 코드 → 목적지성 0~1
+    subcategory_ko: dict[str, str]         # 소분류 코드 → 이유 한 줄·카드에 쓰는 이름
+    penalty_words: tuple[str, ...]         # 이름에 들어 있으면 목적지성 × penalty_factor
+    penalty_factor: float
+    exclude_names: tuple[str, ...]         # 이름에 들어 있으면 후보에서 뺀다
+    exclude_subcategories: tuple[str, ...]
+    exclude_prefixes: tuple[str, ...]      # 예: EV02(공연 전체)
+    long_event_days: int                   # 행사 기간이 이보다 길면 목적지성 × long_event_factor
+    long_event_factor: float
+    indoor: frozenset[str]                 # 실내 소분류
+    indoor_clear: float                    # 맑은 날 실내의 날씨 적합도(비 1이면 1)
+    rain_phrase: str                       # 비 오는 날 실내 카드 이유 한 줄
+    reputation_missing: float              # A2 근거 없음 → 중간보다 낮게
+    off_season_factor: float               # '좋은 시기'가 아닌 달 → 평판 × 이 값
+    rain_hint: dict                        # 비 예보인데 야외 테마를 고른 경우 응답 hint
+
+    @staticmethod
+    def from_json(d: dict) -> "RankingConfig":
+        return RankingConfig(
+            weights={k: float(v) for k, v in d["weights"].items()},
+            quality_default=float(d["quality_default"]),
+            quality={k: float(v) for k, v in d["quality"].items()},
+            subcategory_ko=dict(d["subcategory_ko"]),
+            penalty_words=tuple(d["name_penalty"]["words"]), penalty_factor=float(d["name_penalty"]["factor"]),
+            exclude_names=tuple(d["exclude"]["names"]), exclude_subcategories=tuple(d["exclude"]["subcategories"]),
+            exclude_prefixes=tuple(d["exclude"]["prefixes"]),
+            long_event_days=int(d["long_event"]["days"]), long_event_factor=float(d["long_event"]["factor"]),
+            indoor=frozenset(d["indoor"]), indoor_clear=float(d["indoor_clear"]), rain_phrase=d["rain_phrase"],
+            reputation_missing=float(d["reputation_missing"]), off_season_factor=float(d["off_season_factor"]),
+            rain_hint=dict(d["rain_hint"]),
+        )
+
+
+@dataclass
+class RankContext:
+    """요청 하나의 순위 조건. variant: a1 = 규칙(목적지성·날씨), b = a1 + A2 평판·소개.
+    rain: 후보 id → 나들이 날 비 정도(0 · 0.5 · 1, 없으면 0). trip_date: 나들이 날 YYYY-MM-DD(없으면 행사 날짜를 보지 않음)."""
+    cfg: RankingConfig
+    rain: dict[str, float] | None = None
+    trip_date: str | None = None
+    variant: str = "a1"
+
+    def rain_of(self, c: Candidate) -> float:
+        return (self.rain or {}).get(c.id, 0.0)
+
+    @property
+    def month(self) -> int | None:
+        return int(self.trip_date[5:7]) if self.trip_date else None
+
+
+def _event_days(a: str, b: str) -> int:
+    """행사 기간(일). YYYY-MM-DD."""
+    return (date.fromisoformat(b) - date.fromisoformat(a)).days
+
+
+def is_indoor(c: Candidate, cfg: RankingConfig) -> bool:
+    return c.lcls3 is not None and c.lcls3 in cfg.indoor
+
+
+def excluded(c: Candidate, cfg: RankingConfig) -> bool:
+    """후보에서 아예 빼는 것: 이름(놀이터 등), 소분류(스포츠경기), 소분류 접두어(공연 전체)."""
+    if any(w in c.name for w in cfg.exclude_names):
+        return True
+    if c.lcls3 is None:
+        return False
+    return c.lcls3 in cfg.exclude_subcategories or any(c.lcls3.startswith(p) for p in cfg.exclude_prefixes)
+
+
+def event_active(c: Candidate, trip_date: str | None, days: int = 1) -> bool:
+    """행사는 나들이 날(1박이면 둘째 날까지) 열리는 것만. 장소·나들이 날 모름 → 통과."""
+    if not (c.event_start and c.event_end) or trip_date is None:
+        return True
+    if c.event_start <= trip_date <= c.event_end:
+        return True
+    if days == 2:
+        d2 = (date.fromisoformat(trip_date) + timedelta(days=1)).isoformat()
+        return c.event_start <= d2 <= c.event_end
+    return False
+
+
+def quality(c: Candidate, cfg: RankingConfig) -> float:
+    """목적지성 0~1: 소분류 값 × (이름 감점) × (장기 행사 감점). 소분류를 모르면 중립."""
+    if c.lcls3 is None:
+        return cfg.quality_default
+    q = cfg.quality.get(c.lcls3, cfg.quality_default)
+    if any(w in c.name for w in cfg.penalty_words):
+        q = q * cfg.penalty_factor
+    if c.event_start and c.event_end and _event_days(c.event_start, c.event_end) > cfg.long_event_days:
+        q = q * cfg.long_event_factor
+    return q
+
+
+def weather_fit(c: Candidate, cfg: RankingConfig, rain: float) -> float:
+    """야외 = 1 − 비, 실내 = 맑은 날 indoor_clear → 비 1이면 1. 맑은 날에는 야외가 앞선다(나들이 앱)."""
+    if is_indoor(c, cfg):
+        return cfg.indoor_clear + (1.0 - cfg.indoor_clear) * rain
+    return 1.0 - rain
+
+
+def reputation_fit(c: Candidate, cfg: RankingConfig, month: int | None) -> float:
+    """B만: (평판 − 1) ÷ 4, 근거 없음 = reputation_missing. '좋은 시기'가 아닌 달이면 × off_season_factor."""
+    r = cfg.reputation_missing if c.reputation is None else (c.reputation - 1.0) / 4.0
+    if c.months and month is not None and month not in c.months:
+        r = r * cfg.off_season_factor
+    return r
+
+
+def score(c: Candidate, b: Badge, themes: list[str], recent_themes: list[str],
+          ctx: RankContext | None = None) -> dict[str, float]:
     s: dict[str, float] = {}
     s["zero"] = 1.0 if (b.zero_extra and not b.tight) else (0.5 if b.tight else 0.0)
     if c.minutes <= NEAR_MINUTES:
@@ -270,21 +393,51 @@ def score(c: Candidate, b: Badge, themes: list[str], recent_themes: list[str]) -
     # [명준 확인] 최근 방문이 없어도 1.0 → 이유에 "지난번과 다른 테마"가 붙는다(AC-F5-1 문구 그대로)
     s["diversity"] = 1.0 if c.theme not in recent_themes else 0.0
     s["parking"] = 1.0 if c.has_parking_info else 0.0
+    if ctx is not None:
+        s["quality"] = quality(c, ctx.cfg)
+        s["weather"] = weather_fit(c, ctx.cfg, ctx.rain_of(c))
+        if ctx.variant == "b":
+            s["reputation"] = reputation_fit(c, ctx.cfg, ctx.month)
     return s
 
 
-def weighted(s: dict[str, float]) -> float:
+def weighted(s: dict[str, float], cfg: RankingConfig | None = None) -> float:
     total = 0.0
     for k in ("zero", "time", "theme", "diversity", "parking"):
         total += WEIGHTS[k] * s[k]
+    if cfg is not None:
+        for k in ("quality", "weather", "reputation"):
+            if k in s:
+                total += cfg.weights[k] * s[k]
     return math.floor(total * 10_000 + 0.5) / 10_000
 
 
-def reason_line(c: Candidate, s: dict[str, float], b: Badge) -> str:
+def reason_line(c: Candidate, s: dict[str, float], b: Badge, ctx: RankContext | None = None) -> str:
     """점수 상위 근거 최대 3개. 사실이 아닌 문구는 점수가 있어도 쓰지 않는다:
     - 빠듯·+1만 카드에 "추가 0원 안" 금지(PRD 5-3)
     - 75분 넘는 카드에 "75분 안" 금지
-    - 주차는 점수에만(PRD 7-4)"""
+    - 주차는 점수에만(PRD 7-4)
+    실서비스 후보(소분류 있음): 소분류 이름이 맨 앞(테마 이름 대신), 비 오는 날 실내면 rain_phrase, 나머지는 위 규칙대로.
+    B: A2 한 줄 소개가 있으면 그것(근거 URL을 확인한 것만 저장됨)."""
+    if ctx is not None and ctx.variant == "b" and c.intro:
+        return c.intro
+    if ctx is not None and c.lcls3 is not None:
+        cfg = ctx.cfg
+        phrases = [cfg.subcategory_ko.get(c.lcls3) or THEME_KO.get(c.theme, c.theme)]
+        if is_indoor(c, cfg) and ctx.rain_of(c) >= 0.5:
+            phrases.append(cfg.rain_phrase)
+        for val, key in sorted(((WEIGHTS[k] * s[k], k) for k in ("zero", "time", "diversity")), reverse=True):
+            if len(phrases) == 3:
+                break
+            if val <= 0:
+                continue
+            if key == "zero" and not (b.zero_extra and not b.tight):
+                continue
+            if key == "time" and c.minutes > NEAR_MINUTES:
+                continue
+            if PHRASE[key] not in phrases:
+                phrases.append(PHRASE[key])
+        return " · ".join(phrases)
     contrib = sorted(((WEIGHTS[k] * s[k], k) for k in ("zero", "time", "theme", "diversity")), reverse=True)
     phrases: list[str] = []
     for val, key in contrib:
@@ -305,8 +458,10 @@ def reason_line(c: Candidate, s: dict[str, float], b: Badge) -> str:
     return " · ".join(phrases)
 
 
-def card_json(c: Candidate, cost: Cost, badge: Badge, reason: str) -> dict:
-    return {
+def card_json(c: Candidate, cost: Cost, badge: Badge, reason: str, ctx: RankContext | None = None) -> dict:
+    """계약 Card. 실서비스 후보만 갖는 값(subcategory·indoor·event_*·rain_level)은 있을 때만 넣는다
+    → 데모 응답(fixtures/cards/D*.json)은 키가 그대로다."""
+    out = {
         "id": c.id, "name": c.name, "theme": c.theme, "lat": c.lat, "lng": c.lng,
         "route_km": c.route_km, "minutes": c.minutes, "time_label": time_label(c.minutes),
         "cost": {"fuel": cost.fuel, "toll": cost.toll, "parking": cost.parking,
@@ -317,6 +472,15 @@ def card_json(c: Candidate, cost: Cost, badge: Badge, reason: str) -> dict:
                     "margin_km": badge.margin_km},
         "reason": reason,
     }
+    if ctx is not None and c.lcls3 is not None:
+        out["subcategory"] = ctx.cfg.subcategory_ko.get(c.lcls3, c.lcls3)
+        out["indoor"] = is_indoor(c, ctx.cfg)
+    if c.event_start and c.event_end:
+        out["event_start"] = c.event_start
+        out["event_end"] = c.event_end
+    if ctx is not None and ctx.rain_of(c) > 0:
+        out["rain_level"] = ctx.rain_of(c)
+    return out
 
 
 # ---------------------------------------------------------------- E4 정산

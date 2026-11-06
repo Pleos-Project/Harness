@@ -1,0 +1,252 @@
+{
+  "id": "R2",
+  "title": "비 오는 날 테마 없음: 실내가 위로, 이유에 '비 와도 실내'",
+  "note": "날씨 0.30: 비 1이면 야외 0 · 실내 1. 놀이터는 이름으로 제외.",
+  "context": {
+    "variant": "a1",
+    "trip_date": "2026-11-08",
+    "rain": {
+      "r_beach": 1.0,
+      "r_arboretum": 1.0,
+      "r_science": 1.0,
+      "r_museum": 1.0,
+      "r_playground": 1.0
+    }
+  },
+  "candidates": [
+    {
+      "id": "r_beach",
+      "name": "모래해변",
+      "theme": "sea",
+      "lat": 37.4927,
+      "lng": 127.1147,
+      "route_km": 45.0,
+      "minutes": 55,
+      "toll_krw": 0,
+      "parking_krw": null,
+      "has_parking_info": false,
+      "lcls3": "NA020900"
+    },
+    {
+      "id": "r_arboretum",
+      "name": "숲 수목원",
+      "theme": "park",
+      "lat": 37.7727,
+      "lng": 127.1147,
+      "route_km": 30.0,
+      "minutes": 40,
+      "toll_krw": 0,
+      "parking_krw": null,
+      "has_parking_info": false,
+      "lcls3": "NA040700"
+    },
+    {
+      "id": "r_science",
+      "name": "별빛 과학관",
+      "theme": "indoor",
+      "lat": 37.8027,
+      "lng": 127.1147,
+      "route_km": 35.0,
+      "minutes": 45,
+      "toll_krw": 0,
+      "parking_krw": null,
+      "has_parking_info": false,
+      "lcls3": "VE070500"
+    },
+    {
+      "id": "r_museum",
+      "name": "옛길 박물관",
+      "theme": "indoor",
+      "lat": 37.682700000000004,
+      "lng": 127.1147,
+      "route_km": 25.0,
+      "minutes": 35,
+      "toll_krw": 0,
+      "parking_krw": null,
+      "has_parking_info": false,
+      "lcls3": "VE070100"
+    },
+    {
+      "id": "r_playground",
+      "name": "모래 놀이터",
+      "theme": "park",
+      "lat": 37.432700000000004,
+      "lng": 127.1147,
+      "route_km": 20.0,
+      "minutes": 30,
+      "toll_krw": 0,
+      "parking_krw": null,
+      "has_parking_info": false,
+      "lcls3": "VE030100"
+    }
+  ],
+  "request": {
+    "origin": {
+      "lat": 37.4127,
+      "lng": 127.0947
+    },
+    "budget": {
+      "fuel_type": "ev",
+      "usable_km": 195.0,
+      "margin_km": 50.0,
+      "efficiency": 5.27,
+      "price_per_unit": 300,
+      "price_source": "user"
+    },
+    "seats_occupied": 1,
+    "extra_krw": 0,
+    "days": 1,
+    "themes": [],
+    "recent_visits": []
+  },
+  "expected": {
+    "session_id": "<session>",
+    "radius_km": 75.0,
+    "candidates_in_range": 4,
+    "hint": null,
+    "picked": {
+      "id": "r_science",
+      "name": "별빛 과학관",
+      "theme": "indoor",
+      "lat": 37.8027,
+      "lng": 127.1147,
+      "route_km": 35.0,
+      "minutes": 45,
+      "time_label": "75분 안",
+      "cost": {
+        "fuel": 3985,
+        "toll": 0,
+        "parking": null,
+        "total": 3985,
+        "per_person": null
+      },
+      "display": {
+        "total_text": "5천 원 안팎",
+        "per_person_text": null,
+        "zero_extra": true,
+        "tight": false,
+        "ring_krw": 0,
+        "badge_text": "추가 충전 없이 · 여유 50km",
+        "margin_km": 50
+      },
+      "reason": "과학관 · 비 와도 실내 · 추가 0원 안",
+      "subcategory": "과학관",
+      "indoor": true,
+      "rain_level": 1.0
+    },
+    "stack": [
+      {
+        "id": "r_arboretum",
+        "name": "숲 수목원",
+        "theme": "park",
+        "lat": 37.7727,
+        "lng": 127.1147,
+        "route_km": 30.0,
+        "minutes": 40,
+        "time_label": "75분 안",
+        "cost": {
+          "fuel": 3416,
+          "toll": 0,
+          "parking": null,
+          "total": 3416,
+          "per_person": null
+        },
+        "display": {
+          "total_text": "5천 원 안팎",
+          "per_person_text": null,
+          "zero_extra": true,
+          "tight": false,
+          "ring_krw": 0,
+          "badge_text": "추가 충전 없이 · 여유 50km",
+          "margin_km": 50
+        },
+        "reason": "수목원·정원 · 추가 0원 안 · 75분 안",
+        "subcategory": "수목원·정원",
+        "indoor": false,
+        "rain_level": 1.0
+      },
+      {
+        "id": "r_beach",
+        "name": "모래해변",
+        "theme": "sea",
+        "lat": 37.4927,
+        "lng": 127.1147,
+        "route_km": 45.0,
+        "minutes": 55,
+        "time_label": "75분 안",
+        "cost": {
+          "fuel": 5123,
+          "toll": 0,
+          "parking": null,
+          "total": 5123,
+          "per_person": null
+        },
+        "display": {
+          "total_text": "5천 원 안팎",
+          "per_person_text": null,
+          "zero_extra": true,
+          "tight": false,
+          "ring_krw": 0,
+          "badge_text": "추가 충전 없이 · 여유 50km",
+          "margin_km": 50
+        },
+        "reason": "해변 · 추가 0원 안 · 75분 안",
+        "subcategory": "해변",
+        "indoor": false,
+        "rain_level": 1.0
+      },
+      {
+        "id": "r_museum",
+        "name": "옛길 박물관",
+        "theme": "indoor",
+        "lat": 37.682700000000004,
+        "lng": 127.1147,
+        "route_km": 25.0,
+        "minutes": 35,
+        "time_label": "75분 안",
+        "cost": {
+          "fuel": 2846,
+          "toll": 0,
+          "parking": null,
+          "total": 2846,
+          "per_person": null
+        },
+        "display": {
+          "total_text": "5천 원 안팎",
+          "per_person_text": null,
+          "zero_extra": true,
+          "tight": false,
+          "ring_krw": 0,
+          "badge_text": "추가 충전 없이 · 여유 50km",
+          "margin_km": 50
+        },
+        "reason": "박물관 · 비 와도 실내 · 추가 0원 안",
+        "subcategory": "박물관",
+        "indoor": true,
+        "rain_level": 1.0
+      }
+    ]
+  },
+  "expected_ranked": [
+    {
+      "id": "r_science",
+      "score": 1.4,
+      "reason": "과학관 · 비 와도 실내 · 추가 0원 안"
+    },
+    {
+      "id": "r_museum",
+      "score": 1.34,
+      "reason": "박물관 · 비 와도 실내 · 추가 0원 안"
+    },
+    {
+      "id": "r_arboretum",
+      "score": 1.1,
+      "reason": "수목원·정원 · 추가 0원 안 · 75분 안"
+    },
+    {
+      "id": "r_beach",
+      "score": 1.1,
+      "reason": "해변 · 추가 0원 안 · 75분 안"
+    }
+  ]
+}

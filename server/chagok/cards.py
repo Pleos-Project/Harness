@@ -31,6 +31,20 @@ def load_demo_candidates() -> list[E.Candidate]:
     return [E.Candidate(**c) for c in raw["candidates"]]
 
 
+def load_ranking() -> E.RankingConfig:
+    """fixtures/constants.json "ranking" — A1·B 점수 값(엔진 두 벌이 같이 읽는다)."""
+    return E.RankingConfig.from_json(load_constants()["ranking"])
+
+
+RANKING = load_ranking()
+VARIANTS = ("a1", "b")   # a1 = 규칙(목적지성·날씨), b = a1 + A2 평판·소개(블라인드 검수로 고른다)
+
+
+def demo_ctx(variant: str = "a1") -> E.RankContext:
+    """데모 고정 모드: 날씨 맑음 고정, 행사 날짜 안 봄. 데모 후보는 소분류가 없어 결과가 기존 규칙과 같다."""
+    return E.RankContext(cfg=RANKING, variant=variant)
+
+
 def budget_from(req: dict) -> E.Budget:
     b = req["budget"]
     return E.Budget(fuel_type=b["fuel_type"], usable_km=b["usable_km"], margin_km=b["margin_km"],
@@ -40,19 +54,23 @@ def budget_from(req: dict) -> E.Budget:
 
 # ---------------------------------------------------------------- 순위
 def evaluate(candidates: list[E.Candidate], b: E.Budget, seats: int, themes: list[str],
-             recent_ids: list[str]) -> list[dict]:
-    """후보를 카드로 만든다. 최근 방문·90분 초과·+3만 밖은 뺀다. 항목 = card_json + _score·_route_km."""
+             recent_ids: list[str], ctx: E.RankContext | None = None, days: int = 1) -> list[dict]:
+    """후보를 카드로 만든다. 최근 방문·90분 초과·+3만 밖은 뺀다. 항목 = card_json + _score·_route_km.
+    ctx가 있으면 A1 규칙: 제외 이름·소분류, 나들이 날 안 열리는 행사도 빼고 목적지성·날씨(B는 평판)를 점수에 더한다."""
     recent_themes = [c.theme for c in candidates if c.id in recent_ids]
+    cfg = ctx.cfg if ctx is not None else None
     out = []
     for c in candidates:
         if c.id in recent_ids or E.time_label(c.minutes) is None:
             continue
+        if ctx is not None and (E.excluded(c, cfg) or not E.event_active(c, ctx.trip_date, days)):
+            continue
         badge = E.compute_badge(c, b)
         if badge.ring_krw is None:
             continue
-        s = E.score(c, badge, themes, recent_themes)
-        cj = E.card_json(c, E.compute_cost(c, b, seats), badge, E.reason_line(c, s, badge))
-        cj["_score"] = E.weighted(s)
+        s = E.score(c, badge, themes, recent_themes, ctx)
+        cj = E.card_json(c, E.compute_cost(c, b, seats), badge, E.reason_line(c, s, badge, ctx), ctx)
+        cj["_score"] = E.weighted(s, cfg)
         cj["_route_km"] = c.route_km
         out.append(cj)
     return out
@@ -93,6 +111,17 @@ def build_stack(picked: dict, pool: list[dict], size: int = STACK_SIZE) -> list[
     return stack
 
 
+def pick_hint(n: int, extra_krw: int, themes: list[str], picked: dict | None,
+              ctx: E.RankContext | None) -> dict | None:
+    """응답 hint 하나. '후보가 적어요'가 먼저, 아니면 비 예보인데 야외 테마를 골라 야외 카드가 나온 경우 '실내로 바꿔 볼까요?'."""
+    h = few_hint(n, extra_krw, themes)
+    if h is not None or ctx is None or picked is None:
+        return h
+    if themes and "indoor" not in themes and not picked.get("indoor") and picked.get("rain_level", 0) >= 0.5:
+        return dict(ctx.cfg.rain_hint)
+    return None
+
+
 def few_hint(n: int, extra_krw: int, themes: list[str]) -> dict | None:
     """X2 '범위 안 후보가 적어요' + 테마 해제 / 다음 프리셋."""
     if n >= 3:
@@ -119,11 +148,11 @@ class SessionStore:
         for k in [k for k, v in self._s.items() if now - v["t"] > SESSION_TTL_S]:
             del self._s[k]
 
-    def new(self, picked_id: str, stack_ids: list[str], request: dict) -> str:
+    def new(self, picked_id: str, stack_ids: list[str], request: dict, ctx: E.RankContext | None = None) -> str:
         self._prune()
         sid = self._ids()
         self._s[sid] = {"picked_id": picked_id, "stack_ids": stack_ids, "excluded": [], "swaps": 0,
-                        "request": request, "t": self._clock()}
+                        "request": request, "ctx": ctx, "t": self._clock()}
         return sid
 
     def get(self, sid: str) -> dict | None:
@@ -138,23 +167,28 @@ def strip(card: dict | None) -> dict | None:
     return {k: v for k, v in card.items() if not k.startswith("_")} if card else None
 
 
-def _ranked(req: dict, candidates: list[E.Candidate]) -> tuple[list[dict], list[dict], float]:
+def _ranked(req: dict, candidates: list[E.Candidate], ctx: E.RankContext | None = None
+            ) -> tuple[list[dict], list[dict], float]:
     b = budget_from(req)
     extra, themes = req.get("extra_krw", 0), req.get("themes", [])
     radius = E.radius_km(b, extra)
     all_cards = sort_ranked(evaluate(candidates, b, req.get("seats_occupied", 1), themes,
-                                     req.get("recent_visits", [])), radius)
+                                     req.get("recent_visits", []), ctx, req.get("days", 1)), radius)
     pool = [c for c in all_cards if eligible(c, extra, themes)]
     return all_cards, pool, radius
 
 
-def build_cards(req: dict, candidates: list[E.Candidate], store: SessionStore) -> dict:
-    """POST /v1/cards 본체. req는 contract/openapi.yaml의 CardsRequest."""
+def build_cards(req: dict, candidates: list[E.Candidate], store: SessionStore,
+                ctx: E.RankContext | None = None) -> dict:
+    """POST /v1/cards 본체. req는 contract/openapi.yaml의 CardsRequest. ctx = 순위 조건(없으면 기존 5항목만)."""
     req = {k: v for k, v in req.items() if k != "session_id"} | {"session_id": req.get("session_id")}
-    all_cards, pool, radius = _ranked(req, candidates)
     sid = req["session_id"]
     sess = store.get(sid) if sid else None
+    if sess and ctx is None:
+        ctx = sess.get("ctx")
+    all_cards, pool, radius = _ranked(req, candidates, ctx)
     if sess:
+        sess["ctx"] = ctx
         # 재호출(차량 값 변화, 1초 디바운스): 같은 picked에 새 배지·1인 몫·이유. 세션 값도 최신으로 → 교체가 이 값을 쓴다
         sess["request"] = {k: v for k, v in req.items() if k != "session_id"}
         live = [c for c in pool if c["id"] not in sess["excluded"]]
@@ -168,13 +202,13 @@ def build_cards(req: dict, candidates: list[E.Candidate], store: SessionStore) -
         picked = pool[0] if pool else None
         stack = build_stack(picked, pool) if picked else []
         sid = store.new(picked["id"], [c["id"] for c in stack],
-                        {k: v for k, v in req.items() if k != "session_id"}) if picked else None
+                        {k: v for k, v in req.items() if k != "session_id"}, ctx) if picked else None
 
     return {
         "session_id": sid,
         "radius_km": E.round1(radius),
         "candidates_in_range": len(pool),
-        "hint": few_hint(len(pool), req.get("extra_krw", 0), req.get("themes", [])),
+        "hint": pick_hint(len(pool), req.get("extra_krw", 0), req.get("themes", []), strip(picked), ctx),
         "picked": strip(picked),
         "stack": [strip(c) for c in stack],
     }
@@ -188,7 +222,7 @@ def swap(session_id: str, exclude_ids: list[str], candidates: list[E.Candidate],
     if sess["swaps"] >= E.MAX_SWAPS:
         return {"error": "swap_limit", "hint": "테마를 바꿔 볼까요?"}
     req = sess["request"]
-    all_cards, pool, _ = _ranked(req, candidates)
+    all_cards, pool, _ = _ranked(req, candidates, sess.get("ctx"))
     by_id = {c["id"]: c for c in all_cards}
     excluded = list(dict.fromkeys(sess["excluded"] + list(exclude_ids) + [sess["picked_id"]]))
     nxt = next((by_id[i] for i in sess["stack_ids"] if i in by_id and i not in excluded), None)

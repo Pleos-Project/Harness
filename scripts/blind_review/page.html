@@ -1,0 +1,405 @@
+<title>차곡 블라인드 검수</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;800&display=swap">
+<style>
+/* 레이아웃: 한 줄 카드 목록(왼쪽 장소, 오른쪽 1~5점), 위에 단계·진행 막대 고정. 색은 design/tokens.css(Pleos 가이드) 값, 야간 기본 */
+:root {
+  --bg: #131417; --surface: #1D1E21; --surface-high: #313236; --line: rgba(255,255,255,.10);
+  --fg: #FFFFFF; --fg-2: rgba(255,255,255,.84); --fg-3: rgba(255,255,255,.64); --fg-4: rgba(255,255,255,.32);
+  --btn: rgba(255,255,255,.10); --btn-hover: rgba(255,255,255,.20);
+  --accent: #00E074; --accent-text: #131417; --info: #0082FF; --warn: #FF4C28;
+  --font: "Asta Sans", "Noto Sans KR", system-ui, sans-serif;
+  --radius: 14px; --radius-s: 10px;
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --bg: #F7F8FA; --surface: #FFFFFF; --surface-high: #EDEEF2; --line: rgba(19,20,23,.10);
+    --fg: #131417; --fg-2: rgba(19,20,23,.84); --fg-3: rgba(19,20,23,.64); --fg-4: rgba(19,20,23,.32);
+    --btn: rgba(19,20,23,.05); --btn-hover: rgba(19,20,23,.10);
+    --accent: #02C265; --accent-text: #131417; --info: #0064FF; --warn: #FE3D16;
+    color-scheme: light;
+  }
+}
+:root[data-theme="light"] {
+  --bg: #F7F8FA; --surface: #FFFFFF; --surface-high: #EDEEF2; --line: rgba(19,20,23,.10);
+  --fg: #131417; --fg-2: rgba(19,20,23,.84); --fg-3: rgba(19,20,23,.64); --fg-4: rgba(19,20,23,.32);
+  --btn: rgba(19,20,23,.05); --btn-hover: rgba(19,20,23,.10);
+  --accent: #02C265; --accent-text: #131417; --info: #0064FF; --warn: #FE3D16;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font: 400 16px/1.55 var(--font); }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); }
+.wrap { max-width: 860px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 0 64px; }
+h1, h2 { text-wrap: balance; margin: 0; }
+h1 { font-size: 26px; font-weight: 800; letter-spacing: -0.01em; }
+h2 { font-size: 18px; font-weight: 700; }
+p { margin: 0; }
+.intro { display: grid; gap: 8px; padding-block: 28px 18px; }
+.intro p { color: var(--fg-2); max-width: 62ch; }
+.intro .note { color: var(--fg-3); font-size: 14px; }
+
+.bar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg); border-bottom: 1px solid var(--line); padding-block: 10px; display: grid; gap: 8px; }
+.steps { display: flex; flex-wrap: wrap; gap: 6px 16px; align-items: center; font-size: 14px; }
+.step { color: var(--fg-3); display: flex; gap: 6px; align-items: center; }
+.step b { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--btn); font-size: 12px; }
+.step.on { color: var(--fg); font-weight: 700; }
+.step.on b { background: var(--accent); color: var(--accent-text); }
+.step.done b { background: var(--surface-high); color: var(--fg-2); }
+.save { margin-left: auto; color: var(--fg-3); font-variant-numeric: tabular-nums; }
+.save.warn { color: var(--warn); }
+.track { height: 4px; border-radius: 2px; background: var(--btn); overflow: hidden; }
+.track i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .2s; }
+
+section.cond { display: grid; gap: 10px; padding-block: 22px 4px; }
+.cond-head { display: grid; gap: 4px; }
+.cond-head .meta { color: var(--fg-3); font-size: 14px; }
+.list { display: grid; gap: 8px; }
+.item { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px 16px; align-items: center; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; }
+.item.rated { border-color: transparent; }
+.item .name { font-weight: 700; font-size: 17px; }
+.item .sub { color: var(--fg-3); font-size: 14px; display: flex; flex-wrap: wrap; gap: 2px 10px; }
+.item .reason { color: var(--fg); font-size: 16px; margin-top: 4px; }
+.item .reason::before { content: "이유 한 줄 "; color: var(--fg-4); font-size: 12px; letter-spacing: .04em; margin-right: 4px; }
+.scale { display: grid; gap: 4px; justify-items: center; }
+.scale .opts { display: flex; gap: 6px; }
+.scale button { width: 42px; height: 42px; border-radius: var(--radius-s); border: 0; background: var(--btn); color: var(--fg); font: 700 16px var(--font); cursor: pointer; font-variant-numeric: tabular-nums; }
+.scale button:hover:not(:disabled) { background: var(--btn-hover); }
+.scale button[aria-pressed="true"] { background: var(--accent); color: var(--accent-text); }
+.scale button:disabled { cursor: default; }
+.scale button:disabled:not([aria-pressed="true"]) { color: var(--fg-4); background: transparent; }
+.scale .ends { display: flex; justify-content: space-between; width: 100%; color: var(--fg-4); font-size: 11px; letter-spacing: .02em; }
+button:focus-visible, input:focus-visible { outline: 2px solid var(--info); outline-offset: 2px; }
+
+.actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; padding-block: 22px 0; }
+.primary { background: var(--fg); color: var(--bg); border: 0; border-radius: var(--radius-s); padding: 12px 20px; font: 700 16px var(--font); cursor: pointer; }
+.primary:disabled { background: var(--btn); color: var(--fg-4); cursor: default; }
+.ghost { background: var(--btn); color: var(--fg); border: 0; border-radius: var(--radius-s); padding: 12px 16px; font: 500 15px var(--font); cursor: pointer; }
+.ghost:hover { background: var(--btn-hover); }
+.hint { color: var(--fg-3); font-size: 14px; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; display: grid; gap: 10px; margin-top: 20px; }
+.panel label { font-size: 14px; color: var(--fg-2); }
+.panel input { background: var(--bg); color: var(--fg); border: 1px solid var(--line); border-radius: var(--radius-s); padding: 10px 12px; font: 400 16px var(--font); width: 100%; max-width: 320px; }
+.panel textarea { width: 100%; min-height: 90px; background: var(--bg); color: var(--fg-2); border: 1px solid var(--line); border-radius: var(--radius-s); padding: 10px; font: 400 12px/1.4 ui-monospace, Menlo, Consolas, monospace; }
+.done { display: grid; gap: 8px; padding-block: 28px 0; }
+@media (max-width: 560px) {
+  .item { grid-template-columns: minmax(0, 1fr); }
+  .scale { justify-items: stretch; }
+  .scale .opts { justify-content: space-between; }
+  .scale button { flex: 1; }
+}
+@media (prefers-reduced-motion: reduce) { .track i { transition: none; } }
+</style>
+
+<div class="wrap">
+  <header class="intro">
+    <h1>차곡 블라인드 검수</h1>
+    <p>같은 조건에서 두 가지 방식으로 고른 나들이 장소를 섞어 놓았습니다. 어느 방식이 고른 곳인지는 표시하지 않고, 순서도 사람마다 다르게 섞었습니다.</p>
+    <p class="note">1단계에서 장소마다 "가고 싶다" 점수를, 2단계에서 카드에 붙는 이유 한 줄마다 "납득된다" 점수를 매깁니다. 1단계를 제출하면 그 점수는 고칠 수 없고, 그때 2단계가 열립니다. 점수는 누를 때마다 저장됩니다.</p>
+  </header>
+
+  <div class="bar" id="bar">
+    <div class="steps">
+      <span class="step" id="s1"><b>1</b>장소 · 가고 싶다</span>
+      <span class="step" id="s2"><b>2</b>이유 한 줄 · 납득된다</span>
+      <span class="save" id="save" aria-live="polite">불러오는 중</span>
+    </div>
+    <div class="track" aria-hidden="true"><i id="progress"></i></div>
+  </div>
+
+  <main id="main"></main>
+
+  <div class="panel" id="manual" hidden>
+    <label for="rater">이 화면에서는 점수가 공용 저장소에 저장되지 않습니다. 이름을 적고, 다 매긴 뒤 "점수 복사"로 효성에게 보내 주세요.</label>
+    <input id="rater" type="text" autocomplete="name" placeholder="이름">
+  </div>
+
+  <div class="panel" id="export" hidden>
+    <div class="actions" style="padding-block: 0">
+      <button class="ghost" id="copy" type="button">점수 복사</button>
+      <span class="hint" id="copy-msg">저장이 안 될 때를 대비한 사본입니다.</span>
+    </div>
+    <textarea id="export-text" readonly hidden aria-label="복사할 점수"></textarea>
+  </div>
+</div>
+
+<script>
+const DATA = /*__DATA__*/null;
+const SAMPLE = {
+  version: 1, scale: { place: "가고 싶다", reason: "납득된다" },
+  conditions: [{ theme: "sea", theme_ko: "바다", text: "예시 화면 · 실제 목록은 스크립트가 넣습니다" }],
+  places: [
+    { code: "EX01", theme: "sea", name: "예시 포구", region: "인천 중구", time_text: "75분 안 · 편도 52분 · 41km", cost_text: "1만 원 안팎" },
+    { code: "EX02", theme: "sea", name: "예시 해변", region: "경기 화성시", time_text: "75분 안 · 편도 63분 · 55km", cost_text: "1만 원 안팎" }
+  ],
+  reasons: [
+    { code: "EX11", place: "EX01", text: "예시 이유 한 줄" },
+    { code: "EX12", place: "EX02", text: "예시 이유 한 줄" }
+  ]
+};
+const D = DATA || SAMPLE;
+const DOC_PREFIX = "ratings/";
+const ENDS = { place: ["전혀", "꼭 가고 싶다"], reason: ["전혀", "충분히"] };
+
+const state = { place: {}, reason: {}, part1_done: false, part2_done: false };
+let uid = null, db = null, docRef = null, mode = "loading";   // loading | shared | manual | readonly
+let saving = false, dirty = false, saveTimer = null;
+const $ = (id) => document.getElementById(id);
+const byCode = Object.fromEntries(D.places.map((p) => [p.code, p]));
+
+// 평가자마다 다른 순서(같은 사람은 다시 열어도 같은 순서)
+function hash(s) { let h = 2166136261; for (const c of s) { h ^= c.codePointAt(0); h = Math.imul(h, 16777619); } return h >>> 0; }
+function rng(seed) { return () => { seed |= 0; seed = (seed + 0x6D2B79F5) | 0; let t = Math.imul(seed ^ (seed >>> 15), 1 | seed); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+function shuffled(arr, seed) { const a = arr.slice(), r = rng(seed); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+function localSeed() {
+  try { let s = localStorage.getItem("cg-blind-seed"); if (!s) { s = String(Math.random()).slice(2); localStorage.setItem("cg-blind-seed", s); } return s; }
+  catch { return "fallback"; }
+}
+
+function scale(kind, code, value, locked) {
+  const wrap = document.createElement("div");
+  wrap.className = "scale";
+  const opts = document.createElement("div");
+  opts.className = "opts";
+  opts.setAttribute("role", "group");
+  opts.setAttribute("aria-label", D.scale[kind] + " 점수");
+  for (let s = 1; s <= 5; s++) {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.id = `${kind}-${code}-${s}`;
+    b.textContent = s;
+    b.setAttribute("aria-pressed", String(value === s));
+    b.disabled = locked;
+    b.addEventListener("click", () => rate(kind, code, s));
+    opts.append(b);
+  }
+  const ends = document.createElement("div");
+  ends.className = "ends";
+  ends.innerHTML = "<span></span><span></span>";
+  ends.children[0].textContent = ENDS[kind][0];
+  ends.children[1].textContent = ENDS[kind][1];
+  wrap.append(opts, ends);
+  return wrap;
+}
+
+function itemRow(kind, code, place, reasonText, locked) {
+  const row = document.createElement("div");
+  row.className = "item" + (state[kind][code] ? " rated" : "");
+  const info = document.createElement("div");
+  info.style.minWidth = "0";
+  const name = document.createElement("div");
+  name.className = "name";
+  name.textContent = place.name;
+  const sub = document.createElement("div");
+  sub.className = "sub";
+  for (const t of [place.region, place.time_text, place.cost_text]) {
+    if (!t) continue;
+    const s = document.createElement("span");
+    s.textContent = t;
+    sub.append(s);
+  }
+  info.append(name, sub);
+  if (reasonText) {
+    const r = document.createElement("div");
+    r.className = "reason";
+    r.textContent = reasonText;
+    info.append(r);
+  }
+  row.append(info, scale(kind, code, state[kind][code], locked));
+  return row;
+}
+
+function seed() { return hash(uid || localSeed()); }
+
+function render() {
+  const main = $("main");
+  main.textContent = "";
+  const part2 = state.part1_done;
+  const kind = part2 ? "reason" : "place";
+  const readonly = mode === "readonly";
+  const s = seed();
+  D.conditions.forEach((cond, ci) => {
+    const sec = document.createElement("section");
+    sec.className = "cond";
+    const head = document.createElement("div");
+    head.className = "cond-head";
+    const h = document.createElement("h2");
+    h.textContent = `조건 ${ci + 1} · 테마 ${cond.theme_ko}`;
+    const meta = document.createElement("p");
+    meta.className = "meta";
+    meta.textContent = cond.text;
+    head.append(h, meta);
+    const list = document.createElement("div");
+    list.className = "list";
+    if (!part2) {
+      const items = shuffled(D.places.filter((p) => p.theme === cond.theme), s + ci);
+      for (const p of items) list.append(itemRow("place", p.code, p, null, readonly));
+    } else {
+      const items = shuffled(D.reasons.filter((r) => byCode[r.place] && byCode[r.place].theme === cond.theme), s + 100 + ci);
+      for (const r of items) list.append(itemRow("reason", r.code, byCode[r.place], r.text, readonly || state.part2_done));
+    }
+    sec.append(head, list);
+    main.append(sec);
+  });
+
+  const total = part2 ? D.reasons.length : D.places.length;
+  const done = Object.keys(state[kind]).filter((c) => kind === "place" ? byCode[c] : D.reasons.some((r) => r.code === c)).length;
+  const actions = document.createElement("div");
+  actions.className = "actions";
+  if (state.part2_done) {
+    const box = document.createElement("div");
+    box.className = "done";
+    box.innerHTML = "<h2></h2><p class=\"hint\"></p>";
+    box.children[0].textContent = "두 단계 모두 제출했습니다. 감사합니다.";
+    box.children[1].textContent = "결과는 팀 전원이 끝난 뒤 한 번에 집계해 공유합니다.";
+    main.prepend(box);
+  } else if (!readonly) {
+    const btn = document.createElement("button");
+    btn.className = "primary";
+    btn.type = "button";
+    btn.id = part2 ? "submit2" : "submit1";
+    btn.textContent = part2 ? "2단계 제출" : "1단계 제출하고 이유 한 줄 보기";
+    btn.disabled = done < total;
+    btn.addEventListener("click", () => submit(part2 ? 2 : 1));
+    const hint = document.createElement("span");
+    hint.className = "hint";
+    hint.textContent = done < total ? `${total - done}개 남았어요` : (part2 ? "다 매겼어요" : "제출하면 장소 점수는 고칠 수 없어요");
+    actions.append(btn, hint);
+    main.append(actions);
+  }
+
+  $("s1").className = "step " + (part2 ? "done" : "on");
+  $("s2").className = "step " + (part2 ? (state.part2_done ? "done" : "on") : "");
+  $("progress").style.width = (state.part2_done ? 100 : (part2 ? 50 + 50 * done / Math.max(total, 1) : 50 * done / Math.max(total, 1))) + "%";
+  $("export").hidden = mode === "loading" || !DATA;
+  $("manual").hidden = mode !== "manual";
+  if (!$("export-text").hidden) $("export-text").value = exportJson();
+}
+
+function setSave(text, warn) { const el = $("save"); el.textContent = text; el.className = "save" + (warn ? " warn" : ""); }
+
+function rate(kind, code, s) {
+  if (kind === "place" && state.part1_done) return;
+  if (kind === "reason" && (!state.part1_done || state.part2_done)) return;
+  if (state[kind][code] === s) return;
+  state[kind] = { ...state[kind], [code]: s };
+  render();
+  queueSave();
+}
+
+function submit(part) {
+  if (part === 1) {
+    if (Object.keys(state.place).length < D.places.length) return;
+    state.part1_done = true;
+  } else {
+    if (Object.keys(state.reason).length < D.reasons.length) return;
+    state.part2_done = true;
+  }
+  render();
+  queueSave(true);
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function body() { return { place: state.place, reason: state.reason, part1_done: state.part1_done, part2_done: state.part2_done, version: D.version, created: D.created || null }; }
+
+function queueSave(now) {
+  if (mode === "manual") { saveLocal(); setSave("이 기기에만 저장됨"); return; }
+  if (mode !== "shared") return;
+  dirty = true;
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(flush, now ? 0 : 600);
+  setSave("저장 중…");
+}
+
+async function flush() {
+  if (saving || !dirty) return;
+  saving = true;
+  dirty = false;
+  try {
+    await docRef.set(body());
+    setSave(dirty ? "저장 중…" : "저장됨");
+  } catch (e) {
+    if (e && e.code === "invalid_argument") {
+      mode = "manual";
+      saveLocal();
+      setSave("공용 저장 권한이 없어요", true);
+      render();
+    } else {
+      dirty = true;
+      setSave("저장 실패 — 다시 누르면 다시 저장해요", true);
+    }
+  } finally {
+    saving = false;
+    if (dirty && mode === "shared") saveTimer = setTimeout(flush, 1200);
+  }
+}
+
+function saveLocal() { try { localStorage.setItem("cg-blind-state", JSON.stringify(body())); } catch {} }
+function loadLocal() { try { const s = JSON.parse(localStorage.getItem("cg-blind-state") || "null"); if (s) apply(s); } catch {} }
+function apply(s) {
+  state.place = s.place || {};
+  state.reason = s.reason || {};
+  state.part1_done = !!s.part1_done;
+  state.part2_done = !!s.part2_done;
+}
+
+function exportJson() { return JSON.stringify({ rater: (mode === "manual" ? $("rater").value.trim() : uid) || "이름 없음", ...body() }); }
+
+$("copy").addEventListener("click", async () => {
+  const text = exportJson();
+  const ta = $("export-text");
+  try {
+    await navigator.clipboard.writeText(text);
+    $("copy-msg").textContent = "복사했어요. 효성에게 보내 주세요.";
+  } catch {
+    ta.hidden = false;
+    ta.value = text;
+    ta.focus();
+    ta.select();
+    $("copy-msg").textContent = "아래 글을 선택해 복사해 주세요.";
+  }
+});
+$("rater").addEventListener("input", () => { if (!$("export-text").hidden) $("export-text").value = exportJson(); });
+
+async function start() {
+  render();
+  if (!DATA) { mode = "readonly"; setSave("예시 화면", true); render(); return; }
+  const timer = setTimeout(() => { if (mode === "loading") { mode = "manual"; loadLocal(); setSave("저장소에 연결되지 않았어요", true); render(); } }, 10000);
+  try {
+    const [dbNs, userNs] = window.claude && window.claude.use
+      ? await Promise.all([window.claude.use("db"), window.claude.use("user")])
+      : [null, null];
+    uid = userNs ? await userNs.id() : null;
+    const canWrite = userNs ? await userNs.can("data.write") : null;
+    if (!dbNs || !uid || canWrite === false) {
+      clearTimeout(timer);
+      if (mode !== "loading") return;
+      mode = "manual";
+      loadLocal();
+      setSave(canWrite === false ? "보기 전용 권한이에요" : "저장소에 연결되지 않았어요", true);
+      render();
+      return;
+    }
+    db = dbNs;
+    docRef = db.doc(DOC_PREFIX + uid);
+    const snap = await docRef.get();
+    clearTimeout(timer);
+    if (mode !== "loading") return;
+    if (snap.exists) apply(snap.data());
+    mode = "shared";
+    setSave(snap.exists ? "이어서 매기는 중" : "저장 준비됨");
+    render();
+  } catch (e) {
+    clearTimeout(timer);
+    if (mode !== "loading") return;
+    mode = "manual";
+    loadLocal();
+    setSave("저장소에 연결되지 않았어요", true);
+    render();
+  }
+}
+start();
+</script>

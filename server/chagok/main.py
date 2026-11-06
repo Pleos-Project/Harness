@@ -18,18 +18,20 @@ from typing import Literal
 from fastapi import FastAPI, HTTPException, Request
 from pydantic import BaseModel, ConfigDict, Field
 
+from . import cards as C
 from . import engine as E
 from . import live
 from . import prices as P
 from . import routes as R
 from . import sources as S
-from .cards import SessionStore, build_cards, few_hint, load_constants, load_demo_candidates, swap
+from . import weather as W
+from .cards import SessionStore, build_cards, load_constants, load_demo_candidates, pick_hint, swap
 from .obs import log
 
 @asynccontextmanager
 async def _lifespan(_app):
     rows, refreshed = INDEX.rows()
-    log("start", live_candidates=len(rows), tourapi_refreshed=refreshed, kakao=KAKAO is not None)
+    log("start", live_candidates=len(rows), tourapi_refreshed=refreshed, kakao=KAKAO is not None, ranker=RANKER)
     yield
 
 
@@ -45,8 +47,13 @@ POOLS = live.LivePools()
 ROUTE_CACHE = R.RouteCache()
 KAKAO = R.kakao_fetcher(ENV["KAKAO_REST_API_KEY"], timeout=live.ROUTE_TIMEOUT_S) if ENV.get("KAKAO_REST_API_KEY") else None
 PRICES = P.PriceReader()  # 오피넷 전국 평균(크론 KST 04:20 갱신). DB 없으면 /v1/prices 503
+WEATHER = W.WeatherIndex()  # 기상청 단기예보(크론). 없으면 모두 맑음 취급
+# 순위 규칙: a1 = 규칙(목적지성·날씨), b = a1 + A2 사전 큐레이션. 블라인드 검수(PRD 7-4)로 고른 쪽을 .env에 둔다
+RANKER = ENV.get("CHAGOK_RANKER", "a1").strip() or "a1"
+if RANKER not in C.VARIANTS:
+    raise RuntimeError(f"CHAGOK_RANKER는 {C.VARIANTS} 중 하나: {RANKER!r}")
 
-Theme = Literal["sea", "lake", "river", "mountain", "park", "city", "island", "drive"]
+Theme = Literal["sea", "lake", "river", "mountain", "park", "city", "island", "drive", "indoor", "festival"]
 
 
 class Strict(BaseModel):
@@ -110,9 +117,11 @@ class SettleRequest(Strict):
 
 @app.get("/v1/health")
 def health() -> dict:
-    rows, refreshed = INDEX.rows()
+    rows, _, cur, refreshed = INDEX.snapshot()
+    WEATHER.rain_map(W.trip_date())
     return {"ok": True, "demo_candidates": len(DEMO), "constants_seed": CONST["demo_seed"],
-            "live_candidates": len(rows), "tourapi_refreshed": refreshed, "kakao": KAKAO is not None}
+            "live_candidates": len(rows), "tourapi_refreshed": refreshed, "kakao": KAKAO is not None,
+            "ranker": RANKER, "curated": len(cur), "weather_refreshed": WEATHER.refreshed}
 
 
 def _ms(t0: float) -> int:
@@ -140,14 +149,15 @@ def prices_latest(request: Request) -> dict:
 def cards(req: CardsRequest) -> dict:
     t0 = time.perf_counter()
     body = req.model_dump()
-    common = {"recall": req.session_id is not None, "extra_krw": req.extra_krw, "days": req.days, "themes": len(req.themes)}
+    common = {"recall": req.session_id is not None, "extra_krw": req.extra_krw, "days": req.days,
+              "themes": len(req.themes), "ranker": RANKER}
     if req.demo_seed is not None:
-        # 데모 고정 모드: 후보 = fixtures, 네트워크 없음, 같은 입력 → 같은 출력(fixtures/cards/D*.json)
-        res = build_cards(body, DEMO, STORE)
+        # 데모 고정 모드: 후보 = fixtures, 네트워크 없음, 같은 입력 → 같은 출력(fixtures/cards/D*.json). 날씨 맑음 고정
+        res = build_cards(body, DEMO, STORE, C.demo_ctx(RANKER))
         log("cards", mode="demo", status=200, ms=_ms(t0), in_range=res["candidates_in_range"],
             picked=res["picked"] is not None, **common)
         return res
-    rows, _ = INDEX.rows()
+    rows, meta, cur, _ = INDEX.snapshot()
     if not rows:
         log("cards", mode="live", status=503, ms=_ms(t0), err="candidates_not_ready", **common)
         raise HTTPException(status_code=503, detail={"error": "candidates_not_ready"})
@@ -155,11 +165,14 @@ def cards(req: CardsRequest) -> dict:
         sess = STORE.get(req.session_id) if req.session_id else None
         keep = [i for i in ([sess["picked_id"]] + sess["stack_ids"]) if i] if sess else []
         prev = POOLS.get(req.session_id) if sess else None
-        cands, refined, st = live.candidates_for(body, rows, fetch=KAKAO, cache=ROUTE_CACHE, keep_ids=keep, refined=prev)
-        res = build_cards(body, cands, STORE)
+        day = W.trip_date()
+        ctx = E.RankContext(cfg=C.RANKING, rain=WEATHER.rain_map(day), trip_date=day, variant=RANKER)
+        cands, refined, st = live.candidates_for(body, rows, fetch=KAKAO, cache=ROUTE_CACHE, keep_ids=keep, refined=prev,
+                                                 ctx=ctx, meta=meta, cur=cur)
+        res = build_cards(body, cands, STORE, ctx)
         # 순위는 실경로 후보끼리 매기지만, '범위 안 후보'·힌트는 추정 기준 전체 수로(후보가 12곳뿐인 게 아니므로)
         res["candidates_in_range"] = st.in_range
-        res["hint"] = few_hint(st.in_range, req.extra_krw, req.themes)
+        res["hint"] = pick_hint(st.in_range, req.extra_krw, req.themes, res["picked"], ctx)
         if res["session_id"]:
             POOLS.put(res["session_id"], refined)
     except Exception as e:
@@ -180,7 +193,8 @@ def cards_swap(req: SwapRequest) -> dict:
         candidates = DEMO
     else:
         sess = STORE.get(req.session_id)
-        candidates = live.swap_candidates(sess["request"], INDEX.rows()[0], refined) if sess else []
+        rows, meta, cur, _ = INDEX.snapshot()
+        candidates = live.swap_candidates(sess["request"], rows, refined, meta, cur) if sess else []
     res = swap(req.session_id, req.exclude_ids, candidates, STORE)
     if "error" in res:
         code = 404 if res["error"] == "session_not_found" else 409

@@ -1,0 +1,197 @@
+{
+  "id": "R8",
+  "title": "비 예보 + 야외 테마: '실내로 바꿔 볼까요?'",
+  "note": "야외 테마를 고른 채 비 예보(0.5 이상)면 카드는 그대로, 응답 hint = rain_outdoor. 카드에 rain_level.",
+  "context": {
+    "variant": "a1",
+    "trip_date": "2026-11-08",
+    "rain": {
+      "r_arboretum": 1.0,
+      "r_citypark": 1.0,
+      "r_themepark": 1.0
+    }
+  },
+  "candidates": [
+    {
+      "id": "r_arboretum",
+      "name": "숲 수목원",
+      "theme": "park",
+      "lat": 37.7727,
+      "lng": 127.1147,
+      "route_km": 30.0,
+      "minutes": 40,
+      "toll_krw": 0,
+      "parking_krw": null,
+      "has_parking_info": false,
+      "lcls3": "NA040700"
+    },
+    {
+      "id": "r_citypark",
+      "name": "강변 공원",
+      "theme": "park",
+      "lat": 37.7127,
+      "lng": 127.1147,
+      "route_km": 25.0,
+      "minutes": 35,
+      "toll_krw": 0,
+      "parking_krw": null,
+      "has_parking_info": false,
+      "lcls3": "VE030100"
+    },
+    {
+      "id": "r_themepark",
+      "name": "장미 테마공원",
+      "theme": "park",
+      "lat": 37.612700000000004,
+      "lng": 127.1147,
+      "route_km": 33.0,
+      "minutes": 43,
+      "toll_krw": 0,
+      "parking_krw": null,
+      "has_parking_info": false,
+      "lcls3": "VE030500"
+    }
+  ],
+  "request": {
+    "origin": {
+      "lat": 37.4127,
+      "lng": 127.0947
+    },
+    "budget": {
+      "fuel_type": "ev",
+      "usable_km": 195.0,
+      "margin_km": 50.0,
+      "efficiency": 5.27,
+      "price_per_unit": 300,
+      "price_source": "user"
+    },
+    "seats_occupied": 1,
+    "extra_krw": 0,
+    "days": 1,
+    "themes": [
+      "park"
+    ],
+    "recent_visits": []
+  },
+  "expected": {
+    "session_id": "<session>",
+    "radius_km": 75.0,
+    "candidates_in_range": 3,
+    "hint": {
+      "code": "rain_outdoor",
+      "text": "비 소식이 있어요. 실내로 바꿔 볼까요?",
+      "actions": [
+        "theme_indoor"
+      ]
+    },
+    "picked": {
+      "id": "r_arboretum",
+      "name": "숲 수목원",
+      "theme": "park",
+      "lat": 37.7727,
+      "lng": 127.1147,
+      "route_km": 30.0,
+      "minutes": 40,
+      "time_label": "75분 안",
+      "cost": {
+        "fuel": 3416,
+        "toll": 0,
+        "parking": null,
+        "total": 3416,
+        "per_person": null
+      },
+      "display": {
+        "total_text": "5천 원 안팎",
+        "per_person_text": null,
+        "zero_extra": true,
+        "tight": false,
+        "ring_krw": 0,
+        "badge_text": "추가 충전 없이 · 여유 50km",
+        "margin_km": 50
+      },
+      "reason": "수목원·정원 · 추가 0원 안 · 75분 안",
+      "subcategory": "수목원·정원",
+      "indoor": false,
+      "rain_level": 1.0
+    },
+    "stack": [
+      {
+        "id": "r_themepark",
+        "name": "장미 테마공원",
+        "theme": "park",
+        "lat": 37.612700000000004,
+        "lng": 127.1147,
+        "route_km": 33.0,
+        "minutes": 43,
+        "time_label": "75분 안",
+        "cost": {
+          "fuel": 3757,
+          "toll": 0,
+          "parking": null,
+          "total": 3757,
+          "per_person": null
+        },
+        "display": {
+          "total_text": "5천 원 안팎",
+          "per_person_text": null,
+          "zero_extra": true,
+          "tight": false,
+          "ring_krw": 0,
+          "badge_text": "추가 충전 없이 · 여유 50km",
+          "margin_km": 50
+        },
+        "reason": "테마 공원 · 추가 0원 안 · 75분 안",
+        "subcategory": "테마 공원",
+        "indoor": false,
+        "rain_level": 1.0
+      },
+      {
+        "id": "r_citypark",
+        "name": "강변 공원",
+        "theme": "park",
+        "lat": 37.7127,
+        "lng": 127.1147,
+        "route_km": 25.0,
+        "minutes": 35,
+        "time_label": "75분 안",
+        "cost": {
+          "fuel": 2846,
+          "toll": 0,
+          "parking": null,
+          "total": 2846,
+          "per_person": null
+        },
+        "display": {
+          "total_text": "5천 원 안팎",
+          "per_person_text": null,
+          "zero_extra": true,
+          "tight": false,
+          "ring_krw": 0,
+          "badge_text": "추가 충전 없이 · 여유 50km",
+          "margin_km": 50
+        },
+        "reason": "공원 · 추가 0원 안 · 75분 안",
+        "subcategory": "공원",
+        "indoor": false,
+        "rain_level": 1.0
+      }
+    ]
+  },
+  "expected_ranked": [
+    {
+      "id": "r_arboretum",
+      "score": 1.2,
+      "reason": "수목원·정원 · 추가 0원 안 · 75분 안"
+    },
+    {
+      "id": "r_themepark",
+      "score": 1.14,
+      "reason": "테마 공원 · 추가 0원 안 · 75분 안"
+    },
+    {
+      "id": "r_citypark",
+      "score": 1.02,
+      "reason": "공원 · 추가 0원 안 · 75분 안"
+    }
+  ]
+}

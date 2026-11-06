@@ -1,0 +1,249 @@
+{
+  "id": "R1",
+  "title": "A1 목적지성: 바다 테마(해변 > 포구 > 선착장, 빠듯·먼 곳은 뒤로)",
+  "note": "목적지성 0.30: 해변 1.0 · 포구 0.6 · 선착장 0.6×0.5(이름 감점). 빠듯(−0.15)이면 포구에도 밀리고, 85분(시간 −0.17)이면 같은 등급도 뒤로. 이유 한 줄 맨 앞은 소분류 이름.",
+  "context": {
+    "variant": "a1",
+    "trip_date": "2026-11-08",
+    "rain": {}
+  },
+  "candidates": [
+    {
+      "id": "r_beach",
+      "name": "모래해변",
+      "theme": "sea",
+      "lat": 37.4927,
+      "lng": 127.1147,
+      "route_km": 45.0,
+      "minutes": 55,
+      "toll_krw": 0,
+      "parking_krw": null,
+      "has_parking_info": false,
+      "lcls3": "NA020900"
+    },
+    {
+      "id": "r_port",
+      "name": "큰포구",
+      "theme": "sea",
+      "lat": 37.5327,
+      "lng": 127.1147,
+      "route_km": 40.0,
+      "minutes": 50,
+      "toll_krw": 0,
+      "parking_krw": null,
+      "has_parking_info": false,
+      "lcls3": "NA020700"
+    },
+    {
+      "id": "r_pier",
+      "name": "작은선착장",
+      "theme": "sea",
+      "lat": 37.8227,
+      "lng": 127.1147,
+      "route_km": 37.0,
+      "minutes": 45,
+      "toll_krw": 0,
+      "parking_krw": null,
+      "has_parking_info": false,
+      "lcls3": "NA020700"
+    },
+    {
+      "id": "r_cliff_far",
+      "name": "먼 해안 절경",
+      "theme": "sea",
+      "lat": 37.7427,
+      "lng": 127.1147,
+      "route_km": 70.0,
+      "minutes": 85,
+      "toll_krw": 0,
+      "parking_krw": null,
+      "has_parking_info": false,
+      "lcls3": "NA020800"
+    },
+    {
+      "id": "r_beach_tight",
+      "name": "끝 해변",
+      "theme": "sea",
+      "lat": 37.8827,
+      "lng": 127.1147,
+      "route_km": 90.0,
+      "minutes": 74,
+      "toll_krw": 0,
+      "parking_krw": null,
+      "has_parking_info": false,
+      "lcls3": "NA020900"
+    }
+  ],
+  "request": {
+    "origin": {
+      "lat": 37.4127,
+      "lng": 127.0947
+    },
+    "budget": {
+      "fuel_type": "ev",
+      "usable_km": 195.0,
+      "margin_km": 50.0,
+      "efficiency": 5.27,
+      "price_per_unit": 300,
+      "price_source": "user"
+    },
+    "seats_occupied": 1,
+    "extra_krw": 0,
+    "days": 1,
+    "themes": [
+      "sea"
+    ],
+    "recent_visits": []
+  },
+  "expected": {
+    "session_id": "<session>",
+    "radius_km": 75.0,
+    "candidates_in_range": 5,
+    "hint": null,
+    "picked": {
+      "id": "r_beach",
+      "name": "모래해변",
+      "theme": "sea",
+      "lat": 37.4927,
+      "lng": 127.1147,
+      "route_km": 45.0,
+      "minutes": 55,
+      "time_label": "75분 안",
+      "cost": {
+        "fuel": 5123,
+        "toll": 0,
+        "parking": null,
+        "total": 5123,
+        "per_person": null
+      },
+      "display": {
+        "total_text": "5천 원 안팎",
+        "per_person_text": null,
+        "zero_extra": true,
+        "tight": false,
+        "ring_krw": 0,
+        "badge_text": "추가 충전 없이 · 여유 50km",
+        "margin_km": 50
+      },
+      "reason": "해변 · 추가 0원 안 · 75분 안",
+      "subcategory": "해변",
+      "indoor": false
+    },
+    "stack": [
+      {
+        "id": "r_cliff_far",
+        "name": "먼 해안 절경",
+        "theme": "sea",
+        "lat": 37.7427,
+        "lng": 127.1147,
+        "route_km": 70.0,
+        "minutes": 85,
+        "time_label": "조금 먼 곳",
+        "cost": {
+          "fuel": 7970,
+          "toll": 0,
+          "parking": null,
+          "total": 7970,
+          "per_person": null
+        },
+        "display": {
+          "total_text": "1만 원 안팎",
+          "per_person_text": null,
+          "zero_extra": true,
+          "tight": false,
+          "ring_krw": 0,
+          "badge_text": "추가 충전 없이 · 여유 50km",
+          "margin_km": 50
+        },
+        "reason": "해안 절경 · 추가 0원 안 · 지난번과 다른 테마",
+        "subcategory": "해안 절경",
+        "indoor": false
+      },
+      {
+        "id": "r_port",
+        "name": "큰포구",
+        "theme": "sea",
+        "lat": 37.5327,
+        "lng": 127.1147,
+        "route_km": 40.0,
+        "minutes": 50,
+        "time_label": "75분 안",
+        "cost": {
+          "fuel": 4554,
+          "toll": 0,
+          "parking": null,
+          "total": 4554,
+          "per_person": null
+        },
+        "display": {
+          "total_text": "5천 원 안팎",
+          "per_person_text": null,
+          "zero_extra": true,
+          "tight": false,
+          "ring_krw": 0,
+          "badge_text": "추가 충전 없이 · 여유 50km",
+          "margin_km": 50
+        },
+        "reason": "포구 · 추가 0원 안 · 75분 안",
+        "subcategory": "포구",
+        "indoor": false
+      },
+      {
+        "id": "r_beach_tight",
+        "name": "끝 해변",
+        "theme": "sea",
+        "lat": 37.8827,
+        "lng": 127.1147,
+        "route_km": 90.0,
+        "minutes": 74,
+        "time_label": "75분 안",
+        "cost": {
+          "fuel": 10247,
+          "toll": 0,
+          "parking": null,
+          "total": 10247,
+          "per_person": null
+        },
+        "display": {
+          "total_text": "1만 원 안팎",
+          "per_person_text": null,
+          "zero_extra": true,
+          "tight": true,
+          "ring_krw": 0,
+          "badge_text": "빠듯",
+          "margin_km": 50
+        },
+        "reason": "해변 · 75분 안 · 지난번과 다른 테마",
+        "subcategory": "해변",
+        "indoor": false
+      }
+    ]
+  },
+  "expected_ranked": [
+    {
+      "id": "r_beach",
+      "score": 1.5,
+      "reason": "해변 · 추가 0원 안 · 75분 안"
+    },
+    {
+      "id": "r_port",
+      "score": 1.38,
+      "reason": "포구 · 추가 0원 안 · 75분 안"
+    },
+    {
+      "id": "r_beach_tight",
+      "score": 1.35,
+      "reason": "해변 · 75분 안 · 지난번과 다른 테마"
+    },
+    {
+      "id": "r_cliff_far",
+      "score": 1.3333,
+      "reason": "해안 절경 · 추가 0원 안 · 지난번과 다른 테마"
+    },
+    {
+      "id": "r_pier",
+      "score": 1.29,
+      "reason": "포구 · 추가 0원 안 · 75분 안"
+    }
+  ]
+}

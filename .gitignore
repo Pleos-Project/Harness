@@ -9,6 +9,8 @@ __pycache__/
 server/*.egg-info/
 # 서버 캐시(TourAPI 후보 SQLite 등). 배포 서버는 /opt/chagok/data
 server/data/
+# 블라인드 검수 실행 결과(정답 키·LLM 원문). 점수를 다 매긴 뒤 결과만 따로 커밋한다(scripts/blind_review/README.md)
+scripts/blind_review/out/
 node_modules/
 # 빌드 때 fixtures/ 에서 복사되는 상수·데모 후보 (syncChagokData)
 app/android/**/src/main/assets/data/

@@ -68,7 +68,7 @@ class FixturesTest {
         assertTrue(files.size >= 4)
         for (f in files) {
             val fx = load(f)
-            val server = DemoServer(candidates)
+            val server = DemoServer(candidates, constants.ranking)
             var req = parseCardsRequest(fx.getValue("request").jsonObject)
             val from = fx.strOrNull("session_from")
             req = if (from != null) {
@@ -91,6 +91,41 @@ class FixturesTest {
                     )
                 }
             }
+        }
+    }
+
+    // ------------------------------------------------------------ 순위 A1·B (fixtures/ranking/R*.json)
+    /** 실서비스 후보 모양(소분류·행사·평판) + 순위 조건(variant·나들이 날·비) → 서버 cards.build_cards 와 같은 응답·순위. */
+    @Test
+    fun rankingFixtures() {
+        val files = fixtures("ranking", "R")
+        assertTrue("ranking fixture가 없다", files.isNotEmpty())
+        for (f in files) {
+            val text = f.readText()
+            val fx = parseObject(text)
+            val c = fx.getValue("context").jsonObject
+            val rain = c["rain"]?.takeIf { it !is JsonNull }?.jsonObject?.mapValues { it.value.jsonPrimitive.content.toDouble() } ?: emptyMap()
+            val ctx = RankContext(constants.ranking, rain, c.strOrNull("trip_date"), c.strOrNull("variant") ?: "a1")
+            val cands = parseCandidates(text)
+            val req = parseCardsRequest(fx.getValue("request").jsonObject).copy(sessionId = null)
+
+            val order = ranked(req, cands, ctx).second.map { obj("id" to it.card.id, "score" to it.score, "reason" to it.card.reason) }
+            assertJson(fx.getValue("expected_ranked"), JsonArray(order), "${f.name} expected_ranked")
+
+            val res = DemoServer(cands, constants.ranking).cards(req, ctx)
+            assertJson(fx.getValue("expected"), res.toJson(maskSession = "<session>"), "${f.name} response")
+        }
+    }
+
+    /** 데모 고정 모드는 A1·B 어느 쪽이든 기존 응답 그대로(PT·fixtures/cards 고정). */
+    @Test
+    fun demoModeUnchangedByVariant() {
+        val fx = load(File(root, "cards/D1.json"))
+        val req = parseCardsRequest(fx.getValue("request").jsonObject).copy(sessionId = null)
+        for (variant in listOf("a1", "b")) {
+            val server = DemoServer(candidates, constants.ranking)
+            val res = server.cards(req, server.demoCtx(variant))
+            assertJson(fx.getValue("expected"), res.toJson(maskSession = "<session>"), "D1 variant $variant")
         }
     }
 

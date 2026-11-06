@@ -1,0 +1,226 @@
+{
+  "id": "R5",
+  "title": "1박: 둘째 날 열리는 행사도 후보",
+  "note": "days=2면 나들이 다음 날(11/9)에 열리는 행사도 넣는다.",
+  "context": {
+    "variant": "a1",
+    "trip_date": "2026-11-08",
+    "rain": {}
+  },
+  "candidates": [
+    {
+      "id": "f_active",
+      "name": "가을 문화예술축제",
+      "theme": "festival",
+      "lat": 37.7427,
+      "lng": 127.1147,
+      "route_km": 30.0,
+      "minutes": 40,
+      "toll_krw": 0,
+      "parking_krw": null,
+      "has_parking_info": false,
+      "lcls3": "EV010200",
+      "event_start": "2026-11-07",
+      "event_end": "2026-11-09"
+    },
+    {
+      "id": "f_long",
+      "name": "상설 관광축제",
+      "theme": "festival",
+      "lat": 37.7027,
+      "lng": 127.1147,
+      "route_km": 32.0,
+      "minutes": 42,
+      "toll_krw": 0,
+      "parking_krw": null,
+      "has_parking_info": false,
+      "lcls3": "EV010100",
+      "event_start": "2026-04-01",
+      "event_end": "2026-12-31"
+    },
+    {
+      "id": "f_past",
+      "name": "끝난 특산물축제",
+      "theme": "festival",
+      "lat": 37.7827,
+      "lng": 127.1147,
+      "route_km": 28.0,
+      "minutes": 38,
+      "toll_krw": 0,
+      "parking_krw": null,
+      "has_parking_info": false,
+      "lcls3": "EV010300",
+      "event_start": "2026-11-01",
+      "event_end": "2026-11-05"
+    },
+    {
+      "id": "f_concert",
+      "name": "야외 콘서트",
+      "theme": "festival",
+      "lat": 37.8827,
+      "lng": 127.1147,
+      "route_km": 26.0,
+      "minutes": 36,
+      "toll_krw": 0,
+      "parking_krw": null,
+      "has_parking_info": false,
+      "lcls3": "EV020700",
+      "event_start": "2026-11-08",
+      "event_end": "2026-11-08"
+    },
+    {
+      "id": "f_tomorrow",
+      "name": "내일 시작 생태축제",
+      "theme": "festival",
+      "lat": 37.432700000000004,
+      "lng": 127.1147,
+      "route_km": 34.0,
+      "minutes": 44,
+      "toll_krw": 0,
+      "parking_krw": null,
+      "has_parking_info": false,
+      "lcls3": "EV010500",
+      "event_start": "2026-11-09",
+      "event_end": "2026-11-10"
+    }
+  ],
+  "request": {
+    "origin": {
+      "lat": 37.4127,
+      "lng": 127.0947
+    },
+    "budget": {
+      "fuel_type": "ev",
+      "usable_km": 165.0,
+      "margin_km": 50.0,
+      "efficiency": 5.27,
+      "price_per_unit": 300,
+      "price_source": "user"
+    },
+    "seats_occupied": 1,
+    "extra_krw": 0,
+    "days": 2,
+    "themes": [
+      "festival"
+    ],
+    "recent_visits": []
+  },
+  "expected": {
+    "session_id": "<session>",
+    "radius_km": 63.5,
+    "candidates_in_range": 3,
+    "hint": null,
+    "picked": {
+      "id": "f_active",
+      "name": "가을 문화예술축제",
+      "theme": "festival",
+      "lat": 37.7427,
+      "lng": 127.1147,
+      "route_km": 30.0,
+      "minutes": 40,
+      "time_label": "75분 안",
+      "cost": {
+        "fuel": 3416,
+        "toll": 0,
+        "parking": null,
+        "total": 3416,
+        "per_person": null
+      },
+      "display": {
+        "total_text": "5천 원 안팎",
+        "per_person_text": null,
+        "zero_extra": true,
+        "tight": false,
+        "ring_krw": 0,
+        "badge_text": "추가 충전 없이 · 여유 50km",
+        "margin_km": 50
+      },
+      "reason": "축제 · 추가 0원 안 · 75분 안",
+      "subcategory": "축제",
+      "indoor": false,
+      "event_start": "2026-11-07",
+      "event_end": "2026-11-09"
+    },
+    "stack": [
+      {
+        "id": "f_tomorrow",
+        "name": "내일 시작 생태축제",
+        "theme": "festival",
+        "lat": 37.432700000000004,
+        "lng": 127.1147,
+        "route_km": 34.0,
+        "minutes": 44,
+        "time_label": "75분 안",
+        "cost": {
+          "fuel": 3871,
+          "toll": 0,
+          "parking": null,
+          "total": 3871,
+          "per_person": null
+        },
+        "display": {
+          "total_text": "5천 원 안팎",
+          "per_person_text": null,
+          "zero_extra": true,
+          "tight": false,
+          "ring_krw": 0,
+          "badge_text": "추가 충전 없이 · 여유 50km",
+          "margin_km": 50
+        },
+        "reason": "축제 · 추가 0원 안 · 75분 안",
+        "subcategory": "축제",
+        "indoor": false,
+        "event_start": "2026-11-09",
+        "event_end": "2026-11-10"
+      },
+      {
+        "id": "f_long",
+        "name": "상설 관광축제",
+        "theme": "festival",
+        "lat": 37.7027,
+        "lng": 127.1147,
+        "route_km": 32.0,
+        "minutes": 42,
+        "time_label": "75분 안",
+        "cost": {
+          "fuel": 3643,
+          "toll": 0,
+          "parking": null,
+          "total": 3643,
+          "per_person": null
+        },
+        "display": {
+          "total_text": "5천 원 안팎",
+          "per_person_text": null,
+          "zero_extra": true,
+          "tight": false,
+          "ring_krw": 0,
+          "badge_text": "추가 충전 없이 · 여유 50km",
+          "margin_km": 50
+        },
+        "reason": "축제 · 추가 0원 안 · 75분 안",
+        "subcategory": "축제",
+        "indoor": false,
+        "event_start": "2026-04-01",
+        "event_end": "2026-12-31"
+      }
+    ]
+  },
+  "expected_ranked": [
+    {
+      "id": "f_active",
+      "score": 1.44,
+      "reason": "축제 · 추가 0원 안 · 75분 안"
+    },
+    {
+      "id": "f_tomorrow",
+      "score": 1.44,
+      "reason": "축제 · 추가 0원 안 · 75분 안"
+    },
+    {
+      "id": "f_long",
+      "score": 1.38,
+      "reason": "축제 · 추가 0원 안 · 75분 안"
+    }
+  ]
+}

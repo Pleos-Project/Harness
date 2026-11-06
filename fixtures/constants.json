@@ -16,5 +16,38 @@
     "tucson_hev": {"fuel_type": "ice", "capacity": 52, "official_efficiency": 16.2},
     "grandeur_25": {"fuel_type": "ice", "capacity": 70, "official_efficiency": 11.5}
   },
-  "themes": ["sea", "lake", "river", "mountain", "park", "city", "island", "drive"]
+  "themes": ["sea", "lake", "river", "mountain", "park", "city", "island", "drive", "indoor", "festival"],
+  "ranking": {
+    "_doc": "A1 점수 = 기존 5항목(engine.py WEIGHTS, 그대로) + 목적지성 × weights.quality + 날씨 적합도 × weights.weather. B = A1 + A2 평판 × weights.reputation. 효성이 값을 조정하고, 엔진 두 벌(engine.py RankingConfig · Engine.kt RankingConfig)이 같이 읽는다. 바꾸면 make fixtures. 근거: DECISIONS 'A1 점수 뼈대'",
+    "weights": {"quality": 0.30, "weather": 0.30, "reputation": 0.30},
+    "quality_default": 0.5,
+    "quality": {
+      "NA020900": 1.0, "NA020800": 1.0, "NA020500": 1.0, "NA010400": 1.0, "NA010300": 1.0, "NA040600": 1.0, "NA040700": 1.0,
+      "VE070500": 1.0, "VE020400": 1.0, "EV010100": 1.0,
+      "NA020200": 0.8, "NA020100": 0.8, "NA010100": 0.8, "NA010200": 0.8, "VE010200": 0.8, "VE040100": 0.8, "VE030500": 0.8,
+      "VE010300": 0.8, "VE070100": 0.8, "EV010200": 0.8, "EV010300": 0.8, "EV010400": 0.8, "EV010500": 0.8,
+      "NA020700": 0.6, "VE070200": 0.6, "VE070300": 0.6, "VE070600": 0.6, "EV010600": 0.6, "EV030100": 0.6, "EV030200": 0.6,
+      "VE030100": 0.4, "NA020300": 0.4, "EV030400": 0.4,
+      "VE030400": 0.2
+    },
+    "subcategory_ko": {
+      "NA010100": "산", "NA010200": "숲", "NA010300": "폭포", "NA010400": "계곡", "NA040600": "자연휴양림",
+      "NA020100": "강", "NA020200": "호수", "NA020300": "저수지", "NA020500": "섬", "NA020700": "포구",
+      "NA020800": "해안 절경", "NA020900": "해변", "NA040700": "수목원·정원",
+      "VE010200": "전망대", "VE010300": "다리", "VE030100": "공원", "VE030400": "동네 공원", "VE030500": "테마 공원",
+      "VE040100": "문화 거리", "VE020400": "아쿠아리움", "VE070100": "박물관", "VE070200": "기념관", "VE070300": "전시관",
+      "VE070500": "과학관", "VE070600": "미술관",
+      "EV010100": "축제", "EV010200": "축제", "EV010300": "축제", "EV010400": "축제", "EV010500": "축제", "EV010600": "축제",
+      "EV030100": "전시회", "EV030200": "박람회", "EV030400": "행사"
+    },
+    "name_penalty": {"words": ["체육공원", "근린공원", "광장", "선착장", "쉼터"], "factor": 0.5},
+    "exclude": {"names": ["놀이터", "어린이공원", "유아숲"], "subcategories": ["EV030300"], "prefixes": ["EV02"]},
+    "long_event": {"days": 60, "factor": 0.6},
+    "indoor": ["VE070100", "VE070200", "VE070300", "VE070500", "VE070600", "VE020400", "EV030100", "EV030200"],
+    "indoor_clear": 0.5,
+    "rain_phrase": "비 와도 실내",
+    "reputation_missing": 0.25,
+    "off_season_factor": 0.6,
+    "rain_hint": {"code": "rain_outdoor", "text": "비 소식이 있어요. 실내로 바꿔 볼까요?", "actions": ["theme_indoor"]}
+  }
 }

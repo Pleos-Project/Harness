@@ -21,7 +21,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "server"))
 
 from chagok import engine as E  # noqa: E402
-from chagok.cards import SessionStore, build_cards, load_constants, load_demo_candidates, swap  # noqa: E402
+from chagok.cards import SessionStore, build_cards, demo_ctx, load_constants, load_demo_candidates, swap  # noqa: E402
 
 CONST = load_constants()
 CANDS = load_demo_candidates()
@@ -82,12 +82,12 @@ def card_fixture(fid: str, title: str, note: str, console: dict, inp: dict, *, s
     req = request_for(inp, v, r, seats=seats, themes=themes or [])
     store = SessionStore(ids=iter(f"s{i}" for i in range(1, 99)).__next__)
     if after:
-        first = build_cards(after["request"], CANDS, store)
+        first = build_cards(after["request"], CANDS, store, demo_ctx())
         req_sent = dict(req, session_id=first["session_id"])
         req = dict(req, session_id=MASK)
     else:
         req_sent = req
-    res = build_cards(req_sent, CANDS, store)
+    res = build_cards(req_sent, CANDS, store, demo_ctx())
     fx = {"id": fid, "title": title, "note": note, "virtual_console": console,
           "app_local": {"inputs": inp, "expected": local}, "request": req, "expected": masked(res)}
     if after:
@@ -100,6 +100,38 @@ def card_fixture(fid: str, title: str, note: str, console: dict, inp: dict, *, s
                        {"card": s["card"], "swaps_left": s["swaps_left"], "stack_left": s["stack_left"]})
         fx["expected_swaps"] = out
     return fx
+
+
+# ---------------------------------------------------------------- 순위(A1·B) — 실서비스 후보 모양
+D1_INPUT = {"model": "ioniq5_lr", "level_pct": 80, "remaining_range_m": 245_000, "price": 300}
+
+
+def rcand(cid: str, name: str, theme: str, lcls3: str, km: float, minutes: int, **kw) -> dict:
+    """실서비스 후보 모양(소분류·행사 날짜·A2 값). 좌표는 순위에 쓰지 않아 출발지 근처 아무 점."""
+    n = sum(ord(ch) for ch in cid) % 50
+    return {"id": cid, "name": name, "theme": theme, "lat": ORIGIN["lat"] + 0.01 * n, "lng": ORIGIN["lng"] + 0.02,
+            "route_km": km, "minutes": minutes, "toll_krw": 0, "parking_krw": None, "has_parking_info": False,
+            "lcls3": lcls3, **kw}
+
+
+def ranking_fixture(fid: str, title: str, note: str, cands: list[dict], *, themes: list[str], variant: str = "a1",
+                    trip_date: str | None = "2026-11-08", rain: dict | None = None, days: int = 1) -> dict:
+    """후보 목록 + 순위 조건(variant·나들이 날·비) → /v1/cards 응답과 전체 순위(점수·이유).
+    서버 cards.build_cards 와 앱 DemoServer(같은 ctx)가 같은 결과를 내야 한다(FixturesTest rankingFixtures)."""
+    from chagok.cards import RANKING, _ranked
+    inp = dict(D1_INPUT, days=days)
+    v, r, _ = app_local(inp)
+    req = request_for(inp, v, r, themes=themes)
+    req.pop("demo_seed")
+    ctx = E.RankContext(cfg=RANKING, rain=rain or {}, trip_date=trip_date, variant=variant)
+    objs = [E.Candidate(**{k: (tuple(x) if k == "months" and x else x) for k, x in c.items()}) for c in cands]
+    store = SessionStore(ids=iter(f"s{i}" for i in range(1, 99)).__next__)
+    res = build_cards(req, objs, store, ctx)
+    _, pool, _ = _ranked(req, objs, ctx)
+    return {"id": fid, "title": title, "note": note,
+            "context": {"variant": variant, "trip_date": trip_date, "rain": rain or {}},
+            "candidates": cands, "request": req, "expected": masked(res),
+            "expected_ranked": [{"id": c["id"], "score": c["_score"], "reason": c["reason"]} for c in pool]}
 
 
 def local_fixture(fid: str, title: str, note: str, console: dict, inp: dict) -> dict:
@@ -279,12 +311,71 @@ def main() -> None:
          ev_open("2026-11-04T18:00:00+09:00", 510)],
         "2026-11"))
 
+    # ---------------- 순위 A1·B (fixtures/ranking) — 실서비스 후보 모양, 데모 후보에는 없는 소분류·날씨·행사·평판
+    sea = [rcand("r_beach", "모래해변", "sea", "NA020900", 45.0, 55),
+           rcand("r_port", "큰포구", "sea", "NA020700", 40.0, 50),
+           rcand("r_pier", "작은선착장", "sea", "NA020700", 37.0, 45),
+           rcand("r_cliff_far", "먼 해안 절경", "sea", "NA020800", 70.0, 85),
+           rcand("r_beach_tight", "끝 해변", "sea", "NA020900", 90.0, 74)]
+    write(ROOT / "fixtures/ranking/R1.json", ranking_fixture(
+        "R1", "A1 목적지성: 바다 테마(해변 > 포구 > 선착장, 빠듯·먼 곳은 뒤로)",
+        "목적지성 0.30: 해변 1.0 · 포구 0.6 · 선착장 0.6×0.5(이름 감점). 빠듯(−0.15)이면 포구에도 밀리고, "
+        "85분(시간 −0.17)이면 같은 등급도 뒤로. 이유 한 줄 맨 앞은 소분류 이름.", sea, themes=["sea"]))
+    mixed = [rcand("r_beach", "모래해변", "sea", "NA020900", 45.0, 55),
+             rcand("r_arboretum", "숲 수목원", "park", "NA040700", 30.0, 40),
+             rcand("r_science", "별빛 과학관", "indoor", "VE070500", 35.0, 45),
+             rcand("r_museum", "옛길 박물관", "indoor", "VE070100", 25.0, 35),
+             rcand("r_playground", "모래 놀이터", "park", "VE030100", 20.0, 30)]
+    write(ROOT / "fixtures/ranking/R2.json", ranking_fixture(
+        "R2", "비 오는 날 테마 없음: 실내가 위로, 이유에 '비 와도 실내'",
+        "날씨 0.30: 비 1이면 야외 0 · 실내 1. 놀이터는 이름으로 제외.", mixed, themes=[],
+        rain={c["id"]: 1.0 for c in mixed}))
+    write(ROOT / "fixtures/ranking/R3.json", ranking_fixture(
+        "R3", "맑은 날 테마 없음: 같은 등급이면 야외가 먼저",
+        "맑은 날 실내 날씨 적합도 0.5(야외 1) → 같은 목적지성이면 야외가 0.15 앞.", mixed, themes=[]))
+    fest = [rcand("f_active", "가을 문화예술축제", "festival", "EV010200", 30.0, 40,
+                  event_start="2026-11-07", event_end="2026-11-09"),
+            rcand("f_long", "상설 관광축제", "festival", "EV010100", 32.0, 42,
+                  event_start="2026-04-01", event_end="2026-12-31"),
+            rcand("f_past", "끝난 특산물축제", "festival", "EV010300", 28.0, 38,
+                  event_start="2026-11-01", event_end="2026-11-05"),
+            rcand("f_concert", "야외 콘서트", "festival", "EV020700", 26.0, 36,
+                  event_start="2026-11-08", event_end="2026-11-08"),
+            rcand("f_tomorrow", "내일 시작 생태축제", "festival", "EV010500", 34.0, 44,
+                  event_start="2026-11-09", event_end="2026-11-10")]
+    write(ROOT / "fixtures/ranking/R4.json", ranking_fixture(
+        "R4", "축제: 나들이 날 열리는 것만, 장기 행사 감점, 공연 제외",
+        "11/8 당일: 끝난 행사·내일 시작 행사 제외, 공연(EV02) 제외. 60일 넘는 행사 목적지성 × 0.6. 카드에 event_start·event_end.",
+        fest, themes=["festival"]))
+    write(ROOT / "fixtures/ranking/R5.json", ranking_fixture(
+        "R5", "1박: 둘째 날 열리는 행사도 후보",
+        "days=2면 나들이 다음 날(11/9)에 열리는 행사도 넣는다.", fest, themes=["festival"], days=2))
+    b_sea = [rcand("r_port_famous", "유명포구", "sea", "NA020700", 40.0, 50, reputation=5.0,
+                   intro="갓 잡은 해산물 시장을 둘러보는 포구 산책"),
+             rcand("r_beach", "모래해변", "sea", "NA020900", 45.0, 55),
+             rcand("r_beach_summer", "여름 해변", "sea", "NA020900", 42.0, 52, reputation=4.0,
+                   intro="여름 물놀이로 붐비는 넓은 백사장", months=[6, 7, 8])]
+    write(ROOT / "fixtures/ranking/R6.json", ranking_fixture(
+        "R6", "B: A2 평판이 등급 차이를 뒤집고, 이유는 A2 소개",
+        "평판 0.30: (점수−1)÷4, 근거 없음 0.25, 좋은 시기 아닌 달 × 0.6. 유명 포구(0.6, 평판 5)가 근거 없는 해변(1.0)보다 앞.",
+        b_sea, themes=["sea"], variant="b"))
+    write(ROOT / "fixtures/ranking/R7.json", ranking_fixture(
+        "R7", "A1로 같은 후보: 평판·소개를 쓰지 않는다",
+        "R6과 같은 후보를 variant a1로 → 해변이 앞, 이유는 규칙 문장.", b_sea, themes=["sea"]))
+    park = [rcand("r_arboretum", "숲 수목원", "park", "NA040700", 30.0, 40),
+            rcand("r_citypark", "강변 공원", "park", "VE030100", 25.0, 35),
+            rcand("r_themepark", "장미 테마공원", "park", "VE030500", 33.0, 43)]
+    write(ROOT / "fixtures/ranking/R8.json", ranking_fixture(
+        "R8", "비 예보 + 야외 테마: '실내로 바꿔 볼까요?'",
+        "야외 테마를 고른 채 비 예보(0.5 이상)면 카드는 그대로, 응답 hint = rain_outdoor. 카드에 rain_level.",
+        park, themes=["park"], rain={c["id"]: 1.0 for c in park}))
+
     # ---------------- 계약 샘플 (contract/samples) — D1에서 그대로
     write(ROOT / "contract/samples/D1.request.json", d1["request"])
     write(ROOT / "contract/samples/D1.response.json", d1["expected"])
     write(ROOT / "contract/samples/D2.recall.request.json", dict(d2["request"], session_id="<D1 응답의 session_id>"))
 
-    sweep_stale("fixtures/cards", "fixtures/settle", "fixtures/ledger", "contract/samples")
+    sweep_stale("fixtures/cards", "fixtures/settle", "fixtures/ledger", "fixtures/ranking", "contract/samples")
 
 
 if __name__ == "__main__":
