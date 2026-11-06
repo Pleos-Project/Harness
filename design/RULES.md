@@ -25,6 +25,7 @@
 | `screens/record.html` | `ui/RecordScreen.kt` `RecordScreen` | 기록 |
 | `screens/charge.html` · `fuel.html` · `settings.html` · `error.html` | 없으면 새 화면(`Placeholder` 교체) | 충전 끝 · 주유 확인 · 설정 · 불러오기 실패 |
 | `components/<부품>.html` | `ui/components/Components.kt` `Cg*` | 버튼·칩·카드·배지·안내 등. 화면마다 따로 만들지 않는다 |
+| 모든 시안의 화면 문구 | `res/values/strings.xml` | 문구는 여기서만 고친다. 표기 규칙(PRD 5-3)·금지 문구 |
 - 대응표에 없는 시안이 오면 반영 PR이 가장 가까운 파일을 고르고 PR 본문에 적는다. 화면 파일 이름이 바뀌면 이 표를 같이 고친다(개발 PR에서).
 
 ## 1. 값은 전부 tokens.css 변수로 — 기준은 Pleos Connect UI Design Guide
@@ -90,6 +91,7 @@ Co-authored-by: <BX 디자이너 이름> <GitHub에 쓸 이메일>
 - **첫 시안은 개발단이 직접 입힌다(11/6 명준 결정).** 디자이너가 미드파이 이상으로 전체 화면을 만든 첫 PR(`design/screens/` 전체)에는 **`수동 반영` 라벨**을 단다. 이 라벨이 있으면 자동 반영이 돌지 않고, June이 시안을 보고 앱 화면에 직접 입힌다(0절 대응표 기준). 그 뒤 작은 수정 PR부터 아래 자동 반영을 쓴다. 화면 전체를 다시 그리는 큰 개편도 같은 라벨로 수동 처리할 수 있다.
 - **자동 반영:** `design/`을 바꾼 PR이 `develop`에 머지되면 `.github/workflows/design-handoff.yml`이 돈다. Claude Code가 그 변경과 "앱 반영 요청" 절을 읽고 `app/android`(Compose)에 반영해 `feature/design-apply-pr-<번호>` PR을 연다. 리뷰어는 June 한 명이고(11/6 명준 결정, 앱만 바꾼 PR이지만 리뷰어 규칙의 예외), 본문 `## @june0103 확인 부탁` 절에 확인할 것을 적는다. 자동 머지는 하지 않는다.
   - **화면 구조만** 맡는다. `design/screens/`·`design/components/`·`design/preview.html`이 바뀐 PR에서만 돈다(`*.md`·토큰만 바뀐 PR은 돌지 않음, 일러스트는 방식이 정해지면 추가). 토큰(`tokens.json`·`tokens.css`)과 앱 테마(`ui/theme/`)는 토큰 생성 스크립트가 맡고, 반영 PR은 테마를 고치지 않는다. 생성 스크립트가 생기기 전까지 테마 반영은 June이 한다.
+  - **반영 PR이 건드리지 않는 것:** 엔진(`engine/` 패키지, Python과 두 벌로 같은 fixtures 통과)·`src/main/assets/`·`AndroidManifest.xml`(권한)·앱 테마(`ui/theme/`), 엔진 호출 결과 문구(잔고·카드 비용·정산·월 합계 — 엔진 값을 그대로 쓰고 화면에서 따로 계산하지 않음), 주행 중 가림 화면(`DrivingCover`). CI 금지 경로 검사에도 같은 경로가 들어 있다.
   - Claude가 쓸 수 있는 명령은 좁혀 두었다: 머지(`gh pr merge`)·develop 푸시는 못 하고, 푸시는 그 반영 브랜치 하나만.
   - 금지 경로(design/·테마 등) 검사는 CI `copy`(문구 검사) 잡이 반영 PR의 체크로 돌린다. 반영 PR에 빨간 X로 뜨고 커밋마다 다시 검사한다. 브랜치 보호가 없어 머지를 강제로 막지는 못하니, 리뷰 때 그 표시를 본다.
   - 디자인 PR마다 따로 실행한다. 여러 개가 연달아 머지되면 반영 PR도 각각 생긴다(서로의 반영은 들어 있지 않으니 차례로 머지하며 충돌을 푼다).

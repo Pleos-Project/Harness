@@ -133,7 +133,11 @@ jobs:
                - `data-field` = 서버 응답 Card 필드(contract/openapi.yaml), `data-derived` = 앱이 엔진(engine 패키지)으로 만드는 값. 샘플 글자를 하드코딩하지 않는다.
                - 화면 문구는 strings.xml. 표기 규칙(PRD 5-3)과 금지 문구를 지킨다.
                - 주간/야간은 isSystemInDarkTheme(). 일러스트 SVG는 지금 단계에서 앱으로 옮기지 않는다(방식 미정).
-            4. 고치지 말 것: design/, docs/, fixtures/, contract/, server/, scripts/, .github/, app/android/app/src/main/java/com/mist/pleos_app/ui/theme/. 원시 차량값 서버 전송, 백그라운드 폴링, 권한 추가 금지.
+            4. 고치지 말 것: design/, docs/, fixtures/, contract/, server/, scripts/, .github/, app/android/app/src/main/java/com/mist/pleos_app/ui/theme/,
+               app/android/app/src/main/java/com/mist/pleos_app/engine/(Python 엔진과 두 벌로 같은 fixtures를 통과해야 함), app/android/app/src/main/assets/,
+               app/android/app/src/main/AndroidManifest.xml(권한). 원시 차량값 서버 전송, 백그라운드 폴링, 권한 추가 금지.
+               - 금액·거리 문구(잔고·카드 비용·정산·월 합계)는 엔진이 만든 값을 그대로 쓰고 화면에서 따로 계산하지 않는다. 엔진 호출 결과 문구는 바꾸지 않는다.
+               - 주행 중 가림 화면(ui/ChagokApp.kt `DrivingCover`)은 고치지 않는다.
                시안이 모호하거나 앱 구조 결정이 필요하면 추측하지 말고 기본값으로 최소 구현만 하고 PR 본문 "@june0103 확인 부탁" 절에 적는다.
             5. 확인: `app/android/gradlew -p app/android --no-daemon assembleDebug test` 와 `python scripts/lint_copy.py`.
                실패하면 고쳐 본다. 끝내 실패하면 숨기지 말고 PR 본문에 그대로 적는다.
