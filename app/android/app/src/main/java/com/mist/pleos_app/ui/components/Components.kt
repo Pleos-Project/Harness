@@ -196,7 +196,7 @@ fun CgIconButton(glyph: String, label: String, onClick: () -> Unit, modifier: Mo
 }
 
 /** 금액 배지 3변형(design/components/badge): 추가 0원 · +1만/+3만 · 빠듯. 색 바탕 + 대비 계산한 글자색. */
-enum class BadgeKind { Zero, Extra, Tight }
+enum class BadgeKind { Zero, Extra, Tight, Neutral }
 
 @Composable
 fun CgBadge(text: String, kind: BadgeKind, modifier: Modifier = Modifier) {
@@ -205,6 +205,7 @@ fun CgBadge(text: String, kind: BadgeKind, modifier: Modifier = Modifier) {
         BadgeKind.Zero -> c.badgeZero to c.badgeZeroText
         BadgeKind.Extra -> c.badgeExtra to c.badgeExtraText
         BadgeKind.Tight -> c.badgeTight to c.badgeTightText
+        BadgeKind.Neutral -> c.surfaceAccent to c.textPrimary      // 1인 몫(design/components per-person)
     }
     Text(
         text,

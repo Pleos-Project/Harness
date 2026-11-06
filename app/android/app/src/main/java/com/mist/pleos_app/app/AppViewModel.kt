@@ -12,7 +12,10 @@ import com.mist.pleos_app.engine.parseConstants
 import com.mist.pleos_app.util.ChagokLog
 import com.mist.pleos_app.vehicle.VehicleSnapshot
 import com.mist.pleos_app.vehicle.seatCount
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -32,7 +35,9 @@ class AppViewModel(app: Application, private val saved: SavedStateHandle) : Andr
     /** 차종 표·기본 단가·데모 후보(빌드 때 fixtures/ → assets/data/, syncChagokData). 없으면 null. */
     val constants: Constants? = readAsset(app, "data/constants.json")?.let { runCatching { parseConstants(it) }.getOrNull() }
     private val candidates: List<Candidate> = readAsset(app, "data/candidates_demo.json")?.let { runCatching { parseCandidates(it) }.getOrNull() }.orEmpty()
-    private val flow: CardFlow? = constants?.let { CardFlow(it, DemoServer(candidates)) }
+    private val flow: CardFlow? = constants?.let { CardFlow(it, DemoServer(candidates)) }?.also {
+        it.recentVisits = saved.get<List<String>>(KEY_RECENT).orEmpty()
+    }
 
     // ------------------------------------------------------------ 화면 스택
     val stack: StateFlow<List<Screen>> = saved.getStateFlow(KEY_STACK, listOf(Screen.HOME.name))
@@ -101,6 +106,39 @@ class AppViewModel(app: Application, private val saved: SavedStateHandle) : Andr
         if (card.value == null) card.value = load(s, model, today = saved.get<Boolean>(KEY_CARD_FROM_TODAY) ?: true)
     }
 
+    // ------------------------------------------------------------ 재계산(F5 유지·재계산, F11 1인 몫)
+    private var lastKey: RecallKey? = null
+    private var recallJob: Job? = null
+
+    /**
+     * 차량값이 바뀔 때마다 부른다. SOC 1%p·주행가능거리 1km·착석 수가 바뀌었고 한 장이 떠 있으면
+     * 마지막 변화 1초 뒤에 같은 세션으로 다시 불러 배지·1인 몫만 갱신한다(AC-F5-2·AC-F11-1, 재호출 1건).
+     */
+    fun onVehicle(s: VehicleSnapshot, model: String) {
+        val v = engineVehicle(constants, model, s) ?: return
+        val seats = seatCount(s.seatsOccupied, invert = SEAT_INVERT_EMULATOR)
+        val key = recallKey(v.levelPct.toInt(), s.rangeRemainingM, seats)
+        val prev = lastKey
+        lastKey = key
+        if (prev == null || prev == key) return
+        if (card.value !is CardUi.Shown) return
+        recallJob?.cancel()
+        recallJob = viewModelScope.launch {
+            delay(RECALL_DEBOUNCE_MS)
+            val cur = card.value as? CardUi.Shown ?: return@launch
+            val f = flow ?: return@launch
+            card.value = f.recall(cur, v, seats)
+            ChagokLog.event("card_recall", "seats" to seats, "zero" to (card.value as? CardUi.Shown)?.card?.display?.zeroExtra)
+        }
+    }
+
+    /** 출발(F8): 최근 방문(10곳)에 넣는다. 다음 뽑기에서 빠진다. 장부 trip은 P6. */
+    fun recordDeparture(placeId: String) {
+        val list = (listOf(placeId) + saved.get<List<String>>(KEY_RECENT).orEmpty().filter { it != placeId }).take(10)
+        saved[KEY_RECENT] = list
+        flow?.recentVisits = list
+    }
+
     fun swap() {
         val cur = card.value as? CardUi.Shown ?: return
         card.value = flow?.swap(cur)
@@ -122,6 +160,7 @@ class AppViewModel(app: Application, private val saved: SavedStateHandle) : Andr
         const val KEY_DAYS = "cond_days"
         const val KEY_THEMES = "cond_themes"
         const val KEY_CARD_FROM_TODAY = "card_from_today"
+        const val KEY_RECENT = "recent_visits"
         /** 착석 반전(설정 seat_invert, 에뮬 ON). 설정 화면(S1)이 생기면 그 값을 쓴다. */
         const val SEAT_INVERT_EMULATOR = true
 

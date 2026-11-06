@@ -29,6 +29,7 @@ import com.mist.pleos_app.engine.CardCost
 import com.mist.pleos_app.engine.CardDisplay
 import com.mist.pleos_app.engine.THEME_KO
 import com.mist.pleos_app.engine.approx
+import com.mist.pleos_app.navi.DepartState
 import com.mist.pleos_app.ui.components.BadgeKind
 import com.mist.pleos_app.ui.components.CgBadge
 import com.mist.pleos_app.ui.components.CgBody
@@ -50,13 +51,13 @@ import kotlin.math.abs
  * 일러스트는 SVG를 앱에 넣는 방식이 정해지면(열린 결정 12·13) 앞면 위에 붙인다. 출발(F8)은 P5.
  */
 @Composable
-fun CardScreen(ui: CardUi?, onSwap: () -> Unit, onRange: () -> Unit) {
+fun CardScreen(ui: CardUi?, depart: DepartState, onSwap: () -> Unit, onRange: () -> Unit, onDepart: (Card) -> Unit) {
     when (ui) {
         null -> Column(verticalArrangement = Arrangement.spacedBy(24.gpx)) {
             CgTitle(stringResource(R.string.screen_card))
             CgNotice(stringResource(R.string.reading_vehicle))
         }
-        is CardUi.Shown -> Shown(ui, onSwap)
+        is CardUi.Shown -> Shown(ui, depart, onSwap) { onDepart(ui.card) }
         is CardUi.AskTheme -> Column(verticalArrangement = Arrangement.spacedBy(24.gpx)) {
             CgCard(Modifier.fillMaxWidth(), onClick = onRange) {
                 CgTitle(stringResource(R.string.ask_theme))
@@ -72,7 +73,7 @@ fun CardScreen(ui: CardUi?, onSwap: () -> Unit, onRange: () -> Unit) {
 }
 
 @Composable
-private fun Shown(ui: CardUi.Shown, onSwap: () -> Unit) {
+private fun Shown(ui: CardUi.Shown, depart: DepartState, onSwap: () -> Unit, onDepart: () -> Unit) {
     var showCost by remember(ui.card.id) { mutableStateOf(false) }
     val narrow = LocalNarrow.current
     val front = @Composable { m: Modifier -> FrontCard(ui.card, showCost, onTap = { showCost = !showCost }, onSwipe = onSwap, modifier = m) }
@@ -85,8 +86,12 @@ private fun Shown(ui: CardUi.Shown, onSwap: () -> Unit) {
                     CgCaption(stringResource(R.string.swaps_left, ui.swapsLeft))
                 }
             }
-            // 출발 1탭 → 순정 내비(F8)는 P5에서 붙인다
-            CgButton(stringResource(R.string.depart), {}, Modifier.fillMaxWidth(), enabled = false)
+            // 출발 1탭 → 순정 내비(F8). 실패하면 안내 + 같은 버튼으로 재시도(X2)
+            if (depart == DepartState.FAILED) CgNotice(stringResource(R.string.navi_failed))
+            CgButton(
+                stringResource(if (depart == DepartState.REQUESTING) R.string.depart_requesting else R.string.depart),
+                onDepart, Modifier.fillMaxWidth(), enabled = depart != DepartState.REQUESTING,
+            )
         }
     }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(24.gpx)) {
@@ -120,6 +125,8 @@ private fun FrontCard(card: Card, showCost: Boolean, onTap: () -> Unit, onSwipe:
         CgCaption("${THEME_KO[card.theme] ?: card.theme} · ${minutesText(card.minutes)}")
         CgTitle(card.name)
         CgBadge(card.display.badgeText, badgeKind(card.display))
+        // 1인 몫(F11): 착석 2 이상일 때만 엔진이 문구를 준다("1인 7천 원 안팎"), 착석 1이면 없음(AC-F11-2)
+        card.display.perPersonText?.let { CgBadge(it, BadgeKind.Neutral) }
         CgBody(card.reason, secondary = true)
         if (showCost) CostBreakdown(card)
         else CgCaption(stringResource(R.string.cost_tap_hint))
@@ -168,5 +175,5 @@ private val previewCard = Card(
 @Preview(name = "한 장·세로", widthDp = 640, heightDp = 720)
 @Composable
 private fun CardPreview() {
-    ChagokTheme(dark = true) { CardScreen(CardUi.Shown("s", previewCard, 3, 2, null, Conditions()), {}, {}) }
+    ChagokTheme(dark = true) { CardScreen(CardUi.Shown("s", previewCard, 3, 2, null, Conditions()), DepartState.IDLE, {}, {}, {}) }
 }
