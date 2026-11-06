@@ -1,37 +1,29 @@
-"""블라인드 검수(PRD v1.3 7-4): 같은 조건에서 규칙 상위 5곳과 LLM 5곳을 섞어 팀이 1~5점을 매긴다.
+"""블라인드 검수(PRD v1.6 7-4) — A = 규칙(A1), B = A1 + A2 사전 큐레이션. 같은 조건에서 상위 5곳씩 섞어 팀이 1~5점.
 
-판정: '가고 싶다' 평균 차이(LLM − 규칙)가 0.5점 미만이면 규칙 확정. 이유 한 줄은 '납득된다' 점수로 같이 본다.
+판정(제안, DECISIONS '블라인드 검수 방식'):
+- '가고 싶다' 평균 차이(B − A)가 0.5 이상이면 A2 도입(CHAGOK_RANKER=b), 미만이면 A1만(PRD 7-4 '0.5 미만이면 규칙 확정')
+- '납득된다'(이유 한 줄) 차이가 0.5 이상이면 AI 한 줄 소개(F14) 채택
+
+A와 B는 고르는 틀(거리·시간·다양성·동점·날씨·목적지성)이 같고 A2 평판·소개만 다르다. 둘 다 서버 실서비스 순서 그대로
+(live.candidates_for → cards._ranked, 카카오 실경로)라 어느 쪽이 이기든 CHAGOK_RANKER 하나로 바로 배포된다.
 
 명령 (레포 루트에서)
-  python scripts/blind_review/blind_review.py themes          # D1 반경 안 테마별 후보 수와 자동 선택 (외부 호출 없음)
-  python scripts/blind_review/blind_review.py prompt          # LLM에 보낼 프롬프트를 out/에 쓰기만 (외부 호출 없음)
-  uv run --no-project --python 3.12 --with anthropic python scripts/blind_review/blind_review.py run
-  python scripts/blind_review/blind_review.py page            # out/items.json으로 page.html만 다시 만듦
-  python scripts/blind_review/blind_review.py tally out/ratings.json [파일 더]
+  python scripts/blind_review/blind_review.py conditions        # 조건별 범위 안 후보 수(외부 호출 없음)
+  python scripts/blind_review/blind_review.py run [--date 2026-11-08]   # 카카오 실경로로 A·B 상위 5곳 → out/
+  python scripts/blind_review/blind_review.py page             # out/items.json으로 page.html만 다시
+  python scripts/blind_review/blind_review.py tally out/ratings.json [더]
 
-입력
-- 조건: fixtures/cards/D1.json의 request에서 demo_seed만 뺀 것(= 실서비스 모드) + themes=[테마 하나]
-- 후보: 서버와 같은 TourAPI SQLite(CHAGOK_DB, 기본 server/data/chagok.sqlite3)
-- 키: .env의 KAKAO_REST_API_KEY(실경로), ANTHROPIC_API_KEY(LLM). 키는 출력·기록에 남기지 않는다
-
-순위 규칙은 서버 코드(live.candidates_for → cards._ranked)를 그대로 부른다. 여기서 따로 만들지 않는다.
-LLM에는 규칙과 같은 후보(추정 범위 안 전체)를 가나다순으로 준다. 원시 차량값은 보내지 않는다(반경은 budget 파생값).
-
+준비: 후보 캐시(sources refresh), 날씨는 쓰지 않음(조건마다 고정), A2 큐레이션(python -m chagok.curate run --scope d1).
 출력 scripts/blind_review/out/ (gitignore). **점수를 다 매기기 전에는 key.json·run-*.json을 열지 않는다.**
-- items.json·page.html  섞은 목록(출처 없음). page.html을 아티팩트로 게시해 팀이 점수를 매긴다
-- key.json              코드 → 출처(규칙 순위·LLM 순위)
-- run-<시각>.json        재현 기록: 조건·후보 수·프롬프트 해시·모델·요청 id·원문 응답·사용량·버린 후보와 이유
 """
 
 from __future__ import annotations
 
 import argparse
 import copy
-import hashlib
 import json
 import math
 import random
-import re
 import secrets
 import sqlite3
 import sys
@@ -50,244 +42,65 @@ from chagok import live  # noqa: E402
 from chagok import routes as R  # noqa: E402
 from chagok import sources as S  # noqa: E402
 
-MODEL = "claude-opus-5-5"
-EFFORT = "high"
-PICK_N = 5            # PRD 7-4: 규칙 5곳 vs LLM 5곳
-SPARE_N = 2           # LLM 예비: 실경로로 다시 재서 범위를 벗어나면 다음 것을 쓴다
-MIN_POOL = 30         # 자동 선택할 테마의 최소 범위 안 후보 수(5곳을 고를 때 6배 이상 고를 거리가 있게)
-THRESHOLD = Fraction(1, 2)   # PRD 7-4: 평균 차이 0.5점 미만이면 규칙 확정
+PICK_N = 5
+THRESHOLD = Fraction(1, 2)
 SCORES = range(1, 6)
-ORIGIN_TEXT = "경기 성남시 판교 부근"   # D1 출발 좌표(37.4127, 127.0947) — 가까운 후보 주소로 확인
+SIDES = ("a", "b")
+SIDE_VARIANT = {"a": "a1", "b": "b"}
+ORIGIN_TEXT = "경기 성남시 판교 부근"   # D1 출발 좌표(37.4127, 127.0947)
 KST = timezone(timedelta(hours=9))
 
-# 테마 자동 선택: 성격이 다른 묶음마다 하나씩(후보가 가장 많은 테마)
-THEME_GROUPS: tuple[tuple[str, tuple[str, ...]], ...] = (
-    ("물가", ("sea", "lake", "river", "island")),
-    ("녹지", ("mountain", "park")),
-    ("도시", ("city", "drive")),
-)
-
-# TourAPI 신분류 소분류 이름(lclsSystmCode2, 11/6 조회). 코드 목록은 sources.THEME_LCLS
-LCLS_KO = {
-    "NA010100": "산·고개·봉우리", "NA010200": "숲", "NA010300": "폭포", "NA010400": "계곡",
-    "NA020100": "강", "NA020200": "호수", "NA020300": "저수지", "NA020500": "섬",
-    "NA020700": "항구·포구", "NA020800": "해안절경", "NA020900": "해변·해수욕장",
-    "NA040600": "자연휴양림", "NA040700": "수목원·정원",
-    "VE010200": "타워·전망대", "VE010300": "다리·대교",
-    "VE030100": "시민공원", "VE030400": "근린공원", "VE030500": "주제공원",
-    "VE040100": "골목길·문화거리",
-}
+# 조건: D1 + 테마 4개(맑음 고정) + 테마 없음·비 예보 가정(모든 후보 비 1)
+CONDITIONS = [
+    {"key": "sea", "themes": ["sea"], "rain": False},
+    {"key": "park", "themes": ["park"], "rain": False},
+    {"key": "city", "themes": ["city"], "rain": False},
+    {"key": "festival", "themes": ["festival"], "rain": False},
+    {"key": "rain", "themes": [], "rain": True},
+]
 SIDO_SHORT = {"서울특별시": "서울", "인천광역시": "인천", "경기도": "경기", "강원특별자치도": "강원", "강원도": "강원",
               "충청북도": "충북", "충청남도": "충남"}
 
-# LLM 이유 한 줄 점검(버리지 않고 기록만): 프롬프트 3번 규칙 + 화면 문구 규칙(lint_copy와 같은 취지)
-REASON_FLAGS = [
-    (re.compile(r"\d[\d,]*\s*원|무료|0원|비용|요금|주차"), "금액·비용·주차 언급"),
-    (re.compile(r"\d+\s*(분|km|킬로)"), "시간·거리 숫자"),
-    (re.compile(r"글레오|예상\s*(vs|대비|과|와)\s*실제"), "금지 문구(AC-C-8)"),
-    (re.compile("[\U0001F300-\U0001FAFF☀-➿]"), "이모지"),
-]
-REASON_MAX = 40
 
-SCHEMA = {
-    "type": "object",
-    "properties": {
-        "criteria": {"type": "string"},
-        "picks": {
-            "type": "array",
-            "items": {
-                "type": "object",
-                "properties": {"id": {"type": "string"}, "reason": {"type": "string"}},
-                "required": ["id", "reason"],
-                "additionalProperties": False,
-            },
-        },
-    },
-    "required": ["criteria", "picks"],
-    "additionalProperties": False,
-}
-
-
-# ------------------------------------------------------------ 조건·후보
-def d1_request(theme: str | None = None) -> dict:
-    """D1 요청에서 demo_seed만 뺀 실서비스 요청. 테마 하나를 필터로."""
+# ------------------------------------------------------------ 조건
+def d1_request(themes: list[str]) -> dict:
     d1 = json.loads((ROOT / "fixtures/cards/D1.json").read_text(encoding="utf-8"))
     req = copy.deepcopy(d1["request"])
     req.pop("demo_seed", None)
-    req["themes"] = [theme] if theme else []
+    req["themes"] = list(themes)
     return req
 
 
-def load_candidates(con: sqlite3.Connection) -> tuple[list[S.Row], dict[str, tuple[str, str]], str | None]:
-    """(서버가 쓰는 후보 행, id → (주소, 소분류 코드), 갱신일)."""
-    rows, refreshed = S.load_rows(con)
-    meta = {r[0]: (r[1] or "", r[2] or "") for r in con.execute("SELECT id, addr, lcls3 FROM candidate")}
-    return rows, meta, refreshed
-
-
-def addr_short(addr: str, n: int) -> str:
-    parts = addr.split()
-    if not parts:
-        return ""
-    return " ".join([SIDO_SHORT.get(parts[0], parts[0]), *parts[1:n]])
-
-
-def theme_counts(base_req: dict, est: list[E.Candidate]) -> dict[str, int]:
-    """테마마다 D1 반경·추가 0원 안 후보 수(추정, 서버 응답의 candidates_in_range와 같은 셈)."""
-    return {t: len(C._ranked(dict(base_req, themes=[t]), est)[1]) for t in S.THEME_LCLS}
-
-
-def pick_themes(counts: dict[str, int], k: int = 3, min_pool: int = MIN_POOL) -> list[tuple[str, str]]:
-    """묶음(물가·녹지·도시)마다 범위 안 후보가 가장 많은 테마 하나. min_pool 미만인 묶음은 건너뛰고,
-    남은 자리는 전체에서 후보가 많은 순으로 채운다. 같은 수면 sources.THEME_LCLS 순서. → [(테마, 고른 이유)]"""
-    order = list(S.THEME_LCLS)
-    chosen: list[tuple[str, str]] = []
-    for label, themes in THEME_GROUPS:
-        best = max(themes, key=lambda t: (counts.get(t, 0), -order.index(t)))
-        if counts.get(best, 0) >= min_pool:
-            chosen.append((best, f"{label} 묶음에서 범위 안 후보가 가장 많음({counts[best]}곳)"))
-    for t in sorted(order, key=lambda t: (-counts.get(t, 0), order.index(t))):
-        if len(chosen) >= k:
-            break
-        if counts.get(t, 0) >= min_pool and t not in {c[0] for c in chosen}:
-            chosen.append((t, f"남은 자리: 전체에서 후보가 많은 순({counts[t]}곳)"))
-    return chosen[:k]
-
-
 def one_way_km(req: dict) -> int:
-    """추가 0원 범위의 편도 도로 거리. 엔진 판정(compute_badge)이 '왕복 도로 ≤ usable_km'이라 usable_km ÷ 2.
-    radius_km(= 이 값 ÷ 1.3)는 지도에 그리는 직선 반경이라 도로 거리로 말하면 틀린다."""
+    """추가 0원 범위의 편도 도로 거리(엔진 판정 = 왕복 도로 ≤ usable_km). radius_km는 지도에 그리는 직선 반경."""
     return E.round_half_up(C.budget_from(req).usable_km / 2)
 
 
-def condition_text(req: dict) -> str:
-    t = req["themes"][0]
-    return (f"{ORIGIN_TEXT} 출발 · 당일 · {req.get('seats_occupied', 1)}명 · "
-            f"추가 비용 0원 범위(편도 도로 약 {one_way_km(req)}km) · 테마 {E.THEME_KO[t]}")
+def condition_text(cond: dict, req: dict, date: str) -> str:
+    theme = f"테마 {E.THEME_KO[cond['themes'][0]]}" if cond["themes"] else "테마 없음(오늘의 한 곳)"
+    weather = "비 예보(가정)" if cond["rain"] else "맑음(가정)"
+    return (f"{ORIGIN_TEXT} 출발 · {date} 당일 · {req.get('seats_occupied', 1)}명 · "
+            f"추가 주유·충전 없이(편도 도로 약 {one_way_km(req)}km) · {theme} · {weather}")
 
 
-def fmt_num(x: float) -> str:
-    return str(int(x)) if float(x).is_integer() else str(x)
+def ctx_for(cond: dict, side: str, date: str, ids: list[str]) -> E.RankContext:
+    rain = {i: 1.0 for i in ids} if cond["rain"] else {}
+    return E.RankContext(cfg=C.RANKING, rain=rain, trip_date=date, variant=SIDE_VARIANT[side])
 
 
-# ------------------------------------------------------------ 규칙 쪽
-def rule_top(req: dict, rows: list[S.Row], *, fetch, cache: R.RouteCache, k: int = PICK_N
-             ) -> tuple[list[dict], live.LiveStats]:
-    """서버 실서비스 모드와 같은 순위(추정 → 상위 12곳 실경로 → 실경로 후보끼리 순위)의 상위 k곳."""
-    cands, _, st = live.candidates_for(req, rows, fetch=fetch, cache=cache)
-    _, pool, _ = C._ranked(req, cands)
-    return pool[:k], st
+def default_date(now: datetime | None = None) -> str:
+    """다음 토요일(오늘이 토요일이면 오늘) — 축제 후보가 그날 열리는 것만 남는다."""
+    d = (now or datetime.now(KST)).date()
+    return (d + timedelta(days=(5 - d.weekday()) % 7)).isoformat()
 
 
-# ------------------------------------------------------------ LLM 쪽
-def load_prompt(path: Path = HERE / "prompt.md") -> tuple[str, str, str]:
-    """(system, user 틀, 파일 해시 앞 12자)."""
-    text = path.read_text(encoding="utf-8")
-    sha = hashlib.sha256(text.encode("utf-8")).hexdigest()[:12]
-    rest = text.split("<!-- system -->", 1)[1]
-    system, user = rest.split("<!-- user -->", 1)
-    return system.strip(), user.strip(), sha
-
-
-def candidate_table(pool_est: list[dict], meta: dict[str, tuple[str, str]]) -> str:
-    """가나다순(규칙 순위가 새지 않게). 열: id | 이름 | 주소 | 분류 | 편도 km | 편도 분."""
-    lines = []
-    for c in sorted(pool_est, key=lambda c: (c["name"], c["id"])):
-        addr, lcls3 = meta.get(c["id"], ("", ""))
-        cells = [c["id"], c["name"], addr_short(addr, 3), LCLS_KO.get(lcls3, lcls3),
-                 fmt_num(c["route_km"]), str(c["minutes"])]
-        lines.append(" | ".join(x.replace("|", "/") for x in cells))
-    return "\n".join(lines)
-
-
-def render_user(template: str, req: dict, radius: float, pool_est: list[dict], meta) -> str:
-    return template.format(
-        origin=ORIGIN_TEXT, seats=req.get("seats_occupied", 1), one_way_km=one_way_km(req),
-        radius_km=E.round_half_up(radius),
-        theme_ko=E.THEME_KO[req["themes"][0]], n=len(pool_est), n_pick=PICK_N + SPARE_N,
-        candidates=candidate_table(pool_est, meta))
-
-
-def call_llm(system: str, user: str, api_key: str | None) -> dict:
-    """한 번 호출. 구조화 출력(JSON 스키마)으로 받는다. 거절·잘림은 실패로 멈춘다(조용히 넘어가지 않음)."""
-    import anthropic
-
-    client = anthropic.Anthropic(api_key=api_key) if api_key else anthropic.Anthropic()
-    resp = client.beta.messages.create(
-        model=MODEL,
-        max_tokens=16000,
-        system=system,
-        messages=[{"role": "user", "content": user}],
-        output_config={"effort": EFFORT, "format": {"type": "json_schema", "schema": SCHEMA}},
-        betas=["server-side-fallback-2026-07-01"],
-        fallbacks="default",
-    )
-    record = {"request_id": resp._request_id, "model_requested": MODEL, "model_served": resp.model,
-              "effort": EFFORT, "stop_reason": resp.stop_reason, "usage": resp.usage.to_dict()}
-    if resp.stop_reason == "refusal":
-        raise RuntimeError(f"LLM 거절: {resp.stop_details} (request_id {resp._request_id})")
-    if resp.stop_reason == "max_tokens":
-        raise RuntimeError(f"출력이 max_tokens에서 잘림 (request_id {resp._request_id})")
-    text = next(b.text for b in resp.content if b.type == "text")
-    record["raw"] = text
-    record["parsed"] = json.loads(text)
-    return record
-
-
-def reason_flags(reason: str) -> list[str]:
-    flags = [msg for rx, msg in REASON_FLAGS if rx.search(reason)]
-    if len(reason) > REASON_MAX:
-        flags.append(f"{REASON_MAX}자 넘음({len(reason)}자)")
-    return flags
-
-
-def validate_picks(picks: list[dict], pool_by_id: dict[str, dict]) -> tuple[list[dict], list[dict]]:
-    """목록에 없는 id·중복·같은 장소의 다른 항목·빈 이유는 버린다(버린 이유를 기록). 순서 = LLM 순위."""
-    kept: list[dict] = []
-    dropped: list[dict] = []
-    for rank, p in enumerate(picks, 1):
-        pid = str(p.get("id", "")).strip()
-        reason = " ".join(str(p.get("reason", "")).split())
-        c = pool_by_id.get(pid)
-        why = None
-        if c is None:
-            why = "후보 목록에 없는 id"
-        elif any(k["id"] == pid for k in kept):
-            why = "중복"
-        elif any(live.same_place(c, pool_by_id[k["id"]]) for k in kept):
-            why = "앞에서 고른 곳과 같은 장소"
-        elif not reason:
-            why = "이유 없음"
-        if why:
-            dropped.append({"llm_rank": rank, "id": pid, "why": why})
-        else:
-            kept.append({"llm_rank": rank, "id": pid, "reason": reason, "flags": reason_flags(reason)})
-    return kept, dropped
-
-
-def refine_picks(req: dict, kept: list[dict], est_by_id: dict[str, E.Candidate], *, fetch,
-                 cache: R.RouteCache, k: int = PICK_N) -> tuple[list[dict], list[dict]]:
-    """LLM이 고른 곳도 규칙과 같은 실경로·같은 카드 계산을 거친다. 범위·90분을 벗어나면 다음 예비로.
-    → ([{llm_rank, id, reason, flags, card, route}], 버린 것)"""
-    o = req["origin"]
-    cands = [est_by_id[x["id"]] for x in kept]
-    routed: set[str] = set()
-    if fetch is not None and cands:
-        cands, _ = R.refine(o["lat"], o["lng"], cands, fetch=fetch, cache=cache, max_workers=len(cands))
-        routed = {c.id for c in cands if cache.get(R.grid_key(o["lat"], o["lng"], c.id)) is not None}
-    b = C.budget_from(req)
-    cards = {c["id"]: c for c in C.evaluate(cands, b, req.get("seats_occupied", 1), req["themes"],
-                                            req.get("recent_visits", []))}
-    out: list[dict] = []
-    dropped: list[dict] = []
-    for x in kept:
-        card = cards.get(x["id"])
-        if card is None or not C.eligible(card, req.get("extra_krw", 0), req["themes"]):
-            dropped.append({"llm_rank": x["llm_rank"], "id": x["id"], "why": "실경로로 다시 재니 범위·90분 밖"})
-            continue
-        if len(out) < k:
-            out.append(x | {"card": card, "route": "kakao" if x["id"] in routed else "estimate"})
-    return out, dropped
+def top_for(cond: dict, side: str, date: str, rows, meta, cur, *, fetch, cache) -> tuple[list[dict], live.LiveStats]:
+    """서버 실서비스 모드와 같은 순서(추정 → 상위 12곳 실경로 → 실경로 후보끼리 순위)의 상위 PICK_N."""
+    req = d1_request(cond["themes"])
+    ids = [r[0] for r in rows]
+    ctx = ctx_for(cond, side, date, ids)
+    cands, _, st = live.candidates_for(req, rows, fetch=fetch, cache=cache, ctx=ctx, meta=meta, cur=cur)
+    return C._ranked(req, cands, ctx)[1][:PICK_N], st
 
 
 # ------------------------------------------------------------ 섞기·페이지
@@ -302,51 +115,56 @@ def _code(rng: random.Random, used: set[str]) -> str:
             return c
 
 
+def addr_short(addr: str, n: int) -> str:
+    parts = addr.split()
+    return " ".join([SIDO_SHORT.get(parts[0], parts[0]), *parts[1:n]]) if parts else ""
+
+
+def fmt_num(x: float) -> str:
+    return str(int(x)) if float(x).is_integer() else str(x)
+
+
 def place_view(card: dict, region: str) -> dict:
-    return {"name": card["name"], "region": region,
+    """두 쪽에 같은 정보만: 이름·지역·소분류·시간·비용(·행사 기간). 이유 한 줄은 2단계에서."""
+    sub = card.get("subcategory")
+    period = (f"{card['event_start'][5:].replace('-', '/')}~{card['event_end'][5:].replace('-', '/')}"
+              if card.get("event_start") else None)
+    return {"name": card["name"], "region": " · ".join(x for x in (region, sub, period) if x),
             "time_text": f"{card['time_label']} · 편도 {card['minutes']}분 · {fmt_num(card['route_km'])}km",
             "cost_text": card["display"]["total_text"]}
 
 
-def build_items(conditions: list[dict], meta: dict[str, tuple[str, str]], rng: random.Random
-                ) -> tuple[dict, dict]:
-    """conditions = [{theme, text, rule: [card], llm: [{llm_rank, reason, card}]}] → (페이지 데이터, 정답 키).
-    페이지 데이터에는 출처·순위·장소 id를 넣지 않는다. 두 쪽이 같은 곳을 고르면 장소는 한 번만(점수는 양쪽에 셈),
-    이유는 쪽마다 하나씩. 순서는 섞는다(페이지가 평가자마다 다시 섞는다)."""
+def build_items(conditions: list[dict], addrs: dict[str, str], rng: random.Random) -> tuple[dict, dict]:
+    """conditions = [{key, text, a: [card], b: [card]}] → (페이지 데이터, 정답 키).
+    페이지에는 출처·순위·장소 id를 넣지 않는다. 같은 곳을 두 쪽이 고르면 장소는 한 번(점수는 양쪽), 이유는 서로 다르면 쪽마다."""
     used: set[str] = set()
     places, reasons = [], []
     key = {"places": {}, "reasons": {}}
     for cond in conditions:
         by_id: dict[str, dict] = {}
-        for rank, card in enumerate(cond["rule"], 1):
-            by_id.setdefault(card["id"], {"card": card, "rule_rank": None, "llm_rank": None, "reasons": []})
-            by_id[card["id"]]["rule_rank"] = rank
-            by_id[card["id"]]["reasons"].append(("rule", card["reason"]))
-        for rank, pick in enumerate(cond["llm"], 1):
-            by_id.setdefault(pick["card"]["id"], {"card": pick["card"], "rule_rank": None, "llm_rank": None,
-                                                  "reasons": []})
-            by_id[pick["card"]["id"]]["llm_rank"] = rank
-            by_id[pick["card"]["id"]]["reasons"].append(("llm", pick["reason"]))
+        for side in SIDES:
+            for rank, card in enumerate(cond[side], 1):
+                item = by_id.setdefault(card["id"], {"card": card, "a_rank": None, "b_rank": None, "reasons": []})
+                item[f"{side}_rank"] = rank
+                item["reasons"].append((side, card["reason"]))
         for pid, item in by_id.items():
             code = _code(rng, used)
-            addr = meta.get(pid, ("", ""))[0]
-            places.append({"code": code, "theme": cond["theme"], **place_view(item["card"], addr_short(addr, 2))})
-            key["places"][code] = {"id": pid, "name": item["card"]["name"], "theme": cond["theme"],
-                                   "rule_rank": item["rule_rank"], "llm_rank": item["llm_rank"]}
-            for source, text in item["reasons"]:
+            places.append({"code": code, "theme": cond["key"],
+                           **place_view(item["card"], addr_short(addrs.get(pid, ""), 2))})
+            key["places"][code] = {"id": pid, "name": item["card"]["name"], "theme": cond["key"],
+                                   "a_rank": item["a_rank"], "b_rank": item["b_rank"]}
+            texts: dict[str, list[str]] = {}
+            for side, text in item["reasons"]:
+                texts.setdefault(text, []).append(side)
+            for text, sides in texts.items():   # 같은 문장이면 한 번만 묻고 양쪽에 센다
                 rcode = _code(rng, used)
                 reasons.append({"code": rcode, "place": code, "text": text})
-                key["reasons"][rcode] = {"source": source, "place": code}
+                key["reasons"][rcode] = {"sides": sides, "place": code}
     rng.shuffle(places)
     rng.shuffle(reasons)
-    data = {
-        "version": 1,
-        "scale": {"place": "가고 싶다", "reason": "납득된다"},
-        "conditions": [{"theme": c["theme"], "theme_ko": E.THEME_KO[c["theme"]], "text": c["text"]}
-                       for c in conditions],
-        "places": places,
-        "reasons": reasons,
-    }
+    data = {"version": 2, "scale": {"place": "가고 싶다", "reason": "납득된다"},
+            "conditions": [{"theme": c["key"], "theme_ko": c["label"], "text": c["text"]} for c in conditions],
+            "places": places, "reasons": reasons}
     return data, key
 
 
@@ -398,8 +216,12 @@ def _r2(x: Fraction | None) -> str:
     return f"{v:.2f}"
 
 
+def _diff(m: dict) -> Fraction | None:
+    return m["b"] - m["a"] if m.get("a") is not None and m.get("b") is not None else None
+
+
 def tally(key: dict, raters: list[dict]) -> dict:
-    """출처별 평균. 두 쪽이 같이 고른 장소는 양쪽 평균에 다 들어간다. 판정은 분수로 정확히 비교한다."""
+    """쪽별 평균. 두 쪽이 같이 고른 장소·같은 이유 문장은 양쪽 평균에 다 들어간다. 판정은 분수로 정확히 비교."""
     seen: set[str] = set()
     uniq, dup = [], []
     for r in raters:
@@ -407,7 +229,7 @@ def tally(key: dict, raters: list[dict]) -> dict:
         seen.add(r["rater"])
 
     def collect(kind: str):
-        allv = {"rule": [], "llm": []}
+        allv = {s: [] for s in SIDES}
         theme_v: dict[str, dict[str, list[int]]] = {}
         per_rater: dict[str, dict[str, list[int]]] = {}
         for r in uniq:
@@ -418,62 +240,57 @@ def tally(key: dict, raters: list[dict]) -> dict:
                     k = key["places"].get(code)
                     if not k:
                         continue
-                    sources = [src for src in ("rule", "llm") if k[f"{src}_rank"]]
+                    sides = [x for x in SIDES if k[f"{x}_rank"]]
                     theme = k["theme"]
                 else:
                     k = key["reasons"].get(code)
                     if not k:
                         continue
-                    sources = [k["source"]]
+                    sides = k["sides"]
                     theme = key["places"][k["place"]]["theme"]
-                for src in sources:
-                    allv[src].append(s)
-                    theme_v.setdefault(theme, {"rule": [], "llm": []})[src].append(s)
-                    per_rater.setdefault(r["rater"], {"rule": [], "llm": []})[src].append(s)
-        m = {src: _mean(v) for src, v in allv.items()}
-        diff = m["llm"] - m["rule"] if None not in m.values() else None
-        return {"n": {src: len(v) for src, v in allv.items()}, "mean": m, "diff": diff,
-                "by_theme": {t: {src: _mean(v) for src, v in tv.items()} for t, tv in theme_v.items()},
-                "by_rater": {rid: {src: _mean(v) for src, v in rv.items()} for rid, rv in per_rater.items()}}
+                for side in sides:
+                    allv[side].append(s)
+                    theme_v.setdefault(theme, {x: [] for x in SIDES})[side].append(s)
+                    per_rater.setdefault(r["rater"], {x: [] for x in SIDES})[side].append(s)
+        m = {x: _mean(v) for x, v in allv.items()}
+        return {"n": {x: len(v) for x, v in allv.items()}, "mean": m, "diff": _diff(m),
+                "by_theme": {t: {x: _mean(v) for x, v in tv.items()} for t, tv in theme_v.items()},
+                "by_rater": {rid: {x: _mean(v) for x, v in rv.items()} for rid, rv in per_rater.items()}}
 
-    place = collect("place")
-    reason = collect("reason")
-    verdict = None if place["diff"] is None else ("규칙 확정" if place["diff"] < THRESHOLD else "규칙 재검토")
-    total_items = len(key["places"])
+    place, reason = collect("place"), collect("reason")
+    verdict = None if place["diff"] is None else ("A2 도입(B)" if place["diff"] >= THRESHOLD else "A1만(규칙 확정)")
+    intro = None if reason["diff"] is None else ("AI 한 줄 소개 채택" if reason["diff"] >= THRESHOLD else "규칙 이유 유지")
     coverage = {r["rater"]: sum(1 for c in r["place"] if c in key["places"]) for r in uniq}
-    return {"place": place, "reason": reason, "verdict": verdict, "raters": len(uniq),
-            "duplicates": [r["rater"] for r in dup], "coverage": coverage, "total_items": total_items}
+    return {"place": place, "reason": reason, "verdict": verdict, "intro_verdict": intro, "raters": len(uniq),
+            "duplicates": [r["rater"] for r in dup], "coverage": coverage, "total_items": len(key["places"])}
 
 
-def result_markdown(res: dict, key: dict) -> str:
+def result_markdown(res: dict, key: dict, labels: dict[str, str] | None = None) -> str:
     p, r = res["place"], res["reason"]
+    labels = labels or {}
     lines = [
-        "# 블라인드 검수 결과",
+        "# 블라인드 검수 결과 (A = 규칙 A1, B = A1 + A2 사전 큐레이션)",
         "",
-        f"- 평가자 {res['raters']}명 · 장소 {res['total_items']}곳 · 판정 기준: '가고 싶다' 평균 차이(LLM − 규칙) "
-        f"{_r2(THRESHOLD)} 미만이면 규칙 확정(PRD 7-4)",
-        f"- **판정: {res['verdict'] or '점수 없음'}** (차이 {_r2(p['diff'])})",
+        f"- 평가자 {res['raters']}명 · 장소 {res['total_items']}곳",
+        f"- **장소 판정: {res['verdict'] or '점수 없음'}** — '가고 싶다' 차이(B − A) {_r2(p['diff'])}, 기준 {_r2(THRESHOLD)} 이상이면 B",
+        f"- **이유 판정: {res['intro_verdict'] or '점수 없음'}** — '납득된다' 차이(B − A) {_r2(r['diff'])}",
         "",
-        "| 점수 | 규칙 평균 | LLM 평균 | 차이(LLM − 규칙) | 점수 수(규칙/LLM) |",
+        "| 점수 | A 평균 | B 평균 | 차이(B − A) | 점수 수(A/B) |",
         "|---|---|---|---|---|",
-        f"| 가고 싶다 | {_r2(p['mean']['rule'])} | {_r2(p['mean']['llm'])} | {_r2(p['diff'])} | "
-        f"{p['n']['rule']}/{p['n']['llm']} |",
-        f"| 납득된다(이유 한 줄) | {_r2(r['mean']['rule'])} | {_r2(r['mean']['llm'])} | {_r2(r['diff'])} | "
-        f"{r['n']['rule']}/{r['n']['llm']} |",
+        f"| 가고 싶다 | {_r2(p['mean']['a'])} | {_r2(p['mean']['b'])} | {_r2(p['diff'])} | {p['n']['a']}/{p['n']['b']} |",
+        f"| 납득된다 | {_r2(r['mean']['a'])} | {_r2(r['mean']['b'])} | {_r2(r['diff'])} | {r['n']['a']}/{r['n']['b']} |",
         "",
-        "## 테마별 '가고 싶다'",
+        "## 조건별 '가고 싶다'",
         "",
-        "| 테마 | 규칙 | LLM | 차이 |",
+        "| 조건 | A | B | 차이 |",
         "|---|---|---|---|",
     ]
     for t, v in p["by_theme"].items():
-        d = v["llm"] - v["rule"] if v["llm"] is not None and v["rule"] is not None else None
-        lines.append(f"| {E.THEME_KO.get(t, t)} | {_r2(v['rule'])} | {_r2(v['llm'])} | {_r2(d)} |")
-    lines += ["", "## 평가자별 '가고 싶다' 차이(LLM − 규칙)", "", "| 평가자 | 매긴 장소 | 차이 |", "|---|---|---|"]
+        lines.append(f"| {labels.get(t, t)} | {_r2(v['a'])} | {_r2(v['b'])} | {_r2(_diff(v))} |")
+    lines += ["", "## 평가자별 '가고 싶다' 차이(B − A)", "", "| 평가자 | 매긴 장소 | 차이 |", "|---|---|---|"]
     for i, (rid, v) in enumerate(p["by_rater"].items(), 1):
-        d = v["llm"] - v["rule"] if v.get("llm") is not None and v.get("rule") is not None else None
-        lines.append(f"| {i} | {res['coverage'].get(rid, 0)}/{res['total_items']} | {_r2(d)} |")
-    both = sum(1 for k in key["places"].values() if k["rule_rank"] and k["llm_rank"])
+        lines.append(f"| {i} | {res['coverage'].get(rid, 0)}/{res['total_items']} | {_r2(_diff(v))} |")
+    both = sum(1 for k in key["places"].values() if k["a_rank"] and k["b_rank"])
     lines += ["", f"- 두 쪽이 같이 고른 장소 {both}곳(양쪽 평균에 다 들어감)."]
     if res["raters"] < 5:
         lines.append(f"- 평가자가 PRD의 5명보다 적다({res['raters']}명).")
@@ -483,106 +300,69 @@ def result_markdown(res: dict, key: dict) -> str:
 
 
 # ------------------------------------------------------------ 명령
-def _setup(args):
+def _load():
     con = sqlite3.connect(S.db_path())
-    rows, meta, refreshed = load_candidates(con)
+    rows, refreshed = S.load_rows(con)
+    meta, cur = S.load_meta(con), S.load_curation(con)
+    addrs = dict(con.execute("SELECT id, addr FROM candidate"))
     con.close()
     if not rows:
-        raise SystemExit(f"후보가 없다: {S.db_path()} (서버 캐시를 복사하거나 python -m chagok.sources refresh)")
-    base = d1_request()
-    est = live.estimates(base, rows)
-    counts = theme_counts(base, est)
-    if args.themes:
-        themes = [(t, "직접 지정") for t in args.themes.split(",")]
-        bad = [t for t, _ in themes if t not in S.THEME_LCLS]
-        if bad:
-            raise SystemExit(f"모르는 테마: {bad} (가능: {', '.join(S.THEME_LCLS)})")
-    else:
-        themes = pick_themes(counts)
-    return rows, meta, refreshed, est, counts, themes
+        raise SystemExit(f"후보가 없다: {S.db_path()} (python -m chagok.sources refresh)")
+    return rows, meta, cur, addrs, refreshed
 
 
-def cmd_themes(args) -> int:
-    _, _, refreshed, _, counts, themes = _setup(args)
-    print(f"후보 갱신일 {refreshed} · D1 반경 안(추가 0원) 테마별 후보 수")
-    for t, n in sorted(counts.items(), key=lambda x: -x[1]):
-        print(f"  {E.THEME_KO[t]:<5} {n:>4}")
-    print("선택:")
-    for t, why in themes:
-        print(f"  {E.THEME_KO[t]} — {why}")
-    return 0
-
-
-def cmd_prompt(args) -> int:
-    _, meta, _, est, _, themes = _setup(args)
-    system, user_t, sha = load_prompt()
-    OUT.mkdir(exist_ok=True)
-    for t, _ in themes:
-        req = d1_request(t)
-        _, pool_est, radius = C._ranked(req, est)
-        user = render_user(user_t, req, radius, pool_est, meta)
-        p = OUT / f"prompt-{t}.md"
-        p.write_text(f"<!-- prompt_sha {sha} -->\n# system\n{system}\n\n# user\n{user}\n", encoding="utf-8")
-        print(f"{E.THEME_KO[t]}: 후보 {len(pool_est)}곳 · {len(system) + len(user):,}자 → {p.relative_to(ROOT)}")
+def cmd_conditions(args) -> int:
+    rows, meta, cur, _, refreshed = _load()
+    print(f"후보 갱신 {refreshed} · A2 큐레이션 {len(cur)}곳(근거 {sum(1 for c in cur.values() if c.score)}) · 나들이 날 {args.date}")
+    for cond in CONDITIONS:
+        req = d1_request(cond["themes"])
+        est = live.estimates(req, rows, meta, cur)
+        ctx = ctx_for(cond, "a", args.date, [r[0] for r in rows])
+        print(f"  {cond['key']:<9} 범위 안 {len(C._ranked(req, est, ctx)[1]):>4}곳")
     return 0
 
 
 def cmd_run(args) -> int:
-    rows, meta, refreshed, est, counts, themes = _setup(args)
+    rows, meta, cur, addrs, refreshed = _load()
     env = S.load_env()
-    kakao_key = env.get("KAKAO_REST_API_KEY")
-    if not kakao_key and not args.no_kakao:
-        raise SystemExit("KAKAO_REST_API_KEY가 .env에 없다. 서버와 같은 순위를 내려면 필요하다(정말 추정만 쓰려면 --no-kakao)")
-    fetch = None if args.no_kakao else R.kakao_fetcher(kakao_key, timeout=3.0)
+    key = env.get("KAKAO_REST_API_KEY")
+    if not key and not args.no_kakao:
+        raise SystemExit("KAKAO_REST_API_KEY가 .env에 없다(서버와 같은 순위를 내려면 필요. 추정만 쓰려면 --no-kakao)")
+    fetch = None if args.no_kakao else R.kakao_fetcher(key, timeout=3.0)
     cache = R.RouteCache()
-    system, user_t, sha = load_prompt()
-    started = datetime.now(KST)
-    record = {"created_at": started.isoformat(timespec="seconds"), "prompt_sha": sha, "model": MODEL,
-              "effort": EFFORT, "candidates_refreshed": refreshed, "theme_counts": counts,
-              "themes": [{"theme": t, "why": why} for t, why in themes], "conditions": []}
-    conditions = []
-    for t, _ in themes:
-        req = d1_request(t)
-        _, pool_est, radius = C._ranked(req, est)
-        rule, st = rule_top(req, rows, fetch=fetch, cache=cache)
-        user = render_user(user_t, req, radius, pool_est, meta)
-        print(f"{E.THEME_KO[t]}: 후보 {len(pool_est)}곳 · 규칙 {len(rule)}곳(순위 기준 {st.ranked_on}) · LLM 호출 중…",
-              flush=True)
-        llm = call_llm(system, user, env.get("ANTHROPIC_API_KEY"))
-        pool_by_id = {c["id"]: c for c in pool_est}
-        kept, dropped = validate_picks(llm["parsed"].get("picks", []), pool_by_id)
-        est_by_id = {c.id: c for c in est}
-        picks, dropped2 = refine_picks(req, kept, est_by_id, fetch=fetch, cache=cache)
-        if len(picks) < PICK_N:
-            print(f"  주의: LLM 유효 {len(picks)}곳(< {PICK_N}). run 기록의 dropped 참고")
-        text = condition_text(req)
-        conditions.append({"theme": t, "text": text, "rule": rule, "llm": picks})
-        record["conditions"].append({
-            "theme": t, "text": text, "radius_km": radius, "pool": len(pool_est),
-            "rule": {"ranked_on": st.ranked_on, "kakao_calls": st.calls, "kakao_failures": st.failures,
-                     "picks": [{"rank": i, "id": c["id"], "name": c["name"], "minutes": c["minutes"],
-                                "route_km": c["route_km"], "reason": c["reason"]} for i, c in enumerate(rule, 1)]},
-            "llm": {**{k: v for k, v in llm.items() if k != "parsed"},
-                    "criteria": llm["parsed"].get("criteria"),
-                    "picks": [{"rank": i, "llm_rank": p["llm_rank"], "id": p["id"], "name": p["card"]["name"],
-                               "minutes": p["card"]["minutes"], "route_km": p["card"]["route_km"],
-                               "route": p["route"], "reason": p["reason"], "flags": p["flags"]}
-                              for i, p in enumerate(picks, 1)],
-                    "dropped": dropped + dropped2},
-        })
-    data, key = build_items(conditions, meta, secrets.SystemRandom())
-    data["created"] = started.date().isoformat()
+    now = datetime.now(KST)
+    record = {"created_at": now.isoformat(timespec="seconds"), "trip_date": args.date, "candidates_refreshed": refreshed,
+              "curated": len(cur), "ranking": json.loads((C.FIXTURES / "constants.json").read_text(encoding="utf-8"))["ranking"],
+              "conditions": []}
+    conds = []
+    for cond in CONDITIONS:
+        req = d1_request(cond["themes"])
+        c = {"key": cond["key"], "text": condition_text(cond, req, args.date),
+             "label": E.THEME_KO[cond["themes"][0]] if cond["themes"] else "비 오는 날"}
+        rec = {"key": cond["key"], "text": c["text"]}
+        for side in SIDES:
+            top, st = top_for(cond, side, args.date, rows, meta, cur, fetch=fetch, cache=cache)
+            c[side] = top
+            rec[side] = {"ranked_on": st.ranked_on, "kakao_calls": st.calls, "kakao_failures": st.failures,
+                         "picks": [{"rank": i, "id": x["id"], "name": x["name"], "minutes": x["minutes"],
+                                    "route_km": x["route_km"], "reason": x["reason"]} for i, x in enumerate(top, 1)]}
+            if len(top) < PICK_N:
+                print(f"  주의: {cond['key']} {side.upper()} {len(top)}곳(< {PICK_N})")
+        conds.append(c)
+        record["conditions"].append(rec)
+        print(f"{c['label']}: A {len(c['a'])}곳 · B {len(c['b'])}곳 · 같이 고른 곳 "
+              f"{len({x['id'] for x in c['a']} & {x['id'] for x in c['b']})}", flush=True)
+    data, key_ = build_items(conds, addrs, secrets.SystemRandom())
+    data["created"] = now.date().isoformat()
     OUT.mkdir(exist_ok=True)
-    stamp = started.strftime("%Y%m%d-%H%M")
+    stamp = now.strftime("%Y%m%d-%H%M")
     (OUT / "items.json").write_text(json.dumps(data, ensure_ascii=False, indent=1), encoding="utf-8")
-    (OUT / "key.json").write_text(json.dumps(key, ensure_ascii=False, indent=1), encoding="utf-8")
+    (OUT / "key.json").write_text(json.dumps(key_ | {"labels": {c["key"]: c["label"] for c in conds}},
+                                             ensure_ascii=False, indent=1), encoding="utf-8")
     (OUT / f"run-{stamp}.json").write_text(json.dumps(record, ensure_ascii=False, indent=1), encoding="utf-8")
     (OUT / "page.html").write_text(render_page(data), encoding="utf-8")
-    flags = sum(len(p["flags"]) for c in conditions for p in c["llm"])
-    usage = [c["llm"]["usage"] for c in record["conditions"]]
-    print(f"장소 {len(data['places'])}곳 · 이유 {len(data['reasons'])}개 · 이유 점검 걸림 {flags}건 · "
-          f"입력 토큰 {sum(u.get('input_tokens', 0) for u in usage):,} · 출력 토큰 {sum(u.get('output_tokens', 0) for u in usage):,}")
-    print(f"→ {(OUT / 'page.html').relative_to(ROOT)} (게시용) · key.json·run-{stamp}.json은 검수 끝날 때까지 열지 않기")
+    print(f"장소 {len(data['places'])}곳 · 이유 {len(data['reasons'])}개 → {(OUT / 'page.html').relative_to(ROOT)}")
+    print("key.json·run-*.json은 점수를 다 매길 때까지 열지 않기")
     return 0
 
 
@@ -597,7 +377,7 @@ def cmd_tally(args) -> int:
     key = json.loads((OUT / "key.json").read_text(encoding="utf-8"))
     blobs = [json.loads(Path(f).read_text(encoding="utf-8")) for f in args.files]
     res = tally(key, _norm_raters(blobs))
-    md = result_markdown(res, key)
+    md = result_markdown(res, key, key.get("labels"))
     (OUT / "result.md").write_text(md, encoding="utf-8")
     print(md)
     return 0
@@ -610,17 +390,16 @@ def main(argv: list[str] | None = None) -> int:
         pass
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     sub = ap.add_subparsers(dest="cmd", required=True)
-    for name in ("themes", "prompt", "run"):
+    for name in ("conditions", "run"):
         sp = sub.add_parser(name)
-        sp.add_argument("--themes", help="자동 선택 대신 쉼표로 지정(예: sea,park,city)")
+        sp.add_argument("--date", default=default_date(), help="나들이 날 YYYY-MM-DD(기본: 다음 토요일)")
         if name == "run":
-            sp.add_argument("--no-kakao", action="store_true", help="실경로 없이 추정값만(서버와 순위가 달라질 수 있음)")
+            sp.add_argument("--no-kakao", action="store_true", help="실경로 없이 추정값만(서버와 순서가 달라질 수 있음)")
     sub.add_parser("page")
     sp = sub.add_parser("tally")
     sp.add_argument("files", nargs="+")
     args = ap.parse_args(argv)
-    return {"themes": cmd_themes, "prompt": cmd_prompt, "run": cmd_run, "page": cmd_page,
-            "tally": cmd_tally}[args.cmd](args)
+    return {"conditions": cmd_conditions, "run": cmd_run, "page": cmd_page, "tally": cmd_tally}[args.cmd](args)
 
 
 if __name__ == "__main__":

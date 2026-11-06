@@ -1,4 +1,4 @@
-"""블라인드 검수 도구(scripts/blind_review): 출처가 페이지에 새지 않는지, 판정 경계, LLM 응답 검증.
+"""블라인드 검수 도구(scripts/blind_review): A(A1)·B(A1+A2) 섞기, 출처가 페이지에 새지 않는지, 판정 경계.
 네트워크·LLM 호출 없음."""
 
 from __future__ import annotations
@@ -6,6 +6,7 @@ from __future__ import annotations
 import json
 import random
 import sys
+from datetime import datetime
 from fractions import Fraction
 from pathlib import Path
 
@@ -17,83 +18,50 @@ from chagok import cards as C  # noqa: E402
 from chagok import engine as E  # noqa: E402
 
 
-def card(i: int, theme: str = "sea", name: str | None = None, lat: float = 37.0, lng: float | None = None) -> dict:
-    c = E.Candidate(id=f"ta_{i}", name=name or f"장소{i}", theme=theme, lat=lat,
-                    lng=lng if lng is not None else 126.0 + i * 0.05, route_km=40.0, minutes=50, toll_krw=0,
-                    parking_krw=None, has_parking_info=False)
-    req = B.d1_request(theme)
-    return C.evaluate([c], C.budget_from(req), 1, [theme], [])[0]
+def card(i: int, theme: str = "sea", reason: str | None = None, **kw) -> dict:
+    c = E.Candidate(id=f"ta_{i}", name=f"장소{i}", theme=theme, lat=37.0, lng=126.0 + i * 0.05, route_km=40.0,
+                    minutes=50, lcls3="NA020900", **kw)
+    req = B.d1_request([theme])
+    ctx = E.RankContext(cfg=C.RANKING, variant="a1")
+    out = C.evaluate([c], C.budget_from(req), 1, [theme], [], ctx)[0]
+    if reason:
+        out["reason"] = reason
+    return out
 
 
-# ------------------------------------------------------------ 테마 자동 선택
-def test_pick_themes_one_per_group():
-    counts = {"sea": 80, "lake": 65, "river": 16, "mountain": 195, "park": 636, "city": 156, "island": 38, "drive": 19}
-    assert [t for t, _ in B.pick_themes(counts)] == ["sea", "park", "city"]
-
-
-def test_pick_themes_skips_thin_group_and_fills_by_count():
-    counts = {"sea": 10, "lake": 12, "river": 3, "island": 5, "mountain": 195, "park": 636, "city": 156, "drive": 19}
-    picked = [t for t, _ in B.pick_themes(counts)]
-    assert picked == ["park", "city", "mountain"]   # 물가 묶음은 30곳 미만 → 전체에서 많은 순
-
-
-# ------------------------------------------------------------ LLM 응답 검증
-def test_validate_picks_drops_unknown_duplicate_and_same_place():
-    a = card(1, name="오이도")
-    b = card(2, name="오이도 빨간등대", lat=a["lat"], lng=a["lng"])   # 이름 앞부분 겹침 = 같은 장소
-    c = card(3)
-    pool = {x["id"]: x for x in (a, b, c)}
-    picks = [{"id": a["id"], "reason": "노을이 좋은 포구"}, {"id": "ta_999", "reason": "x"},
-             {"id": a["id"], "reason": "중복"}, {"id": b["id"], "reason": "같은 곳"}, {"id": c["id"], "reason": " "},
-             ]
-    kept, dropped = B.validate_picks(picks, pool)
-    assert [k["id"] for k in kept] == [a["id"]]
-    assert [d["why"] for d in dropped] == ["후보 목록에 없는 id", "중복", "앞에서 고른 곳과 같은 장소", "이유 없음"]
-
-
-def test_reason_flags():
-    assert B.reason_flags("바다 보며 걷기 좋은 산책길") == []
-    assert "금액·비용·주차 언급" in B.reason_flags("주차가 편한 해변")
-    assert "시간·거리 숫자" in B.reason_flags("40분이면 닿는 바다")
-    assert any("자 넘음" in f for f in B.reason_flags("가" * 41))
-
-
-def test_candidate_table_is_name_sorted_not_rule_order():
-    pool = [card(1, name="하늘포구"), card(2, name="가람해변"), card(3, name="나루터")]
-    table = B.candidate_table(pool, {})
-    assert [line.split(" | ")[1] for line in table.splitlines()] == ["가람해변", "나루터", "하늘포구"]
-
-
-def test_prompt_template_has_all_slots():
-    system, user, sha = B.load_prompt()
-    assert system and len(sha) == 12
-    req = B.d1_request("sea")
-    out = B.render_user(user, req, 75.0, [card(1)], {})
-    # D1 usable 195km → 편도 도로 97.5 → 98(반올림 0.5 올림). 75는 직선 반경(지도 원)
-    assert "{" not in out and "테마: 바다" in out and "편도 도로 약 98km 안(지도 직선 반경 약 75km)" in out
-    assert "편도 도로 약 98km" in B.condition_text(req)
-
-
-# ------------------------------------------------------------ 섞기·페이지
 def conditions_with_overlap():
-    rule = [card(i) for i in range(1, 6)]
-    llm_cards = [rule[0]] + [card(i) for i in range(11, 15)]   # 첫 곳은 두 쪽이 같이 고름
-    llm = [{"llm_rank": i, "reason": f"LLM 이유 {i}", "card": c} for i, c in enumerate(llm_cards, 1)]
-    return [{"theme": "sea", "text": "조건", "rule": rule, "llm": llm}]
+    a = [card(i) for i in range(1, 6)]
+    b = [card(1, reason="소개 1")] + [card(i, reason=f"소개 {i}") for i in range(11, 15)]   # 첫 곳은 같이 고름
+    return [{"key": "sea", "label": "바다", "text": "조건", "a": a, "b": b}]
 
 
 def test_build_items_no_source_leak_and_overlap():
     data, key = B.build_items(conditions_with_overlap(), {}, random.Random(7))
     assert len(data["places"]) == 9            # 5 + 5 − 겹침 1
-    assert len(data["reasons"]) == 10          # 이유는 쪽마다 하나
+    assert len(data["reasons"]) == 10          # 겹친 곳은 이유 문장이 달라 쪽마다
     blob = json.dumps(data, ensure_ascii=False)
-    for leak in ("rule", "llm", "ta_", "rank", "source"):
+    for leak in ("a_rank", "b_rank", "ta_", "sides", '"a"', '"b"'):
         assert leak not in blob, leak
-    both = [k for k in key["places"].values() if k["rule_rank"] and k["llm_rank"]]
+    both = [k for k in key["places"].values() if k["a_rank"] and k["b_rank"]]
     assert len(both) == 1 and both[0]["id"] == "ta_1"
-    assert {v["source"] for v in key["reasons"].values()} == {"rule", "llm"}
     codes = [p["code"] for p in data["places"]] + [r["code"] for r in data["reasons"]]
     assert len(set(codes)) == len(codes)
+
+
+def test_same_reason_text_asked_once_and_counted_for_both():
+    a = [card(1)]
+    b = [card(1)]                              # B에 A2 소개가 없으면 이유 문장이 같다
+    data, key = B.build_items([{"key": "sea", "label": "바다", "text": "조건", "a": a, "b": b}], {}, random.Random(1))
+    assert len(data["places"]) == 1 and len(data["reasons"]) == 1
+    assert list(key["reasons"].values())[0]["sides"] == ["a", "b"]
+
+
+def test_place_view_shows_same_fields_for_both_sides():
+    c = card(1)
+    v = B.place_view(c, "경기 화성시")
+    assert v["region"] == "경기 화성시 · 해변" and "편도 50분" in v["time_text"]
+    ev = card(2, theme="festival", event_start="2026-11-07", event_end="2026-11-09")
+    assert B.place_view(ev, "")["region"].endswith("11/07~11/09")
 
 
 def test_render_page_injects_data_safely():
@@ -104,40 +72,52 @@ def test_render_page_injects_data_safely():
     assert "</script><b>x" not in html and "<\\/script><b>x" in html
 
 
+def test_conditions_and_text():
+    assert [c["key"] for c in B.CONDITIONS] == ["sea", "park", "city", "festival", "rain"]
+    req = B.d1_request([])
+    assert B.one_way_km(req) == 98                       # D1 usable 195 → 97.5 → 98(0.5 올림)
+    txt = B.condition_text(B.CONDITIONS[-1], req, "2026-11-07")
+    assert "테마 없음" in txt and "비 예보(가정)" in txt and "편도 도로 약 98km" in txt
+    rain_ctx = B.ctx_for(B.CONDITIONS[-1], "b", "2026-11-07", ["x", "y"])
+    assert rain_ctx.rain == {"x": 1.0, "y": 1.0} and rain_ctx.variant == "b"
+    assert B.ctx_for(B.CONDITIONS[0], "a", "2026-11-07", ["x"]).rain == {}
+    assert B.default_date(datetime(2026, 11, 6, tzinfo=B.KST)) == "2026-11-07"     # 금 → 토
+    assert B.default_date(datetime(2026, 11, 7, tzinfo=B.KST)) == "2026-11-07"     # 토 → 그날
+
+
 # ------------------------------------------------------------ 집계·판정
-def key_two_places():
-    return {"places": {"P1": {"id": "a", "name": "a", "theme": "sea", "rule_rank": 1, "llm_rank": None},
-                       "P2": {"id": "b", "name": "b", "theme": "sea", "rule_rank": None, "llm_rank": 1},
-                       "P3": {"id": "c", "name": "c", "theme": "sea", "rule_rank": 2, "llm_rank": 2}},
-            "reasons": {"R1": {"source": "rule", "place": "P1"}, "R2": {"source": "llm", "place": "P2"}}}
+def key_three_places():
+    return {"places": {"P1": {"id": "a", "name": "a", "theme": "sea", "a_rank": 1, "b_rank": None},
+                       "P2": {"id": "b", "name": "b", "theme": "sea", "a_rank": None, "b_rank": 1},
+                       "P3": {"id": "c", "name": "c", "theme": "sea", "a_rank": 2, "b_rank": 2}},
+            "reasons": {"R1": {"sides": ["a"], "place": "P1"}, "R2": {"sides": ["b"], "place": "P2"},
+                        "R3": {"sides": ["a", "b"], "place": "P3"}}}
 
 
 def test_tally_overlap_counts_both_sides():
-    res = B.tally(key_two_places(), [{"rater": "u1", "place": {"P1": 2, "P2": 4, "P3": 3}, "reason": {}}])
-    assert res["place"]["mean"]["rule"] == Fraction(5, 2)   # P1 2, P3 3
-    assert res["place"]["mean"]["llm"] == Fraction(7, 2)    # P2 4, P3 3
-    assert res["place"]["diff"] == 1 and res["verdict"] == "규칙 재검토"
+    res = B.tally(key_three_places(), [{"rater": "u1", "place": {"P1": 2, "P2": 4, "P3": 3}, "reason": {"R3": 5}}])
+    assert res["place"]["mean"] == {"a": Fraction(5, 2), "b": Fraction(7, 2)}
+    assert res["place"]["diff"] == 1 and res["verdict"] == "A2 도입(B)"
+    assert res["reason"]["mean"] == {"a": 5, "b": 5} and res["intro_verdict"] == "규칙 이유 유지"
 
 
-def test_tally_threshold_is_strictly_less_than_half():
-    key = key_two_places()
-    # 규칙 평균 3, LLM 평균 3.5 → 차이 정확히 0.5 → 규칙 확정 아님
+def test_tally_threshold_half_point_goes_to_b():
+    key = key_three_places()
     r = [{"rater": "u1", "place": {"P1": 3, "P2": 4}, "reason": {}},
          {"rater": "u2", "place": {"P1": 3, "P2": 3}, "reason": {}}]
     res = B.tally(key, r)
-    assert res["place"]["diff"] == Fraction(1, 2) and res["verdict"] == "규칙 재검토"
-    r[1]["place"]["P2"] = 2   # LLM 평균 3 → 차이 0
-    assert B.tally(key, r)["verdict"] == "규칙 확정"
+    assert res["place"]["diff"] == Fraction(1, 2) and res["verdict"] == "A2 도입(B)"   # 0.5 미만이어야 규칙 확정
+    r[1]["place"]["P2"] = 2
+    assert B.tally(key, r)["verdict"] == "A1만(규칙 확정)"
 
 
 def test_tally_ignores_bad_scores_unknown_codes_and_duplicate_raters():
-    key = key_two_places()
     r = [{"rater": "u1", "place": {"P1": 5, "P2": 9, "ZZ": 1}, "reason": {"R1": 4, "R2": 2}},
          {"rater": "u1", "place": {"P1": 1}, "reason": {}}]
-    res = B.tally(key, r)
-    assert res["place"]["n"] == {"rule": 1, "llm": 0} and res["verdict"] is None
+    res = B.tally(key_three_places(), r)
+    assert res["place"]["n"] == {"a": 1, "b": 0} and res["verdict"] is None
     assert res["duplicates"] == ["u1"]
-    assert res["reason"]["mean"] == {"rule": 4, "llm": 2}
+    assert res["reason"]["mean"] == {"a": 4, "b": 2}
 
 
 def test_norm_raters_accepts_db_list_and_copied_json():
@@ -145,5 +125,5 @@ def test_norm_raters_accepts_db_list_and_copied_json():
     copied = {"rater": "명준", "place": {"P2": 4}, "reason": {"R2": 5}}
     raters = B._norm_raters([db_list, copied])
     assert [r["rater"] for r in raters] == ["uid-1", "명준"]
-    md = B.result_markdown(B.tally(key_two_places(), raters), key_two_places())
-    assert "판정" in md and "평가자가 PRD의 5명보다 적다(2명)" in md
+    md = B.result_markdown(B.tally(key_three_places(), raters), key_three_places(), {"sea": "바다"})
+    assert "장소 판정" in md and "| 바다 |" in md and "평가자가 PRD의 5명보다 적다(2명)" in md

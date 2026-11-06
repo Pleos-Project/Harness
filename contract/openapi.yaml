@@ -136,7 +136,8 @@ components:
         themes:
           type: array
           maxItems: 2
-          items: { type: string, enum: [sea, lake, river, mountain, park, city, island, drive] }
+          items: { type: string, enum: [sea, lake, river, mountain, park, city, island, drive, indoor, festival] }
+          description: 'indoor = 박물관·미술관·과학관·아쿠아리움 등(비 오는 날), festival = TourAPI 행사(나들이 날 열리는 것만). [제안] DECISIONS "A1 점수 뼈대"'
         recent_visits: { type: array, maxItems: 10, items: { type: string }, description: '장소 ID, 최근 10개' }
         demo_seed: { type: [string, 'null'] }
         session_id: { type: [string, 'null'] }
@@ -145,7 +146,7 @@ components:
       properties:
         id: { type: string }
         name: { type: string }
-        theme: { type: string, description: 'sea|lake|river|mountain|park|city|island|drive = design/illustrations/<theme>-<n>.svg' }
+        theme: { type: string, description: 'sea|lake|river|mountain|park|city|island|drive|indoor|festival = design/illustrations/<theme>-<n>.svg (indoor·festival 일러스트는 아직 없음)' }
         lat: { type: number }
         lng: { type: number }
         route_km: { type: number, description: '편도 도로 거리. 도착 Δodo 0일 때 편도 추정(F17)에 씀' }
@@ -170,7 +171,12 @@ components:
             ring_krw: { type: integer, enum: [0, 10000, 30000] }
             badge_text: { type: string, examples: ['추가 충전 없이 · 여유 50km', '빠듯', '+1만 원 안팎'] }
             margin_km: { type: integer }
-        reason: { type: string, examples: ['추가 0원 안 · 75분 안 · 지난번과 다른 테마'] }
+        reason: { type: string, examples: ['추가 0원 안 · 75분 안 · 지난번과 다른 테마', '해변 · 추가 0원 안 · 75분 안'] }
+        subcategory: { type: string, description: '실서비스 후보만(데모 카드에는 없음). TourAPI 소분류 이름, 예: 해변·수목원·정원·박물관·축제', examples: ['해변'] }
+        indoor: { type: boolean, description: '실서비스 후보만. 실내 장소(비 오는 날 위로)' }
+        event_start: { type: string, format: date, description: '행사(festival)만. 카드에 기간 표시' }
+        event_end: { type: string, format: date }
+        rain_level: { type: number, enum: [0.5, 1], description: '나들이 날 목적지 비 예보(기상청 단기예보 9~18시). 비가 없으면 키가 없다' }
     CardsResponse:
       type: object
       properties:
@@ -180,8 +186,9 @@ components:
         hint:
           type: [object, 'null']
           properties:
-            code: { type: string, enum: [few_candidates] }
-            text: { type: string, examples: ['범위 안 후보가 적어요'] }
-            actions: { type: array, items: { type: string, enum: [clear_themes, extra_10000, extra_30000] } }
+            code: { type: string, enum: [few_candidates, rain_outdoor] }
+            text: { type: string, examples: ['범위 안 후보가 적어요', '비 소식이 있어요. 실내로 바꿔 볼까요?'] }
+            actions: { type: array, items: { type: string, enum: [clear_themes, extra_10000, extra_30000, theme_indoor] } }
+          description: 'few_candidates가 먼저. rain_outdoor = 야외 테마를 골랐는데 앞면 카드 목적지에 비 예보(0.5 이상) → 실내 테마로 바꾸기 제안'
         picked: { oneOf: [{ $ref: '#/components/schemas/Card' }, { type: 'null' }] }
         stack: { type: array, items: { $ref: '#/components/schemas/Card' }, maxItems: 3 }
