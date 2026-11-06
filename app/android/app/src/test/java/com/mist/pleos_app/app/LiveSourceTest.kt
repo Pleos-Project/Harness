@@ -104,4 +104,20 @@ class LiveSourceTest {
         assertEquals(ui.card.id, next.card.id)                         // 앞면 유지 + offline
         assertTrue(next.offline)
     }
+
+    @Test
+    fun requestUsesPickedOrigin() {
+        // 출발점 = 뽑기 전에 정한 현재 위치(명세 F5). 재호출도 같은 출발점.
+        val src = LiveSource(ChagokApi(fake(200)), DemoServer(candidates))
+        val f = CardFlow(constants) { src }
+        f.origin = com.mist.pleos_app.navi.LatLng(37.5665, 126.9780)
+        val ui = f.pick(d1, seats = 1, c = Conditions()) as CardUi.Shown
+        f.recall(ui, d1, seats = 2)
+        bodies.forEach { b ->
+            val o = Json.parseToJsonElement(b).jsonObject["origin"]!!.jsonObject
+            assertEquals("37.5665", o["lat"].toString())
+            assertEquals("126.978", o["lng"].toString())
+        }
+        assertEquals(2, bodies.size)
+    }
 }

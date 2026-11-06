@@ -1,6 +1,7 @@
 package com.mist.pleos_app.navi
 
 import ai.pleos.playground.navi.constants.NaviErrorCode
+import ai.pleos.playground.navi.data.CurrentLocationInfo
 import ai.pleos.playground.navi.data.RecentDestinationInfo
 import ai.pleos.playground.navi.data.RouteInfo
 import ai.pleos.playground.navi.data.RouteStartInfo
@@ -19,6 +20,9 @@ import kotlinx.coroutines.flow.asStateFlow
 
 /** 출발(F8) 진행 상태. 실패하면 "내비를 열 수 없어요" + 재시도(명세 F8·X2). */
 enum class DepartState { IDLE, REQUESTING, STARTED, FAILED }
+
+/** 카드 출발점(명세 F5: 내비 현재 위치 → 직전 위치 → 설정 집 위치). 기기 메모리에만, 로그·저장 안 함(AC-C-10·AC-N-4). */
+data class LatLng(val lat: Double, val lng: Double)
 
 /** 내비로 보낼 목적지. 서버 응답 Card에서 만든다(좌표·이름·id). 주소는 계약에 없어 이름으로 대신한다. */
 data class Destination(val id: String, val name: String, val lat: Double, val lng: Double)
@@ -44,6 +48,8 @@ class NaviRepository(context: Context) : DefaultLifecycleObserver {
     private val main = Handler(Looper.getMainLooper())
     /** 최근 목적지 대기 시간 초과. 응답이 오거나 새로 요청하면 지운다(앞 방문의 타이머가 새 대기자에게 null을 넘기지 않게, 효성 #28 리뷰). */
     private val recentTimeout = Runnable { deliverRecent(null) }
+    private var locationWaiters = mutableListOf<(LatLng?) -> Unit>()
+    private val locationTimeout = Runnable { deliverLocation(null) }
 
     private val listener = object : NaviHelperEventListener {
         override fun onRouteStarted(routeStartInfo: RouteStartInfo) {
@@ -56,6 +62,11 @@ class NaviRepository(context: Context) : DefaultLifecycleObserver {
             val first = recentDestinationInfoList.firstOrNull()
             deliverRecent(first?.let { Place(it.name, it.latitude, it.longitude) })
             ChagokLog.event("navi_recent", "count" to recentDestinationInfoList.size)
+        }
+
+        override fun onCurrentLocationInfo(currentLocationInfo: CurrentLocationInfo) {
+            val ok = currentLocationInfo.latitude != 0.0 || currentLocationInfo.longitude != 0.0
+            deliverLocation(if (ok) LatLng(currentLocationInfo.latitude, currentLocationInfo.longitude) else null)
         }
 
         override fun onError(errorCode: NaviErrorCode) {
@@ -106,6 +117,37 @@ class NaviRepository(context: Context) : DefaultLifecycleObserver {
         }
     }
 
+    /**
+     * 카드 출발점: getCurrentLocationInfo → onCurrentLocationInfo(P NAVI_ROUTE, 명세 F5 출발점).
+     * [TIMEOUT_MS] 안에 안 오거나 연결에 실패하면 null(→ 직전 위치 → 집 위치). 카드를 뽑을 때만 부른다(폴링 없음).
+     */
+    @Synchronized
+    fun fetchLocation(done: (LatLng?) -> Unit) {
+        locationWaiters.add(done)
+        main.removeCallbacks(locationTimeout)
+        main.postDelayed(locationTimeout, TIMEOUT_MS)
+        val n = navi
+        if (n != null && connected) { askLocation(n); return }
+        if (n != null) return
+        try {
+            navi = NaviHelper(app).also { h -> h.initialize(onConnected = { onConnected() }, onFailed = { deliverLocation(null) }) }
+        } catch (e: Exception) {
+            deliverLocation(null)
+        }
+    }
+
+    private fun askLocation(n: NaviHelper) {
+        try { n.getCurrentLocationInfo() } catch (e: Exception) { deliverLocation(null) }
+    }
+
+    @Synchronized
+    private fun deliverLocation(p: LatLng?) {
+        if (locationWaiters.isEmpty()) return
+        main.removeCallbacks(locationTimeout)
+        val ws = locationWaiters.toList(); locationWaiters.clear()
+        main.post { ws.forEach { it(p) } }
+    }
+
     private fun askRecent(n: NaviHelper) {
         try { n.getRecentDestinationInfo() } catch (e: Exception) { deliverRecent(null) }
     }
@@ -126,6 +168,7 @@ class NaviRepository(context: Context) : DefaultLifecycleObserver {
         pending?.let { request(n, it) }
         pending = null
         if (recentWaiters.isNotEmpty()) askRecent(n)
+        if (locationWaiters.isNotEmpty()) askLocation(n)
     }
 
     private fun request(n: NaviHelper, d: Destination) {
@@ -149,6 +192,7 @@ class NaviRepository(context: Context) : DefaultLifecycleObserver {
         navi?.let { n -> runCatching { n.removeListener(listener) }; runCatching { n.release() } }
         navi = null; connected = false; pending = null
         deliverRecent(null)
+        deliverLocation(null)
         if (flow.value == DepartState.REQUESTING) flow.value = DepartState.IDLE
     }
 }

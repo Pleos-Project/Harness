@@ -57,6 +57,7 @@
     <string name="server_retry">잠시 후 다시 볼까요?</string>
     <string name="server_retry_button">다시 보기</string>
     <string name="card_loading">갈 곳을 고르는 중</string>
+    <string name="locating">위치 확인 중</string>
     <string name="navi_failed">내비를 열 수 없어요</string>
     <!-- F11 인원 확인 토스트(PRD v1.5 6-3). "무게 감지" 표현 쓰지 않음 -->
     <string name="payer_toast">%1$d명이 탔어요 · 나눠 낼 인원</string>

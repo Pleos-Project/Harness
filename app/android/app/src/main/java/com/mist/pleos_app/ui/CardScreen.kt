@@ -60,9 +60,9 @@ fun CardScreen(
             CgTitle(stringResource(R.string.screen_card))
             CgNotice(stringResource(R.string.reading_vehicle))
         }
-        CardUi.Loading -> Column(verticalArrangement = Arrangement.spacedBy(24.gpx)) {
+        CardUi.Locating, CardUi.Loading -> Column(verticalArrangement = Arrangement.spacedBy(24.gpx)) {
             CgTitle(stringResource(R.string.screen_card))
-            CgNotice(stringResource(R.string.card_loading))
+            CgNotice(stringResource(if (ui == CardUi.Locating) R.string.locating else R.string.card_loading))
         }
         is CardUi.Shown -> Shown(ui, depart, ev, onSwap, onRetry) { onDepart(ui.card) }
         is CardUi.AskTheme -> Column(verticalArrangement = Arrangement.spacedBy(24.gpx)) {

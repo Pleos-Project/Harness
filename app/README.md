@@ -72,6 +72,7 @@ adb install -r -g app/build/outputs/apk/debug/app-debug.apk        # -g: 권한 
   - 한 장 화면 스택 자리에 "잠시 후 다시 볼까요?" + [다시 보기](X2). 같은 뽑기 안에서는 서버를 다시 기다리지 않는다(오늘의 한 곳 +1만·+3만 자동 전환 포함).
   - fallback으로 만든 세션의 재호출·교체는 계속 `DemoServer`로. 서버 세션의 재호출·교체가 네트워크로 실패하면 앞면을 그대로 두고 같은 안내.
   - 명세 fallback ①(직전 응답 캐시)과 `requestTrip` 거리 보정은 아직 없다(내장 후보의 거리·시간 그대로).
+- **출발점**(요청 `origin`, 명세 F5): 뽑기 전에 내비 `getCurrentLocationInfo`(P `NAVI_ROUTE`, 2초) → 못 받으면 직전 위치(메모리) → 집 위치(`constants.origin`, 에뮬 현재 위치와 같은 성남 시흥동). 기다리는 동안 "위치 확인 중"(X2). 재호출·교체는 뽑을 때의 출발점 그대로. 좌표는 저장·로그하지 않는다(로그는 `origin src`만). 설정에 집 위치 입력은 아직 없다.
 - 호출은 화면을 연 동안만, IO 스레드 한 줄로(`DemoServer` 세션이 스레드 안전하지 않음). 화면은 바로 넘기고("갈 곳을 고르는 중") 응답이 오면 바꾼다. 폴링·백그라운드 호출 금지.
 - **평균 단가 `GET /v1/prices`**(DECISIONS '계약: 단가'): 입력 없음, 응답 `{gasoline, diesel, trade_dt, source}`(원/L 정수).
   - 사용자 단가가 없을 때만 쓴다. 받은 휘발유 값으로 내장 기본값을 갈아 끼운다(`AppViewModel.constants` = `copy(gasolineKrwPerL = …)`). `price_source`는 `default` 그대로, 화면은 "평균 단가".

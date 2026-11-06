@@ -23,6 +23,9 @@ import com.mist.pleos_app.net.ChagokApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlin.coroutines.resume
+import com.mist.pleos_app.navi.LatLng
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
@@ -176,14 +179,31 @@ class AppViewModel(app: Application, private val saved: SavedStateHandle) : Andr
     /** "잠시 후 다시 볼까요?"의 다시 보기: 같은 경로로 서버부터 다시(X2). */
     fun retryCard(s: VehicleSnapshot, model: String) = startLoad(s, model, today = saved.get<Boolean>(KEY_CARD_FROM_TODAY) ?: true)
 
-    /** 화면은 바로 넘기고(Loading) 서버 응답(최대 3초, 실패하면 내장 후보)이 오면 바꾼다. */
+    /** 화면은 바로 넘기고 출발점(최대 2초) → 서버 응답(최대 3초, 실패하면 내장 후보) 순서로 바꾼다. */
     private fun startLoad(s: VehicleSnapshot, model: String, today: Boolean) {
         loadJob?.cancel()
         recallJob?.cancel()
-        card.value = CardUi.Loading
+        card.value = CardUi.Locating
         loadJob = viewModelScope.launch {
+            flow?.origin = origin()
+            card.value = CardUi.Loading
             card.value = withContext(io) { load(s, model, today) }
         }
+    }
+
+    // ------------------------------------------------------------ 출발점(명세 F5: 내비 현재 위치 → 직전 위치 → 설정 집 위치)
+    /** MainActivity가 넣는다(NaviRepository.fetchLocation). 없으면(테스트·미리보기) 집 위치. */
+    var locator: (((LatLng?) -> Unit) -> Unit)? = null
+    /** 직전 위치(메모리만, 저장·로그 안 함 — AC-N-4·AC-C-10). */
+    private var lastLocation: LatLng? = null
+
+    private suspend fun origin(): LatLng {
+        val here = locator?.let { loc -> suspendCancellableCoroutine<LatLng?> { c -> loc { p -> if (c.isActive) c.resume(p) } } }
+        if (here != null) lastLocation = here
+        val home = baseConstants?.let { LatLng(it.originLat, it.originLng) } ?: LatLng(0.0, 0.0)
+        val src = when { here != null -> "navi"; lastLocation != null -> "last"; else -> "home" }
+        ChagokLog.event("origin", "src" to src)                          // 좌표는 남기지 않는다
+        return here ?: lastLocation ?: home
     }
 
     // ------------------------------------------------------------ 재계산(F5 유지·재계산, F11 1인 몫)
