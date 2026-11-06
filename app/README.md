@@ -57,6 +57,8 @@ adb install -r -g app/build/outputs/apk/debug/app-debug.apk        # -g: 권한 
 - 창 폭이 900px 이하면 한 단(`LocalNarrow`). 레이아웃 확인은 `@Preview`로 가로·세로(1:1 분할)·주간을 같이 둔다(`ChagokApp.kt` 참고).
 - **화면 상태는 `remember`가 아니라 ViewModel(SavedStateHandle)에 둔다.** 주행 중에는 화면 composable이 가림 화면으로 바뀌어 composition에서 빠지므로 `remember`·`rememberSaveable` 값이 버려진다. 카드·프리셋·인원·테마 선택처럼 정차 뒤 그대로 돌아와야 하는 값(명세 X1 "세션·입력 저장", AC-X1-1·AC-F5-6)은 ViewModel에. 펼침·스크롤처럼 사라져도 되는 것만 `remember`.
 - 화면 이동은 `AppViewModel`의 화면 스택(SavedStateHandle, AC-C-11). CCP Back은 홈에서 `moveTaskToBack(true)`(finish 금지, Pleos 앱 개발 가이드).
+- 버튼·칩·카드·아이콘 버튼은 누르면 95%로 줄고 배경이 바뀐다(가이드 Button interaction). 칩은 가이드 Toggle button, 교체는 Icon button(아이콘 SVG가 나오기 전까지 글자).
+- 범위·한 장 흐름은 `app/CardModel.kt`(`CardFlow`·`presets`·`toggleTheme`, JUnit `CardModelTest`). 지금은 오프라인 `DemoServer`만, 서버 호출은 같은 자리에 붙인다.
 
 ## 3. 서버 호출 — Kotlin에서 직접 (열린 결정 2 해결)
 - 앱이 부르는 건 `/v1/cards`·`/v1/cards/swap`·`/v1/prices` 셋(`contract/openapi.yaml`).

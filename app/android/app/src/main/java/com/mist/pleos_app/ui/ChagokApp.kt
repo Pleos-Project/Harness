@@ -14,7 +14,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -26,6 +28,9 @@ import com.mist.pleos_app.R
 import com.mist.pleos_app.app.AppViewModel
 import com.mist.pleos_app.app.HomeBalance
 import com.mist.pleos_app.app.Screen
+import com.mist.pleos_app.app.engineVehicle
+import com.mist.pleos_app.vehicle.VehicleSnapshot
+import com.mist.pleos_app.vehicle.seatCount
 import com.mist.pleos_app.ui.components.CgBody
 import com.mist.pleos_app.ui.components.CgButton
 import com.mist.pleos_app.ui.components.CgButtonKind
@@ -47,29 +52,45 @@ val LocalNarrow = staticCompositionLocalOf { false }
  * 화면 문구는 strings.xml, 계산은 engine 패키지(HomeModel)만 쓴다.
  */
 @Composable
-fun ChagokApp(vm: AppViewModel, balance: HomeBalance, driving: Boolean, onExit: () -> Unit) {
+fun ChagokApp(vm: AppViewModel, snapshot: VehicleSnapshot, model: String, balance: HomeBalance, driving: Boolean, onExit: () -> Unit) {
     val stack by vm.stack.collectAsStateWithLifecycle()
     val screen = stack.last()
+    val conditions by vm.conditions.collectAsStateWithLifecycle()
+    val card by vm.cardUi.collectAsStateWithLifecycle()
+    val vehicle = remember(snapshot) { engineVehicle(vm.constants, model, snapshot) }
     // CCP Back: 최상단(홈)에서는 finish 하지 않고 숨긴다(Pleos 앱 개발 가이드, 심사 반려 사유)
     BackHandler { if (!driving && !vm.back()) onExit() }   // 주행 중 Back은 받아서 무시(가림 화면 유지, 앱이 뒤로 숨지 않게)
-    AppFrame(screen, balance, driving, open = vm::open, back = { if (!vm.back()) onExit() })
+    if (screen == Screen.CARD && !driving) LaunchedEffect(Unit) { vm.ensureCard(snapshot, model) }
+    val content: @Composable (Screen) -> Unit = { s ->
+        when (s) {
+            Screen.HOME -> HomeScreen(balance, today = { vm.openToday(snapshot, model) }, open = vm::open)
+            Screen.RANGE -> {
+                // 범위 화면에서 고르는 중인 값도 ViewModel에 둔다(주행 가림 뒤 그대로, README 2-1)
+                LaunchedEffect(Unit) { vm.setConditions(vm.conditionsFor(snapshot, model)) }
+                RangeScreen(
+                    vehicle, conditions,
+                    seats = seatCount(snapshot.seatsOccupied, invert = true),
+                    onChange = vm::setConditions,
+                    onPick = { vm.openPicked(snapshot, model) },
+                )
+            }
+            Screen.CARD -> CardScreen(card, onSwap = vm::swap, onRange = { vm.open(Screen.RANGE) })
+            Screen.RECORD -> Placeholder(stringResource(R.string.screen_record)) { if (!vm.back()) onExit() }
+            Screen.SETTINGS -> Placeholder(stringResource(R.string.screen_settings)) { if (!vm.back()) onExit() }
+        }
+    }
+    AppFrame(screen, balance.demoValues, driving, content)
 }
 
 @Composable
-private fun AppFrame(screen: Screen, balance: HomeBalance, driving: Boolean, open: (Screen) -> Unit, back: () -> Unit) {
+private fun AppFrame(screen: Screen, demoValues: Boolean, driving: Boolean, content: @Composable (Screen) -> Unit) {
     BoxWithConstraints(Modifier.fillMaxSize().background(Chagok.colors.bgPrimary)) {
         val narrow = with(LocalDensity.current) { maxWidth.toPx() } <= NARROW_MAX_PX
         CompositionLocalProvider(LocalNarrow provides narrow) {
             // X1 주행 중: 앱 안에서도 모든 화면을 가린다(시스템 가림과 별개). 화면 스택은 그대로라 정차하면 같은 화면으로 돌아온다(AC-X1-1).
             if (driving) DrivingCover() else Box(Modifier.fillMaxSize().padding(horizontal = 40.gpx, vertical = 32.gpx)) {
-                when (screen) {
-                    Screen.HOME -> HomeScreen(balance, open)
-                    Screen.RANGE -> Placeholder(stringResource(R.string.screen_range), back)
-                    Screen.CARD -> Placeholder(stringResource(R.string.screen_card), back)
-                    Screen.RECORD -> Placeholder(stringResource(R.string.screen_record), back)
-                    Screen.SETTINGS -> Placeholder(stringResource(R.string.screen_settings), back)
-                }
-                if (balance.demoValues) {
+                content(screen)
+                if (demoValues) {
                     // 화면 구석(AC-C-7). 위쪽은 카드와 겹쳐서 오른쪽 아래에 둔다.
                     DemoMark(stringResource(R.string.demo_values), Modifier.align(Alignment.BottomEnd))
                 }
@@ -81,17 +102,17 @@ private fun AppFrame(screen: Screen, balance: HomeBalance, driving: Boolean, ope
 // ------------------------------------------------------------ 홈 (F1 잔고 · 오늘의 한 곳 · 조건 바꾸기)
 // 정산 카드(F10, 맨 위·닫기)와 상황 카드는 P6에서 이 자리에 붙인다.
 @Composable
-private fun HomeScreen(balance: HomeBalance, open: (Screen) -> Unit) {
+private fun HomeScreen(balance: HomeBalance, today: () -> Unit, open: (Screen) -> Unit) {
     val narrow = LocalNarrow.current
     val gap = Arrangement.spacedBy(24.gpx)
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()), verticalArrangement = gap) {
         if (narrow) {
             BalanceCard(balance, Modifier.fillMaxWidth())
-            TodayPickCard({ open(Screen.CARD) }, Modifier.fillMaxWidth())
+            TodayPickCard(today, Modifier.fillMaxWidth())
         } else {
             Row(horizontalArrangement = gap) {
                 BalanceCard(balance, Modifier.weight(1f))
-                TodayPickCard({ open(Screen.CARD) }, Modifier.weight(1f))
+                TodayPickCard(today, Modifier.weight(1f))
             }
         }
         CgButton(stringResource(R.string.change_conditions), { open(Screen.RANGE) }, Modifier.fillMaxWidth(), kind = CgButtonKind.Basic)
@@ -149,17 +170,17 @@ private val previewBalance = HomeBalance("배터리에 1만 9천 원어치 · �
 @Preview(name = "세로·분할", widthDp = 640, heightDp = 720)
 @Composable
 private fun HomePreview() {
-    ChagokTheme(dark = true) { AppFrame(Screen.HOME, previewBalance, driving = false, {}, {}) }
+    ChagokTheme(dark = true) { AppFrame(Screen.HOME, demoValues = true, driving = false) { HomeScreen(previewBalance, {}, {}) } }
 }
 
 @Preview(name = "주간·읽는 중", widthDp = 640, heightDp = 720)
 @Composable
 private fun HomeReadingPreview() {
-    ChagokTheme(dark = false) { AppFrame(Screen.HOME, previewBalance.copy(balanceText = null), driving = false, {}, {}) }
+    ChagokTheme(dark = false) { AppFrame(Screen.HOME, demoValues = true, driving = false) { HomeScreen(previewBalance.copy(balanceText = null), {}, {}) } }
 }
 
 @Preview(name = "주행 중 가림", widthDp = 640, heightDp = 720)
 @Composable
 private fun DrivingPreview() {
-    ChagokTheme(dark = true) { AppFrame(Screen.CARD, previewBalance, driving = true, {}, {}) }
+    ChagokTheme(dark = true) { AppFrame(Screen.CARD, demoValues = true, driving = true) {} }
 }
