@@ -41,7 +41,7 @@ class AppViewModel(app: Application, private val saved: SavedStateHandle) : Andr
     /** 차종 표·기본 단가·데모 후보(빌드 때 fixtures/ → assets/data/, syncChagokData). 없으면 null. */
     val constants: Constants? = readAsset(app, "data/constants.json")?.let { runCatching { parseConstants(it) }.getOrNull() }
     private val candidates: List<Candidate> = readAsset(app, "data/candidates_demo.json")?.let { runCatching { parseCandidates(it) }.getOrNull() }.orEmpty()
-    private val flow: CardFlow? = constants?.let { CardFlow(it, DemoServer(candidates)) }?.also {
+    private val flow: CardFlow? = constants?.let { CardFlow(it, DemoServer(candidates, it.ranking)) }?.also {
         it.recentVisits = saved.get<List<String>>(KEY_RECENT).orEmpty()
     }
 

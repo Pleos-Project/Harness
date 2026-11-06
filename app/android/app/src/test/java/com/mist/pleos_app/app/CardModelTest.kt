@@ -18,7 +18,7 @@ class CardModelTest {
         .map { File(it, "fixtures") }.first { File(it, "constants.json").exists() }
     private val constants = parseConstants(File(root, "constants.json").readText())
     private val candidates = parseCandidates(File(root, "candidates_demo.json").readText())
-    private fun flow() = CardFlow(constants, DemoServer(candidates))
+    private fun flow() = CardFlow(constants, DemoServer(candidates, constants.ranking))
 
     private fun ev(soc: Int, rangeM: Double) =
         engineVehicle(constants, "ioniq5_lr", VehicleSnapshot(socPct = soc, rangeRemainingM = rangeM, evCapacityWh = 77_400.0))!!
