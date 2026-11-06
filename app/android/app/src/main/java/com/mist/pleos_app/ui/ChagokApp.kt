@@ -47,20 +47,21 @@ val LocalNarrow = staticCompositionLocalOf { false }
  * 화면 문구는 strings.xml, 계산은 engine 패키지(HomeModel)만 쓴다.
  */
 @Composable
-fun ChagokApp(vm: AppViewModel, balance: HomeBalance, onExit: () -> Unit) {
+fun ChagokApp(vm: AppViewModel, balance: HomeBalance, driving: Boolean, onExit: () -> Unit) {
     val stack by vm.stack.collectAsStateWithLifecycle()
     val screen = stack.last()
     // CCP Back: 최상단(홈)에서는 finish 하지 않고 숨긴다(Pleos 앱 개발 가이드, 심사 반려 사유)
-    BackHandler { if (!vm.back()) onExit() }
-    AppFrame(screen, balance, open = vm::open, back = { if (!vm.back()) onExit() })
+    BackHandler(enabled = !driving) { if (!vm.back()) onExit() }
+    AppFrame(screen, balance, driving, open = vm::open, back = { if (!vm.back()) onExit() })
 }
 
 @Composable
-private fun AppFrame(screen: Screen, balance: HomeBalance, open: (Screen) -> Unit, back: () -> Unit) {
+private fun AppFrame(screen: Screen, balance: HomeBalance, driving: Boolean, open: (Screen) -> Unit, back: () -> Unit) {
     BoxWithConstraints(Modifier.fillMaxSize().background(Chagok.colors.bgPrimary)) {
         val narrow = with(LocalDensity.current) { maxWidth.toPx() } <= NARROW_MAX_PX
         CompositionLocalProvider(LocalNarrow provides narrow) {
-            Box(Modifier.fillMaxSize().padding(horizontal = 40.gpx, vertical = 32.gpx)) {
+            // X1 주행 중: 앱 안에서도 모든 화면을 가린다(시스템 가림과 별개). 화면 스택은 그대로라 정차하면 같은 화면으로 돌아온다(AC-X1-1).
+            if (driving) DrivingCover() else Box(Modifier.fillMaxSize().padding(horizontal = 40.gpx, vertical = 32.gpx)) {
                 when (screen) {
                     Screen.HOME -> HomeScreen(balance, open)
                     Screen.RANGE -> Placeholder(stringResource(R.string.screen_range), back)
@@ -123,6 +124,14 @@ private fun TodayPickCard(onClick: () -> Unit, modifier: Modifier) {
     }
 }
 
+// ------------------------------------------------------------ 주행 중 가림 (X1). 금액·카드 없음(AC-C-8 주행 중 금액 미터 금지)
+@Composable
+private fun DrivingCover() {
+    Box(Modifier.fillMaxSize().background(Chagok.colors.bgSecondary), contentAlignment = Alignment.Center) {
+        CgBody(stringResource(R.string.driving_hidden), secondary = true)
+    }
+}
+
 // ------------------------------------------------------------ 아직 안 지은 화면 (P3~P7)
 @Composable
 private fun Placeholder(title: String, back: () -> Unit) {
@@ -140,11 +149,17 @@ private val previewBalance = HomeBalance("배터리에 1만 9천 원어치 · �
 @Preview(name = "세로·분할", widthDp = 640, heightDp = 720)
 @Composable
 private fun HomePreview() {
-    ChagokTheme(dark = true) { AppFrame(Screen.HOME, previewBalance, {}, {}) }
+    ChagokTheme(dark = true) { AppFrame(Screen.HOME, previewBalance, driving = false, {}, {}) }
 }
 
 @Preview(name = "주간·읽는 중", widthDp = 640, heightDp = 720)
 @Composable
 private fun HomeReadingPreview() {
-    ChagokTheme(dark = false) { AppFrame(Screen.HOME, previewBalance.copy(balanceText = null), {}, {}) }
+    ChagokTheme(dark = false) { AppFrame(Screen.HOME, previewBalance.copy(balanceText = null), driving = false, {}, {}) }
+}
+
+@Preview(name = "주행 중 가림", widthDp = 640, heightDp = 720)
+@Composable
+private fun DrivingPreview() {
+    ChagokTheme(dark = true) { AppFrame(Screen.CARD, previewBalance, driving = true, {}, {}) }
 }

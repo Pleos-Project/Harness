@@ -47,5 +47,12 @@ fun seatCount(seats: Map<String, Boolean>, invert: Boolean): Int =
 /** 정차 = 기어 P이고 주행 규제 없음(명세 2절). 규제 값을 아직 못 받았으면 기어만 본다. */
 fun isParked(s: VehicleSnapshot): Boolean = s.gear == GearState.PARK && s.uxRestricted != true
 
+/**
+ * 주행 중(명세 X1: 규제 ON 또는 기어 ≠ P) → 화면을 가리고 규제·기어 외 리스너를 해제한다.
+ * 기어를 아직 모르면(앱 시작 직후·읽기 실패) 가리지 않는다. 규제가 켜져 있으면 기어와 상관없이 주행.
+ */
+fun isDriving(s: VehicleSnapshot): Boolean =
+    s.uxRestricted == true || (s.gear != GearState.UNKNOWN && s.gear != GearState.PARK)
+
 /** 잔량 %: 전기차면 SOC, 내연이면 연료 %. */
 fun levelPct(s: VehicleSnapshot, ev: Boolean): Int? = if (ev) s.socPct else s.fuelPct

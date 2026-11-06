@@ -80,7 +80,11 @@ adb install -r -g app/build/outputs/apk/debug/app-debug.apk        # -g: 권한 
 - 기어 P = 규제 없음, D = 속도 0이어도 규제. 규제 중 시스템이 앱을 가린다. adb 설치본은 `distractionOptimized`를 선언해도 가려진다.
 
 ## 4-1. 차량값 읽기 (`vehicle/PleosVehicleRepository`)
-- Activity 수명주기 observer. `onStart`에 진입 때 값(용량·연료 종류·연비·충전 스위치·누적 주행거리)을 1회 읽고 리스너(SOC·연료 %·기어·운전석 문·착석·`RANGE_REMAINING`·주행 규제)를 등록, `onStop`에 전부 해제(AC-C-2).
+- Activity 수명주기 observer. 리스너는 두 묶음이다.
+  - **관문**(기어·주행 규제): 화면이 보이는 동안 늘 듣는다.
+  - **데이터**(SOC·연료 %·운전석 문·착석·`RANGE_REMAINING`): 정차일 때만. 등록 전에 진입 때 값(용량·연료 종류·연비·충전 스위치·누적 주행거리)을 1회 읽는다.
+  - `onStop`에 둘 다 해제(AC-C-2).
+- **주행 중(X1)** = 규제 ON 또는 기어 ≠ P(`isDriving`, 기어를 아직 모르면 아님): 데이터 리스너를 끊고(AC-X1-2) 앱 안에서도 화면을 가린다(`DrivingCover`, 금액 없음). 화면 스택은 그대로라 정차하면 같은 화면으로 돌아온다(AC-X1-1).
 - `onFailed`는 `SecurityException`(권한 없음)과 그 밖(미지원)을 나눠 `VehicleSnapshot.failures`에 남긴다. `VehicleException`은 공개 클래스가 아니라 못 쓴다.
 - 기어는 Pleos `Gear` API(P `CAR_DRIVE`). SDK가 AAOS `GEAR_SELECTION`을 권하지만 그건 A `CAR_POWERTRAIN` 권한이라 쓰지 않는다.
 - **충전 스위치는 Pleos SDK에 리스너가 없다**(AAR 2.3.2). 지금은 진입 때만 읽는다. F9는 AAOS `EV_CHARGE_SWITCH` 콜백 가능 여부를 확인하고 정한다.

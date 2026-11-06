@@ -4,6 +4,7 @@ import com.mist.pleos_app.engine.parseConstants
 import com.mist.pleos_app.vehicle.GearState
 import com.mist.pleos_app.vehicle.VehicleSnapshot
 import com.mist.pleos_app.vehicle.isEv
+import com.mist.pleos_app.vehicle.isDriving
 import com.mist.pleos_app.vehicle.isParked
 import com.mist.pleos_app.vehicle.seatCount
 import org.junit.Assert.assertEquals
@@ -72,5 +73,16 @@ class HomeModelTest {
         assertTrue(isParked(VehicleSnapshot(gear = GearState.PARK)))
         assertFalse(isParked(VehicleSnapshot(gear = GearState.PARK, uxRestricted = true)))
         assertFalse(isParked(VehicleSnapshot(gear = GearState.DRIVE, uxRestricted = false)))
+    }
+
+    @Test
+    fun drivingHidesScreen() {
+        // X1: 규제 ON 또는 기어 ≠ P → 가림. 기어를 아직 모르면 가리지 않는다(시작 직후 빈 화면 방지)
+        assertFalse(isDriving(VehicleSnapshot()))
+        assertFalse(isDriving(VehicleSnapshot(gear = GearState.PARK, uxRestricted = false)))
+        assertTrue(isDriving(VehicleSnapshot(gear = GearState.DRIVE)))
+        assertTrue(isDriving(VehicleSnapshot(gear = GearState.OTHER, uxRestricted = false)))       // R·N
+        assertTrue(isDriving(VehicleSnapshot(gear = GearState.PARK, uxRestricted = true)))         // 콘솔 driving_regulation on
+        assertTrue(isDriving(VehicleSnapshot(gear = GearState.UNKNOWN, uxRestricted = true)))
     }
 }

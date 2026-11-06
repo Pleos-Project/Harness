@@ -22,6 +22,9 @@
     <string name="today_pick_conditions">추가 0원 · 당일 · 인원 자동</string>
     <string name="change_conditions">조건 바꾸기</string>
 
+    <!-- X1 주행 중 가림: 금액·카드 없이 한 줄 -->
+    <string name="driving_hidden">정차하면 다시 보여 드릴게요</string>
+
     <!-- X2 예외 -->
     <string name="reading_vehicle">차량 정보를 읽는 중</string>
 </resources>
