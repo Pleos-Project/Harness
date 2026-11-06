@@ -99,6 +99,16 @@ adb install -r -g app/build/outputs/apk/debug/app-debug.apk        # -g: 권한 
 - 차량값·착석이 바뀌면(SOC 1%p·주행가능거리 1km·착석 수) 마지막 변화 1초 뒤 같은 세션으로 다시 불러 앞면은 그대로, 배지·1인 몫만 갱신(`AppViewModel.onVehicle`, AC-F5-2·AC-F11-1). 1인 몫 문구는 엔진 `display.perPersonText` 그대로.
 - 착석 3명 이상이면 홈에 "N명 · 1인 기준으로 볼까요?"(AC-F11-3). 콘솔 착석: `PUT /vehicle/seat?kind=occupied&area=driver|passenger|rear_left|rear_right&value=true`.
 
+## 4-3. 장부(F10 정산 · F17 기록 · F8 trip)
+- 규칙은 `engine/Ledger.kt`(fixtures/ledger L1~L5), 언제 넣나는 `app/LedgerFlow.kt`(JUnit `LedgerFlowTest`).
+  - **Open**: 화면이 보이고 정차이며 누적 주행거리를 이번 방문에 새로 읽은 뒤 1번. 마지막 목적지는 내비 `getRecentDestinationInfo`(2초 안 없으면 목적지 없이). 홈 맨 위 정산 카드(닫기, 탭 → 기록)
+  - **Depart**: 출발 1탭 → trip(장소·편도·출발 때 누적 주행거리)
+  - **Arrive**: trip이 있고 정차 중 운전석 문 닫힘 → 열림. Δodo 0(에뮬)이면 편도 추정 + "시연용 값"
+- 저장: `ledger/EncryptedLedgerStore` — 앱 내부 파일, Android Keystore AES-256-GCM(AC-N-4, 장소 좌표는 장소당 1개, 현재 위치·궤적 없음). 깨지면 빈 장부로 시작
+- 복귀했는데 차량값이 그대로면 상태 흐름이 새 값을 내보내지 않는다 → 정산 확인은 `visit`(화면이 보인 횟수)도 키로 다시 돌리고, 문 기준값은 복귀 때 지우지 않는다. 누적 주행거리는 들어올 때마다 비우고 새로 읽는다(예전 값으로 0km 정산 방지)
+- 콘솔: 문 `PUT /vehicle/body?door_fl=true|false`, 주행거리 올리기 `PUT /vehicle/odometer?traveled_distance_km=<지금+132>`(줄일 수 없음)
+- 에뮬 앱은 사용자 10으로 돈다 → 데이터 비우기는 `adb uninstall` 뒤 `install -g`(그냥 `pm clear`는 안 지워짐). 앱 안 기록 초기화는 설정(S1, P7)
+
 ## 5. 앱을 지을 때 지킬 것
 - 차량 값은 리스너로 받는다. 타이머 반복 읽기 금지, 화면이 가려지면 내비·규제 리스너까지 해제(AC-C-2). H_Mate의 2초 폴링은 가져오지 않는다.
 - 권한을 바꾸면 `contract/permissions.md`도 같은 PR에서(CI `check_permissions.py`).

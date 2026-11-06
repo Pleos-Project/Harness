@@ -60,6 +60,11 @@
     <string name="cost_none">없음</string>
     <string name="cost_unknown">정보 없음</string>
 
+    <!-- 기록·정산(F10·F17) -->
+    <string name="close">닫기</string>
+    <string name="record_no_place">목적지 없음</string>
+    <string name="record_meta">%1$s · %2$dkm</string>
+
     <!-- X1 주행 중 가림: 금액·카드 없이 한 줄 -->
     <string name="driving_hidden">정차하면 다시 보여 드릴게요</string>
 
