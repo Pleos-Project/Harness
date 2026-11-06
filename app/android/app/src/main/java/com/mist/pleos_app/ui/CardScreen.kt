@@ -51,13 +51,20 @@ import kotlin.math.abs
  * 일러스트는 SVG를 앱에 넣는 방식이 정해지면(열린 결정 12·13) 앞면 위에 붙인다. 출발(F8)은 P5.
  */
 @Composable
-fun CardScreen(ui: CardUi?, depart: DepartState, onSwap: () -> Unit, onRange: () -> Unit, onDepart: (Card) -> Unit, ev: Boolean = true) {
+fun CardScreen(
+    ui: CardUi?, depart: DepartState, onSwap: () -> Unit, onRange: () -> Unit, onDepart: (Card) -> Unit,
+    ev: Boolean = true, onRetry: () -> Unit = {},
+) {
     when (ui) {
         null -> Column(verticalArrangement = Arrangement.spacedBy(24.gpx)) {
             CgTitle(stringResource(R.string.screen_card))
             CgNotice(stringResource(R.string.reading_vehicle))
         }
-        is CardUi.Shown -> Shown(ui, depart, ev, onSwap) { onDepart(ui.card) }
+        CardUi.Loading -> Column(verticalArrangement = Arrangement.spacedBy(24.gpx)) {
+            CgTitle(stringResource(R.string.screen_card))
+            CgNotice(stringResource(R.string.card_loading))
+        }
+        is CardUi.Shown -> Shown(ui, depart, ev, onSwap, onRetry) { onDepart(ui.card) }
         is CardUi.AskTheme -> Column(verticalArrangement = Arrangement.spacedBy(24.gpx)) {
             CgCard(Modifier.fillMaxWidth(), onClick = onRange) {
                 CgTitle(stringResource(R.string.ask_theme))
@@ -73,7 +80,7 @@ fun CardScreen(ui: CardUi?, depart: DepartState, onSwap: () -> Unit, onRange: ()
 }
 
 @Composable
-private fun Shown(ui: CardUi.Shown, depart: DepartState, ev: Boolean, onSwap: () -> Unit, onDepart: () -> Unit) {
+private fun Shown(ui: CardUi.Shown, depart: DepartState, ev: Boolean, onSwap: () -> Unit, onRetry: () -> Unit, onDepart: () -> Unit) {
     var showCost by remember(ui.card.id) { mutableStateOf(false) }
     val narrow = LocalNarrow.current
     val front = @Composable { m: Modifier -> FrontCard(ui.card, showCost, onTap = { showCost = !showCost }, onSwipe = onSwap, modifier = m) }
@@ -85,6 +92,11 @@ private fun Shown(ui: CardUi.Shown, depart: DepartState, ev: Boolean, onSwap: ()
                     CgBody(stringResource(R.string.stack_left, ui.stackLeft))
                     CgCaption(stringResource(R.string.swaps_left, ui.swapsLeft))
                 }
+            }
+            // 서버 대신 내장 후보로 뽑았으면 스택 자리에 "잠시 후 다시 볼까요?" + 다시 보기(X2, 명세 F5 fallback)
+            if (ui.offline) {
+                CgNotice(stringResource(R.string.server_retry))
+                CgButton(stringResource(R.string.server_retry_button), onRetry, Modifier.fillMaxWidth(), kind = CgButtonKind.Basic)
             }
             // 출발 1탭 → 순정 내비(F8). 실패하면 안내 + 같은 버튼으로 재시도(X2)
             if (depart == DepartState.FAILED) CgNotice(stringResource(R.string.navi_failed))

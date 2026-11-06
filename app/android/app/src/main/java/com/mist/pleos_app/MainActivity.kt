@@ -46,7 +46,8 @@ class MainActivity : ComponentActivity() {
             // 차종·단가·모의 연료 %는 설정(S1). 바꾸고 홈으로 돌아오면 바로 다시 계산(AC-F1-3·AC-S1-1)
             val settings by vm.settings.collectAsStateWithLifecycle()
             val model = settings.model
-            val balance = remember(snapshot, settings) {
+            val avgGas by vm.avgGasPrice.collectAsStateWithLifecycle()   // 서버 평균 단가가 오면 다시 계산
+            val balance = remember(snapshot, settings, avgGas) {
                 homeBalance(vm.constants, model, snapshot, mockFuelPct = settings.mockFuelPct, price = settings.priceFor(vm.constants))
             }
             ChagokTheme {

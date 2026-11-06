@@ -60,6 +60,8 @@ fun minutesText(minutes: Int): String = when {
     else -> "${minutes / 60}시간 ${minutes % 60}분"
 }
 
+private fun fixedSource(s: CardSource): () -> CardSource = { s }
+
 /** 한 장 화면 상태. */
 sealed class CardUi {
     /**
@@ -75,7 +77,12 @@ sealed class CardUi {
         val conditions: Conditions,
         /** 범위 안 후보 < 3곳(서버 hint few_candidates) → "범위 안 후보가 적어요" + 조건 바꾸기(X2) */
         val fewCandidates: Boolean = false,
+        /** 서버 대신 내장 후보로 뽑음 → 스택 자리에 "잠시 후 다시 볼까요?" + 다시 보기(X2, AC-F5-7) */
+        val offline: Boolean = false,
     ) : CardUi()
+
+    /** 서버 응답을 기다리는 중(최대 3초, 실패하면 내장 후보). */
+    data object Loading : CardUi()
 
     /** 교체 3회째·후보 소진 → "어떤 쪽으로 다시 볼까요?" 카드 → 범위 화면(PRD v1.6, 이유 칩 3개는 다음 PR). */
     data class AskTheme(val conditions: Conditions) : CardUi()
@@ -85,13 +92,17 @@ sealed class CardUi {
 }
 
 /**
- * 카드 뽑기·교체. [server]는 오프라인 DemoServer(서버 실패 fallback ②와 같은 것).
- * [seats]는 착석 자동(F11), 출발점은 지금은 constants.origin(에뮬 위치와 같음) — 내비 현재 위치는 F8 작업 때.
+ * 카드 뽑기·교체. [source]는 지금 모드의 카드 출처(데모 고정 → DemoSource, 아니면 서버 + 내장 후보 fallback).
+ * 모든 함수가 블로킹(서버 호출)이라 IO 스레드에서 부른다.
+ * [seats]는 나눠 낼 인원(F11), 출발점은 지금은 constants.origin(에뮬 위치와 같음) — 내비 현재 위치는 다음 PR.
  */
 class CardFlow(
     private val constants: Constants,
-    private val server: DemoServer,
+    private val source: () -> CardSource,
 ) {
+    /** 테스트·데모 고정용: DemoServer 하나로. */
+    constructor(constants: Constants, server: DemoServer) : this(constants, fixedSource(DemoSource(server)))
+
     /** 출발한 곳(최근 10곳). 다음 뽑기에서 빼고 "지난번과 다른 테마"를 판단한다(명세 F5 저장). */
     var recentVisits: List<String> = emptyList()
 
@@ -101,10 +112,11 @@ class CardFlow(
         recentVisits = recentVisits, demoSeed = constants.demoSeed, sessionId = sessionId,
     )
 
-    private fun shown(resp: CardsResponse, raisedTo: Int?, c: Conditions): CardUi? {
+    private fun shown(f: Fetched<CardsResponse>, raisedTo: Int?, c: Conditions): CardUi? {
+        val resp = f.value
         val card = resp.picked ?: return null
         val sid = resp.sessionId ?: return null
-        return CardUi.Shown(sid, card, resp.stack.size, MAX_SWAPS, raisedTo, c, fewCandidates = resp.hint?.code == "few_candidates")
+        return CardUi.Shown(sid, card, resp.stack.size, MAX_SWAPS, raisedTo, c, fewCandidates = resp.hint?.code == "few_candidates", offline = f.offline)
     }
 
     /**
@@ -112,16 +124,20 @@ class CardFlow(
      * 셋 다 없으면 Empty(fromToday=true).
      */
     fun today(v: Vehicle, seats: Int): CardUi {
+        val src = source()
+        var offline = false                                   // 한 번 실패하면 이번 뽑기 안에서는 서버를 다시 기다리지 않는다
         for (extra in RING_KRW) {
             val c = Conditions(extraKrw = extra)
-            shown(server.cards(request(v, c, seats)), raisedTo = extra.takeIf { it > 0 }, c)?.let { return it }
+            val f = src.cards(request(v, c, seats), offlineOnly = offline)
+            offline = offline || f.offline
+            shown(f, raisedTo = extra.takeIf { it > 0 }, c)?.let { return it }
         }
         return CardUi.Empty(fromToday = true, conditions = Conditions())
     }
 
     /** 범위 화면 "한 장 뽑기". 자동 전환 없음(사용자가 고른 조건 그대로), 없으면 Empty → "범위 안 후보가 적어요". */
     fun pick(v: Vehicle, seats: Int, c: Conditions): CardUi =
-        shown(server.cards(request(v, c, seats)), raisedTo = null, c) ?: CardUi.Empty(fromToday = false, conditions = c)
+        shown(source().cards(request(v, c, seats)), raisedTo = null, c) ?: CardUi.Empty(fromToday = false, conditions = c)
 
     /**
      * 차량값·착석이 바뀌었을 때 재호출(명세 F5 '유지·재계산', AC-F5-2·AC-F11-1): 같은 세션으로 다시 불러
@@ -130,15 +146,19 @@ class CardFlow(
      */
     fun recall(cur: CardUi.Shown, v: Vehicle, seats: Int): CardUi {
         val c = cur.conditions
-        val resp = server.cards(request(v, c, seats, sessionId = cur.sessionId))
+        val resp = try {
+            source().cards(request(v, c, seats, sessionId = cur.sessionId)).value
+        } catch (e: java.io.IOException) {
+            return cur.copy(offline = true)                   // 서버 세션 재호출 실패: 앞면 유지 + "잠시 후 다시"
+        }
         val card = resp.picked ?: return CardUi.Empty(fromToday = cur.raisedTo != null, conditions = c)
         return cur.copy(card = card, sessionId = resp.sessionId ?: cur.sessionId, fewCandidates = resp.hint?.code == "few_candidates")
     }
 
     /** 교체(스와이프·아이콘). 2회까지, 3회째·후보 소진은 AskTheme. */
-    fun swap(cur: CardUi.Shown): CardUi = when (val r = server.swap(cur.sessionId)) {
+    fun swap(cur: CardUi.Shown): CardUi = when (val r = source().swap(cur.sessionId)) {
         is SwapResult.Ok -> cur.copy(card = r.card, stackLeft = r.stackLeft, swapsLeft = r.swapsLeft)
-        is SwapResult.Error -> CardUi.AskTheme(cur.conditions)
+        is SwapResult.Error -> if (r.error == LiveSource.NETWORK) cur.copy(offline = true) else CardUi.AskTheme(cur.conditions)
     }
 }
 

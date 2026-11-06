@@ -78,7 +78,8 @@ fun ChagokApp(
     val payer by vm.payerState.collectAsStateWithLifecycle()
     val refuel by vm.refuelUi.collectAsStateWithLifecycle()
     val settings by vm.settings.collectAsStateWithLifecycle()
-    val vehicle = remember(snapshot, settings) { vm.vehicleOf(snapshot, model) }
+    val avgGas by vm.avgGasPrice.collectAsStateWithLifecycle()
+    val vehicle = remember(snapshot, settings, avgGas) { vm.vehicleOf(snapshot, model) }
     val ev = vm.constants?.vehicles?.get(model)?.fuelType != "ice"
     // CCP Back: 최상단(홈)에서는 finish 하지 않고 숨긴다(Pleos 앱 개발 가이드, 심사 반려 사유)
     BackHandler { if (!driving && !vm.back()) onExit() }   // 주행 중 Back은 받아서 무시(가림 화면 유지, 앱이 뒤로 숨지 않게)
@@ -88,7 +89,8 @@ fun ChagokApp(
         if (!driving) {
             vm.onVehicle(snapshot, model)
             vm.onEnergy(snapshot, model)                   // F9: 충전 스위치 ON→OFF, 연료 % 3%p 상승(모의 값 포함)
-            vm.maybeSettle(snapshot, model, fetchRecent)   // F10: 화면이 보일 때 정차면 이번 방문 정산 1번
+            vm.maybeSettle(snapshot, model, fetchRecent)
+            vm.refreshPrices()                             // 서버 모드: 평균 휘발유 단가(복귀마다 1회, 기다리지 않음)   // F10: 화면이 보일 때 정차면 이번 방문 정산 1번
         }
         vm.onDoor(snapshot, model)                         // F17: trip이 있고 정차 중 운전석 문 열림 = 도착
     }
@@ -109,7 +111,10 @@ fun ChagokApp(
                     onPick = { vm.openPicked(snapshot, model) },
                 )
             }
-            Screen.CARD -> CardScreen(card, depart, onSwap = vm::swap, onRange = { vm.open(Screen.RANGE) }, onDepart = onDepart, ev = ev)
+            Screen.CARD -> CardScreen(
+                card, depart, onSwap = vm::swap, onRange = { vm.open(Screen.RANGE) }, onDepart = onDepart, ev = ev,
+                onRetry = { vm.retryCard(snapshot, model) },
+            )
             Screen.RECORD -> RecordScreen(ledger)
             Screen.SETTINGS -> SettingsScreen(settings, vm.constants, onChange = vm::updateSettings, onReset = vm::resetRecords)
         }

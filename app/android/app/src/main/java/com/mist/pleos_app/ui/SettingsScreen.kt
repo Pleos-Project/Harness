@@ -107,6 +107,12 @@ fun SettingsScreen(
             }
             CgCaption(stringResource(R.string.settings_mock_fuel_hint))
             Row(horizontalArrangement = gap, verticalAlignment = Alignment.CenterVertically) {
+                CgBody(stringResource(R.string.settings_demo_fixed), Modifier.weight(1f))
+                CgChip(stringResource(R.string.on), selected = s.demoFixed, onClick = { onChange(s.copy(demoFixed = true)) })
+                CgChip(stringResource(R.string.off), selected = !s.demoFixed, onClick = { onChange(s.copy(demoFixed = false)) })
+            }
+            CgCaption(stringResource(R.string.settings_demo_fixed_hint))
+            Row(horizontalArrangement = gap, verticalAlignment = Alignment.CenterVertically) {
                 CgBody(stringResource(R.string.settings_seat_invert), Modifier.weight(1f))
                 CgChip(stringResource(R.string.on), selected = s.seatInvert, onClick = { onChange(s.copy(seatInvert = true)) })
                 CgChip(stringResource(R.string.off), selected = !s.seatInvert, onClick = { onChange(s.copy(seatInvert = false)) })
