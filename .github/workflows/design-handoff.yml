@@ -10,6 +10,9 @@
 #   앱 테마(ui/theme/)는 토큰 생성 스크립트가 맡는다. screens·components·preview.html이 안 바뀐 PR이면 돌지 않는다.
 # - 한 방향 검사는 ci.yml copy 잡이 반영 PR(feature/design-apply-pr-*)의 체크로 돌린다.
 #   반영 PR에 빨간 X로 뜨고 머지 전에 보인다(브랜치 보호가 없어 머지를 강제로 막지는 못함).
+# - 첫 시안(미드파이 이상 전체 화면)은 개발단이 직접 입힌다(명준 결정 11/6). 그 PR에 `수동 반영` 라벨을 달면
+#   이 워크플로가 돌지 않는다. 이후 작은 수정 PR부터 자동 반영한다. 큰 개편도 같은 라벨로 수동 처리할 수 있다.
+# - 모델: Sonnet 5.5, effort high(명준 결정 11/6). 사용량은 CLAUDE_CODE_OAUTH_TOKEN 주인(명준) 구독 한도에서 나간다.
 #
 # 준비(레포 관리자 1회):
 #   1. Claude GitHub App 설치: https://github.com/apps/claude → Pleos-Project → Harness 선택
@@ -40,7 +43,11 @@ concurrency:
 
 jobs:
   apply:
-    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.merged == true
+    # `수동 반영` 라벨 PR(첫 시안·큰 개편)은 개발단이 직접 반영하므로 건너뛴다. 수동 실행(workflow_dispatch)은 라벨과 무관하게 돈다
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.pull_request.merged == true &&
+       !contains(github.event.pull_request.labels.*.name, '수동 반영'))
     runs-on: ubuntu-latest
     timeout-minutes: 60
     permissions:
@@ -109,6 +116,7 @@ jobs:
             그 변경을 app/android 에 반영하는 PR을 하나 연다.
 
             1. 규칙을 읽는다: CLAUDE.md, design/RULES.md, app/README.md, DECISIONS.md.
+               이 PR은 첫 시안이 앱에 입혀진 뒤의 수정이다. 바뀐 부분만 고치고, 바뀌지 않은 화면은 건드리지 않는다.
             2. 무엇이 바뀌었는지 본다.
                - `gh pr view ${{ env.PR }} --json title,body,files` — 본문의 "앱 반영 요청" 절이 작업 지시다.
                - `git diff ${{ steps.info.outputs.merge }}^1 ${{ steps.info.outputs.merge }} -- design/`
@@ -137,7 +145,10 @@ jobs:
                앱에 반영할 것이 없으면 PR을 만들지 않고 그 이유만 디자인 PR에 코멘트한다.
           # 허용 명령을 좁혀 실제로 막는다(무료 요금제라 브랜치 보호가 없음):
           # gh pr merge·develop 푸시 불가, push는 이 반영 브랜치 하나만
+          # 모델·effort는 명준 결정(11/6): Sonnet 5.5 + high
           claude_args: |
+            --model claude-sonnet-5-5
+            --effort high
             --max-turns 80
             --allowedTools "Read,Edit,Write,Glob,Grep,Bash(git status:*),Bash(git diff:*),Bash(git log:*),Bash(git switch:*),Bash(git add:*),Bash(git commit:*),Bash(git push -u origin ${{ steps.info.outputs.branch }}),Bash(gh pr view:*),Bash(gh pr create:*),Bash(gh pr comment:*),Bash(app/android/gradlew:*),Bash(python scripts/lint_copy.py),Bash(ls:*),Bash(cat:*),Bash(mkdir:*)"
 
