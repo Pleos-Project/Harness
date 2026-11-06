@@ -9,10 +9,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import com.mist.pleos_app.R
@@ -37,9 +34,10 @@ import com.mist.pleos_app.ui.theme.gpx
 @Composable
 fun RangeScreen(
     vehicle: Vehicle?,
-    initial: Conditions,
+    c: Conditions,
     seats: Int,
-    onPick: (Conditions) -> Unit,
+    onChange: (Conditions) -> Unit,
+    onPick: () -> Unit,
 ) {
     if (vehicle == null) {
         Column(verticalArrangement = Arrangement.spacedBy(24.gpx)) {
@@ -48,7 +46,6 @@ fun RangeScreen(
         }
         return
     }
-    var c by remember(initial) { mutableStateOf(initial) }
     val ps = remember(vehicle, c.days) { presets(vehicle, c.days) }
     // 고른 프리셋이 비활성이 되면(잔고 부족) 고를 수 있는 첫 프리셋으로(AC-F2-2: +1만 자동)
     val extra = ps.firstOrNull { it.extraKrw == c.extraKrw && it.enabled }?.extraKrw ?: ps.first { it.enabled }.extraKrw
@@ -60,13 +57,13 @@ fun RangeScreen(
         CgCaption(stringResource(R.string.range_extra_label))
         if (!ps.first().enabled) CgNotice(stringResource(R.string.range_zero_unavailable))
         FlowRow(horizontalArrangement = gap, verticalArrangement = gap) {
-            ps.forEach { p -> CgChip(presetText(p), selected = p.extraKrw == extra, onClick = { c = c.copy(extraKrw = p.extraKrw) }, enabled = p.enabled) }
+            ps.forEach { p -> CgChip(presetText(p), selected = p.extraKrw == extra, onClick = { onChange(c.copy(extraKrw = p.extraKrw)) }, enabled = p.enabled) }
         }
 
         CgCaption(stringResource(R.string.range_days_label))
         FlowRow(horizontalArrangement = gap, verticalArrangement = gap) {
-            CgChip(stringResource(R.string.range_day_trip), selected = c.days == 1, onClick = { c = c.copy(days = 1) })
-            CgChip(stringResource(R.string.range_overnight), selected = c.days == 2, onClick = { c = c.copy(days = 2) })
+            CgChip(stringResource(R.string.range_day_trip), selected = c.days == 1, onClick = { onChange(c.copy(days = 1)) })
+            CgChip(stringResource(R.string.range_overnight), selected = c.days == 2, onClick = { onChange(c.copy(days = 2)) })
         }
 
         CgCaption(stringResource(R.string.range_people_label))
@@ -74,10 +71,10 @@ fun RangeScreen(
 
         CgCaption(stringResource(R.string.range_theme_label))
         FlowRow(horizontalArrangement = gap, verticalArrangement = gap) {
-            THEME_KO.forEach { (key, ko) -> CgChip(ko, selected = key in c.themes, onClick = { c = c.copy(themes = toggleTheme(c.themes, key)) }) }
+            THEME_KO.forEach { (key, ko) -> CgChip(ko, selected = key in c.themes, onClick = { onChange(c.copy(themes = toggleTheme(c.themes, key))) }) }
         }
 
-        CgButton(stringResource(R.string.range_pick), { onPick(c.copy(extraKrw = extra)) }, Modifier.fillMaxWidth())
+        CgButton(stringResource(R.string.range_pick), { onChange(c.copy(extraKrw = extra)); onPick() }, Modifier.fillMaxWidth())
     }
 }
 

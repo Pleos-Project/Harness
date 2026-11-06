@@ -59,16 +59,21 @@ fun ChagokApp(vm: AppViewModel, snapshot: VehicleSnapshot, model: String, balanc
     val card by vm.cardUi.collectAsStateWithLifecycle()
     val vehicle = remember(snapshot) { engineVehicle(vm.constants, model, snapshot) }
     // CCP Back: 최상단(홈)에서는 finish 하지 않고 숨긴다(Pleos 앱 개발 가이드, 심사 반려 사유)
-    BackHandler(enabled = !driving) { if (!vm.back()) onExit() }
+    BackHandler { if (!driving && !vm.back()) onExit() }   // 주행 중 Back은 받아서 무시(가림 화면 유지, 앱이 뒤로 숨지 않게)
     if (screen == Screen.CARD && !driving) LaunchedEffect(Unit) { vm.ensureCard(snapshot, model) }
     val content: @Composable (Screen) -> Unit = { s ->
         when (s) {
             Screen.HOME -> HomeScreen(balance, today = { vm.openToday(snapshot, model) }, open = vm::open)
-            Screen.RANGE -> RangeScreen(
-                vehicle, remember(conditions, screen) { vm.conditionsFor(snapshot, model) },
-                seats = seatCount(snapshot.seatsOccupied, invert = true),
-                onPick = { c -> vm.setConditions(c); vm.openPicked(snapshot, model) },
-            )
+            Screen.RANGE -> {
+                // 범위 화면에서 고르는 중인 값도 ViewModel에 둔다(주행 가림 뒤 그대로, README 2-1)
+                LaunchedEffect(Unit) { vm.setConditions(vm.conditionsFor(snapshot, model)) }
+                RangeScreen(
+                    vehicle, conditions,
+                    seats = seatCount(snapshot.seatsOccupied, invert = true),
+                    onChange = vm::setConditions,
+                    onPick = { vm.openPicked(snapshot, model) },
+                )
+            }
             Screen.CARD -> CardScreen(card, onSwap = vm::swap, onRange = { vm.open(Screen.RANGE) })
             Screen.RECORD -> Placeholder(stringResource(R.string.screen_record)) { if (!vm.back()) onExit() }
             Screen.SETTINGS -> Placeholder(stringResource(R.string.screen_settings)) { if (!vm.back()) onExit() }

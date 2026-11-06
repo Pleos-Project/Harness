@@ -227,13 +227,14 @@ class PleosVehicleRepository(context: Context) : VehicleRepository, DefaultLifec
     }
 
     /**
-     * 규제가 바뀔 때마다 기어를 Get으로 다시 읽는다. 에뮬(콘솔 D → P)에서 Pleos 기어 리스너가 PARK를 놓치는 일이
+     * 규제가 꺼질 때 기어를 Get으로 다시 읽는다. 에뮬(콘솔 D → P)에서 Pleos 기어 리스너가 PARK를 놓치는 일이
      * 3번 중 3번 있었다(11/6 실측: 규제는 false로 오는데 기어가 DRIVE에 머물러 화면이 계속 가려짐).
      */
     private val uxListener = CarUxRestrictionsManager.OnUxRestrictionsChangedListener { r ->
         flow.update { it.copy(uxRestricted = r?.isRequiresDistractionOptimization) }
         onGateChanged()
-        refreshGear()
+        // P 복귀를 놓치는 경우만 다시 읽는다. 규제가 켜지면 기어와 상관없이 주행이라 Get이 필요 없다(주행 중 Get 0건, AC-X1-2)
+        if (r?.isRequiresDistractionOptimization == false) refreshGear()
     }
 
     private fun refreshGear() {
