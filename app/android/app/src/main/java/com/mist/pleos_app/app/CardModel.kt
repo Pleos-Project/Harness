@@ -86,10 +86,13 @@ class CardFlow(
     private val constants: Constants,
     private val server: DemoServer,
 ) {
+    /** 출발한 곳(최근 10곳). 다음 뽑기에서 빼고 "지난번과 다른 테마"를 판단한다(명세 F5 저장). */
+    var recentVisits: List<String> = emptyList()
+
     private fun request(v: Vehicle, c: Conditions, seats: Int, sessionId: String? = null) = cardsRequest(
         constants.originLat, constants.originLng, v, computeRange(v, c.extraKrw, c.days),
         extraKrw = c.extraKrw, days = c.days, seats = seats, themes = c.themes,
-        demoSeed = constants.demoSeed, sessionId = sessionId,
+        recentVisits = recentVisits, demoSeed = constants.demoSeed, sessionId = sessionId,
     )
 
     private fun shown(resp: CardsResponse, raisedTo: Int?, c: Conditions): CardUi? {
@@ -114,9 +117,32 @@ class CardFlow(
     fun pick(v: Vehicle, seats: Int, c: Conditions): CardUi =
         shown(server.cards(request(v, c, seats)), raisedTo = null, c) ?: CardUi.Empty(fromToday = false, conditions = c)
 
+    /**
+     * 차량값·착석이 바뀌었을 때 재호출(명세 F5 '유지·재계산', AC-F5-2·AC-F11-1): 같은 세션으로 다시 불러
+     * 앞면은 그대로 두고 배지·1인 몫·이유만 새로. 앞면이 +3만 범위를 벗어나면 엔진이 다시 뽑는다.
+     * 자동 전환(raisedTo) 중이면 그 금액 기준을 유지한다.
+     */
+    fun recall(cur: CardUi.Shown, v: Vehicle, seats: Int): CardUi {
+        val c = cur.conditions
+        val resp = server.cards(request(v, c, seats, sessionId = cur.sessionId))
+        val card = resp.picked ?: return CardUi.Empty(fromToday = cur.raisedTo != null, conditions = c)
+        return cur.copy(card = card, sessionId = resp.sessionId ?: cur.sessionId, fewCandidates = resp.hint?.code == "few_candidates")
+    }
+
     /** 교체(스와이프·아이콘). 2회까지, 3회째·후보 소진은 AskTheme. */
     fun swap(cur: CardUi.Shown): CardUi = when (val r = server.swap(cur.sessionId)) {
         is SwapResult.Ok -> cur.copy(card = r.card, stackLeft = r.stackLeft, swapsLeft = r.swapsLeft)
         is SwapResult.Error -> CardUi.AskTheme(cur.conditions)
     }
 }
+
+/**
+ * 재호출을 부를 만큼 바뀌었나(명세 F5: SOC 1%p·주행가능거리 1km 미만 변화는 무시). 착석 수는 바뀌면 바로.
+ * 키 = (잔량 %, 주행가능거리 km 반올림, 착석 수).
+ */
+data class RecallKey(val levelPct: Int?, val rangeKm: Int?, val seats: Int)
+
+fun recallKey(levelPct: Int?, rangeM: Double?, seats: Int) = RecallKey(levelPct, rangeM?.let { roundHalfUp(it / 1000.0) }, seats)
+
+/** 1초 디바운스 뒤 재호출할 값(명세 F5 '마지막 변화 후 1초 디바운스'). */
+const val RECALL_DEBOUNCE_MS = 1_000L

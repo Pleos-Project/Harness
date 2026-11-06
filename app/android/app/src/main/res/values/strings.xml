@@ -48,6 +48,9 @@
     <string name="stack_left">다른 후보 %1$d</string>
     <string name="swaps_left">교체 %1$d번 남음</string>
     <string name="depart">출발</string>
+    <string name="depart_requesting">내비를 여는 중</string>
+    <string name="navi_failed">내비를 열 수 없어요</string>
+    <string name="seat_banner">%1$d명 · 1인 기준으로 볼까요?</string>
     <string name="cost_tap_hint">눌러서 비용 보기</string>
     <string name="cost_fuel">연료</string>
     <string name="cost_toll">통행료(왕복)</string>

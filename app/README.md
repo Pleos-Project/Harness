@@ -93,6 +93,12 @@ adb install -r -g app/build/outputs/apk/debug/app-debug.apk        # -g: 권한 
 - **충전 스위치는 Pleos SDK에 리스너가 없다**(AAR 2.3.2). 지금은 진입 때만 읽는다. F9는 AAOS `EV_CHARGE_SWITCH` 콜백 가능 여부를 확인하고 정한다.
 - SDK 사용법·실측은 Pleos 문서 묶음(`docs/pleos` 사본, June PC)의 11-sdk-verification을 기준으로 했다.
 
+## 4-2. 출발(F8)·1인 몫(F11)
+- `navi/NaviRepository`: 출발을 누를 때만 `NaviHelper.initialize` → `onConnected` → `requestRoute(RouteInfo)`. 성공 판정은 `onRouteStarted`(실측 약 9초 뒤, 그 사이 내비가 앞으로 와서 앱은 보통 `onStop`), 실패는 `onError`·초기화 실패 → "내비를 열 수 없어요" + 같은 버튼으로 재시도. `onStop`에 `removeListener`·`release`(AC-C-2). 주소는 계약 Card에 없어 장소명으로 채운다.
+- 출발한 곳은 최근 방문(10곳, `recent_visits`)에 들어가 다음 뽑기에서 빠진다. **PT 리허설 뒤에는 기록 초기화(S1)가 필요하다**(설정 화면 P7 전까지는 앱 강제 종료로 비움).
+- 차량값·착석이 바뀌면(SOC 1%p·주행가능거리 1km·착석 수) 마지막 변화 1초 뒤 같은 세션으로 다시 불러 앞면은 그대로, 배지·1인 몫만 갱신(`AppViewModel.onVehicle`, AC-F5-2·AC-F11-1). 1인 몫 문구는 엔진 `display.perPersonText` 그대로.
+- 착석 3명 이상이면 홈에 "N명 · 1인 기준으로 볼까요?"(AC-F11-3). 콘솔 착석: `PUT /vehicle/seat?kind=occupied&area=driver|passenger|rear_left|rear_right&value=true`.
+
 ## 5. 앱을 지을 때 지킬 것
 - 차량 값은 리스너로 받는다. 타이머 반복 읽기 금지, 화면이 가려지면 내비·규제 리스너까지 해제(AC-C-2). H_Mate의 2초 폴링은 가져오지 않는다.
 - 권한을 바꾸면 `contract/permissions.md`도 같은 PR에서(CI `check_permissions.py`).

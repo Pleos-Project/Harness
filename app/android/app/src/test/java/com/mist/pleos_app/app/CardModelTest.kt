@@ -61,6 +61,34 @@ class CardModelTest {
     }
 
     @Test
+    fun recallKeepsCardUpdatesBadge() {
+        // AC-F5-2: D1 → D2(SOC 35·100km) 같은 세션 재호출 → 같은 앞면, 배지만 "+1만 원 안팎"(PT 3단계)
+        val f = flow()
+        val d1Card = f.today(d1, 1) as CardUi.Shown
+        val d2 = ev(35, 100_000.0)
+        val after = f.recall(d1Card, d2, 1) as CardUi.Shown
+        assertEquals(d1Card.card.id, after.card.id)
+        assertFalse(after.card.display.zeroExtra)
+        assertEquals("+1만 원 안팎", after.card.display.badgeText)
+        assertEquals(d1Card.swapsLeft, after.swapsLeft)
+
+        // AC-F11-1: 착석 1 → 4 → 1인 몫이 붙는다(착석 1이면 없음, AC-F11-2)
+        assertNull(d1Card.card.display.perPersonText)
+        val four = f.recall(after, d2, 4) as CardUi.Shown
+        assertEquals(d1Card.card.id, four.card.id)
+        assertTrue(four.card.display.perPersonText!!.startsWith("1인 "))
+    }
+
+    @Test
+    fun recallKeyIgnoresTinyChanges() {
+        // 명세 F5: SOC 1%p·주행가능거리 1km 미만 변화는 무시
+        assertEquals(recallKey(80, 245_000.0, 1), recallKey(80, 245_400.0, 1))
+        assertTrue(recallKey(80, 245_000.0, 1) != recallKey(79, 245_000.0, 1))
+        assertTrue(recallKey(80, 245_000.0, 1) != recallKey(80, 246_000.0, 1))
+        assertTrue(recallKey(80, 245_000.0, 1) != recallKey(80, 245_000.0, 4))
+    }
+
+    @Test
     fun presetsAndDefaults() {
         val p1 = presets(d1, days = 1)
         assertEquals(listOf(0, 10_000, 30_000), p1.map { it.extraKrw })
