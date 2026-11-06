@@ -90,8 +90,10 @@ adb install -r -g app/build/outputs/apk/debug/app-debug.apk        # -g: 권한 
 - **주행 중(X1)** = 규제 ON 또는 기어 ≠ P(`isDriving`, 기어를 아직 모르면 아님): 데이터 리스너를 끊고(AC-X1-2) 앱 안에서도 화면을 가린다(`DrivingCover`, 금액 없음). 화면 스택은 그대로라 정차하면 같은 화면으로 돌아온다(AC-X1-1).
 - `onFailed`는 `SecurityException`(권한 없음)과 그 밖(미지원)을 나눠 `VehicleSnapshot.failures`에 남긴다. `VehicleException`은 공개 클래스가 아니라 못 쓴다.
 - 기어는 Pleos `Gear` API(P `CAR_DRIVE`). SDK가 AAOS `GEAR_SELECTION`을 권하지만 그건 A `CAR_POWERTRAIN` 권한이라 쓰지 않는다.
-- **충전 스위치는 Pleos SDK에 리스너가 없다**(AAR 2.3.2). 지금은 진입 때만 읽는다. F9는 AAOS `EV_CHARGE_SWITCH` 콜백 가능 여부를 확인하고 정한다.
+- **충전 스위치는 Pleos SDK에 리스너가 없다**(AAR 2.3.2, Get만). 진입 때 Get 1회 + 데이터 리스너와 같이 AAOS `EV_CHARGE_SWITCH` 콜백(A `CAR_ENERGY`, 이미 선언)을 듣는다. 콘솔 "Charge Switch"가 이 속성으로 들어온다(11/6 실측, OFF→카드 27ms).
 - SDK 사용법·실측은 Pleos 문서 묶음(`docs/pleos` 사본, June PC)의 11-sdk-verification을 기준으로 했다.
+
+- **F9 충전·주유 직후**(`app/RefuelFlow`): EV는 충전 스위치 OFF→ON 때 SOC 기억 → ON→OFF 때 엔진 `chargeAmount`로 홈 맨 위 카드, 탭 또는 3초 뒤 한 장(오늘의 한 곳 경로). 앱을 연 때 이미 충전 중이면 "충전 끝났어요"만. 내연은 정차 중 연료 %(없으면 설정 모의 값)가 3%p 이상 오르면 금액 시트(3만 / 5만 / 가득 + 1만 원 ±) → 한 장. 화면이 보이는 동안만 판단한다.
 
 ## 4-2. 출발(F8)·1인 몫(F11)
 - `navi/NaviRepository`: 출발을 누를 때만 `NaviHelper.initialize` → `onConnected` → `requestRoute(RouteInfo)`. 성공 판정은 `onRouteStarted`(실측 약 9초 뒤, 그 사이 내비가 앞으로 와서 앱은 보통 `onStop`), 실패는 `onError`·초기화 실패 → "내비를 열 수 없어요" + 같은 버튼으로 재시도. `onStop`에 `removeListener`·`release`(AC-C-2). 주소는 계약 Card에 없어 장소명으로 채운다.

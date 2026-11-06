@@ -237,6 +237,34 @@ class AppViewModel(app: Application, private val saved: SavedStateHandle) : Andr
         ChagokLog.event("payers_dismiss", "seats" to seats)
     }
 
+    // ------------------------------------------------------------ 충전·주유 직후(F9)
+    private val refuel = RefuelFlow()
+    private val refuelFlow = MutableStateFlow<RefuelUi?>(null)
+    val refuelUi: StateFlow<RefuelUi?> = refuelFlow.asStateFlow()
+
+    /** 화면이 보이고 주행이 아닐 때 차량값마다. 충전 스위치 ON→OFF·연료 % 상승을 본다. */
+    fun onEnergy(s: VehicleSnapshot, model: String) {
+        val v = vehicleOf(s, model)
+        refuel.onCharge(s.chargeSwitchOn, s.socPct, v)?.let {
+            refuelFlow.value = it
+            ChagokLog.event("charge_done", "known" to (it.text != null))
+        }
+        val level = s.fuelPct ?: settingsFlow.value.mockFuelPct
+        refuel.onFuel(level, isParked(s), v)?.let {
+            refuelFlow.value = it
+            ChagokLog.event("refuel_sheet", "from" to it.startPct, "full" to it.fullKrw)
+        }
+    }
+
+    fun dismissRefuel() { refuelFlow.value = null }
+
+    /** 충전 카드 탭 또는 3초 뒤 / 금액 시트 확인 → 범위 화면 없이 한 장(F2 기본값, AC-F9-2). */
+    fun refuelToCard(s: VehicleSnapshot, model: String, krw: Int? = null) {
+        if (krw != null) ChagokLog.event("refuel_confirm", "krw" to krw)
+        refuelFlow.value = null
+        openToday(s, model)
+    }
+
     fun swap() {
         val cur = card.value as? CardUi.Shown ?: return
         card.value = flow?.swap(cur)
