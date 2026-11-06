@@ -51,7 +51,7 @@ fun ChagokApp(vm: AppViewModel, balance: HomeBalance, driving: Boolean, onExit: 
     val stack by vm.stack.collectAsStateWithLifecycle()
     val screen = stack.last()
     // CCP Back: 최상단(홈)에서는 finish 하지 않고 숨긴다(Pleos 앱 개발 가이드, 심사 반려 사유)
-    BackHandler(enabled = !driving) { if (!vm.back()) onExit() }
+    BackHandler { if (!driving && !vm.back()) onExit() }   // 주행 중 Back은 받아서 무시(가림 화면 유지, 앱이 뒤로 숨지 않게)
     AppFrame(screen, balance, driving, open = vm::open, back = { if (!vm.back()) onExit() })
 }
 
