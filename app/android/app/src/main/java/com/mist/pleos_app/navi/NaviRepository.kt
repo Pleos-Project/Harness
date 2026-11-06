@@ -42,6 +42,8 @@ class NaviRepository(context: Context) : DefaultLifecycleObserver {
     private var pending: Destination? = null
     private var recentWaiters = mutableListOf<(Place?) -> Unit>()
     private val main = Handler(Looper.getMainLooper())
+    /** 최근 목적지 대기 시간 초과. 응답이 오거나 새로 요청하면 지운다(앞 방문의 타이머가 새 대기자에게 null을 넘기지 않게, 효성 #28 리뷰). */
+    private val recentTimeout = Runnable { deliverRecent(null) }
 
     private val listener = object : NaviHelperEventListener {
         override fun onRouteStarted(routeStartInfo: RouteStartInfo) {
@@ -92,7 +94,8 @@ class NaviRepository(context: Context) : DefaultLifecycleObserver {
     @Synchronized
     fun fetchRecent(done: (Place?) -> Unit) {
         recentWaiters.add(done)
-        main.postDelayed({ deliverRecent(null) }, TIMEOUT_MS)
+        main.removeCallbacks(recentTimeout)
+        main.postDelayed(recentTimeout, TIMEOUT_MS)
         val n = navi
         if (n != null && connected) { askRecent(n); return }
         if (n != null) return
@@ -110,6 +113,7 @@ class NaviRepository(context: Context) : DefaultLifecycleObserver {
     @Synchronized
     private fun deliverRecent(p: Place?) {
         if (recentWaiters.isEmpty()) return
+        main.removeCallbacks(recentTimeout)
         val ws = recentWaiters.toList(); recentWaiters.clear()
         main.post { ws.forEach { it(p) } }
     }

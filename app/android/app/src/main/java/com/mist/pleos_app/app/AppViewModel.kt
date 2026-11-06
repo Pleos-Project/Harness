@@ -145,6 +145,7 @@ class AppViewModel(app: Application, private val saved: SavedStateHandle) : Andr
         flow?.recentVisits = list
         val odo = s.odometerKm
         if (odo != null) ledger.depart(Place(card.name, card.lat, card.lng, card.id), card.routeKm, odo)
+        else ChagokLog.event("ledger_depart", "trip" to false, "reason" to "no_odometer")   // 들어오자마자 출발 → 도착·핀 없음(정산은 다음 Open이 잡음)
         refreshLedger()
     }
 
@@ -168,9 +169,12 @@ class AppViewModel(app: Application, private val saved: SavedStateHandle) : Andr
         if (!ledger.needsOpen) return
         opening = true
         val seats = seatCount(s.seatsOccupied, invert = SEAT_INVERT_EMULATOR)
+        val visitAtStart = visits.value
         fetchRecent { place ->
-            ledger.open(v, odo, seats, place)
             opening = false
+            // 기다리는 사이 화면이 가려졌으면 버린다 → 다음 방문에서 다시 정산(효성 #28 리뷰: 안 버리면 다음 복귀의 정산을 놓침)
+            if (visits.value != visitAtStart) return@fetchRecent
+            ledger.open(v, odo, seats, place)
             refreshLedger()
         }
     }
