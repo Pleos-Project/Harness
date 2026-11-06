@@ -5,6 +5,12 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import com.mist.pleos_app.engine.Candidate
+import com.mist.pleos_app.engine.Card
+import com.mist.pleos_app.engine.MonthSummary
+import com.mist.pleos_app.engine.Place
+import com.mist.pleos_app.engine.Row
+import com.mist.pleos_app.ledger.EncryptedLedgerStore
+import com.mist.pleos_app.vehicle.isParked
 import com.mist.pleos_app.engine.Constants
 import com.mist.pleos_app.engine.DemoServer
 import com.mist.pleos_app.engine.parseCandidates
@@ -132,11 +138,64 @@ class AppViewModel(app: Application, private val saved: SavedStateHandle) : Andr
         }
     }
 
-    /** 출발(F8): 최근 방문(10곳)에 넣는다. 다음 뽑기에서 빠진다. 장부 trip은 P6. */
-    fun recordDeparture(placeId: String) {
-        val list = (listOf(placeId) + saved.get<List<String>>(KEY_RECENT).orEmpty().filter { it != placeId }).take(10)
+    /** 출발(F8): 최근 방문(10곳)에 넣고(다음 뽑기에서 빠짐) 장부에 trip을 연다(AC-F8-3). */
+    fun recordDeparture(card: Card, s: VehicleSnapshot) {
+        val list = (listOf(card.id) + saved.get<List<String>>(KEY_RECENT).orEmpty().filter { it != card.id }).take(10)
         saved[KEY_RECENT] = list
         flow?.recentVisits = list
+        val odo = s.odometerKm
+        if (odo != null) ledger.depart(Place(card.name, card.lat, card.lng, card.id), card.routeKm, odo)
+        refreshLedger()
+    }
+
+    // ------------------------------------------------------------ 장부(F10 정산 · F17 기록)
+    private val ledger = LedgerFlow(EncryptedLedgerStore(app))
+    private val ledgerFlow = MutableStateFlow(ledgerUi())
+    val ledgerState: StateFlow<LedgerUi> = ledgerFlow.asStateFlow()
+    private var opening = false
+
+    private fun ledgerUi() = LedgerUi(ledger.settleCard, ledger.summary(), ledger.rows())
+    private fun refreshLedger() { ledgerFlow.value = ledgerUi() }
+
+    /**
+     * 화면이 보이고 정차이며 누적 주행거리·잔량을 읽었으면 이번 방문의 정산(Open)을 넣는다.
+     * 마지막 목적지는 [fetchRecent](내비 최근 목적지, 2초 안 응답 없으면 null)로 받은 뒤 넣는다.
+     */
+    fun maybeSettle(s: VehicleSnapshot, model: String, fetchRecent: ((Place?) -> Unit) -> Unit) {
+        if (opening || !isParked(s)) return
+        val odo = s.odometerKm ?: return
+        val v = engineVehicle(constants, model, s) ?: return
+        if (!ledger.needsOpen) return
+        opening = true
+        val seats = seatCount(s.seatsOccupied, invert = SEAT_INVERT_EMULATOR)
+        fetchRecent { place ->
+            ledger.open(v, odo, seats, place)
+            opening = false
+            refreshLedger()
+        }
+    }
+
+    /** 운전석 문·기어가 바뀔 때: trip이 있으면 정차 중 문 열림 = 도착(F17). */
+    fun onDoor(s: VehicleSnapshot, model: String) {
+        val v = engineVehicle(constants, model, s)
+        if (ledger.onDoor(s.driverDoorOpen, isParked(s), v, s.odometerKm, seatCount(s.seatsOccupied, invert = SEAT_INVERT_EMULATOR))) refreshLedger()
+    }
+
+    fun dismissSettle() { ledger.dismissSettle(); refreshLedger() }
+
+    /** 화면이 보인 횟수. 복귀했는데 차량값이 그대로여도 정산 확인을 다시 돌리려고 화면 효과의 키로 쓴다. */
+    private val visits = MutableStateFlow(0)
+    val visit: StateFlow<Int> = visits.asStateFlow()
+
+    /** 화면이 가려짐 → 다음에 보일 때 다시 정산(F10 "다른 앱에서 복귀"). */
+    fun onHidden() { ledger.onHidden(); opening = false; visits.value += 1 }
+
+    /** 기록 초기화(S1). PT 리허설 전: 장부와 최근 방문을 비운다. */
+    fun resetRecords() {
+        ledger.reset()
+        saved[KEY_RECENT] = emptyList<String>()
+        flow?.recentVisits = emptyList()
+        refreshLedger()
     }
 
     fun swap() {
@@ -169,3 +228,6 @@ class AppViewModel(app: Application, private val saved: SavedStateHandle) : Andr
                 .onFailure { ChagokLog.event("asset_missing", "path" to path) }.getOrNull()
     }
 }
+
+/** 홈 정산 카드 + 기록 화면 상태. */
+data class LedgerUi(val settleCard: String?, val summary: MonthSummary, val rows: List<Row>)

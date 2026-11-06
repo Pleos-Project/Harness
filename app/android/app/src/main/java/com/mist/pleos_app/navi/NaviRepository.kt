@@ -1,6 +1,7 @@
 package com.mist.pleos_app.navi
 
 import ai.pleos.playground.navi.constants.NaviErrorCode
+import ai.pleos.playground.navi.data.RecentDestinationInfo
 import ai.pleos.playground.navi.data.RouteInfo
 import ai.pleos.playground.navi.data.RouteStartInfo
 import ai.pleos.playground.navi.helper.NaviHelper
@@ -9,6 +10,9 @@ import android.content.Context
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import com.mist.pleos_app.util.ChagokLog
+import android.os.Handler
+import android.os.Looper
+import com.mist.pleos_app.engine.Place
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -27,6 +31,8 @@ data class Destination(val id: String, val name: String, val lat: Double, val ln
  * - 경유지(requestRouteWithWaypoints)·trip 기록(F8 pending, 장부)은 P6에서 붙인다.
  */
 class NaviRepository(context: Context) : DefaultLifecycleObserver {
+    private companion object { const val TIMEOUT_MS = 2_000L }
+
     private val app = context.applicationContext
     private val flow = MutableStateFlow(DepartState.IDLE)
     val state: StateFlow<DepartState> = flow.asStateFlow()
@@ -34,11 +40,20 @@ class NaviRepository(context: Context) : DefaultLifecycleObserver {
     private var navi: NaviHelper? = null
     private var connected = false
     private var pending: Destination? = null
+    private var recentWaiters = mutableListOf<(Place?) -> Unit>()
+    private val main = Handler(Looper.getMainLooper())
 
     private val listener = object : NaviHelperEventListener {
         override fun onRouteStarted(routeStartInfo: RouteStartInfo) {
             flow.value = DepartState.STARTED
             ChagokLog.event("navi_route_started")
+        }
+
+        override fun onRecentDestinationInfo(recentDestinationInfoList: List<RecentDestinationInfo>) {
+            // 목록 순서가 최신순인지는 문서·실측으로 확인되지 않았다(Pleos README 「확인되지 않은 것」) → 첫 항목을 최신으로 가정
+            val first = recentDestinationInfoList.firstOrNull()
+            deliverRecent(first?.let { Place(it.name, it.latitude, it.longitude) })
+            ChagokLog.event("navi_recent", "count" to recentDestinationInfoList.size)
         }
 
         override fun onError(errorCode: NaviErrorCode) {
@@ -70,6 +85,35 @@ class NaviRepository(context: Context) : DefaultLifecycleObserver {
         }
     }
 
+    /**
+     * F10 정산의 "마지막 목적지". getRecentDestinationInfo → onRecentDestinationInfo. [TIMEOUT_MS] 안에 안 오거나
+     * 연결에 실패하면 null(목적지 없이 금액만, T4).
+     */
+    @Synchronized
+    fun fetchRecent(done: (Place?) -> Unit) {
+        recentWaiters.add(done)
+        main.postDelayed({ deliverRecent(null) }, TIMEOUT_MS)
+        val n = navi
+        if (n != null && connected) { askRecent(n); return }
+        if (n != null) return
+        try {
+            navi = NaviHelper(app).also { h -> h.initialize(onConnected = { onConnected() }, onFailed = { deliverRecent(null) }) }
+        } catch (e: Exception) {
+            deliverRecent(null)
+        }
+    }
+
+    private fun askRecent(n: NaviHelper) {
+        try { n.getRecentDestinationInfo() } catch (e: Exception) { deliverRecent(null) }
+    }
+
+    @Synchronized
+    private fun deliverRecent(p: Place?) {
+        if (recentWaiters.isEmpty()) return
+        val ws = recentWaiters.toList(); recentWaiters.clear()
+        main.post { ws.forEach { it(p) } }
+    }
+
     @Synchronized
     private fun onConnected() {
         val n = navi ?: return
@@ -77,6 +121,7 @@ class NaviRepository(context: Context) : DefaultLifecycleObserver {
         runCatching { n.addListener(listener) }
         pending?.let { request(n, it) }
         pending = null
+        if (recentWaiters.isNotEmpty()) askRecent(n)
     }
 
     private fun request(n: NaviHelper, d: Destination) {
@@ -99,6 +144,7 @@ class NaviRepository(context: Context) : DefaultLifecycleObserver {
     override fun onStop(owner: LifecycleOwner) {
         navi?.let { n -> runCatching { n.removeListener(listener) }; runCatching { n.release() } }
         navi = null; connected = false; pending = null
+        deliverRecent(null)
         if (flow.value == DepartState.REQUESTING) flow.value = DepartState.IDLE
     }
 }

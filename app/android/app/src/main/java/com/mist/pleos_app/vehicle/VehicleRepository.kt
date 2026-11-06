@@ -134,6 +134,9 @@ class PleosVehicleRepository(context: Context) : VehicleRepository, DefaultLifec
 
     // ------------------------------------------------------------ 데이터: 정차 화면에 들어올 때 1회
     private fun readData() {
+        // 누적 주행거리는 들어올 때마다 새로 읽는다. 읽기 전에는 비워 둬서, 예전 값으로 정산(F10)이 먼저 돌지 않게 한다
+        // (11/6 콘솔 실측: 주행거리를 올린 뒤 복귀하면 첫 정산이 예전 값으로 0km가 됨).
+        flow.update { it.copy(odometerKm = null) }
         val v = vehicle
         if (v != null) {
             guard("ev_efficiency") {
@@ -196,7 +199,7 @@ class PleosVehicleRepository(context: Context) : VehicleRepository, DefaultLifec
     }
     private val doorArea = DoorArea(DoorValue.ROW_1_LEFT)
     private val doorListener = object : DoorPositionListener {
-        override fun onPositionUpdated(pos: Int?) { ok("driver_door"); flow.update { it.copy(driverDoorOpen = pos?.let { p -> p > 0 }) } }
+        override fun onPositionUpdated(pos: Int?) { ok("driver_door"); flow.update { it.copy(driverDoorOpen = pos?.let { p -> p > 0 }) }; ChagokLog.event("door", "pos" to pos) }
         override fun onFailed(e: Exception) = fail("driver_door", e)
     }
 

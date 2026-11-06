@@ -4,6 +4,8 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
+import androidx.lifecycle.DefaultLifecycleObserver
+import androidx.lifecycle.LifecycleOwner
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -33,6 +35,10 @@ class MainActivity : ComponentActivity() {
         lifecycle.addObserver(vehicle)
         navi = NaviRepository(this)
         lifecycle.addObserver(navi)
+        // 화면이 가려지면 다음에 보일 때 다시 정산(F10 "다른 앱에서 복귀")
+        lifecycle.addObserver(object : DefaultLifecycleObserver {
+            override fun onStop(owner: LifecycleOwner) = vm.onHidden()
+        })
         ChagokLog.event("app_create", "restored" to (savedInstanceState != null))
         setContent {
             val snapshot by vehicle.state.collectAsStateWithLifecycle()
@@ -42,9 +48,9 @@ class MainActivity : ComponentActivity() {
             ChagokTheme {
                 ChagokApp(vm, snapshot, DEFAULT_MODEL, balance, driving = isDriving(snapshot), depart = depart, onDepart = { card ->
                     // F8: 출발 1탭 → 순정 내비. 최근 방문에 넣고(다음 뽑기에서 빠짐) 경로 요청
-                    vm.recordDeparture(card.id)
+                    vm.recordDeparture(card, snapshot)
                     navi.depart(Destination(card.id, card.name, card.lat, card.lng))
-                }, onExit = {
+                }, fetchRecent = navi::fetchRecent, onExit = {
                     val moved = moveTaskToBack(true)
                     ChagokLog.event("back_to_background", "moved" to moved)
                 })

@@ -30,6 +30,7 @@ import com.mist.pleos_app.app.HomeBalance
 import com.mist.pleos_app.app.Screen
 import com.mist.pleos_app.app.engineVehicle
 import com.mist.pleos_app.engine.Card
+import com.mist.pleos_app.engine.Place
 import com.mist.pleos_app.navi.DepartState
 import com.mist.pleos_app.vehicle.VehicleSnapshot
 import com.mist.pleos_app.vehicle.seatCount
@@ -62,22 +63,31 @@ fun ChagokApp(
     driving: Boolean,
     depart: DepartState,
     onDepart: (Card) -> Unit,
+    fetchRecent: ((Place?) -> Unit) -> Unit,
     onExit: () -> Unit,
 ) {
     val stack by vm.stack.collectAsStateWithLifecycle()
     val screen = stack.last()
     val conditions by vm.conditions.collectAsStateWithLifecycle()
     val card by vm.cardUi.collectAsStateWithLifecycle()
+    val ledger by vm.ledgerState.collectAsStateWithLifecycle()
+    val visit by vm.visit.collectAsStateWithLifecycle()
     val vehicle = remember(snapshot) { engineVehicle(vm.constants, model, snapshot) }
     // CCP Back: 최상단(홈)에서는 finish 하지 않고 숨긴다(Pleos 앱 개발 가이드, 심사 반려 사유)
     BackHandler { if (!driving && !vm.back()) onExit() }   // 주행 중 Back은 받아서 무시(가림 화면 유지, 앱이 뒤로 숨지 않게)
     if (screen == Screen.CARD && !driving) LaunchedEffect(Unit) { vm.ensureCard(snapshot, model) }
     // 차량값·착석이 바뀌면 한 장의 배지·1인 몫을 1초 디바운스로 갱신(F5 유지·재계산, F11)
-    LaunchedEffect(snapshot) { if (!driving) vm.onVehicle(snapshot, model) }
+    LaunchedEffect(snapshot, visit) {
+        if (!driving) {
+            vm.onVehicle(snapshot, model)
+            vm.maybeSettle(snapshot, model, fetchRecent)   // F10: 화면이 보일 때 정차면 이번 방문 정산 1번
+        }
+        vm.onDoor(snapshot, model)                         // F17: trip이 있고 정차 중 운전석 문 열림 = 도착
+    }
     val seats = seatCount(snapshot.seatsOccupied, invert = true)
     val content: @Composable (Screen) -> Unit = { s ->
         when (s) {
-            Screen.HOME -> HomeScreen(balance, seats, today = { vm.openToday(snapshot, model) }, open = vm::open)
+            Screen.HOME -> HomeScreen(balance, seats, ledger.settleCard, today = { vm.openToday(snapshot, model) }, open = vm::open, closeSettle = vm::dismissSettle)
             Screen.RANGE -> {
                 // 범위 화면에서 고르는 중인 값도 ViewModel에 둔다(주행 가림 뒤 그대로, README 2-1)
                 LaunchedEffect(Unit) { vm.setConditions(vm.conditionsFor(snapshot, model)) }
@@ -89,7 +99,7 @@ fun ChagokApp(
                 )
             }
             Screen.CARD -> CardScreen(card, depart, onSwap = vm::swap, onRange = { vm.open(Screen.RANGE) }, onDepart = onDepart)
-            Screen.RECORD -> Placeholder(stringResource(R.string.screen_record)) { if (!vm.back()) onExit() }
+            Screen.RECORD -> RecordScreen(ledger)
             Screen.SETTINGS -> Placeholder(stringResource(R.string.screen_settings)) { if (!vm.back()) onExit() }
         }
     }
@@ -116,10 +126,19 @@ private fun AppFrame(screen: Screen, demoValues: Boolean, driving: Boolean, cont
 // ------------------------------------------------------------ 홈 (F1 잔고 · 오늘의 한 곳 · 조건 바꾸기)
 // 정산 카드(F10, 맨 위·닫기)와 상황 카드는 P6에서 이 자리에 붙인다.
 @Composable
-private fun HomeScreen(balance: HomeBalance, seats: Int, today: () -> Unit, open: (Screen) -> Unit) {
+private fun HomeScreen(
+    balance: HomeBalance,
+    seats: Int,
+    settle: String?,
+    today: () -> Unit,
+    open: (Screen) -> Unit,
+    closeSettle: () -> Unit = {},
+) {
     val narrow = LocalNarrow.current
     val gap = Arrangement.spacedBy(24.gpx)
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()), verticalArrangement = gap) {
+        // F10 정산 카드: 홈 맨 위, 닫기 가능, 탭하면 기록(DECISIONS '정산 카드 위치')
+        settle?.let { SettleCard(it, onOpen = { open(Screen.RECORD) }, onClose = closeSettle, modifier = Modifier.fillMaxWidth()) }
         // F11: 착석 3 이상이면 홈 배너(AC-F11-3) → 오늘의 한 곳(1인 몫이 붙은 카드)
         if (seats >= 3) {
             CgCard(Modifier.fillMaxWidth(), onClick = today) { CgBody(stringResource(R.string.seat_banner, seats)) }
@@ -188,13 +207,13 @@ private val previewBalance = HomeBalance("배터리에 1만 9천 원어치 · �
 @Preview(name = "세로·분할", widthDp = 640, heightDp = 720)
 @Composable
 private fun HomePreview() {
-    ChagokTheme(dark = true) { AppFrame(Screen.HOME, demoValues = true, driving = false) { HomeScreen(previewBalance, 1, {}, {}) } }
+    ChagokTheme(dark = true) { AppFrame(Screen.HOME, demoValues = true, driving = false) { HomeScreen(previewBalance, 1, "지난번 이후 132km · 약 8천 원 · 마지막 목적지 양평 두물머리", {}, {}) } }
 }
 
 @Preview(name = "주간·읽는 중", widthDp = 640, heightDp = 720)
 @Composable
 private fun HomeReadingPreview() {
-    ChagokTheme(dark = false) { AppFrame(Screen.HOME, demoValues = true, driving = false) { HomeScreen(previewBalance.copy(balanceText = null), 3, {}, {}) } }
+    ChagokTheme(dark = false) { AppFrame(Screen.HOME, demoValues = true, driving = false) { HomeScreen(previewBalance.copy(balanceText = null), 3, null, {}, {}) } }
 }
 
 @Preview(name = "주행 중 가림", widthDp = 640, heightDp = 720)
