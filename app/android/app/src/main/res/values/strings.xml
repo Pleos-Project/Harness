@@ -74,4 +74,40 @@
 
     <!-- X2 예외 -->
     <string name="reading_vehicle">차량 정보를 읽는 중</string>
+
+    <!-- S1 설정 -->
+    <string name="settings_model">차종</string>
+    <string name="model_grandeur_25">그랜저 2.5</string>
+    <string name="model_grandeur_hev">그랜저 HEV</string>
+    <string name="model_avante_hev">아반떼 HEV</string>
+    <string name="model_tucson_hev">투싼 HEV</string>
+    <string name="model_ioniq5_lr">아이오닉 5 LR</string>
+    <string name="model_ioniq6_lr">아이오닉 6 LR</string>
+    <string name="settings_price">단가</string>
+    <string name="settings_price_gas">휘발유</string>
+    <string name="settings_price_home">집 충전</string>
+    <string name="settings_price_fast">급속 충전</string>
+    <string name="settings_price_default">평균 %1$s</string>
+    <string name="settings_price_hint">비워 두면 평균 단가로 계산해요</string>
+    <string name="unit_krw_per_l">원/L</string>
+    <string name="unit_krw_per_kwh">원/kWh</string>
+    <string name="settings_margin">안전 여유</string>
+    <string name="settings_margin_value">50km와 남은 거리의 15% 중 큰 값을 남겨 둬요</string>
+    <string name="settings_people">인원</string>
+    <string name="settings_people_value">좌석 센서로 감지해요. 나눠 낼 인원은 탈 때 위쪽 알림에서 확인해요</string>
+    <string name="settings_mock">시연용 값(에뮬)</string>
+    <string name="settings_mock_fuel">모의 연료 %</string>
+    <string name="settings_mock_fuel_minus">모의 연료 % 줄이기</string>
+    <string name="settings_mock_fuel_plus">모의 연료 % 늘리기</string>
+    <string name="settings_mock_fuel_hint">내연 차종인데 연료 %를 읽지 못할 때 써요</string>
+    <string name="settings_seat_invert">착석 값 반전</string>
+    <string name="on">켜기</string>
+    <string name="off">끄기</string>
+    <string name="settings_records">기록</string>
+    <string name="settings_reset">기록 초기화</string>
+    <string name="settings_reset_title">기록을 지울까요?</string>
+    <string name="settings_reset_body">지난번 정산 기준, 정산 기록, 다녀온 곳 핀, 최근 방문이 지워져요</string>
+    <string name="settings_reset_confirm">지우기</string>
+    <string name="settings_reset_done">기록을 지웠어요</string>
+    <string name="cancel">취소</string>
 </resources>
