@@ -74,10 +74,10 @@
         "zero_extra": true,
         "tight": false,
         "ring_krw": 0,
-        "badge_text": "추가 주유 없이 · 여유 57km",
+        "badge_text": "추가 주유 없이 · 57km 남기고",
         "margin_km": 57
       },
-      "reason": "추가 0원 안 · 75분 안 · 지난번과 다른 테마"
+      "reason": "추가 주유 없이 · 75분 안 · 지난번과 다른 테마"
     },
     "stack": [
       {
@@ -102,10 +102,10 @@
           "zero_extra": true,
           "tight": false,
           "ring_krw": 0,
-          "badge_text": "추가 주유 없이 · 여유 57km",
+          "badge_text": "추가 주유 없이 · 57km 남기고",
           "margin_km": 57
         },
-        "reason": "추가 0원 안 · 지난번과 다른 테마 · 바다"
+        "reason": "추가 주유 없이 · 지난번과 다른 테마 · 바다"
       },
       {
         "id": "p_songdo",
@@ -129,10 +129,10 @@
           "zero_extra": true,
           "tight": false,
           "ring_krw": 0,
-          "badge_text": "추가 주유 없이 · 여유 57km",
+          "badge_text": "추가 주유 없이 · 57km 남기고",
           "margin_km": 57
         },
-        "reason": "추가 0원 안 · 75분 안 · 지난번과 다른 테마"
+        "reason": "추가 주유 없이 · 75분 안 · 지난번과 다른 테마"
       },
       {
         "id": "p_dumulmeori",
@@ -156,10 +156,10 @@
           "zero_extra": true,
           "tight": false,
           "ring_krw": 0,
-          "badge_text": "추가 주유 없이 · 여유 57km",
+          "badge_text": "추가 주유 없이 · 57km 남기고",
           "margin_km": 57
         },
-        "reason": "추가 0원 안 · 75분 안 · 지난번과 다른 테마"
+        "reason": "추가 주유 없이 · 75분 안 · 지난번과 다른 테마"
       }
     ]
   }

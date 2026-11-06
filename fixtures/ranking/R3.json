@@ -120,10 +120,10 @@
         "zero_extra": true,
         "tight": false,
         "ring_krw": 0,
-        "badge_text": "추가 충전 없이 · 여유 50km",
+        "badge_text": "추가 충전 없이 · 50km 남기고",
         "margin_km": 50
       },
-      "reason": "수목원·정원 · 추가 0원 안 · 75분 안",
+      "reason": "수목원·정원 · 추가 충전 없이 · 75분 안",
       "subcategory": "수목원·정원",
       "indoor": false
     },
@@ -150,10 +150,10 @@
           "zero_extra": true,
           "tight": false,
           "ring_krw": 0,
-          "badge_text": "추가 충전 없이 · 여유 50km",
+          "badge_text": "추가 충전 없이 · 50km 남기고",
           "margin_km": 50
         },
-        "reason": "해변 · 추가 0원 안 · 75분 안",
+        "reason": "해변 · 추가 충전 없이 · 75분 안",
         "subcategory": "해변",
         "indoor": false
       },
@@ -179,10 +179,10 @@
           "zero_extra": true,
           "tight": false,
           "ring_krw": 0,
-          "badge_text": "추가 충전 없이 · 여유 50km",
+          "badge_text": "추가 충전 없이 · 50km 남기고",
           "margin_km": 50
         },
-        "reason": "과학관 · 추가 0원 안 · 75분 안",
+        "reason": "과학관 · 추가 충전 없이 · 75분 안",
         "subcategory": "과학관",
         "indoor": true
       },
@@ -208,10 +208,10 @@
           "zero_extra": true,
           "tight": false,
           "ring_krw": 0,
-          "badge_text": "추가 충전 없이 · 여유 50km",
+          "badge_text": "추가 충전 없이 · 50km 남기고",
           "margin_km": 50
         },
-        "reason": "박물관 · 추가 0원 안 · 75분 안",
+        "reason": "박물관 · 추가 충전 없이 · 75분 안",
         "subcategory": "박물관",
         "indoor": true
       }
@@ -221,22 +221,22 @@
     {
       "id": "r_arboretum",
       "score": 1.4,
-      "reason": "수목원·정원 · 추가 0원 안 · 75분 안"
+      "reason": "수목원·정원 · 추가 충전 없이 · 75분 안"
     },
     {
       "id": "r_beach",
       "score": 1.4,
-      "reason": "해변 · 추가 0원 안 · 75분 안"
+      "reason": "해변 · 추가 충전 없이 · 75분 안"
     },
     {
       "id": "r_science",
       "score": 1.25,
-      "reason": "과학관 · 추가 0원 안 · 75분 안"
+      "reason": "과학관 · 추가 충전 없이 · 75분 안"
     },
     {
       "id": "r_museum",
       "score": 1.19,
-      "reason": "박물관 · 추가 0원 안 · 75분 안"
+      "reason": "박물관 · 추가 충전 없이 · 75분 안"
     }
   ]
 }

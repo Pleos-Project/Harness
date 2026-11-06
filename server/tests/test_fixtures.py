@@ -92,8 +92,8 @@ def test_d5_settle_text():
 def test_ac_f5_1_d1_picked_text():
     fx = load(ROOT / "fixtures/cards/D1.json")["expected"]["picked"]
     assert fx["name"] == "양평 두물머리"
-    assert fx["display"]["badge_text"] == "추가 충전 없이 · 여유 50km"
-    assert fx["reason"] == "추가 0원 안 · 75분 안 · 지난번과 다른 테마"
+    assert fx["display"]["badge_text"] == "추가 충전 없이 · 50km 남기고"
+    assert fx["reason"] == "추가 충전 없이 · 75분 안 · 지난번과 다른 테마"
 
 
 def test_ac_f5_2_d2_same_card_badge_only():

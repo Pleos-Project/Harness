@@ -139,10 +139,10 @@
         "zero_extra": true,
         "tight": false,
         "ring_krw": 0,
-        "badge_text": "추가 충전 없이 · 여유 50km",
+        "badge_text": "추가 충전 없이 · 50km 남기고",
         "margin_km": 50
       },
-      "reason": "축제 · 추가 0원 안 · 75분 안",
+      "reason": "축제 · 추가 충전 없이 · 75분 안",
       "subcategory": "축제",
       "indoor": false,
       "event_start": "2026-11-07",
@@ -171,10 +171,10 @@
           "zero_extra": true,
           "tight": false,
           "ring_krw": 0,
-          "badge_text": "추가 충전 없이 · 여유 50km",
+          "badge_text": "추가 충전 없이 · 50km 남기고",
           "margin_km": 50
         },
-        "reason": "축제 · 추가 0원 안 · 75분 안",
+        "reason": "축제 · 추가 충전 없이 · 75분 안",
         "subcategory": "축제",
         "indoor": false,
         "event_start": "2026-04-01",
@@ -186,12 +186,12 @@
     {
       "id": "f_active",
       "score": 1.44,
-      "reason": "축제 · 추가 0원 안 · 75분 안"
+      "reason": "축제 · 추가 충전 없이 · 75분 안"
     },
     {
       "id": "f_long",
       "score": 1.38,
-      "reason": "축제 · 추가 0원 안 · 75분 안"
+      "reason": "축제 · 추가 충전 없이 · 75분 안"
     }
   ]
 }

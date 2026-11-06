@@ -105,7 +105,7 @@
         "zero_extra": true,
         "tight": false,
         "ring_krw": 0,
-        "badge_text": "추가 충전 없이 · 여유 50km",
+        "badge_text": "추가 충전 없이 · 50km 남기고",
         "margin_km": 50
       },
       "reason": "갓 잡은 해산물 시장을 둘러보는 포구 산책",
@@ -135,7 +135,7 @@
           "zero_extra": true,
           "tight": false,
           "ring_krw": 0,
-          "badge_text": "추가 충전 없이 · 여유 50km",
+          "badge_text": "추가 충전 없이 · 50km 남기고",
           "margin_km": 50
         },
         "reason": "여름 물놀이로 붐비는 넓은 백사장",
@@ -164,10 +164,10 @@
           "zero_extra": true,
           "tight": false,
           "ring_krw": 0,
-          "badge_text": "추가 충전 없이 · 여유 50km",
+          "badge_text": "추가 충전 없이 · 50km 남기고",
           "margin_km": 50
         },
-        "reason": "해변 · 추가 0원 안 · 75분 안",
+        "reason": "해변 · 추가 충전 없이 · 75분 안",
         "subcategory": "해변",
         "indoor": false
       }
@@ -187,7 +187,7 @@
     {
       "id": "r_beach",
       "score": 1.575,
-      "reason": "해변 · 추가 0원 안 · 75분 안"
+      "reason": "해변 · 추가 충전 없이 · 75분 안"
     }
   ]
 }

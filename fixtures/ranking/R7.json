@@ -105,10 +105,10 @@
         "zero_extra": true,
         "tight": false,
         "ring_krw": 0,
-        "badge_text": "추가 충전 없이 · 여유 50km",
+        "badge_text": "추가 충전 없이 · 50km 남기고",
         "margin_km": 50
       },
-      "reason": "해변 · 추가 0원 안 · 75분 안",
+      "reason": "해변 · 추가 충전 없이 · 75분 안",
       "subcategory": "해변",
       "indoor": false
     },
@@ -135,10 +135,10 @@
           "zero_extra": true,
           "tight": false,
           "ring_krw": 0,
-          "badge_text": "추가 충전 없이 · 여유 50km",
+          "badge_text": "추가 충전 없이 · 50km 남기고",
           "margin_km": 50
         },
-        "reason": "해변 · 추가 0원 안 · 75분 안",
+        "reason": "해변 · 추가 충전 없이 · 75분 안",
         "subcategory": "해변",
         "indoor": false
       },
@@ -164,10 +164,10 @@
           "zero_extra": true,
           "tight": false,
           "ring_krw": 0,
-          "badge_text": "추가 충전 없이 · 여유 50km",
+          "badge_text": "추가 충전 없이 · 50km 남기고",
           "margin_km": 50
         },
-        "reason": "포구 · 추가 0원 안 · 75분 안",
+        "reason": "포구 · 추가 충전 없이 · 75분 안",
         "subcategory": "포구",
         "indoor": false
       }
@@ -177,17 +177,17 @@
     {
       "id": "r_beach_summer",
       "score": 1.5,
-      "reason": "해변 · 추가 0원 안 · 75분 안"
+      "reason": "해변 · 추가 충전 없이 · 75분 안"
     },
     {
       "id": "r_beach",
       "score": 1.5,
-      "reason": "해변 · 추가 0원 안 · 75분 안"
+      "reason": "해변 · 추가 충전 없이 · 75분 안"
     },
     {
       "id": "r_port_famous",
       "score": 1.38,
-      "reason": "포구 · 추가 0원 안 · 75분 안"
+      "reason": "포구 · 추가 충전 없이 · 75분 안"
     }
   ]
 }

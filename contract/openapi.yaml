@@ -70,7 +70,7 @@ paths:
                   swaps_left: { type: integer }
                   stack_left: { type: integer, description: '뒤집힌 스택에 남은 장 수("다른 후보 n")' }
         '404': { description: 'session_not_found (만료 30분 포함) → 앱은 새로 /v1/cards' }
-        '409': { description: 'swap_limit 또는 no_more_candidates. detail.hint = "테마를 바꿔 볼까요?"' }
+        '409': { description: 'swap_limit 또는 no_more_candidates. detail.hint = "어떤 쪽으로 다시 볼까요?"' }
   /v1/prices:
     get:
       summary: 최신 전국 평균 단가(오피넷, 읽기 전용)
@@ -169,9 +169,9 @@ components:
             zero_extra: { type: boolean }
             tight: { type: boolean }
             ring_krw: { type: integer, enum: [0, 10000, 30000] }
-            badge_text: { type: string, examples: ['추가 충전 없이 · 여유 50km', '빠듯', '+1만 원 안팎'] }
+            badge_text: { type: string, examples: ['추가 충전 없이 · 50km 남기고', '추가 주유 없이 · 50km 남기고', '빠듯', '+1만 원 안팎'] }
             margin_km: { type: integer }
-        reason: { type: string, examples: ['추가 0원 안 · 75분 안 · 지난번과 다른 테마', '해변 · 추가 0원 안 · 75분 안'] }
+        reason: { type: string, examples: ['추가 충전 없이 · 75분 안 · 지난번과 다른 테마', '추가 주유 없이 · 75분 안 · 바다', '해변 · 추가 주유 없이 · 75분 안'] }
         subcategory: { type: string, description: '실서비스 후보만(데모 카드에는 없음). TourAPI 소분류 이름, 예: 해변·수목원·정원·박물관·축제', examples: ['해변'] }
         indoor: { type: boolean, description: '실서비스 후보만. 실내 장소(비 오는 날 위로)' }
         event_start: { type: string, format: date, description: '행사(festival)만. 카드에 기간 표시' }

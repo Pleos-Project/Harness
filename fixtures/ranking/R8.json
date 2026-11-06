@@ -106,10 +106,10 @@
         "zero_extra": true,
         "tight": false,
         "ring_krw": 0,
-        "badge_text": "추가 충전 없이 · 여유 50km",
+        "badge_text": "추가 충전 없이 · 50km 남기고",
         "margin_km": 50
       },
-      "reason": "수목원·정원 · 추가 0원 안 · 75분 안",
+      "reason": "수목원·정원 · 추가 충전 없이 · 75분 안",
       "subcategory": "수목원·정원",
       "indoor": false,
       "rain_level": 1.0
@@ -137,10 +137,10 @@
           "zero_extra": true,
           "tight": false,
           "ring_krw": 0,
-          "badge_text": "추가 충전 없이 · 여유 50km",
+          "badge_text": "추가 충전 없이 · 50km 남기고",
           "margin_km": 50
         },
-        "reason": "테마 공원 · 추가 0원 안 · 75분 안",
+        "reason": "테마 공원 · 추가 충전 없이 · 75분 안",
         "subcategory": "테마 공원",
         "indoor": false,
         "rain_level": 1.0
@@ -167,10 +167,10 @@
           "zero_extra": true,
           "tight": false,
           "ring_krw": 0,
-          "badge_text": "추가 충전 없이 · 여유 50km",
+          "badge_text": "추가 충전 없이 · 50km 남기고",
           "margin_km": 50
         },
-        "reason": "공원 · 추가 0원 안 · 75분 안",
+        "reason": "공원 · 추가 충전 없이 · 75분 안",
         "subcategory": "공원",
         "indoor": false,
         "rain_level": 1.0
@@ -181,17 +181,17 @@
     {
       "id": "r_arboretum",
       "score": 1.2,
-      "reason": "수목원·정원 · 추가 0원 안 · 75분 안"
+      "reason": "수목원·정원 · 추가 충전 없이 · 75분 안"
     },
     {
       "id": "r_themepark",
       "score": 1.14,
-      "reason": "테마 공원 · 추가 0원 안 · 75분 안"
+      "reason": "테마 공원 · 추가 충전 없이 · 75분 안"
     },
     {
       "id": "r_citypark",
       "score": 1.02,
-      "reason": "공원 · 추가 0원 안 · 75분 안"
+      "reason": "공원 · 추가 충전 없이 · 75분 안"
     }
   ]
 }
