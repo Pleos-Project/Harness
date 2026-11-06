@@ -2,7 +2,26 @@
 <!-- 화면 문구는 여기에. scripts/lint_copy.py가 PRD 5-3 표기·AC-C-8 금지 문구를 검사한다. -->
 <resources>
     <string name="app_name">차곡</string>
-    <string name="build_check">빌드 환경 확인</string>
-    <string name="engine_ok">엔진 OK · %1$s</string>
-    <string name="engine_data_missing">엔진 데이터 없음 — Gradle syncChagokData 확인</string>
+
+    <!-- 공통 -->
+    <string name="back">뒤로</string>
+    <string name="preparing">준비 중이에요</string>
+    <!-- AC-C-7: 에뮬 임의 값(차종 표·모의 값)을 쓰는 동안 화면 구석에 고정 -->
+    <string name="demo_values">시연용 값</string>
+
+    <!-- 화면 이름(명세 3절) -->
+    <string name="screen_range">범위</string>
+    <string name="screen_card">한 장</string>
+    <string name="screen_record">기록</string>
+    <string name="screen_settings">설정</string>
+
+    <!-- 홈(F1·PRD v1.3 6-1) -->
+    <string name="balance_label">지금 차에 든 돈</string>
+    <string name="price_average">평균 단가</string>
+    <string name="today_pick">오늘의 한 곳</string>
+    <string name="today_pick_conditions">추가 0원 · 당일 · 인원 자동</string>
+    <string name="change_conditions">조건 바꾸기</string>
+
+    <!-- X2 예외 -->
+    <string name="reading_vehicle">차량 정보를 읽는 중</string>
 </resources>
