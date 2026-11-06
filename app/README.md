@@ -55,6 +55,7 @@ adb install -r -g app/build/outputs/apk/debug/app-debug.apk        # -g: 권한 
 - 화면 문구는 `res/values/strings.xml`에 둔다(`scripts/lint_copy.py`가 검사). 엔진이 만든 문구(`balanceText`·`display.*`)는 그대로 보여 준다.
 - 색·글자는 `Chagok.colors.*`·`Chagok.type.*`(tokens.css 값, Pleos 가이드 위계)만 쓴다. 버튼·칩·카드·안내 문구·"시연용 값"은 `ui/components`의 `CgButton`·`CgChip`·`CgCard`·`CgNotice`·`DemoMark`. 명준 시안이 나오면 이 부품만 바꾼다.
 - 창 폭이 900px 이하면 한 단(`LocalNarrow`). 레이아웃 확인은 `@Preview`로 가로·세로(1:1 분할)·주간을 같이 둔다(`ChagokApp.kt` 참고).
+- **화면 상태는 `remember`가 아니라 ViewModel(SavedStateHandle)에 둔다.** 주행 중에는 화면 composable이 가림 화면으로 바뀌어 composition에서 빠지므로 `remember`·`rememberSaveable` 값이 버려진다. 카드·프리셋·인원·테마 선택처럼 정차 뒤 그대로 돌아와야 하는 값(명세 X1 "세션·입력 저장", AC-X1-1·AC-F5-6)은 ViewModel에. 펼침·스크롤처럼 사라져도 되는 것만 `remember`.
 - 화면 이동은 `AppViewModel`의 화면 스택(SavedStateHandle, AC-C-11). CCP Back은 홈에서 `moveTaskToBack(true)`(finish 금지, Pleos 앱 개발 가이드).
 
 ## 3. 서버 호출 — Kotlin에서 직접 (열린 결정 2 해결)
@@ -80,7 +81,11 @@ adb install -r -g app/build/outputs/apk/debug/app-debug.apk        # -g: 권한 
 - 기어 P = 규제 없음, D = 속도 0이어도 규제. 규제 중 시스템이 앱을 가린다. adb 설치본은 `distractionOptimized`를 선언해도 가려진다.
 
 ## 4-1. 차량값 읽기 (`vehicle/PleosVehicleRepository`)
-- Activity 수명주기 observer. `onStart`에 진입 때 값(용량·연료 종류·연비·충전 스위치·누적 주행거리)을 1회 읽고 리스너(SOC·연료 %·기어·운전석 문·착석·`RANGE_REMAINING`·주행 규제)를 등록, `onStop`에 전부 해제(AC-C-2).
+- Activity 수명주기 observer. 리스너는 두 묶음이다.
+  - **관문**(기어·주행 규제): 화면이 보이는 동안 늘 듣는다.
+  - **데이터**(SOC·연료 %·운전석 문·착석·`RANGE_REMAINING`): 정차일 때만. 등록 전에 진입 때 값(용량·연료 종류·연비·충전 스위치·누적 주행거리)을 1회 읽는다.
+  - `onStop`에 둘 다 해제(AC-C-2).
+- **주행 중(X1)** = 규제 ON 또는 기어 ≠ P(`isDriving`, 기어를 아직 모르면 아님): 데이터 리스너를 끊고(AC-X1-2) 앱 안에서도 화면을 가린다(`DrivingCover`, 금액 없음). 화면 스택은 그대로라 정차하면 같은 화면으로 돌아온다(AC-X1-1).
 - `onFailed`는 `SecurityException`(권한 없음)과 그 밖(미지원)을 나눠 `VehicleSnapshot.failures`에 남긴다. `VehicleException`은 공개 클래스가 아니라 못 쓴다.
 - 기어는 Pleos `Gear` API(P `CAR_DRIVE`). SDK가 AAOS `GEAR_SELECTION`을 권하지만 그건 A `CAR_POWERTRAIN` 권한이라 쓰지 않는다.
 - **충전 스위치는 Pleos SDK에 리스너가 없다**(AAR 2.3.2). 지금은 진입 때만 읽는다. F9는 AAOS `EV_CHARGE_SWITCH` 콜백 가능 여부를 확인하고 정한다.

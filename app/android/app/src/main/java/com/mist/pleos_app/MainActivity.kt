@@ -15,6 +15,7 @@ import com.mist.pleos_app.ui.ChagokApp
 import com.mist.pleos_app.ui.theme.ChagokTheme
 import com.mist.pleos_app.util.ChagokLog
 import com.mist.pleos_app.vehicle.PleosVehicleRepository
+import com.mist.pleos_app.vehicle.isDriving
 
 /**
  * 한 Activity + Compose. 차량값은 [PleosVehicleRepository]가 이 Activity 수명주기에 맞춰
@@ -41,7 +42,7 @@ class MainActivity : ComponentActivity() {
             // 차종·단가·모의 연료 %는 설정(S1, P7)에서 받는다. 그 전까지 에뮬 기본값 아이오닉 5 LR(명세 S1).
             val balance = remember(snapshot) { homeBalance(constants, DEFAULT_MODEL, snapshot) }
             ChagokTheme {
-                ChagokApp(vm, balance, onExit = {
+                ChagokApp(vm, balance, driving = isDriving(snapshot), onExit = {
                     val moved = moveTaskToBack(true)
                     ChagokLog.event("back_to_background", "moved" to moved)
                 })
