@@ -111,8 +111,7 @@ class PleosVehicleRepository(context: Context) : VehicleRepository, DefaultLifec
 
     // ------------------------------------------------------------ 관문: 기어·주행 규제 (화면이 보이는 동안 늘)
     private fun readGate() {
-        @Suppress("DEPRECATION")
-        vehicle?.let { v -> guard("gear") { v.getGear().getCurrentGearSelectionState({ g -> ok("gear"); flow.update { it.copy(gear = g.toState()) }; onGateChanged() }, { e -> fail("gear", e) }) } }
+        refreshGear()
         ux?.let { m -> guard("ux_restrictions") { flow.update { it.copy(uxRestricted = m.currentCarUxRestrictions?.isRequiresDistractionOptimization) } } }
     }
 
@@ -120,7 +119,9 @@ class PleosVehicleRepository(context: Context) : VehicleRepository, DefaultLifec
     @Synchronized
     private fun onGateChanged() {
         if (!started) return
-        val driving = isDriving(flow.value)
+        val s = flow.value
+        val driving = isDriving(s)
+        ChagokLog.event("gate", "gear" to s.gear.name, "restricted" to s.uxRestricted, "driving" to driving)
         if (driving && dataOn) {
             unregisterData()
             ChagokLog.event("driving", "on" to true)
@@ -225,9 +226,19 @@ class PleosVehicleRepository(context: Context) : VehicleRepository, DefaultLifec
         }
     }
 
+    /**
+     * 규제가 바뀔 때마다 기어를 Get으로 다시 읽는다. 에뮬(콘솔 D → P)에서 Pleos 기어 리스너가 PARK를 놓치는 일이
+     * 3번 중 3번 있었다(11/6 실측: 규제는 false로 오는데 기어가 DRIVE에 머물러 화면이 계속 가려짐).
+     */
     private val uxListener = CarUxRestrictionsManager.OnUxRestrictionsChangedListener { r ->
         flow.update { it.copy(uxRestricted = r?.isRequiresDistractionOptimization) }
         onGateChanged()
+        refreshGear()
+    }
+
+    private fun refreshGear() {
+        @Suppress("DEPRECATION")
+        vehicle?.let { v -> guard("gear") { v.getGear().getCurrentGearSelectionState({ g -> ok("gear"); flow.update { it.copy(gear = g.toState()) }; onGateChanged() }, { e -> fail("gear", e) }) } }
     }
 
     private fun registerGate() {
