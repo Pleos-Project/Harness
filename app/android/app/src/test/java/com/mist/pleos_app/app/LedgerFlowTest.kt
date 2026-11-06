@@ -62,7 +62,7 @@ class LedgerFlowTest {
         val s = f.summary("2026-12")
         assertEquals(1, s.places)
         assertTrue(s.demo)                                             // Δodo 0 → 편도 추정 "시연용 값"
-        assertEquals("이번 달 이동비 약 2천 원 · 다녀온 곳 1곳", s.text)   // DECISIONS 'PT 콘솔 값'
+        assertEquals("이번 달 이동비 약 2천 원 · 목적지 1곳", s.text)   // DECISIONS 'PT 콘솔 값', PRD v1.6 F17
 
         f.onHidden(); t = t.plusMinutes(5)
         f.open(v, 12_472.0, seats = 4, recentDestination = dumul)      // AC-F17-4: 같은 구간 다시 안 쌓임
