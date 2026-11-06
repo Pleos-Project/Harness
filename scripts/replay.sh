@@ -39,10 +39,10 @@ case "${1:-}" in
     echo "  현재 odometer(이 값 기준으로 정산·도착이 계산됨):"; curl -fsS "$VC/vehicle/odometer"; echo
     gear Park; manual "착석 1, 운전석 문 닫힘 확인"; pause
     echo "1단계: 충전 직후";     manual "충전 ON"; soc 80; manual "충전 OFF  → '방금 약 1만 4천 원어치 충전' → 한 장"; pause
-    echo "2단계: 한 장 공개";    echo "  기대: 양평 두물머리 · 42분 · 추가 충전 없이 · 여유 50km"; pause
+    echo "2단계: 한 장 공개";    echo "  기대: 양평 두물머리 · 42분 · 추가 충전 없이 · 50km 남기고"; pause
     echo "3단계: 배지 변화";     soc 35; range 100000; echo "  1초 뒤 같은 카드, 배지만 '+1만 원 안팎'"; pause
     echo "4단계: 1인 몫";        manual "착석 4 → '1인 2천 원 안팎'"; pause
     echo "5단계: 출발";          manual "앱에서 출발 1탭 → 순정 내비"; pause
-    echo "6단계: 도착";          gear Park; manual "운전석 문 열기 → 핀 + '이번 달 이동비 약 2천 원 · 다녀온 곳 1곳'" ;;
+    echo "6단계: 도착";          gear Park; manual "운전석 문 열기 → 핀 + '이번 달 이동비 약 2천 원 · 목적지 1곳'" ;;
   *) echo "usage: $0 {D1|D2|D3|D5 <odo>|D6|D7|D8|D9|X1|pt}"; exit 1 ;;
 esac

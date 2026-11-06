@@ -43,14 +43,15 @@ def check_card(c, fuel_type, seats):
     assert c["time_label"] == ("75분 안" if m <= 75 else "조금 먼 곳")
     if m > 75:
         assert "75분 안" not in reason, (c["name"], reason)
+    word = "충전" if fuel_type == "ev" else "주유"
+    zero_phrase = f"추가 {word} 없이"          # PRD v1.6 5-3: 화면 문구('추가 0원'은 내부 조건 이름)
     if d["tight"]:
         assert d["badge_text"] == "빠듯", "경계 카드는 '빠듯'만(PRD 5-3)"
-        assert "추가 0원" not in reason, (c["name"], reason)
+        assert zero_phrase not in reason and "추가 0원" not in reason, (c["name"], reason)
     if d["zero_extra"] and not d["tight"]:
-        word = "충전" if fuel_type == "ev" else "주유"
-        assert d["badge_text"].startswith(f"추가 {word} 없이 · 여유 ")
+        assert re.fullmatch(rf"{zero_phrase} · \d+km 남기고", d["badge_text"]), d["badge_text"]   # '남겨 둘 거리'
     if not d["zero_extra"]:
-        assert "추가 0원" not in reason and "없이" not in d["badge_text"]
+        assert zero_phrase not in reason and "추가 0원" not in reason and "없이" not in d["badge_text"]
     assert d["ring_krw"] in E.RING_KRW
     assert (d["per_person_text"] is None) == (seats < 2)
     assert "주차" not in reason

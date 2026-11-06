@@ -191,7 +191,11 @@ fun computeCost(c: Candidate, b: Budget, seats: Int): Cost {
     return Cost(fuel, toll, parking, total, if (t.under) t.text else "${t.text} 안팎", pp, ppText)
 }
 
-data class Badge(val zeroExtra: Boolean, val tight: Boolean, val ringKrw: Int?, val text: String, val marginKm: Int)
+/** zeroText = "추가 주유 없이"(EV "추가 충전 없이") — 배지·이유 한 줄 공통(PRD v1.6 5-3). */
+data class Badge(
+    val zeroExtra: Boolean, val tight: Boolean, val ringKrw: Int?, val text: String, val marginKm: Int,
+    val zeroText: String,
+)
 
 fun computeBadge(c: Candidate, b: Budget): Badge {
     val rt = 2 * c.routeKm
@@ -199,13 +203,14 @@ fun computeBadge(c: Candidate, b: Budget): Badge {
     val zero = ring == 0
     val tight = zero && rt >= b.usableKm * TIGHT_LOW
     val margin = roundHalfUp(b.marginKm)
+    val zeroText = "추가 ${if (b.fuelType == "ev") "충전" else "주유"} 없이"   // '추가 0원'은 내부 조건 이름(PRD v1.6 5-3)
     val text = when {
         tight -> "빠듯"                                  // 경계에서는 0원을 약속하지 않는다(PRD 5-3)
-        zero -> "추가 ${if (b.fuelType == "ev") "충전" else "주유"} 없이 · 여유 ${margin}km"
+        zero -> "$zeroText · ${margin}km 남기고"          // '남겨 둘 거리'(PRD v1.6 5-3·5-4)
         ring != null -> "+${krwText(ring)} 안팎"
         else -> "범위 밖"
     }
-    return Badge(zero, tight, ring, text, margin)
+    return Badge(zero, tight, ring, text, margin, zeroText)
 }
 
 fun timeLabel(minutes: Int): String? = when {
@@ -260,7 +265,7 @@ fun reasonLine(c: Candidate, s: Score, b: Badge): String {
         if (key == "zero" && !(b.zeroExtra && !b.tight)) continue
         if (key == "time" && c.minutes > NEAR_MINUTES) continue
         val phrase = when (key) {
-            "zero" -> "추가 0원 안"
+            "zero" -> b.zeroText
             "time" -> "75분 안"
             "theme" -> themeKo
             else -> "지난번과 다른 테마"

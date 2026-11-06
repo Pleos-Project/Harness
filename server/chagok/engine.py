@@ -218,6 +218,7 @@ class Badge:
     ring_krw: int | None           # 0 / 10000 / 30000 / None(+3만 밖)
     text: str
     margin_km: int
+    zero_text: str                 # "추가 주유 없이"(EV "추가 충전 없이") — 배지·이유 한 줄 공통(PRD v1.6 5-3)
 
 
 def compute_badge(c: Candidate, b: Budget) -> Badge:
@@ -230,16 +231,16 @@ def compute_badge(c: Candidate, b: Budget) -> Badge:
     zero = ring == 0
     tight = zero and rt >= b.usable_km * TIGHT_LOW
     margin = round_half_up(b.margin_km)
+    zero_text = f"추가 {'충전' if b.fuel_type == 'ev' else '주유'} 없이"   # '추가 0원'은 내부 조건 이름(PRD v1.6 5-3)
     if tight:
         text = "빠듯"                                   # 경계에서는 0원을 약속하지 않는다(PRD 5-3)
     elif zero:
-        word = "충전" if b.fuel_type == "ev" else "주유"
-        text = f"추가 {word} 없이 · 여유 {margin}km"
+        text = f"{zero_text} · {margin}km 남기고"       # '남겨 둘 거리'(PRD v1.6 5-3·5-4)
     elif ring is not None:
         text = f"+{krw_text(ring)} 안팎"
     else:
         text = "범위 밖"
-    return Badge(zero, tight, ring, text, margin)
+    return Badge(zero, tight, ring, text, margin, zero_text)
 
 
 def time_label(minutes: int) -> str | None:
@@ -252,7 +253,7 @@ def time_label(minutes: int) -> str | None:
 
 # ---------------------------------------------------------------- E2 점수·이유
 WEIGHTS = {"zero": 0.30, "time": 0.25, "theme": 0.20, "diversity": 0.15, "parking": 0.10}
-PHRASE = {"zero": "추가 0원 안", "time": "75분 안", "diversity": "지난번과 다른 테마"}
+PHRASE = {"time": "75분 안", "diversity": "지난번과 다른 테마"}   # zero 문구는 연료 종류별 Badge.zero_text
 THEME_KO = {"sea": "바다", "lake": "호수", "river": "강", "mountain": "산",
             "park": "공원", "city": "도시", "island": "섬", "drive": "드라이브길"}
 
@@ -282,7 +283,7 @@ def weighted(s: dict[str, float]) -> float:
 
 def reason_line(c: Candidate, s: dict[str, float], b: Badge) -> str:
     """점수 상위 근거 최대 3개. 사실이 아닌 문구는 점수가 있어도 쓰지 않는다:
-    - 빠듯·+1만 카드에 "추가 0원 안" 금지(PRD 5-3)
+    - 빠듯·+1만 카드에 "추가 주유 없이"(EV "추가 충전 없이") 금지(PRD 5-3)
     - 75분 넘는 카드에 "75분 안" 금지
     - 주차는 점수에만(PRD 7-4)"""
     contrib = sorted(((WEIGHTS[k] * s[k], k) for k in ("zero", "time", "theme", "diversity")), reverse=True)
@@ -294,7 +295,8 @@ def reason_line(c: Candidate, s: dict[str, float], b: Badge) -> str:
             continue
         if key == "time" and c.minutes > NEAR_MINUTES:
             continue
-        phrase = THEME_KO.get(c.theme, c.theme) if key == "theme" else PHRASE[key]
+        phrase = (THEME_KO.get(c.theme, c.theme) if key == "theme"
+                  else b.zero_text if key == "zero" else PHRASE[key])
         if phrase not in phrases:
             phrases.append(phrase)
         if len(phrases) == 3:
@@ -494,7 +496,7 @@ def ledger_step(state: dict, event: dict) -> tuple[dict, dict]:
 
 
 def month_summary(rows: list[dict], month: str) -> dict:
-    """F17 '이번 달 이동비 약 7만 원 · 다녀온 곳 3곳'. month = 'YYYY-MM', 기록의 to_ts 기준."""
+    """F17 '이번 달 이동비 약 7만 원 · 목적지 3곳'(PRD v1.6 F17). month = 'YYYY-MM', 기록의 to_ts 기준."""
     mine = [r for r in rows if r["to_ts"][:7] == month]
     if not mine:
         return {"krw": 0, "places": 0, "demo": False, "text": "첫 드라이브를 기다리는 중"}
@@ -503,4 +505,4 @@ def month_summary(rows: list[dict], month: str) -> dict:
     krw, txt, under = approx(total, 1_000)
     amount = txt if under else f"약 {txt}"
     return {"krw": krw, "places": places, "demo": any(r["demo"] for r in mine),
-            "text": f"이번 달 이동비 {amount} · 다녀온 곳 {places}곳"}
+            "text": f"이번 달 이동비 {amount} · 목적지 {places}곳"}

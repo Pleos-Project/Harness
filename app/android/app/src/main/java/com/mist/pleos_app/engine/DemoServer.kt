@@ -183,13 +183,13 @@ class DemoServer(
     /** POST /v1/cards/swap 과 같은 규칙: 화면 스택 순서대로 다음 카드, 세션의 최신 값으로 배지. */
     fun swap(sessionId: String, excludeIds: List<String> = emptyList()): SwapResult {
         val sess = get(sessionId) ?: return SwapResult.Error("session_not_found")
-        if (sess.swaps >= MAX_SWAPS) return SwapResult.Error("swap_limit", "테마를 바꿔 볼까요?")
+        if (sess.swaps >= MAX_SWAPS) return SwapResult.Error("swap_limit", "어떤 쪽으로 다시 볼까요?")
         val (all, pool, _) = ranked(sess.request, candidates)
         val byId = all.associateBy { it.card.id }
         val excluded = (sess.excluded + excludeIds + listOfNotNull(sess.pickedId)).distinct()
         val nxt = sess.stackIds.firstOrNull { it in byId && it !in excluded }?.let { byId.getValue(it) }
             ?: pool.firstOrNull { it.card.id !in excluded }
-            ?: return SwapResult.Error("no_more_candidates", "테마를 바꿔 볼까요?")
+            ?: return SwapResult.Error("no_more_candidates", "어떤 쪽으로 다시 볼까요?")
         sess.excluded = excluded
         sess.swaps += 1
         sess.pickedId = nxt.card.id

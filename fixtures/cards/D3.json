@@ -76,10 +76,10 @@
         "zero_extra": true,
         "tight": false,
         "ring_krw": 0,
-        "badge_text": "추가 충전 없이 · 여유 50km",
+        "badge_text": "추가 충전 없이 · 50km 남기고",
         "margin_km": 50
       },
-      "reason": "추가 0원 안 · 75분 안 · 지난번과 다른 테마"
+      "reason": "추가 충전 없이 · 75분 안 · 지난번과 다른 테마"
     },
     "stack": [
       {
@@ -104,10 +104,10 @@
           "zero_extra": true,
           "tight": false,
           "ring_krw": 0,
-          "badge_text": "추가 충전 없이 · 여유 50km",
+          "badge_text": "추가 충전 없이 · 50km 남기고",
           "margin_km": 50
         },
-        "reason": "추가 0원 안 · 지난번과 다른 테마 · 바다"
+        "reason": "추가 충전 없이 · 지난번과 다른 테마 · 바다"
       },
       {
         "id": "p_songdo",
@@ -131,10 +131,10 @@
           "zero_extra": true,
           "tight": false,
           "ring_krw": 0,
-          "badge_text": "추가 충전 없이 · 여유 50km",
+          "badge_text": "추가 충전 없이 · 50km 남기고",
           "margin_km": 50
         },
-        "reason": "추가 0원 안 · 75분 안 · 지난번과 다른 테마"
+        "reason": "추가 충전 없이 · 75분 안 · 지난번과 다른 테마"
       },
       {
         "id": "p_anseong_farm",
@@ -158,10 +158,10 @@
           "zero_extra": true,
           "tight": false,
           "ring_krw": 0,
-          "badge_text": "추가 충전 없이 · 여유 50km",
+          "badge_text": "추가 충전 없이 · 50km 남기고",
           "margin_km": 50
         },
-        "reason": "추가 0원 안 · 75분 안 · 지난번과 다른 테마"
+        "reason": "추가 충전 없이 · 75분 안 · 지난번과 다른 테마"
       }
     ]
   },

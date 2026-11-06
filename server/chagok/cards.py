@@ -186,7 +186,7 @@ def swap(session_id: str, exclude_ids: list[str], candidates: list[E.Candidate],
     if not sess:
         return {"error": "session_not_found"}
     if sess["swaps"] >= E.MAX_SWAPS:
-        return {"error": "swap_limit", "hint": "테마를 바꿔 볼까요?"}
+        return {"error": "swap_limit", "hint": "어떤 쪽으로 다시 볼까요?"}
     req = sess["request"]
     all_cards, pool, _ = _ranked(req, candidates)
     by_id = {c["id"]: c for c in all_cards}
@@ -195,7 +195,7 @@ def swap(session_id: str, exclude_ids: list[str], candidates: list[E.Candidate],
     if nxt is None:
         nxt = next((c for c in pool if c["id"] not in excluded), None)
     if nxt is None:
-        return {"error": "no_more_candidates", "hint": "테마를 바꿔 볼까요?"}
+        return {"error": "no_more_candidates", "hint": "어떤 쪽으로 다시 볼까요?"}
     sess["excluded"] = excluded
     sess["swaps"] += 1
     sess["picked_id"] = nxt["id"]

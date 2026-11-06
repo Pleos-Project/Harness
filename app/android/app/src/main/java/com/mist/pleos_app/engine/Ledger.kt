@@ -156,12 +156,12 @@ private fun onArrive(st: LedgerState, ev: LedgerEvent.Arrive): Pair<LedgerState,
     )
 }
 
-/** F17 "이번 달 이동비 약 7만 원 · 다녀온 곳 3곳". month = "YYYY-MM", 기록의 toTs 기준. */
+/** F17 "이번 달 이동비 약 7만 원 · 목적지 3곳"(PRD v1.6 F17). month = "YYYY-MM", 기록의 toTs 기준. */
 fun monthSummary(rows: List<Row>, month: String): MonthSummary {
     val mine = rows.filter { it.toTs.take(7) == month }
     if (mine.isEmpty()) return MonthSummary(0, 0, false, "첫 드라이브를 기다리는 중")
     val a = approx(mine.sumOf { it.krw }.toDouble(), 1000)
     val places = mine.count { it.pinned }
     return MonthSummary(a.value, places, mine.any { it.demo },
-        "이번 달 이동비 ${if (a.under) a.text else "약 ${a.text}"} · 다녀온 곳 ${places}곳")
+        "이번 달 이동비 ${if (a.under) a.text else "약 ${a.text}"} · 목적지 ${places}곳")
 }
