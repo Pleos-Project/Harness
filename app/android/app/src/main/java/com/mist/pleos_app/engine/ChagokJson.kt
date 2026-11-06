@@ -237,7 +237,10 @@ fun parseLedgerEvent(o: JsonObject): LedgerEvent = when (val t = o.str("type")) 
         o.strOrNull("price_source"), parsePlace(o.objOrNull("recent_destination")),
     )
     "depart" -> LedgerEvent.Depart(o.str("ts"), o.dbl("odometer_km"), parsePlace(o.getValue("place").jsonObject)!!, o.dbl("route_km"))
-    "arrive" -> LedgerEvent.Arrive(o.str("ts"), o.dbl("odometer_km"), o.integer("seats"), o.dbl("price"), o.dbl("efficiency"))
+    "arrive" -> LedgerEvent.Arrive(
+        o.str("ts"), o.dbl("odometer_km"), o.integer("seats"), o.dbl("price"), o.dbl("efficiency"),
+        o.strOrNull("price_source"),
+    )
     else -> throw IllegalArgumentException("unknown event type: $t")
 }
 
