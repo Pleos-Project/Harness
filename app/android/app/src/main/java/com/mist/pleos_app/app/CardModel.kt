@@ -81,6 +81,9 @@ sealed class CardUi {
         val offline: Boolean = false,
     ) : CardUi()
 
+    /** 출발점(내비 현재 위치)을 받는 중(최대 2초) → "위치 확인 중"(X2). */
+    data object Locating : CardUi()
+
     /** 서버 응답을 기다리는 중(최대 3초, 실패하면 내장 후보). */
     data object Loading : CardUi()
 
@@ -94,7 +97,7 @@ sealed class CardUi {
 /**
  * 카드 뽑기·교체. [source]는 지금 모드의 카드 출처(데모 고정 → DemoSource, 아니면 서버 + 내장 후보 fallback).
  * 모든 함수가 블로킹(서버 호출)이라 IO 스레드에서 부른다.
- * [seats]는 나눠 낼 인원(F11), 출발점은 지금은 constants.origin(에뮬 위치와 같음) — 내비 현재 위치는 다음 PR.
+ * [seats]는 나눠 낼 인원(F11). 출발점은 [origin](뽑기 전에 VM이 내비 현재 위치 → 직전 위치 → 집 위치로 정함).
  */
 class CardFlow(
     private val constants: Constants,
@@ -106,8 +109,11 @@ class CardFlow(
     /** 출발한 곳(최근 10곳). 다음 뽑기에서 빼고 "지난번과 다른 테마"를 판단한다(명세 F5 저장). */
     var recentVisits: List<String> = emptyList()
 
+    /** 이번 뽑기의 출발점. 재호출·교체는 뽑을 때의 값을 그대로 쓴다. 기본 = 집 위치(constants.origin, 에뮬 현재 위치와 같음). */
+    var origin: com.mist.pleos_app.navi.LatLng = com.mist.pleos_app.navi.LatLng(constants.originLat, constants.originLng)
+
     private fun request(v: Vehicle, c: Conditions, seats: Int, sessionId: String? = null) = cardsRequest(
-        constants.originLat, constants.originLng, v, computeRange(v, c.extraKrw, c.days),
+        origin.lat, origin.lng, v, computeRange(v, c.extraKrw, c.days),
         extraKrw = c.extraKrw, days = c.days, seats = seats, themes = c.themes,
         recentVisits = recentVisits, demoSeed = constants.demoSeed, sessionId = sessionId,
     )

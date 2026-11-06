@@ -35,6 +35,7 @@ class MainActivity : ComponentActivity() {
         lifecycle.addObserver(vehicle)
         navi = NaviRepository(this)
         lifecycle.addObserver(navi)
+        vm.locator = navi::fetchLocation                 // 카드 출발점 = 내비 현재 위치(명세 F5)
         // 화면이 가려지면 다음에 보일 때 다시 정산(F10 "다른 앱에서 복귀")
         lifecycle.addObserver(object : DefaultLifecycleObserver {
             override fun onStop(owner: LifecycleOwner) = vm.onHidden()
