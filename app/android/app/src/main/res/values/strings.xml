@@ -50,7 +50,11 @@
     <string name="depart">출발</string>
     <string name="depart_requesting">내비를 여는 중</string>
     <string name="navi_failed">내비를 열 수 없어요</string>
-    <string name="seat_banner">%1$d명 · 1인 기준으로 볼까요?</string>
+    <!-- F11 인원 확인 토스트(PRD v1.5 6-3). "무게 감지" 표현 쓰지 않음 -->
+    <string name="payer_toast">%1$d명이 탔어요 · 나눠 낼 인원</string>
+    <string name="payer_minus">나눠 낼 인원 줄이기</string>
+    <string name="payer_plus">나눠 낼 인원 늘리기</string>
+    <string name="confirm">확인</string>
     <string name="cost_tap_hint">눌러서 비용 보기</string>
     <string name="cost_fuel">연료</string>
     <string name="cost_toll">통행료(왕복)</string>
