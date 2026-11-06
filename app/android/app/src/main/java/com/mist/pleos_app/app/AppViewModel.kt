@@ -122,7 +122,7 @@ class AppViewModel(app: Application, private val saved: SavedStateHandle) : Andr
      */
     fun onVehicle(s: VehicleSnapshot, model: String) {
         val v = engineVehicle(constants, model, s) ?: return
-        val seats = seatCount(s.seatsOccupied, invert = SEAT_INVERT_EMULATOR)
+        val seats = payersOf(s)
         val key = recallKey(v.levelPct.toInt(), s.rangeRemainingM, seats)
         val prev = lastKey
         lastKey = key
@@ -168,7 +168,7 @@ class AppViewModel(app: Application, private val saved: SavedStateHandle) : Andr
         val v = engineVehicle(constants, model, s) ?: return
         if (!ledger.needsOpen) return
         opening = true
-        val seats = seatCount(s.seatsOccupied, invert = SEAT_INVERT_EMULATOR)
+        val seats = payersOf(s)
         val visitAtStart = visits.value
         fetchRecent { place ->
             opening = false
@@ -182,7 +182,7 @@ class AppViewModel(app: Application, private val saved: SavedStateHandle) : Andr
     /** 운전석 문·기어가 바뀔 때: trip이 있으면 정차 중 문 열림 = 도착(F17). */
     fun onDoor(s: VehicleSnapshot, model: String) {
         val v = engineVehicle(constants, model, s)
-        if (ledger.onDoor(s.driverDoorOpen, isParked(s), v, s.odometerKm, seatCount(s.seatsOccupied, invert = SEAT_INVERT_EMULATOR))) refreshLedger()
+        if (ledger.onDoor(s.driverDoorOpen, isParked(s), v, s.odometerKm, payersOf(s))) refreshLedger()
     }
 
     fun dismissSettle() { ledger.dismissSettle(); refreshLedger() }
@@ -202,6 +202,27 @@ class AppViewModel(app: Application, private val saved: SavedStateHandle) : Andr
         refreshLedger()
     }
 
+    // ------------------------------------------------------------ 나눠 낼 인원(F11, PRD v1.5)
+    private val payers = PayerFlow(PrefsPayerStore(app))
+    private val payerFlow = MutableStateFlow(payers.state)
+    /** 확인값이 바뀌면 화면 효과가 다시 돌아 한 장의 1인 몫을 갱신한다(recallKey에 인원이 들어 있음). */
+    val payerState: StateFlow<PayerState> = payerFlow.asStateFlow()
+
+    /** 엔진에 넘기는 인원(카드 1인 몫·정산 스냅샷). 엔진의 seats 자리에 나눠 낼 인원을 넣는다(DECISIONS 11/6). */
+    fun payersOf(s: VehicleSnapshot): Int = payers.payersFor(seatsOf(s))
+    fun seatsOf(s: VehicleSnapshot): Int = seatCount(s.seatsOccupied, invert = SEAT_INVERT_EMULATOR)
+    fun shouldAskPayers(s: VehicleSnapshot): Boolean = payers.shouldAsk(seatsOf(s))
+
+    fun confirmPayers(seats: Int, n: Int) {
+        payers.confirm(seats, n); payerFlow.value = payers.state
+        ChagokLog.event("payers_confirm", "seats" to seats, "payers" to payers.state.payers)
+    }
+
+    fun dismissPayers(seats: Int) {
+        payers.dismiss(seats); payerFlow.value = payers.state
+        ChagokLog.event("payers_dismiss", "seats" to seats)
+    }
+
     fun swap() {
         val cur = card.value as? CardUi.Shown ?: return
         card.value = flow?.swap(cur)
@@ -211,7 +232,7 @@ class AppViewModel(app: Application, private val saved: SavedStateHandle) : Andr
     private fun load(s: VehicleSnapshot, model: String, today: Boolean): CardUi? {
         val f = flow ?: return null
         val v = engineVehicle(constants, model, s) ?: return null
-        val seats = seatCount(s.seatsOccupied, invert = SEAT_INVERT_EMULATOR)
+        val seats = payersOf(s)
         val ui = if (today) f.today(v, seats) else f.pick(v, seats, conditions.value)
         ChagokLog.event("card_open", "today" to today, "shown" to (ui is CardUi.Shown), "raised" to (ui as? CardUi.Shown)?.raisedTo)
         return ui
