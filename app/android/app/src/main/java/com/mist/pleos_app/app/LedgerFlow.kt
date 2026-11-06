@@ -74,7 +74,7 @@ class LedgerFlow(
         val was = doorWasOpen
         doorWasOpen = open
         if (open != true || was != false || !parked || state.trip == null || v == null || odometerKm == null) return false
-        val out = step(LedgerEvent.Arrive(now().toString(), odometerKm, seats, v.pricePerUnit, v.efficiency))
+        val out = step(LedgerEvent.Arrive(now().toString(), odometerKm, seats, v.pricePerUnit, v.efficiency, v.priceSource))
         ChagokLog.event("ledger_arrive", "pinned" to out.row?.pinned, "demo" to out.row?.demo)
         return out.row != null
     }
