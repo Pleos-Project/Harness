@@ -18,7 +18,7 @@ WORKDIR /app
 
 # 의존성·패키지 설치. fixtures보다 먼저 두어 fixtures만 바뀌면 이 층은 캐시를 쓴다.
 COPY server/ /app/server/
-RUN pip install --no-cache-dir /app/server \
+RUN pip install --no-cache-dir "/app/server[curate]" \
  && rm -rf /app/server/build /app/server/*.egg-info
 
 COPY fixtures/ /app/fixtures/

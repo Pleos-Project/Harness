@@ -277,29 +277,55 @@ def save(con: sqlite3.Connection, g: Group, rows: list[tuple], request_id: str |
 
 # ------------------------------------------------------------ 명령
 def run(con: sqlite3.Connection, client, groups: list[Group], max_usd: float, log_path: Path | None = None,
-        echo=print) -> dict:
+        echo=print, workers: int = 4) -> dict:
+    """묶음을 workers개씩 동시에 부른다(묶음당 20초 남짓). 저장·비용 합계는 이 스레드에서만.
+    예산: 끝난 비용 + 진행 중 묶음 × EST_CALL_USD가 max_usd를 넘으면 새로 부르지 않는다."""
+    from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
+
     spent = 0.0
-    done = calls = 0
-    for g in groups:
-        if spent + EST_CALL_USD > max_usd:
-            echo(f"예산 {max_usd:.2f}달러에 닿아 멈춤(남은 묶음 {len(groups) - done})")
-            break
+    done = 0
+    todo = list(groups)
+    running: dict = {}
+    stopped = False
+
+    def timed(g: Group):
         t0 = time.perf_counter()
-        r = call(client, g)
-        calls += 1
-        c = cost(r.usage)
-        spent += c
-        rows = validate(g, r)
-        save(con, g, rows, r.request_id)
-        done += 1
-        scored = sum(1 for x in rows if x[1] is not None)
-        if log_path is not None:
-            with log_path.open("a", encoding="utf-8") as f:
-                f.write(json.dumps({"group": g.key, "n": len(g.items), "scored": scored, "usd": round(c, 4),
-                                    "stop": r.stop_reason, "request_id": r.request_id, **r.usage,
-                                    "sec": round(time.perf_counter() - t0, 1)}, ensure_ascii=False) + "\n")
-        echo(f"[{done}/{len(groups)}] {g.key} {len(g.items)}곳 → 근거 {scored}곳 · {c:.3f}달러 (누적 {spent:.2f})")
-    return {"groups": done, "calls": calls, "usd": spent}
+        return call(client, g), time.perf_counter() - t0
+
+    with ThreadPoolExecutor(max_workers=max(1, workers)) as ex:
+        while todo or running:
+            while todo and len(running) < workers and not stopped:
+                if spent + (len(running) + 1) * EST_CALL_USD > max_usd:
+                    stopped = True
+                    echo(f"예산 {max_usd:.2f}달러에 닿아 새로 부르지 않음(남은 묶음 {len(todo)})")
+                    break
+                g = todo.pop(0)
+                running[ex.submit(timed, g)] = g
+            if not running:
+                break
+            fin, _ = wait(running, return_when=FIRST_COMPLETED)
+            for fut in fin:
+                g = running.pop(fut)
+                try:
+                    r, sec = fut.result()
+                except Exception as e:  # noqa: BLE001 — 한 묶음 실패로 전체를 멈추지 않는다(키·메시지는 남기지 않음)
+                    echo(f"{g.key} 실패: {type(e).__name__}")
+                    continue
+                c = cost(r.usage)
+                spent += c
+                rows = validate(g, r)
+                save(con, g, rows, r.request_id)
+                done += 1
+                scored = sum(1 for x in rows if x[1] is not None)
+                if log_path is not None:
+                    with log_path.open("a", encoding="utf-8") as f:
+                        f.write(json.dumps({"group": g.key, "n": len(g.items), "scored": scored, "usd": round(c, 4),
+                                            "stop": r.stop_reason, "request_id": r.request_id, **r.usage,
+                                            "sec": round(sec, 1)}, ensure_ascii=False) + "\n")
+                echo(f"[{done}/{len(groups)}] {g.key} {len(g.items)}곳 → 근거 {scored}곳 · {c:.3f}달러 (누적 {spent:.2f})")
+            if stopped and not running:
+                break
+    return {"groups": done, "usd": spent}
 
 
 def stats(con: sqlite3.Connection) -> str:
@@ -326,6 +352,7 @@ def main(argv: list[str] | None = None) -> int:
         sp.add_argument("--themes", default="", help="쉼표로 테마만(예: sea,festival)")
         if name == "run":
             sp.add_argument("--max-usd", type=float, required=True, help="이번 실행 비용 상한(달러)")
+            sp.add_argument("--workers", type=int, default=4, help="동시에 부를 묶음 수")
     sub.add_parser("stats")
     args = ap.parse_args(argv)
     con = S.connect()
@@ -348,7 +375,7 @@ def main(argv: list[str] | None = None) -> int:
         return 2
     import anthropic
     res = run(con, anthropic.Anthropic(api_key=key), groups, args.max_usd,
-              log_path=S.db_path().parent / "curation_log.jsonl")
+              log_path=S.db_path().parent / "curation_log.jsonl", workers=args.workers)
     print(f"끝: 묶음 {res['groups']}개 · {res['usd']:.2f}달러 · {stats(con)}")
     return 0
 

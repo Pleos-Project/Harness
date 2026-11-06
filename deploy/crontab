@@ -4,6 +4,8 @@
 #   Ubuntu(Debian) cron의 CRON_TZ 지원에 기대지 않고 UTC로 적는다. KST = UTC + 9.
 #   KST 04:10 = UTC 19:10(전날)   sources refresh  (TourAPI 후보 캐시)
 #   KST 04:20 = UTC 19:20(전날)   prices refresh   (오피넷 유가)
+#   KST 05:20·11:20·17:20·23:20 = UTC 20:20·02:20·08:20·14:20   weather refresh (기상청 단기예보, 격자 약 124회)
+#   KST 월 05:40 = UTC 일 20:40   curate run --scope all (A2 사전 큐레이션, 아직 안 한 후보·행사만, 한 번에 2달러 상한)
 #   서버 시간대를 Asia/Seoul로 바꾸면 아래 시각을 10 4 / 20 4 로 고친다.
 #
 # 두 작업은 같은 잠금(flock)을 써서 겹치지 않는다(sources가 10분을 넘겨도 prices가 기다린다).
@@ -16,3 +18,5 @@ PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 
 10 19 * * * ubuntu { echo "== $(date -Iseconds) sources refresh"; flock -w 3600 /opt/chagok/.cron.lock docker compose --env-file /opt/chagok/compose.env -f /opt/chagok/app/deploy/compose.yaml exec -T api python -m chagok.sources refresh; echo "== 종료 코드 $?"; } >> /var/log/chagok-cron.log 2>&1
 20 19 * * * ubuntu { echo "== $(date -Iseconds) prices refresh"; flock -w 3600 /opt/chagok/.cron.lock docker compose --env-file /opt/chagok/compose.env -f /opt/chagok/app/deploy/compose.yaml exec -T api python -m chagok.prices refresh; echo "== 종료 코드 $?"; } >> /var/log/chagok-cron.log 2>&1
+20 20,2,8,14 * * * ubuntu { echo "== $(date -Iseconds) weather refresh"; flock -w 3600 /opt/chagok/.cron.lock docker compose --env-file /opt/chagok/compose.env -f /opt/chagok/app/deploy/compose.yaml exec -T api python -m chagok.weather refresh; echo "== 종료 코드 $?"; } >> /var/log/chagok-cron.log 2>&1
+40 20 * * 0 ubuntu { echo "== $(date -Iseconds) curate run"; flock -w 3600 /opt/chagok/.cron.lock docker compose --env-file /opt/chagok/compose.env -f /opt/chagok/app/deploy/compose.yaml exec -T api python -m chagok.curate run --scope all --max-usd 2; echo "== 종료 코드 $?"; } >> /var/log/chagok-cron.log 2>&1
