@@ -2,8 +2,13 @@
 
 ```
 app/android/                                                안드로이드 프로젝트(Kotlin). 앱 기능은 여기에 짓는다
-app/android/app/src/main/java/com/mist/pleos_app/engine/    Kotlin 엔진 (server/chagok/engine.py·cards.py 포팅)
-app/android/app/src/test/.../engine/FixturesTest.kt         fixtures/ 대조 JUnit — cd app/android && ./gradlew test
+app/android/app/src/main/java/com/mist/pleos_app/
+  engine/      Kotlin 엔진 (server/chagok/engine.py·cards.py 포팅) — 수식은 여기만
+  vehicle/     차량값 읽기: PleosVehicleRepository(Pleos SDK + AAOS), VehicleSnapshot
+  app/         화면 상태: AppViewModel(화면 스택·복원), HomeModel(차량값 → 엔진 입력)
+  ui/          Compose: ChagokApp(뼈대), components/(공통 부품), theme/(색·글자)
+  util/        ChagokLog(1줄 JSON 로그)
+app/android/app/src/test/.../  FixturesTest(fixtures 대조)·HomeModelTest — cd app/android && ./gradlew test
 ```
 
 H_Mate(github.com/june0103/H_Mate)는 June의 실험 레포로, 참고용이다. 레포를 통째로 옮기지 않는다. 그 안의 차곡 데모 화면·브리지(`ChagokBridge.kt`)는 WebView용이라 가져오지 않는다(화면은 Compose). 빌드 환경·디자인 가이드 토큰·콘솔 기어 경로·SDK 동작 메모만 이 레포로 가져왔다(아래 1·4절, `design/tokens.css`, `scripts/replay.sh`).
@@ -48,7 +53,9 @@ adb install -r -g app/build/outputs/apk/debug/app-debug.apk        # -g: 권한 
 - 주간/야간은 `isSystemInDarkTheme()`(기본 야간, 시스템이 주간이면 주간).
 - 디자인 가이드 크기는 디스플레이 실제 픽셀이다 → `48.gpx`(Dp)·`26.gsp`(TextUnit). 터치 영역 48처럼 dp 기준 값은 그냥 `48.dp`.
 - 화면 문구는 `res/values/strings.xml`에 둔다(`scripts/lint_copy.py`가 검사). 엔진이 만든 문구(`balanceText`·`display.*`)는 그대로 보여 준다.
-- 레이아웃 확인은 `@Preview`로 가로·세로(1:1 분할)를 같이 둔다(`MainActivity.kt`의 `EngineCheckPreview` 참고).
+- 색·글자는 `Chagok.colors.*`·`Chagok.type.*`(tokens.css 값, Pleos 가이드 위계)만 쓴다. 버튼·칩·카드·안내 문구·"시연용 값"은 `ui/components`의 `CgButton`·`CgChip`·`CgCard`·`CgNotice`·`DemoMark`. 명준 시안이 나오면 이 부품만 바꾼다.
+- 창 폭이 900px 이하면 한 단(`LocalNarrow`). 레이아웃 확인은 `@Preview`로 가로·세로(1:1 분할)·주간을 같이 둔다(`ChagokApp.kt` 참고).
+- 화면 이동은 `AppViewModel`의 화면 스택(SavedStateHandle, AC-C-11). CCP Back은 홈에서 `moveTaskToBack(true)`(finish 금지, Pleos 앱 개발 가이드).
 
 ## 3. 서버 호출 — Kotlin에서 직접 (열린 결정 2 해결)
 - 앱이 부르는 건 `/v1/cards`·`/v1/cards/swap`·`/v1/prices` 셋(`contract/openapi.yaml`).
@@ -71,6 +78,13 @@ adb install -r -g app/build/outputs/apk/debug/app-debug.apk        # -g: 권한 
 - `RouteInfo.routeOption`은 내비까지 전달되지 않고, `changeRouteOption`은 받기만 하고 무시된다.
 - 착석은 SDK가 반대로 읽는다(SDK 1 = 앉음, AAOS·콘솔 1 = 빈 좌석, 2 = 앉음) → 설정 `seat_invert`.
 - 기어 P = 규제 없음, D = 속도 0이어도 규제. 규제 중 시스템이 앱을 가린다. adb 설치본은 `distractionOptimized`를 선언해도 가려진다.
+
+## 4-1. 차량값 읽기 (`vehicle/PleosVehicleRepository`)
+- Activity 수명주기 observer. `onStart`에 진입 때 값(용량·연료 종류·연비·충전 스위치·누적 주행거리)을 1회 읽고 리스너(SOC·연료 %·기어·운전석 문·착석·`RANGE_REMAINING`·주행 규제)를 등록, `onStop`에 전부 해제(AC-C-2).
+- `onFailed`는 `SecurityException`(권한 없음)과 그 밖(미지원)을 나눠 `VehicleSnapshot.failures`에 남긴다. `VehicleException`은 공개 클래스가 아니라 못 쓴다.
+- 기어는 Pleos `Gear` API(P `CAR_DRIVE`). SDK가 AAOS `GEAR_SELECTION`을 권하지만 그건 A `CAR_POWERTRAIN` 권한이라 쓰지 않는다.
+- **충전 스위치는 Pleos SDK에 리스너가 없다**(AAR 2.3.2). 지금은 진입 때만 읽는다. F9는 AAOS `EV_CHARGE_SWITCH` 콜백 가능 여부를 확인하고 정한다.
+- SDK 사용법·실측은 Pleos 문서 묶음(`docs/pleos` 사본, June PC)의 11-sdk-verification을 기준으로 했다.
 
 ## 5. 앱을 지을 때 지킬 것
 - 차량 값은 리스너로 받는다. 타이머 반복 읽기 금지, 화면이 가려지면 내비·규제 리스너까지 해제(AC-C-2). H_Mate의 2초 폴링은 가져오지 않는다.
