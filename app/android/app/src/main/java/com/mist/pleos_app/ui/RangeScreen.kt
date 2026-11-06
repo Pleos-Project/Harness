@@ -50,15 +50,18 @@ fun RangeScreen(
     // 고른 프리셋이 비활성이 되면(잔고 부족) 고를 수 있는 첫 프리셋으로(AC-F2-2: +1만 자동)
     val extra = ps.firstOrNull { it.extraKrw == c.extraKrw && it.enabled }?.extraKrw ?: ps.first { it.enabled }.extraKrw
     val gap = Arrangement.spacedBy(16.gpx)
+    val zero = zeroText(vehicle.fuelType == "ev")
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(28.gpx)) {
         CgTitle(stringResource(R.string.screen_range))
 
         CgCaption(stringResource(R.string.range_extra_label))
-        if (!ps.first().enabled) CgNotice(stringResource(R.string.range_zero_unavailable))
+        if (!ps.first().enabled) CgNotice(stringResource(R.string.range_zero_unavailable, zero))
         FlowRow(horizontalArrangement = gap, verticalArrangement = gap) {
-            ps.forEach { p -> CgChip(presetText(p), selected = p.extraKrw == extra, onClick = { onChange(c.copy(extraKrw = p.extraKrw)) }, enabled = p.enabled) }
+            ps.forEach { p -> CgChip(presetText(p, zero), selected = p.extraKrw == extra, onClick = { onChange(c.copy(extraKrw = p.extraKrw)) }, enabled = p.enabled) }
         }
+        // 프리셋은 주유·충전에 더 쓰는 돈 기준, 통행료·주차는 따로(PRD v1.6 F2·6-3)
+        CgCaption(stringResource(R.string.range_preset_note))
 
         CgCaption(stringResource(R.string.range_days_label))
         FlowRow(horizontalArrangement = gap, verticalArrangement = gap) {
@@ -79,10 +82,10 @@ fun RangeScreen(
 }
 
 @Composable
-private fun presetText(p: PresetUi): String = when {
+private fun presetText(p: PresetUi, zero: String): String = when {
     // 비활성(잔고 < 안전 여유)이면 반경이 0 이하라 km를 붙이지 않는다
-    !p.enabled -> stringResource(R.string.preset_zero_only)
-    p.extraKrw == 0 -> stringResource(R.string.preset_zero, p.radiusKm)
+    !p.enabled -> stringResource(R.string.preset_zero_only, zero)
+    p.extraKrw == 0 -> stringResource(R.string.preset_zero, zero, p.radiusKm)
     p.extraKrw == 10_000 -> stringResource(R.string.preset_10k, p.radiusKm)
     else -> stringResource(R.string.preset_30k, p.radiusKm)
 }

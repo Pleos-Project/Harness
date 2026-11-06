@@ -46,18 +46,18 @@ import kotlin.math.abs
 
 /**
  * F5 한 장. 정보 순서: 테마·시간 → 장소명 → 금액 배지 → 이유 한 줄 → (탭) 비용 분해(PRD v1.3 6-4).
- * 교체는 앞면을 옆으로 밀거나 아이콘 버튼(남은 횟수 표시). 2회 쓰고 한 번 더 넘기면 "테마를 바꿔 볼까요?"(AC-F5-3).
+ * 교체는 앞면을 옆으로 밀거나 아이콘 버튼(남은 횟수 표시). 2회 쓰고 한 번 더 넘기면 "어떤 쪽으로 다시 볼까요?"(PRD v1.6, 이유 칩은 다음 PR).
  * 배지·이유·비용 문구는 엔진(display·reason)이 만든 것을 그대로 쓴다.
  * 일러스트는 SVG를 앱에 넣는 방식이 정해지면(열린 결정 12·13) 앞면 위에 붙인다. 출발(F8)은 P5.
  */
 @Composable
-fun CardScreen(ui: CardUi?, depart: DepartState, onSwap: () -> Unit, onRange: () -> Unit, onDepart: (Card) -> Unit) {
+fun CardScreen(ui: CardUi?, depart: DepartState, onSwap: () -> Unit, onRange: () -> Unit, onDepart: (Card) -> Unit, ev: Boolean = true) {
     when (ui) {
         null -> Column(verticalArrangement = Arrangement.spacedBy(24.gpx)) {
             CgTitle(stringResource(R.string.screen_card))
             CgNotice(stringResource(R.string.reading_vehicle))
         }
-        is CardUi.Shown -> Shown(ui, depart, onSwap) { onDepart(ui.card) }
+        is CardUi.Shown -> Shown(ui, depart, ev, onSwap) { onDepart(ui.card) }
         is CardUi.AskTheme -> Column(verticalArrangement = Arrangement.spacedBy(24.gpx)) {
             CgCard(Modifier.fillMaxWidth(), onClick = onRange) {
                 CgTitle(stringResource(R.string.ask_theme))
@@ -73,7 +73,7 @@ fun CardScreen(ui: CardUi?, depart: DepartState, onSwap: () -> Unit, onRange: ()
 }
 
 @Composable
-private fun Shown(ui: CardUi.Shown, depart: DepartState, onSwap: () -> Unit, onDepart: () -> Unit) {
+private fun Shown(ui: CardUi.Shown, depart: DepartState, ev: Boolean, onSwap: () -> Unit, onDepart: () -> Unit) {
     var showCost by remember(ui.card.id) { mutableStateOf(false) }
     val narrow = LocalNarrow.current
     val front = @Composable { m: Modifier -> FrontCard(ui.card, showCost, onTap = { showCost = !showCost }, onSwipe = onSwap, modifier = m) }
@@ -95,7 +95,8 @@ private fun Shown(ui: CardUi.Shown, depart: DepartState, onSwap: () -> Unit, onD
         }
     }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(24.gpx)) {
-        ui.raisedTo?.let { CgNotice(stringResource(if (it == 10_000) R.string.raised_10k else R.string.raised_30k)) }
+        // 자동 전환 안내(PRD v1.6 5-3): "추가 주유 없이 갈 곳이 없어 +1만 원 기준이에요"(EV "추가 충전 없이")
+        ui.raisedTo?.let { CgNotice(stringResource(if (it == 10_000) R.string.raised_10k else R.string.raised_30k, zeroText(ev))) }
         if (ui.fewCandidates) CgNotice(stringResource(R.string.few_candidates))
         if (narrow) {
             front(Modifier.fillMaxWidth())
@@ -128,6 +129,8 @@ private fun FrontCard(card: Card, showCost: Boolean, onTap: () -> Unit, onSwipe:
         // 1인 몫(F11): 착석 2 이상일 때만 엔진이 문구를 준다("1인 7천 원 안팎"), 착석 1이면 없음(AC-F11-2)
         card.display.perPersonText?.let { CgBadge(it, BadgeKind.Neutral) }
         CgBody(card.reason, secondary = true)
+        // 통행료·주차는 범위(주유·충전 기준)와 따로 작은 줄로(PRD v1.6 5-3, "0원" 오해 방지)
+        CgCaption(stringResource(R.string.card_extra_costs, tollText(card.cost.toll), parkingText(card.cost.parking)))
         if (showCost) CostBreakdown(card)
         else CgCaption(stringResource(R.string.cost_tap_hint))
     }
@@ -145,12 +148,19 @@ private fun CostBreakdown(card: Card) {
     val c = card.cost
     Column(verticalArrangement = Arrangement.spacedBy(8.gpx)) {
         CostRow(stringResource(R.string.cost_fuel), around(c.fuel))
-        CostRow(stringResource(R.string.cost_toll), if (c.toll > 0) around(c.toll) else stringResource(R.string.cost_none))
-        CostRow(stringResource(R.string.cost_parking), c.parking?.let { if (it > 0) around(it) else stringResource(R.string.cost_none) } ?: stringResource(R.string.cost_unknown))
+        CostRow(stringResource(R.string.cost_toll), tollText(c.toll))
+        CostRow(stringResource(R.string.cost_parking), parkingText(c.parking))
         CostRow(stringResource(R.string.cost_total), card.display.totalText)
         card.display.perPersonText?.let { CostRow(stringResource(R.string.cost_per_person), it) }
     }
 }
+
+@Composable
+private fun tollText(toll: Int): String = if (toll > 0) around(toll) else stringResource(R.string.cost_none)
+
+@Composable
+private fun parkingText(parking: Int?): String =
+    parking?.let { if (it > 0) around(it) else stringResource(R.string.cost_none) } ?: stringResource(R.string.cost_unknown)
 
 /** 분해 항목은 천 원 어림(엔진 approx). 어림이 0이면 "1천 원 미만". */
 private fun around(krw: Int): String = approx(krw.toDouble(), 1_000).let { if (it.under) it.text else "약 ${it.text}" }
@@ -167,8 +177,8 @@ private fun CostRow(label: String, value: String) {
 private val previewCard = Card(
     "p_dumulmeori", "양평 두물머리", "river", 37.5363, 127.314, 37.2, 42, "75분 안",
     CardCost(fuel = 4_200, toll = 3_600, parking = 2_000, total = 9_800, perPerson = null),
-    CardDisplay("1만 원 안팎", null, zeroExtra = true, tight = false, ringKrw = 0, badgeText = "추가 충전 없이 · 여유 50km", marginKm = 50),
-    "추가 0원 안 · 75분 안 · 지난번과 다른 테마",
+    CardDisplay("1만 원 안팎", null, zeroExtra = true, tight = false, ringKrw = 0, badgeText = "추가 충전 없이 · 50km 남기고", marginKm = 50),
+    "추가 충전 없이 · 75분 안 · 지난번과 다른 테마",
 )
 
 @Preview(name = "한 장·가로", widthDp = 1280, heightDp = 720)

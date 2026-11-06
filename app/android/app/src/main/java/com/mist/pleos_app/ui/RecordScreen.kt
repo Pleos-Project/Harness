@@ -30,7 +30,7 @@ import com.mist.pleos_app.ui.theme.ChagokTheme
 import com.mist.pleos_app.ui.theme.gpx
 
 /**
- * F17 기록 · 이달 이동비. "이번 달 이동비 약 7만 원 · 다녀온 곳 3곳"(엔진 monthSummary 문구 그대로) + 기록 목록.
+ * F17 기록 · 이달 이동비. "이번 달 이동비 약 7만 원 · 목적지 3곳"(엔진 monthSummary 문구 그대로) + 기록 목록.
  * 기록 지도(일러스트 위 핀)는 BX 지도 그림이 나오면 목록 위에 붙인다. 비교 문구 없음(AC-C-8).
  */
 @Composable
@@ -85,5 +85,5 @@ private fun RecordPreview() {
         Row("arrive", "2026-12-03T14:05:00+09:00", "2026-12-03T14:06:00+09:00", 37.2, 2_000, null, Place("양평 두물머리", 37.5, 127.3), true, true),
         Row("settle", "2026-11-08T09:00:00+09:00", "2026-11-08T18:30:00+09:00", 110.0, 16_000, 8_000, null, false, false),
     )
-    ChagokTheme(dark = true) { RecordScreen(LedgerUi(null, MonthSummary(18_000, 1, true, "이번 달 이동비 약 1만 8천 원 · 다녀온 곳 1곳"), rows)) }
+    ChagokTheme(dark = true) { RecordScreen(LedgerUi(null, MonthSummary(18_000, 1, true, "이번 달 이동비 약 1만 8천 원 · 목적지 1곳"), rows)) }
 }

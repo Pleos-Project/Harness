@@ -71,7 +71,7 @@ sealed class CardUi {
         val fewCandidates: Boolean = false,
     ) : CardUi()
 
-    /** 교체 3회째·후보 소진 → "테마를 바꿔 볼까요?" 카드 → 범위 화면(AC-F5-3). */
+    /** 교체 3회째·후보 소진 → "어떤 쪽으로 다시 볼까요?" 카드 → 범위 화면(PRD v1.6, 이유 칩 3개는 다음 PR). */
     data class AskTheme(val conditions: Conditions) : CardUi()
 
     /** 범위 안 후보가 없음. 오늘의 한 곳에서 +3만까지 없으면 "가까운 곳만 볼 수 있어요". */
