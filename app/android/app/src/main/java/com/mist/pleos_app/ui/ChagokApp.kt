@@ -46,6 +46,10 @@ import com.mist.pleos_app.ui.theme.ChagokTheme
 import com.mist.pleos_app.ui.theme.NARROW_MAX_PX
 import com.mist.pleos_app.ui.theme.gpx
 
+/** "추가 0원" 대신 화면에 쓰는 말: "추가 주유 없이"(EV "추가 충전 없이")(PRD v1.6 5-3). */
+@Composable
+fun zeroText(ev: Boolean): String = stringResource(if (ev) R.string.zero_ev else R.string.zero_ice)
+
 /** 창 폭이 900px 이하면 한 단(1:1 분할·세로 창). 화면마다 이 값으로 배치를 바꾼다(AC-C-9). */
 val LocalNarrow = staticCompositionLocalOf { false }
 
@@ -75,6 +79,7 @@ fun ChagokApp(
     val refuel by vm.refuelUi.collectAsStateWithLifecycle()
     val settings by vm.settings.collectAsStateWithLifecycle()
     val vehicle = remember(snapshot, settings) { vm.vehicleOf(snapshot, model) }
+    val ev = vm.constants?.vehicles?.get(model)?.fuelType != "ice"
     // CCP Back: 최상단(홈)에서는 finish 하지 않고 숨긴다(Pleos 앱 개발 가이드, 심사 반려 사유)
     BackHandler { if (!driving && !vm.back()) onExit() }   // 주행 중 Back은 받아서 무시(가림 화면 유지, 앱이 뒤로 숨지 않게)
     if (screen == Screen.CARD && !driving) LaunchedEffect(Unit) { vm.ensureCard(snapshot, model) }
@@ -91,7 +96,7 @@ fun ChagokApp(
     val content: @Composable (Screen) -> Unit = { s ->
         when (s) {
             Screen.HOME -> HomeScreen(
-                balance, ledger.settleCard, today = { vm.openToday(snapshot, model) }, open = vm::open, closeSettle = vm::dismissSettle,
+                balance, ledger.settleCard, ev = ev, today = { vm.openToday(snapshot, model) }, open = vm::open, closeSettle = vm::dismissSettle,
                 charged = refuel as? RefuelUi.Charged, chargedOpen = { vm.refuelToCard(snapshot, model) }, chargedClose = vm::dismissRefuel,
             )
             Screen.RANGE -> {
@@ -104,7 +109,7 @@ fun ChagokApp(
                     onPick = { vm.openPicked(snapshot, model) },
                 )
             }
-            Screen.CARD -> CardScreen(card, depart, onSwap = vm::swap, onRange = { vm.open(Screen.RANGE) }, onDepart = onDepart)
+            Screen.CARD -> CardScreen(card, depart, onSwap = vm::swap, onRange = { vm.open(Screen.RANGE) }, onDepart = onDepart, ev = ev)
             Screen.RECORD -> RecordScreen(ledger)
             Screen.SETTINGS -> SettingsScreen(settings, vm.constants, onChange = vm::updateSettings, onReset = vm::resetRecords)
         }
@@ -148,6 +153,7 @@ private fun HomeScreen(
     today: () -> Unit,
     open: (Screen) -> Unit,
     closeSettle: () -> Unit = {},
+    ev: Boolean = true,
     charged: RefuelUi.Charged? = null,
     chargedOpen: () -> Unit = {},
     chargedClose: () -> Unit = {},
@@ -161,11 +167,11 @@ private fun HomeScreen(
         charged?.let { ChargeCard(it, onOpen = chargedOpen, onClose = chargedClose, modifier = Modifier.fillMaxWidth()) }
         if (narrow) {
             BalanceCard(balance, Modifier.fillMaxWidth())
-            TodayPickCard(today, Modifier.fillMaxWidth())
+            TodayPickCard(today, ev, Modifier.fillMaxWidth())
         } else {
             Row(horizontalArrangement = gap) {
                 BalanceCard(balance, Modifier.weight(1f))
-                TodayPickCard(today, Modifier.weight(1f))
+                TodayPickCard(today, ev, Modifier.weight(1f))
             }
         }
         CgButton(stringResource(R.string.change_conditions), { open(Screen.RANGE) }, Modifier.fillMaxWidth(), kind = CgButtonKind.Basic)
@@ -189,12 +195,12 @@ private fun BalanceCard(balance: HomeBalance, modifier: Modifier) {
     }
 }
 
-/** 오늘의 한 곳: 기본 조건(추가 0원 · 당일 · 테마 없음 · 인원 자동), 탭하면 범위 화면 없이 한 장(PRD v1.3 6-1). */
+/** 오늘의 한 곳: 기본 조건(추가 0원 · 당일 · 테마 없음 · 인원 자동, 화면은 "추가 주유 없이 · 당일 · 인원 자동"), 탭하면 범위 화면 없이 한 장. */
 @Composable
-private fun TodayPickCard(onClick: () -> Unit, modifier: Modifier) {
+private fun TodayPickCard(onClick: () -> Unit, ev: Boolean, modifier: Modifier) {
     CgCard(modifier, onClick = onClick) {
         CgCaption(stringResource(R.string.today_pick))
-        CgBody(stringResource(R.string.today_pick_conditions), secondary = true)
+        CgBody(stringResource(R.string.today_pick_conditions, zeroText(ev)), secondary = true)
     }
 }
 

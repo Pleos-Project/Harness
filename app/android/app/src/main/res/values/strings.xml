@@ -19,16 +19,20 @@
     <string name="balance_label">지금 차에 든 돈</string>
     <string name="price_average">평균 단가</string>
     <string name="today_pick">오늘의 한 곳</string>
-    <string name="today_pick_conditions">추가 0원 · 당일 · 인원 자동</string>
+    <string name="today_pick_conditions">%1$s · 당일 · 인원 자동</string>
     <string name="change_conditions">조건 바꾸기</string>
 
     <!-- 범위(F2·F3) -->
     <string name="range_extra_label">추가로 쓸 돈</string>
-    <string name="preset_zero">추가 0원 · 약 %1$dkm</string>
-    <string name="preset_zero_only">추가 0원</string>
+    <!-- PRD v1.6 5-3: "추가 0원"은 내부 조건 이름, 화면은 "추가 주유 없이"(EV "추가 충전 없이") -->
+    <string name="zero_ice">추가 주유 없이</string>
+    <string name="zero_ev">추가 충전 없이</string>
+    <string name="preset_zero">%1$s · 약 %2$dkm</string>
+    <string name="preset_zero_only">%1$s</string>
+    <string name="range_preset_note">주유·충전 기준 · 통행료·주차 별도</string>
     <string name="preset_10k">+1만 원 · 약 %1$dkm</string>
     <string name="preset_30k">+3만 원 · 약 %1$dkm</string>
-    <string name="range_zero_unavailable">추가 0원 범위가 없어요. +1만 원부터 볼게요</string>
+    <string name="range_zero_unavailable">%1$s 갈 곳이 없어요. +1만 원부터 볼게요</string>
     <string name="range_days_label">일정</string>
     <string name="range_day_trip">당일</string>
     <string name="range_overnight">1박</string>
@@ -38,11 +42,11 @@
     <string name="range_pick">한 장 뽑기</string>
 
     <!-- 한 장(F5) -->
-    <string name="raised_10k">추가 0원으로 갈 곳이 없어 +1만 원 기준이에요</string>
-    <string name="raised_30k">추가 0원으로 갈 곳이 없어 +3만 원 기준이에요</string>
+    <string name="raised_10k">%1$s 갈 곳이 없어 +1만 원 기준이에요</string>
+    <string name="raised_30k">%1$s 갈 곳이 없어 +3만 원 기준이에요</string>
     <string name="only_nearby">가까운 곳만 볼 수 있어요</string>
     <string name="few_candidates">범위 안 후보가 적어요</string>
-    <string name="ask_theme">테마를 바꿔 볼까요?</string>
+    <string name="ask_theme">어떤 쪽으로 다시 볼까요?</string>
     <string name="ask_theme_sub">조건을 바꾸면 다른 곳을 뽑아 볼게요</string>
     <string name="swap_label">다른 곳 보기</string>
     <string name="stack_left">다른 후보 %1$d</string>
@@ -55,6 +59,7 @@
     <string name="payer_minus">나눠 낼 인원 줄이기</string>
     <string name="payer_plus">나눠 낼 인원 늘리기</string>
     <string name="confirm">확인</string>
+    <string name="card_extra_costs">통행료 %1$s · 주차 %2$s</string>
     <string name="cost_tap_hint">눌러서 비용 보기</string>
     <string name="cost_fuel">연료</string>
     <string name="cost_toll">통행료(왕복)</string>
@@ -106,7 +111,7 @@
     <string name="settings_records">기록</string>
     <string name="settings_reset">기록 초기화</string>
     <string name="settings_reset_title">기록을 지울까요?</string>
-    <string name="settings_reset_body">지난번 정산 기준, 정산 기록, 다녀온 곳 핀, 최근 방문이 지워져요</string>
+    <string name="settings_reset_body">지난번 정산 기준, 정산 기록, 목적지 핀, 최근 방문이 지워져요</string>
     <string name="settings_reset_confirm">지우기</string>
     <string name="settings_reset_done">기록을 지웠어요</string>
     <string name="cancel">취소</string>
