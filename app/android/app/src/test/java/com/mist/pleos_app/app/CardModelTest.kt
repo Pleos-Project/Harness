@@ -110,4 +110,14 @@ class CardModelTest {
         assertEquals("1시간", minutesText(60))
         assertEquals("1시간 10분", minutesText(70))
     }
+
+    @Test
+    fun rangeThemeChipsAreDemoThemes() {
+        // 칩 8개 = fixtures/constants.json themes(데모 후보 테마). 실내·축제는 확정 전이라 칩에 없음(#39 후속)
+        val themes = kotlinx.serialization.json.Json.parseToJsonElement(File(root, "constants.json").readText())
+            .let { (it as kotlinx.serialization.json.JsonObject)["themes"] as kotlinx.serialization.json.JsonArray }
+            .map { (it as kotlinx.serialization.json.JsonPrimitive).content }
+        assertEquals(themes, RANGE_THEMES)
+        assertTrue(candidates.all { it.theme in RANGE_THEMES })
+    }
 }

@@ -40,6 +40,12 @@ fun presets(v: Vehicle, days: Int): List<PresetUi> = RING_KRW.map { extra ->
 /** 추가 0원이 안 되면 +1만부터(AC-F2-2). */
 fun defaultExtra(v: Vehicle, days: Int): Int = if (computeRange(v, 0, days).zeroAvailable) 0 else RING_KRW[1]
 
+/**
+ * 범위 화면 테마 칩(F3). 엔진 THEME_KO는 카드 라벨용이라 서버 테마가 늘어도(#39 실내·축제) 칩은 이 8개로 묶어 둔다.
+ * 명준 확정 전이고 데모 후보에 실내·축제가 없어 오프라인 데모에서 고르면 0개가 된다. 확정되면 여기에 더한다.
+ */
+val RANGE_THEMES: List<String> = listOf("sea", "lake", "river", "mountain", "park", "city", "island", "drive")
+
 /** 테마 칩: 0~2개, 3개째를 누르면 가장 먼저 고른 것이 빠진다(AC-F3-1). */
 fun toggleTheme(themes: List<String>, theme: String): List<String> = when {
     theme in themes -> themes - theme

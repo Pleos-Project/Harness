@@ -17,6 +17,7 @@ import com.mist.pleos_app.app.Conditions
 import com.mist.pleos_app.app.PresetUi
 import com.mist.pleos_app.app.presets
 import com.mist.pleos_app.app.toggleTheme
+import com.mist.pleos_app.app.RANGE_THEMES
 import com.mist.pleos_app.engine.THEME_KO
 import com.mist.pleos_app.engine.Vehicle
 import com.mist.pleos_app.ui.components.CgButton
@@ -71,7 +72,7 @@ fun RangeScreen(
 
         CgCaption(stringResource(R.string.range_theme_label))
         FlowRow(horizontalArrangement = gap, verticalArrangement = gap) {
-            THEME_KO.forEach { (key, ko) -> CgChip(ko, selected = key in c.themes, onClick = { onChange(c.copy(themes = toggleTheme(c.themes, key))) }) }
+            RANGE_THEMES.forEach { key -> CgChip(THEME_KO[key] ?: key, selected = key in c.themes, onClick = { onChange(c.copy(themes = toggleTheme(c.themes, key))) }) }
         }
 
         CgButton(stringResource(R.string.range_pick), { onChange(c.copy(extraKrw = extra)); onPick() }, Modifier.fillMaxWidth())
