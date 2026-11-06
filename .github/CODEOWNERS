@@ -10,7 +10,7 @@
 /scripts/replay.sh          @june0103
 /app/                       @june0103
 /app/android/app/src/main/java/com/mist/pleos_app/engine/   @hyos0415 @june0103
-/app/android/app/src/test/   @hyos0415 @june0103
+/app/android/app/src/test/java/com/mist/pleos_app/engine/   @hyos0415 @june0103
 /design/                    @thvlou @june0103
 /design/illustrations/      @thvlou
 /design/icons/              @thvlou
