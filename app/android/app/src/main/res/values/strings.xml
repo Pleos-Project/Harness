@@ -22,6 +22,41 @@
     <string name="today_pick_conditions">추가 0원 · 당일 · 인원 자동</string>
     <string name="change_conditions">조건 바꾸기</string>
 
+    <!-- 범위(F2·F3) -->
+    <string name="range_extra_label">추가로 쓸 돈</string>
+    <string name="preset_zero">추가 0원 · 약 %1$dkm</string>
+    <string name="preset_zero_only">추가 0원</string>
+    <string name="preset_10k">+1만 원 · 약 %1$dkm</string>
+    <string name="preset_30k">+3만 원 · 약 %1$dkm</string>
+    <string name="range_zero_unavailable">추가 0원 범위가 없어요. +1만 원부터 볼게요</string>
+    <string name="range_days_label">일정</string>
+    <string name="range_day_trip">당일</string>
+    <string name="range_overnight">1박</string>
+    <string name="range_people_label">인원</string>
+    <string name="range_people_auto">%1$d명 · 자동</string>
+    <string name="range_theme_label">테마 (0~2개)</string>
+    <string name="range_pick">한 장 뽑기</string>
+
+    <!-- 한 장(F5) -->
+    <string name="raised_10k">추가 0원으로 갈 곳이 없어 +1만 원 기준이에요</string>
+    <string name="raised_30k">추가 0원으로 갈 곳이 없어 +3만 원 기준이에요</string>
+    <string name="only_nearby">가까운 곳만 볼 수 있어요</string>
+    <string name="few_candidates">범위 안 후보가 적어요</string>
+    <string name="ask_theme">테마를 바꿔 볼까요?</string>
+    <string name="ask_theme_sub">조건을 바꾸면 다른 곳을 뽑아 볼게요</string>
+    <string name="swap_label">다른 곳 보기</string>
+    <string name="stack_left">다른 후보 %1$d</string>
+    <string name="swaps_left">교체 %1$d번 남음</string>
+    <string name="depart">출발</string>
+    <string name="cost_tap_hint">눌러서 비용 보기</string>
+    <string name="cost_fuel">연료</string>
+    <string name="cost_toll">통행료(왕복)</string>
+    <string name="cost_parking">주차</string>
+    <string name="cost_total">합계</string>
+    <string name="cost_per_person">1인</string>
+    <string name="cost_none">없음</string>
+    <string name="cost_unknown">정보 없음</string>
+
     <!-- X1 주행 중 가림: 금액·카드 없이 한 줄 -->
     <string name="driving_hidden">정차하면 다시 보여 드릴게요</string>
 

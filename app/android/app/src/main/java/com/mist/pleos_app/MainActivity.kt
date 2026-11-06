@@ -9,8 +9,6 @@ import androidx.compose.runtime.remember
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.mist.pleos_app.app.AppViewModel
 import com.mist.pleos_app.app.homeBalance
-import com.mist.pleos_app.engine.Constants
-import com.mist.pleos_app.engine.parseConstants
 import com.mist.pleos_app.ui.ChagokApp
 import com.mist.pleos_app.ui.theme.ChagokTheme
 import com.mist.pleos_app.util.ChagokLog
@@ -26,12 +24,6 @@ class MainActivity : ComponentActivity() {
     private val vm: AppViewModel by viewModels()
     private lateinit var vehicle: PleosVehicleRepository
 
-    /** 차종 표·기본 단가(빌드 때 fixtures/ → assets/data/, syncChagokData). 없으면 잔고 대신 "차량 정보를 읽는 중". */
-    private val constants: Constants? by lazy {
-        runCatching { assets.open("data/constants.json").bufferedReader().use { parseConstants(it.readText()) } }
-            .onFailure { ChagokLog.event("constants_missing") }.getOrNull()
-    }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         vehicle = PleosVehicleRepository(this)
@@ -40,9 +32,9 @@ class MainActivity : ComponentActivity() {
         setContent {
             val snapshot by vehicle.state.collectAsStateWithLifecycle()
             // 차종·단가·모의 연료 %는 설정(S1, P7)에서 받는다. 그 전까지 에뮬 기본값 아이오닉 5 LR(명세 S1).
-            val balance = remember(snapshot) { homeBalance(constants, DEFAULT_MODEL, snapshot) }
+            val balance = remember(snapshot) { homeBalance(vm.constants, DEFAULT_MODEL, snapshot) }
             ChagokTheme {
-                ChagokApp(vm, balance, driving = isDriving(snapshot), onExit = {
+                ChagokApp(vm, snapshot, DEFAULT_MODEL, balance, driving = isDriving(snapshot), onExit = {
                     val moved = moveTaskToBack(true)
                     ChagokLog.event("back_to_background", "moved" to moved)
                 })
