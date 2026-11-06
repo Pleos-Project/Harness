@@ -74,6 +74,22 @@ class LedgerFlowTest {
     }
 
     @Test
+    fun arriveKeepsAveragePriceSource() {
+        // fixtures/ledger L6(#29): 기본값 단가로 도착 → 그 스냅샷으로 다음 정산에도 "(평균 단가)"
+        assertEquals("default", v.priceSource)
+        val f = flow()
+        f.open(v, 12_472.0, seats = 1, recentDestination = null)
+        f.depart(dumul, routeKm = 37.2, odometerKm = 12_472.0)
+        f.onDoor(open = false, parked = true, v = v, odometerKm = 12_472.0, seats = 1)
+        assertTrue(f.onDoor(open = true, parked = true, v = v, odometerKm = 12_472.0, seats = 1))
+        assertEquals("default", f.state.snapshot!!.priceSource)
+
+        f.onHidden(); t = t.plusHours(2)
+        f.open(v, 12_550.0, seats = 1, recentDestination = null)
+        assertTrue(f.settleCard!!, f.settleCard!!.endsWith("(평균 단가)"))
+    }
+
+    @Test
     fun resetClearsEverything() {
         val f = flow()
         f.open(v, 100.0, 1, null); f.depart(dumul, 37.2, 100.0)
