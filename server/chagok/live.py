@@ -23,7 +23,8 @@ from . import engine as E
 from . import routes as R
 from . import sources as S
 
-REFINE_WINDOW = 12   # [가정] 실경로로 바꿀 후보 수(한 번에 병렬). 스택은 상위 9장 안에서 고른다(cards.build_stack)
+REFINE_WINDOW = 20   # [제안] 실경로로 바꿀 후보 수(한 번에 병렬). 12곳이면 A1(목적지성)이 고른 서해 해변·섬이 실경로 90분을 넘어
+                     # 바다 테마 카드가 4곳만 남았다(11/6, 추정 67~79분 → 실경로 74~145분). 20곳 병렬 실측 1.1~1.3초
 FAR_IN_WINDOW = 2    # 그중 '조금 먼 곳'(75~90분) 몫 — 스택에 먼 곳 1장을 넣을 수 있게
 # 앱 서버 타임아웃 3초(기능명세서 '서버 실패'). 카카오 1회 약 0.7초(실측, 12곳 병렬 1.2~2.0초) → 호출 타임아웃 1.2초.
 ROUTE_TIMEOUT_S = 1.2
