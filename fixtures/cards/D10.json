@@ -14,15 +14,15 @@
     "expected": {
       "fuel_type": "ice",
       "capacity": 42,
-      "efficiency": 17.935000000000002,
+      "efficiency": 18.02,
       "price_per_unit": 1856,
       "price_source": "default",
-      "balance_km": 376.6,
+      "balance_km": 378.4,
       "balance_krw": 39000,
-      "balance_text": "탱크에 3만 9천 원어치 · 약 377km",
-      "margin_km": 56.5,
-      "usable_km": 320.1,
-      "radius_km": 123.1,
+      "balance_text": "탱크에 3만 9천 원어치 · 약 378km",
+      "margin_km": 56.8,
+      "usable_km": 321.7,
+      "radius_km": 123.7,
       "range_source": "assembled",
       "zero_available": true
     }
@@ -34,9 +34,9 @@
     },
     "budget": {
       "fuel_type": "ice",
-      "usable_km": 320.13975000000005,
-      "margin_km": 56.495250000000006,
-      "efficiency": 17.935000000000002,
+      "usable_km": 321.65700000000004,
+      "margin_km": 56.763,
+      "efficiency": 18.02,
       "price_per_unit": 1856,
       "price_source": "default"
     },
@@ -49,7 +49,7 @@
   },
   "expected": {
     "session_id": "<session>",
-    "radius_km": 123.1,
+    "radius_km": 123.7,
     "candidates_in_range": 12,
     "hint": null,
     "picked": {
@@ -62,10 +62,10 @@
       "minutes": 58,
       "time_label": "75분 안",
       "cost": {
-        "fuel": 11073,
+        "fuel": 11021,
         "toll": 7000,
         "parking": 0,
-        "total": 18073,
+        "total": 18021,
         "per_person": 9000
       },
       "display": {
@@ -74,8 +74,8 @@
         "zero_extra": true,
         "tight": false,
         "ring_krw": 0,
-        "badge_text": "추가 주유 없이 · 여유 56km",
-        "margin_km": 56
+        "badge_text": "추가 주유 없이 · 여유 57km",
+        "margin_km": 57
       },
       "reason": "추가 0원 안 · 75분 안 · 지난번과 다른 테마"
     },
@@ -90,10 +90,10 @@
         "minutes": 76,
         "time_label": "조금 먼 곳",
         "cost": {
-          "fuel": 13908,
+          "fuel": 13843,
           "toll": 6400,
           "parking": 0,
-          "total": 20308,
+          "total": 20243,
           "per_person": 10000
         },
         "display": {
@@ -102,8 +102,8 @@
           "zero_extra": true,
           "tight": false,
           "ring_krw": 0,
-          "badge_text": "추가 주유 없이 · 여유 56km",
-          "margin_km": 56
+          "badge_text": "추가 주유 없이 · 여유 57km",
+          "margin_km": 57
         },
         "reason": "추가 0원 안 · 지난번과 다른 테마 · 바다"
       },
@@ -117,10 +117,10 @@
         "minutes": 58,
         "time_label": "75분 안",
         "cost": {
-          "fuel": 10783,
+          "fuel": 10732,
           "toll": 9000,
           "parking": 2000,
-          "total": 21783,
+          "total": 21732,
           "per_person": 11000
         },
         "display": {
@@ -129,8 +129,8 @@
           "zero_extra": true,
           "tight": false,
           "ring_krw": 0,
-          "badge_text": "추가 주유 없이 · 여유 56km",
-          "margin_km": 56
+          "badge_text": "추가 주유 없이 · 여유 57km",
+          "margin_km": 57
         },
         "reason": "추가 0원 안 · 75분 안 · 지난번과 다른 테마"
       },
@@ -144,10 +144,10 @@
         "minutes": 42,
         "time_label": "75분 안",
         "cost": {
-          "fuel": 7699,
+          "fuel": 7663,
           "toll": 3600,
           "parking": 2000,
-          "total": 13299,
+          "total": 13263,
           "per_person": 7000
         },
         "display": {
@@ -156,8 +156,8 @@
           "zero_extra": true,
           "tight": false,
           "ring_krw": 0,
-          "badge_text": "추가 주유 없이 · 여유 56km",
-          "margin_km": 56
+          "badge_text": "추가 주유 없이 · 여유 57km",
+          "margin_km": 57
         },
         "reason": "추가 0원 안 · 75분 안 · 지난번과 다른 테마"
       }

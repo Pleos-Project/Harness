@@ -8,13 +8,14 @@
     "home_charge_krw_per_kwh": 300,
     "fast_charge_krw_per_kwh": 350
   },
+  "_vehicles_basis":"내연 차종 = Pleos Connect 탑재 현행 모델의 현대차 공식 카탈로그 정부 신고 복합 연비(빌트인 캠 미적용·가장 작은 휠·2WD)와 연료탱크 용량. 실연비는 엔진이 OFFICIAL_TO_REAL을 곱한다",
   "vehicles": {
-    "ioniq5_lr": {"fuel_type": "ev", "capacity": 77.4, "official_efficiency": 6.2, "note": "77.4kWh, 공인 6.2 km/kWh, 프로토타입 기준"},
-    "ioniq6_lr": {"fuel_type": "ev", "capacity": 77.4, "official_efficiency": 6.2},
-    "grandeur_hev": {"fuel_type": "ice", "capacity": 60, "official_efficiency": 18.0, "note": "탱크 60L, 공인 18.0 km/L [제원 재확인]"},
-    "avante_hev": {"fuel_type": "ice", "capacity": 42, "official_efficiency": 21.1},
-    "tucson_hev": {"fuel_type": "ice", "capacity": 52, "official_efficiency": 16.2},
-    "grandeur_25": {"fuel_type": "ice", "capacity": 70, "official_efficiency": 11.5}
+    "ioniq5_lr": {"fuel_type": "ev", "capacity": 77.4, "official_efficiency": 6.2, "note": "77.4kWh, 공인 6.2 km/kWh, 프로토타입 기준 [현행 카탈로그는 84.0kWh·5.2(19\") — 바꾸면 PT 숫자가 바뀌어 별도 이슈]"},
+    "ioniq6_lr": {"fuel_type": "ev", "capacity": 77.4, "official_efficiency": 6.2, "note": "[더 뉴 아이오닉 6 카탈로그는 84.0kWh·6.0(18\") — 별도 이슈]"},
+    "grandeur_hev": {"fuel_type": "ice", "capacity": 50, "official_efficiency": 18.4, "note": "더 뉴 그랜저 1.6T 하이브리드: 탱크 50L, 복합 18.4 km/L(18\"). 카탈로그 2026-10"},
+    "avante_hev": {"fuel_type": "ice", "capacity": 42, "official_efficiency": 21.2, "note": "디 올 뉴 아반떼 1.6 하이브리드: 탱크 42L, 복합 21.2 km/L(17\"). 카탈로그 2026-11"},
+    "tucson_hev": {"fuel_type": "ice", "capacity": 54, "official_efficiency": 17.4, "note": "디 올 뉴 투싼 1.6T 하이브리드 2WD: 탱크 54L, 복합 17.4 km/L(17\"). 카탈로그 2026-10"},
+    "grandeur_25": {"fuel_type": "ice", "capacity": 60, "official_efficiency": 11.6, "note": "더 뉴 그랜저 가솔린 2.5: 탱크 60L, 복합 11.6 km/L(18\"). 카탈로그 2026-10"}
   },
   "themes": ["sea", "lake", "river", "mountain", "park", "city", "island", "drive"]
 }
