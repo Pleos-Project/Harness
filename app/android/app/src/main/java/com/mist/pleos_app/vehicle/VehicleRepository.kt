@@ -223,9 +223,18 @@ class PleosVehicleRepository(context: Context) : VehicleRepository, DefaultLifec
                 ok("range_remaining")
                 flow.update { it.copy(rangeRemainingM = (value.value as? Number)?.toDouble()) }
             }
+            // F9 충전 스위치: Pleos SDK 2.3.2는 Get만 있고 리스너가 없어 AAOS EV_CHARGE_SWITCH(A CAR_ENERGY)로 받는다.
+            // 콘솔 "Charge Switch"가 이 속성으로 들어온다(catalog car_property 0x11200F42).
+            if (value.propertyId == VehiclePropertyIds.EV_CHARGE_SWITCH) {
+                ok("charge_switch")
+                val on = value.value as? Boolean
+                flow.update { it.copy(chargeSwitchOn = on) }
+                ChagokLog.event("charge_switch", "on" to on)
+            }
         }
         override fun onErrorEvent(propertyId: Int, areaId: Int) {
             if (propertyId == VehiclePropertyIds.RANGE_REMAINING) fail("range_remaining", Exception("property error"))
+            if (propertyId == VehiclePropertyIds.EV_CHARGE_SWITCH) fail("charge_switch", Exception("property error"))
         }
     }
 
@@ -274,6 +283,10 @@ class PleosVehicleRepository(context: Context) : VehicleRepository, DefaultLifec
             guard("range_remaining") {
                 @Suppress("DEPRECATION")
                 p.registerCallback(propCallback, VehiclePropertyIds.RANGE_REMAINING, CarPropertyManager.SENSOR_RATE_ONCHANGE)
+            }
+            guard("charge_switch") {
+                @Suppress("DEPRECATION")
+                p.registerCallback(propCallback, VehiclePropertyIds.EV_CHARGE_SWITCH, CarPropertyManager.SENSOR_RATE_ONCHANGE)
             }
         }
         ChagokLog.event("vehicle_listen", "on" to true)

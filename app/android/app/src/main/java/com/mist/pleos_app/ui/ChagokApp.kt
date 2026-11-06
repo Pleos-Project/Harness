@@ -27,6 +27,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.mist.pleos_app.R
 import com.mist.pleos_app.app.AppViewModel
 import com.mist.pleos_app.app.HomeBalance
+import com.mist.pleos_app.app.RefuelUi
 import com.mist.pleos_app.app.Screen
 import com.mist.pleos_app.engine.Card
 import com.mist.pleos_app.engine.Place
@@ -71,15 +72,17 @@ fun ChagokApp(
     val ledger by vm.ledgerState.collectAsStateWithLifecycle()
     val visit by vm.visit.collectAsStateWithLifecycle()
     val payer by vm.payerState.collectAsStateWithLifecycle()
+    val refuel by vm.refuelUi.collectAsStateWithLifecycle()
     val settings by vm.settings.collectAsStateWithLifecycle()
     val vehicle = remember(snapshot, settings) { vm.vehicleOf(snapshot, model) }
     // CCP Back: 최상단(홈)에서는 finish 하지 않고 숨긴다(Pleos 앱 개발 가이드, 심사 반려 사유)
     BackHandler { if (!driving && !vm.back()) onExit() }   // 주행 중 Back은 받아서 무시(가림 화면 유지, 앱이 뒤로 숨지 않게)
     if (screen == Screen.CARD && !driving) LaunchedEffect(Unit) { vm.ensureCard(snapshot, model) }
     // 차량값·착석·나눠 낼 인원이 바뀌면 한 장의 배지·1인 몫을 1초 디바운스로 갱신(F5 유지·재계산, F11)
-    LaunchedEffect(snapshot, visit, payer) {
+    LaunchedEffect(snapshot, visit, payer, settings) {
         if (!driving) {
             vm.onVehicle(snapshot, model)
+            vm.onEnergy(snapshot, model)                   // F9: 충전 스위치 ON→OFF, 연료 % 3%p 상승(모의 값 포함)
             vm.maybeSettle(snapshot, model, fetchRecent)   // F10: 화면이 보일 때 정차면 이번 방문 정산 1번
         }
         vm.onDoor(snapshot, model)                         // F17: trip이 있고 정차 중 운전석 문 열림 = 도착
@@ -87,7 +90,10 @@ fun ChagokApp(
     val seats = vm.seatsOf(snapshot)
     val content: @Composable (Screen) -> Unit = { s ->
         when (s) {
-            Screen.HOME -> HomeScreen(balance, ledger.settleCard, today = { vm.openToday(snapshot, model) }, open = vm::open, closeSettle = vm::dismissSettle)
+            Screen.HOME -> HomeScreen(
+                balance, ledger.settleCard, today = { vm.openToday(snapshot, model) }, open = vm::open, closeSettle = vm::dismissSettle,
+                charged = refuel as? RefuelUi.Charged, chargedOpen = { vm.refuelToCard(snapshot, model) }, chargedClose = vm::dismissRefuel,
+            )
             Screen.RANGE -> {
                 // 범위 화면에서 고르는 중인 값도 ViewModel에 둔다(주행 가림 뒤 그대로, README 2-1)
                 LaunchedEffect(Unit) { vm.setConditions(vm.conditionsFor(snapshot, model)) }
@@ -107,6 +113,10 @@ fun ChagokApp(
     val askPayers = remember(snapshot, payer) { vm.shouldAskPayers(snapshot) }
     val toast: @Composable () -> Unit = {
         if (askPayers) PayerToast(seats, onConfirm = { vm.confirmPayers(seats, it) }, onDismiss = { vm.dismissPayers(seats) })
+        // F9 내연 금액 시트: 정차 화면 어디서나(주행 중에는 가림 화면만)
+        (refuel as? RefuelUi.Sheet)?.let { sheet ->
+            RefuelSheet(sheet, onConfirm = { vm.refuelToCard(snapshot, model, it) }, onDismiss = vm::dismissRefuel)
+        }
     }
     AppFrame(screen, balance.demoValues, driving, toast, content)
 }
@@ -138,12 +148,17 @@ private fun HomeScreen(
     today: () -> Unit,
     open: (Screen) -> Unit,
     closeSettle: () -> Unit = {},
+    charged: RefuelUi.Charged? = null,
+    chargedOpen: () -> Unit = {},
+    chargedClose: () -> Unit = {},
 ) {
     val narrow = LocalNarrow.current
     val gap = Arrangement.spacedBy(24.gpx)
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()), verticalArrangement = gap) {
         // F10 정산 카드: 홈 맨 위, 닫기 가능, 탭하면 기록(DECISIONS '정산 카드 위치')
         settle?.let { SettleCard(it, onOpen = { open(Screen.RECORD) }, onClose = closeSettle, modifier = Modifier.fillMaxWidth()) }
+        // F9 충전 직후 카드: 탭 또는 3초 뒤 한 장(AC-F9-2)
+        charged?.let { ChargeCard(it, onOpen = chargedOpen, onClose = chargedClose, modifier = Modifier.fillMaxWidth()) }
         if (narrow) {
             BalanceCard(balance, Modifier.fillMaxWidth())
             TodayPickCard(today, Modifier.fillMaxWidth())
