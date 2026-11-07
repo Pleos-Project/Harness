@@ -45,7 +45,13 @@ val KNOWN_PRECIP: Set<String> = setOf("none", "rain", "snow")
 const val SUN_ZENITH_DEG = 90.833
 
 // ------------------------------------------------------------ 상수
-data class EffortItem(val key: String, val label: String, val priceKrw: Double)
+data class EffortItem(
+    val key: String,
+    val label: String,                      // 선택지 버튼 "공동 경비"
+    val priceKrw: Double,
+    val phraseText: String = "",            // B 문장에 들어갈 말 "커피값"·"밥값"·"공동 경비"
+    val examples: List<String> = emptyList(),   // 그 자리 글자가 차례로 바뀌는 예시(공동 경비만, 첫 값 = phraseText)
+)
 
 data class EffortConstants(
     val ratesPct: Map<String, Double>,      // rain·snow·congestion·delay·night (정수 %)
@@ -74,7 +80,7 @@ fun parseEffortConstants(text: String): EffortConstants {
         wageLabel = e.str("wage_label"),
         items = e.getValue("items").jsonArray.map {
             val i = it.jsonObject
-            EffortItem(i.str("key"), i.str("label"), i.dbl("price_krw"))
+            EffortItem(i.str("key"), i.str("label"), i.dbl("price_krw"), i.str("phrase_text"), i.strList("examples"))
         }.sortedBy { it.priceKrw },
         basis = e["basis"]?.takeIf { it !is JsonNull }?.jsonObject?.mapValues { (_, v) -> v.jsonPrimitive.content }
             ?: emptyMap(),
@@ -125,7 +131,8 @@ data class EffortScreenA(
 /** 방식 B 화면(명세 v0.5 F25, 노고 PRD v1.3 5-3). 금액은 보여 주지 않는다. 선택지는 effort.items 전부. */
 data class EffortScreenB(
     val item: String,                   // 기본값으로 올릴 항목 key
-    val text: String,                   // "오늘은 밥값에서 운전자 빼고 나누는 게 어때요"
+    val text: String,                   // "오늘은 밥값에서 운전자 빼고 나누는 게 어때요" / "오늘은 공동 경비에서 …"
+    val itemExamples: List<String>,     // 공동 경비면 그 자리에 차례로 보일 예시(첫 값이 text 안의 말), 커피·밥은 빈 목록
 )
 
 data class EffortProposal(
@@ -374,7 +381,7 @@ fun effortProposal(effortPctS: Double, n: Int, c: EffortConstants): EffortPropos
             basisText = "운전 노고 ${aT}을 운전자 포함 ${n}명이 나눈 값",
             wageText = "${c.wageLabel} 1분 ${perMin}원 기준",
         ),
-        b = item?.let { EffortScreenB(it.key, "오늘은 ${it.label}값에서 운전자 빼고 나누는 게 어때요") },
+        b = item?.let { EffortScreenB(it.key, "오늘은 ${it.phraseText}에서 운전자 빼고 나누는 게 어때요", it.examples) },
     )
 }
 
@@ -468,7 +475,7 @@ fun EffortScreenA.toJson(): JsonObject = obj(
     "title_text" to titleText, "main_text" to mainText, "basis_text" to basisText, "wage_text" to wageText,
 )
 
-fun EffortScreenB.toJson(): JsonObject = obj("item" to item, "text" to text)
+fun EffortScreenB.toJson(): JsonObject = obj("item" to item, "text" to text, "item_examples" to itemExamples)
 
 fun EffortProposal.toJson(): JsonObject = obj(
     "amount_krw" to amountKrw, "amount_approx" to amountApprox, "amount_text" to amountText,

@@ -157,10 +157,11 @@ def at(hm: str, day: str = DAY) -> str:
 
 def effort_input(dep: str, arr: str, *, eta_min: float, n: int, answer: int | None = None,
                  stops: list[tuple[str, str]] | None = None, ratio: float | None = 0.0,
-                 congestion_km: float | None = 0.0, segments_min: float | None = None, wdep: str = "none",
+                 congestion_m: float | None = 0.0, segments_min: float | None = None, wdep: str = "none",
                  warr: str = "none", distance_km: float | None = None, arr_day: str = DAY) -> dict:
     """정차: answer = 기본(도착 때 답한 쉰 시간, 분), stops = 보조(자동으로 잰 정차 목록, 빈 목록이면 정차 없음). 둘 중 하나만.
-    정체: ratio·congestion_km = 기본(출발 전 requestTrip 비율·km, 없으면 None), segments_min = 보조(구간 목록 통과 시간)."""
+    정체: ratio·congestion_m = 기본(출발 전 requestTrip 비율·정체 거리 m = 비율 × 경로 거리, 없으면 None),
+    segments_min = 보조(구간 목록 통과 시간)."""
     assert (stops is None) != (answer is None)
     return {
         "departed_at": at(dep), "arrived_at": at(arr, arr_day),
@@ -168,7 +169,7 @@ def effort_input(dep: str, arr: str, *, eta_min: float, n: int, answer: int | No
         "stops": [{"start": s, "end": e} for s, e in stops] if stops is not None else None,
         "eta_s": eta_min * 60,
         "congestion_ratio": ratio,
-        "congestion_m": congestion_km * 1000 if congestion_km is not None else None,
+        "congestion_m": congestion_m,
         "congestion_s": segments_min * 60 if segments_min is not None else None,
         "weather_dep": wdep, "weather_arr": warr, **SUN, "n": n, "distance_km": distance_km,
     }
@@ -194,13 +195,16 @@ KASI_SEOUL: dict = {
 
 
 def effort_fixtures() -> None:
-    r1 = effort_input("16:00", "18:10", answer=0, eta_min=105, ratio=0.35, congestion_km=12, wdep="rain",
+    # 정체: requestTrip 비율은 4% 단위라 36%(9칸), 정체 km = 비율 × 경로 거리 = 0.36 × 104,300m = 37,548m(명세 F20)
+    r1 = effort_input("16:00", "18:10", answer=0, eta_min=105, ratio=0.36, congestion_m=37_548, wdep="rain",
                       warr="rain", n=4, distance_km=104.3)
+    r13 = effort_input("09:00", "15:00", answer=60, eta_min=300, n=2)
     cases = [
-        ("R1", "PRD 예시: 16:00→18:10, ETA 105분, 정체 12km(경로의 35%), 비(출발·도착), 일몰 17:20, 쉰 시간 없음, 4명",
-         "AC-F23-1·AC-F24-1·AC-F25-1. 정체 분 = 비율 0.35 × T 130 = 45.5(열린 결정 28). 노고 130 + 비 52 + 정체 12.285 "
-         "+ 예상보다 더 6.75(25분) + 밤길 2(50분) + 장시간 1.25(10분) = 204.285 → 1.57배, 정체 줄 +9%. "
-         "금액 204.285 × 10,700 ÷ 60 = 36,430.825 → 약 3만 6천, 한 사람 9,107.7 → 약 9천, 운전자 몫 27,323.1 → 밥", r1),
+        ("R1", "PRD 예시: 16:00→18:10, ETA 105분, 정체 38km(경로의 36%), 비(출발·도착), 일몰 17:20, 쉰 시간 없음, 4명",
+         "AC-F23-1·AC-F24-1·AC-F25-1. 정체 분 = 비율 0.36 × T 130 = 46.8(열린 결정 28). 노고 130 + 비 52 + 정체 12.636 "
+         "+ 예상보다 더 6.75(25분) + 밤길 2(50분) + 장시간 1.25(10분) = 204.636 → 1.57배, 정체 줄 +10%. "
+         "금액 204.636 × 10,700 ÷ 60 = 36,493.42 → 약 3만 6천, 한 사람 9,123.36 → 약 9천, 운전자 몫 27,370.07 → 밥. "
+         "정체 값은 효성 결정(11/7): 35%·12km는 거리 104km와 맞지 않고 4% 단위가 아니어서 36%·38km", r1),
         ("R2", "보조(나란히 배치): 10:00 출발, 12:00~12:20 정차, 13:20 도착, ETA 170분, 맑음·낮, 2명",
          "AC-F21-2. 자동으로 잰 정차 20분(15분 이상)에서 장시간 구간이 120분 + 60분으로 나뉘어 장시간 0. "
          "예상보다 더 10분 < ETA의 10%(17분) → 0. 180 → 평소와 같은 길",
@@ -231,7 +235,7 @@ def effort_fixtures() -> None:
         ("R10", "답 + 밤길 비례 + 정보 없음: 16:30→19:30, 쉰 시간 30분, ETA 140분, 날씨·정체 정보 없음, 3명",
          "T = 180 − 30 = 150(75 + 75, 장시간 0). 밤 = 일몰 17:20~19:30 130분 × (150 ÷ 180) = 108.3분 → 4.33. "
          "날씨 '정보 없음'(가산 0), 출발 전 정체 비율도 구간 목록도 없음 → '정체 정보 없음'(F20·X2)",
-         effort_input("16:30", "19:30", answer=30, eta_min=140, ratio=None, congestion_km=None, wdep="unknown",
+         effort_input("16:30", "19:30", answer=30, eta_min=140, ratio=None, congestion_m=None, wdep="unknown",
                       warr="unknown", n=3)),
         ("R11", "새벽 출발: 05:30→08:00, 쉰 시간 없음, 일출 07:13, ETA 150분, 맑음, 2명",
          "전날 일몰 ~ 그날 일출 구간과 겹친 05:30~07:13 = 103분이 밤길 → 4.12. 장시간 30 × 0.125 = 3.75",
@@ -242,12 +246,15 @@ def effort_fixtures() -> None:
                       arr_day=NEXT_DAY)),
         ("R13", "답 '1시간 이상'(60분): 09:00→15:00, ETA 300분, 맑음·낮, 2명",
          "#47 표 '5시간 + 점심 1시간'. 언제 쉬었는지 모르니 T 300을 150 + 150으로 나눔 → 장시간 2 × 30 × 0.125 = 7.5. "
-         "307.5 ÷ 300 = 1.025 → 1.03(반올림 경계)",
-         effort_input("09:00", "15:00", answer=60, eta_min=300, n=2)),
-        ("R14", "보조(나란히 배치)로 구간 목록을 받은 R1: 정체 통과 시간 합 40분, 비율 35%·12km도 있음, 4명",
-         "구간 목록이 있으면 비율 × T(45.5분) 대신 통과 시간 40분을 쓴다(명세 7절). 노고 202.8 → 1.56배, 정체 +8%, "
-         "금액 36,166 → 약 3만 6천, 한 사람 약 9천, 운전자 몫 27,124.5 → 밥. 정체 줄 문구는 그대로 '12km (경로의 35%)'",
+         "307.5 ÷ 300 = 1.025 → 1.03(반올림 경계)", r13),
+        ("R14", "보조(나란히 배치)로 구간 목록을 받은 R1: 정체 통과 시간 합 40분, 비율 36%·38km도 있음, 4명",
+         "구간 목록이 있으면 비율 × T(46.8분) 대신 통과 시간 40분을 쓴다(명세 7절). 노고 202.8 → 1.56배, 정체 +8%, "
+         "금액 36,166 → 약 3만 6천, 한 사람 약 9천, 운전자 몫 27,124.5 → 밥. 정체 줄 문구는 그대로 '38km (경로의 36%)'",
          dict(r1, rest_answer_min=None, stops=[], congestion_s=2400)),
+        ("R15", "공동 경비: R13과 같은 주행(09:00→15:00, 답 60분, ETA 300분, 맑음·낮), 4명",
+         "금액 54,837.5 → 운전자 몫 54,837.5 × 3 ÷ 4 = 41,128.1 ≥ 39,865.5 → 공동 경비. "
+         "B 문장은 '공동 경비에서'('값' 없음, 명준 결정), item_examples = 그 자리에 차례로 보일 예시(constants effort.items)",
+         dict(r13, n=4)),
     ]
     for fid, title, note, inp in cases:
         write(ROOT / "fixtures/effort" / f"{fid}.json", effort_fixture(fid, title, note, inp))

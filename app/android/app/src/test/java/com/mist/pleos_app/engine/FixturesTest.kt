@@ -172,10 +172,10 @@ class FixturesTest {
     @Test
     fun effortSpecR1() {
         val r = effort(parseEffortInput(load(File(root, "effort/R1.json")).getValue("input").jsonObject), effortConstants)
-        // 정체 분 = 비율 0.35 × T 130 = 45.5(열린 결정 28) → 1.57배, 정체 +9%
+        // 정체 분 = 비율 0.36 × T 130 = 46.8(열린 결정 28) → 1.57배, 정체 +10%
         assertEquals("오늘 운전 2시간 10분 · 평소보다 1.57배 힘든 길", r.headlineText)
-        assertEquals(listOf("+40%", "+9%", "+5%", "+2%", "+1%"), r.lines.map { it.pctText })
-        assertEquals(listOf(null, "12km (경로의 35%)", null, null, null), r.lines.map { it.detailText })
+        assertEquals(listOf("+40%", "+10%", "+5%", "+2%", "+1%"), r.lines.map { it.pctText })
+        assertEquals(listOf(null, "38km (경로의 36%)", null, null, null), r.lines.map { it.detailText })
         // AC-F23-4: 줄마다 근거 한 줄, {pct}는 rates_pct 값
         assertEquals(
             "비 오는 날은 맑은 날보다 운전 부담이 40% 커요 · 시뮬레이터 30명 연구(Frontiers in Neuroscience 2026)",
@@ -184,11 +184,11 @@ class FixturesTest {
         assertTrue(r.lines.all { it.basisText != null && "{pct}" !in it.basisText!! })
         assertEquals("answer", r.method)
         val p = r.proposal!!
-        assertEquals(36_430.825, p.amountKrw, 0.0)
+        assertEquals(36_493.42, p.amountKrw, 0.0)
         assertEquals("약 3만 6천 원", p.amountText)
-        assertEquals(9_107.70625, p.perPersonKrw, 0.0)
+        assertEquals(9_123.355, p.perPersonKrw, 1e-9)
         assertEquals("약 9천 원", p.perPersonText)
-        assertEquals(27_323.1, p.driverShareKrw, 0.05)
+        assertEquals(27_370.065, p.driverShareKrw, 1e-6)
         // 방식 A 화면(노고 PRD v1.3 5-2)과 방식 B 화면은 따로다
         assertEquals("오늘 운전을 챙긴다면", p.a.titleText)
         assertEquals("한 사람 약 9천 원", p.a.mainText)
@@ -196,6 +196,7 @@ class FixturesTest {
         assertEquals("최저임금 1분 178원 기준", p.a.wageText)
         assertEquals("meal", p.b?.item)
         assertEquals("오늘은 밥값에서 운전자 빼고 나누는 게 어때요", p.b?.text)
+        assertEquals(emptyList<String>(), p.b?.itemExamples)
         val r8 = effort(parseEffortInput(load(File(root, "effort/R8.json")).getValue("input").jsonObject), effortConstants)
         assertEquals(null, r8.proposal)
         // 구간 목록(나란히 배치)이 있으면 비율 대신 통과 시간 40분 → 예전 R1 값(R14)
@@ -205,6 +206,11 @@ class FixturesTest {
         // AC-F21-1: 답 30분 → T 130, 장시간 65 + 65(R9)
         val r9 = effort(parseEffortInput(load(File(root, "effort/R9.json")).getValue("input").jsonObject), effortConstants)
         assertEquals(listOf(65.0, 65.0), r9.fatigueSegmentsMin)
+        // 공동 경비: "값" 없이 "공동 경비에서", 그 자리 예시 목록(R15)
+        val b15 = effort(parseEffortInput(load(File(root, "effort/R15.json")).getValue("input").jsonObject), effortConstants)
+            .proposal!!.b!!
+        assertEquals("오늘은 공동 경비에서 운전자 빼고 나누는 게 어때요", b15.text)
+        assertEquals(listOf("공동 경비", "장 본 값", "펜션비", "바베큐장 이용료", "입장료", "물품 구매비"), b15.itemExamples)
     }
 
     /** 명세 9절 경계표: 2,350 미만 제안 없음 / 7,715.5 이상 밥 / 39,865.5 이상 공동 경비. */

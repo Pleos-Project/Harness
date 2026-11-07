@@ -1,15 +1,15 @@
 {
   "id": "R1",
-  "title": "PRD 예시: 16:00→18:10, ETA 105분, 정체 12km(경로의 35%), 비(출발·도착), 일몰 17:20, 쉰 시간 없음, 4명",
-  "note": "AC-F23-1·AC-F24-1·AC-F25-1. 정체 분 = 비율 0.35 × T 130 = 45.5(열린 결정 28). 노고 130 + 비 52 + 정체 12.285 + 예상보다 더 6.75(25분) + 밤길 2(50분) + 장시간 1.25(10분) = 204.285 → 1.57배, 정체 줄 +9%. 금액 204.285 × 10,700 ÷ 60 = 36,430.825 → 약 3만 6천, 한 사람 9,107.7 → 약 9천, 운전자 몫 27,323.1 → 밥",
+  "title": "PRD 예시: 16:00→18:10, ETA 105분, 정체 38km(경로의 36%), 비(출발·도착), 일몰 17:20, 쉰 시간 없음, 4명",
+  "note": "AC-F23-1·AC-F24-1·AC-F25-1. 정체 분 = 비율 0.36 × T 130 = 46.8(열린 결정 28). 노고 130 + 비 52 + 정체 12.636 + 예상보다 더 6.75(25분) + 밤길 2(50분) + 장시간 1.25(10분) = 204.636 → 1.57배, 정체 줄 +10%. 금액 204.636 × 10,700 ÷ 60 = 36,493.42 → 약 3만 6천, 한 사람 9,123.36 → 약 9천, 운전자 몫 27,370.07 → 밥. 정체 값은 효성 결정(11/7): 35%·12km는 거리 104km와 맞지 않고 4% 단위가 아니어서 36%·38km",
   "input": {
     "departed_at": "2026-11-17T16:00:00+09:00",
     "arrived_at": "2026-11-17T18:10:00+09:00",
     "rest_answer_min": 0,
     "stops": null,
     "eta_s": 6300,
-    "congestion_ratio": 0.35,
-    "congestion_m": 12000,
+    "congestion_ratio": 0.36,
+    "congestion_m": 37548,
     "congestion_s": null,
     "weather_dep": "rain",
     "weather_arr": "rain",
@@ -26,13 +26,13 @@
     "fatigue_segments_min": [
       130.0
     ],
-    "congestion_min": 45.5,
+    "congestion_min": 46.8,
     "delay_min": 25.0,
     "night_min": 50.0,
     "rain_min": 130.0,
     "snow_min": 0.0,
     "fatigue_excess_min": 10.0,
-    "effort_min": 204.285,
+    "effort_min": 204.636,
     "multiplier": 1.57,
     "lines": [
       {
@@ -47,10 +47,10 @@
       {
         "key": "congestion",
         "label": "정체 구간",
-        "add_min": 12.285,
-        "pct": 9,
-        "pct_text": "+9%",
-        "detail_text": "12km (경로의 35%)",
+        "add_min": 12.636,
+        "pct": 10,
+        "pct_text": "+10%",
+        "detail_text": "38km (경로의 36%)",
         "basis_text": "차가 몰린 길은 한산한 길보다 운전 부담이 27% 커요 · 시뮬레이터 연구(Shakouri, LSU 2015)"
       },
       {
@@ -87,13 +87,13 @@
     "headline_text": "오늘 운전 2시간 10분 · 평소보다 1.57배 힘든 길",
     "distance_text": "104km",
     "proposal": {
-      "amount_krw": 36430.825,
+      "amount_krw": 36493.42,
       "amount_approx": 36000,
       "amount_text": "약 3만 6천 원",
-      "per_person_krw": 9107.70625,
+      "per_person_krw": 9123.355,
       "per_person_approx": 9000,
       "per_person_text": "약 9천 원",
-      "driver_share_krw": 27323.118749999998,
+      "driver_share_krw": 27370.065,
       "a": {
         "title_text": "오늘 운전을 챙긴다면",
         "main_text": "한 사람 약 9천 원",
@@ -102,7 +102,8 @@
       },
       "b": {
         "item": "meal",
-        "text": "오늘은 밥값에서 운전자 빼고 나누는 게 어때요"
+        "text": "오늘은 밥값에서 운전자 빼고 나누는 게 어때요",
+        "item_examples": []
       }
     }
   }

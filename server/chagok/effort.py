@@ -35,8 +35,10 @@ ZENITH_DEG = 90.833   # 일출·일몰 천정각: 대기 굴절 34′ + 해 반�
 @dataclass(frozen=True)
 class Item:
     key: str
-    label: str
+    label: str                   # 선택지 버튼 "공동 경비"
     price_krw: float
+    phrase_text: str = ""        # B 문장에 들어갈 말 "커피값"·"밥값"·"공동 경비"
+    examples: tuple[str, ...] = ()   # 그 자리 글자가 차례로 바뀌는 예시(공동 경비만, 첫 값 = phrase_text)
 
 
 @dataclass(frozen=True)
@@ -56,7 +58,8 @@ def effort_constants(const: dict) -> EffortConstants:
     """constants.json 전체(dict)에서 effort 블록을 읽는다."""
     e = const["effort"]
     f = e["fatigue"]
-    items = sorted((Item(i["key"], i["label"], float(i["price_krw"])) for i in e["items"]), key=lambda i: i.price_krw)
+    items = sorted((Item(i["key"], i["label"], float(i["price_krw"]), i["phrase_text"], tuple(i.get("examples", ())))
+                    for i in e["items"]), key=lambda i: i.price_krw)
     return EffortConstants(
         rates_pct={k: float(e["rates_pct"][k]) for k in ("rain", "snow", "congestion", "delay", "night")},
         delay_threshold_pct=float(e["delay_threshold_pct"]),
@@ -121,7 +124,8 @@ class ScreenA:
 class ScreenB:
     """방식 B 화면(명세 v0.5 F25, 노고 PRD v1.3 5-3). 금액은 보여 주지 않는다. 선택지는 effort.items 전부."""
     item: str                    # 기본값으로 올릴 항목 key
-    text: str                    # "오늘은 밥값에서 운전자 빼고 나누는 게 어때요"
+    text: str                    # "오늘은 밥값에서 운전자 빼고 나누는 게 어때요" / "오늘은 공동 경비에서 …"
+    item_examples: list[str]     # 공동 경비면 그 자리에 차례로 보일 예시(첫 값이 text 안의 말), 커피·밥은 빈 목록
 
 
 @dataclass
@@ -392,7 +396,8 @@ def proposal(effort_pct_s: float, n: int, c: EffortConstants) -> Proposal:
             basis_text=f"운전 노고 {a_t}을 운전자 포함 {n}명이 나눈 값",
             wage_text=f"{c.wage_label} 1분 {round_half_up(c.wage_per_hour / 60)}원 기준",
         ),
-        b=ScreenB(item.key, f"오늘은 {item.label}값에서 운전자 빼고 나누는 게 어때요") if item else None,
+        b=ScreenB(item.key, f"오늘은 {item.phrase_text}에서 운전자 빼고 나누는 게 어때요", list(item.examples))
+        if item else None,
     )
 
 

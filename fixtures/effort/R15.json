@@ -1,0 +1,82 @@
+{
+  "id": "R15",
+  "title": "공동 경비: R13과 같은 주행(09:00→15:00, 답 60분, ETA 300분, 맑음·낮), 4명",
+  "note": "금액 54,837.5 → 운전자 몫 54,837.5 × 3 ÷ 4 = 41,128.1 ≥ 39,865.5 → 공동 경비. B 문장은 '공동 경비에서'('값' 없음, 명준 결정), item_examples = 그 자리에 차례로 보일 예시(constants effort.items)",
+  "input": {
+    "departed_at": "2026-11-17T09:00:00+09:00",
+    "arrived_at": "2026-11-17T15:00:00+09:00",
+    "rest_answer_min": 60,
+    "stops": null,
+    "eta_s": 18000,
+    "congestion_ratio": 0.0,
+    "congestion_m": 0.0,
+    "congestion_s": null,
+    "weather_dep": "none",
+    "weather_arr": "none",
+    "sunrise": "07:13",
+    "sunset": "17:20",
+    "n": 4,
+    "distance_km": null
+  },
+  "expected": {
+    "method": "answer",
+    "elapsed_min": 360.0,
+    "drive_min": 300.0,
+    "rest_min": 60.0,
+    "fatigue_segments_min": [
+      150.0,
+      150.0
+    ],
+    "congestion_min": 0.0,
+    "delay_min": 0.0,
+    "night_min": 0.0,
+    "rain_min": 0.0,
+    "snow_min": 0.0,
+    "fatigue_excess_min": 60.0,
+    "effort_min": 307.5,
+    "multiplier": 1.03,
+    "lines": [
+      {
+        "key": "fatigue",
+        "label": "장시간",
+        "add_min": 7.5,
+        "pct": 3,
+        "pct_text": "+3%",
+        "detail_text": null,
+        "basis_text": "2시간을 넘겨 이어서 운전한 시간에 더해요 · 2시간 운전하면 15분 쉬도록 한 법령 기준(화물자동차 운수사업법 시행규칙)"
+      }
+    ],
+    "notes": [],
+    "drive_text": "5시간",
+    "multiplier_text": "평소보다 1.03배 힘든 길",
+    "headline_text": "오늘 운전 5시간 · 평소보다 1.03배 힘든 길",
+    "distance_text": null,
+    "proposal": {
+      "amount_krw": 54837.5,
+      "amount_approx": 55000,
+      "amount_text": "약 5만 5천 원",
+      "per_person_krw": 13709.375,
+      "per_person_approx": 14000,
+      "per_person_text": "약 1만 4천 원",
+      "driver_share_krw": 41128.125,
+      "a": {
+        "title_text": "오늘 운전을 챙긴다면",
+        "main_text": "한 사람 약 1만 4천 원",
+        "basis_text": "운전 노고 약 5만 5천 원을 운전자 포함 4명이 나눈 값",
+        "wage_text": "최저임금 1분 178원 기준"
+      },
+      "b": {
+        "item": "shared",
+        "text": "오늘은 공동 경비에서 운전자 빼고 나누는 게 어때요",
+        "item_examples": [
+          "공동 경비",
+          "장 본 값",
+          "펜션비",
+          "바베큐장 이용료",
+          "입장료",
+          "물품 구매비"
+        ]
+      }
+    }
+  }
+}

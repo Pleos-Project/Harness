@@ -8,8 +8,8 @@
     "rest_answer_min": 0,
     "stops": null,
     "eta_s": 6300,
-    "congestion_ratio": 0.35,
-    "congestion_m": 12000,
+    "congestion_ratio": 0.36,
+    "congestion_m": 37548,
     "congestion_s": null,
     "weather_dep": "rain",
     "weather_arr": "rain",
@@ -26,13 +26,13 @@
     "fatigue_segments_min": [
       130.0
     ],
-    "congestion_min": 45.5,
+    "congestion_min": 46.8,
     "delay_min": 25.0,
     "night_min": 50.0,
     "rain_min": 130.0,
     "snow_min": 0.0,
     "fatigue_excess_min": 10.0,
-    "effort_min": 204.285,
+    "effort_min": 204.636,
     "multiplier": 1.57,
     "lines": [
       {
@@ -47,10 +47,10 @@
       {
         "key": "congestion",
         "label": "정체 구간",
-        "add_min": 12.285,
-        "pct": 9,
-        "pct_text": "+9%",
-        "detail_text": "12km (경로의 35%)",
+        "add_min": 12.636,
+        "pct": 10,
+        "pct_text": "+10%",
+        "detail_text": "38km (경로의 36%)",
         "basis_text": "차가 몰린 길은 한산한 길보다 운전 부담이 27% 커요 · 시뮬레이터 연구(Shakouri, LSU 2015)"
       },
       {

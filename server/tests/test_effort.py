@@ -53,7 +53,7 @@ def simple(minutes, n=2, **kw):
 # ---------------------------------------------------------------- 1부: 명세 12절 표 (손 계산값)
 # (T, 노고, 배수, 금액, 금액 문구, 한 사람 문구, B)
 SPEC_R = {
-    "R1": (130, 204.285, 1.57, 36_430.825, "약 3만 6천 원", "약 9천 원", "meal"),
+    "R1": (130, 204.636, 1.57, 36_493.42, "약 3만 6천 원", "약 9천 원", "meal"),
     "R2": (180, 180.0, 1.00, 32_100, "약 3만 2천 원", "약 1만 6천 원", "meal"),
     "R3": (180, 187.5, 1.04, 33_437.5, "약 3만 3천 원", "약 1만 7천 원", "meal"),
     "R4": (150, 153.75, 1.03, 27_418.75, "약 2만 7천 원", "약 1만 4천 원", "meal"),
@@ -86,19 +86,19 @@ def test_ac_f23_1_r1_headline_and_lines():
     r = run("R1")
     assert r.headline_text == "오늘 운전 2시간 10분 · 평소보다 1.57배 힘든 길"
     assert [(l.label, l.pct_text) for l in r.lines] == [
-        ("비", "+40%"), ("정체 구간", "+9%"), ("예상보다 더", "+5%"), ("밤길", "+2%"), ("장시간", "+1%")]
-    assert [l.detail_text for l in r.lines] == [None, "12km (경로의 35%)", None, None, None]
-    assert (r.congestion_min, r.delay_min, r.night_min, r.rain_min, r.fatigue_excess_min) == (45.5, 25, 50, 130, 10)
+        ("비", "+40%"), ("정체 구간", "+10%"), ("예상보다 더", "+5%"), ("밤길", "+2%"), ("장시간", "+1%")]
+    assert [l.detail_text for l in r.lines] == [None, "38km (경로의 36%)", None, None, None]
+    assert (r.congestion_min, r.delay_min, r.night_min, r.rain_min, r.fatigue_excess_min) == (46.8, 25, 50, 130, 10)
     assert r.distance_text == "104km"
 
 
 def test_congestion_ratio_by_default_segments_when_listed():
     """열린 결정 28(효성): 정체 분 = 정체 비율 × T(기본). 구간 목록(congestion_s)이 있으면 min(통과 시간, T)."""
-    assert run("R1").congestion_min == 0.35 * 130
+    assert run("R1").congestion_min == 0.36 * 130
     r14 = run("R14")                              # R1 + 구간 목록 40분 → 예전 R1 값
     assert (r14.congestion_min, r14.effort_min, r14.multiplier) == (40, 202.8, 1.56)
     assert r14.proposal.amount_krw == 36_166 and r14.lines[1].pct_text == "+8%"
-    assert r14.lines[1].detail_text == "12km (경로의 35%)"
+    assert r14.lines[1].detail_text == "38km (경로의 36%)"
     none = run("R1", congestion_ratio=None, congestion_m=None)
     assert none.congestion_min == 0 and "정체 정보 없음" in none.notes
     assert run("R1", congestion_ratio=1.5).congestion_min == 130      # 비율이 1을 넘어도 T까지
@@ -136,10 +136,11 @@ def test_basis_follows_rate_constant():
 
 
 def test_basis_templates_pass_copy_rules():
-    """상수의 근거 문구 전부(줄이 안 보여 fixture에 안 나오는 것까지)가 명세 2절 금지 문구·표기 규칙을 지킨다."""
+    """상수의 근거 문구·B 항목 문구·예시 전부(fixture에 안 나오는 것까지)가 명세 2절 금지 문구·표기 규칙을 지킨다."""
     assert set(C.basis) == set(EF.LINE_ORDER)
-    for k in C.basis:
-        s = EF.basis_text(k, C)
+    texts_ = [EF.basis_text(k, C) for k in C.basis]
+    texts_ += [it.phrase_text for it in C.items] + [x for it in C.items for x in it.examples]
+    for s in texts_:
         assert "{" not in s and "}" not in s, s
         for rx, msg in lint_copy.FORBIDDEN + lint_copy.COPY_RULES:
             assert not rx.search(s), f"{msg}: {s}"
@@ -147,8 +148,8 @@ def test_basis_templates_pass_copy_rules():
 
 def test_ac_f24_1_r1_amount():
     p = run("R1").proposal
-    assert p.amount_krw == 36_430.825 and p.amount_text == "약 3만 6천 원"
-    assert p.per_person_krw == 9_107.70625 and p.per_person_text == "약 9천 원"
+    assert p.amount_krw == pytest.approx(36_493.42, abs=0.005) and p.amount_text == "약 3만 6천 원"
+    assert p.per_person_krw == pytest.approx(9_123.355) and p.per_person_text == "약 9천 원"   # 명세 표기 9,123.36
 
 
 def test_ac_f24_screen_a_copy():
@@ -169,13 +170,13 @@ def test_ac_f24_2_wage_constant_changes_amount_and_source():
     taxi = dataclasses.replace(C, wage_per_hour=12_000, wage_label="서울 택시 시간요금")
     r = EF.effort(EF.input_from_json(fx("R1")["input"]), taxi)
     assert r.proposal.a.wage_text == "서울 택시 시간요금 1분 200원 기준"
-    assert r.proposal.amount_krw == pytest.approx(204.285 * 200)
+    assert r.proposal.amount_krw == pytest.approx(204.636 * 200)
     assert r.proposal.amount_text == "약 4만 1천 원"
     assert r.proposal.a.basis_text == "운전 노고 약 4만 1천 원을 운전자 포함 4명이 나눈 값"
 
 
 def test_ac_f25_1_b_suggestion():
-    assert run("R1").proposal.driver_share_krw == pytest.approx(27_323.1, abs=0.05)
+    assert run("R1").proposal.driver_share_krw == pytest.approx(27_370.065)                     # 명세 표기 27,370.07
     assert run("R1").proposal.b.item == "meal"
     p = simple(30).proposal                       # 30분 카풀, 2명
     assert p.amount_krw == pytest.approx(5_350) and p.driver_share_krw == pytest.approx(2_675)
@@ -183,6 +184,16 @@ def test_ac_f25_1_b_suggestion():
     assert run("R1").proposal.b.text == "오늘은 밥값에서 운전자 빼고 나누는 게 어때요"
     p6 = run("R6").proposal
     assert p6.driver_share_krw == pytest.approx(891.67, abs=0.01) and p6.b is None
+
+
+def test_f25_shared_phrase_and_examples():
+    """공동 경비는 '공동 경비에서'('값' 없음, 명준 결정), 그 자리 예시 목록을 함께 낸다. 커피·밥은 빈 목록."""
+    b = run("R15").proposal.b
+    assert b.item == "shared" and b.text == "오늘은 공동 경비에서 운전자 빼고 나누는 게 어때요"
+    assert b.item_examples == ["공동 경비", "장 본 값", "펜션비", "바베큐장 이용료", "입장료", "물품 구매비"]
+    assert b.item_examples[0] in b.text                 # 첫 값 = 문장 안의 말(화면은 이 자리를 바꿔 보여 줌)
+    assert run("R1").proposal.b.item_examples == [] and simple(30).proposal.b.item_examples == []
+    assert "장보기" not in json.dumps(dataclasses.asdict(run("R15")), ensure_ascii=False)
 
 
 @pytest.mark.parametrize("share,want", [
@@ -345,6 +356,7 @@ def texts(r):
         yield from dataclasses.asdict(p.a).values()
         if p.b:
             yield p.b.text
+            yield from p.b.item_examples
 
 
 def test_copy_rules_hold_everywhere():
