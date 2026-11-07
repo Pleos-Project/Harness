@@ -4,15 +4,42 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
+import com.mist.pleos_app.BuildConfig
+import com.mist.pleos_app.app.PayerFlow
+import com.mist.pleos_app.app.PayerState
+import com.mist.pleos_app.app.PrefsPayerStore
 import com.mist.pleos_app.app.PrefsSettingsStore
 import com.mist.pleos_app.app.Settings
+import com.mist.pleos_app.engine.EffortConstants
+import com.mist.pleos_app.engine.departurePreview
+import com.mist.pleos_app.engine.parseEffortConstants
+import com.mist.pleos_app.navi.Destination
+import com.mist.pleos_app.navi.NaviPlace
+import com.mist.pleos_app.navi.TripPreview
+import com.mist.pleos_app.net.EffortApi
+import com.mist.pleos_app.net.PlacesResult
+import com.mist.pleos_app.net.PlacesStatus
 import com.mist.pleos_app.util.ChagokLog
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+
+/** 출발 화면이 쓰는 내비 기능(NaviRepository). 화면이 보일 때만 부른다(AC-C-2). */
+interface DepartNavi {
+    fun location(done: (Pair<Double, Double>?) -> Unit)
+    fun places(done: (List<NaviPlace>) -> Unit)
+    fun preview(d: Destination, done: (TripPreview?) -> Unit)
+    fun route(d: Destination)
+}
 
 /** 노고 흐름 화면(명세 v0.5 3절). 영수증·제안은 3~5단계에서 붙인다. */
 enum class EffortScreen { HOME, DEPART, SETTINGS }
@@ -41,6 +68,11 @@ class EffortViewModel(app: Application, private val saved: SavedStateHandle) : A
         runCatching { parseDemoScene(t) }.onFailure { ChagokLog.event("effort_demo_invalid", "err" to it.javaClass.simpleName) }.getOrNull()
     }
     private val demoSource = demoScene?.let(::DemoEffortSource)
+
+    /** 노고 상수·문구(constants.json effort, 빌드 때 fixtures/에서 복사). 없으면 미리보기 문구 없이 진행. */
+    private val effortConstants: EffortConstants? = readAsset(app, "data/constants.json")?.let { t ->
+        runCatching { parseEffortConstants(t) }.onFailure { ChagokLog.event("effort_constants_invalid", "err" to it.javaClass.simpleName) }.getOrNull()
+    }
     private val liveSource = LiveEffortSource()
 
     // ------------------------------------------------------------ 설정(S20)
@@ -94,16 +126,114 @@ class EffortViewModel(app: Application, private val saved: SavedStateHandle) : A
     private fun home() { saved[KEY_STACK] = listOf(EffortScreen.HOME.name) }
 
     // ------------------------------------------------------------ 출발(F20)
+    /** MainActivity가 넣는다(NaviRepository). 없으면(미리보기·테스트) 내비 후보·미리보기·경로 없이 진행. */
+    var navi: DepartNavi? = null
+
+    private val api = EffortApi(BuildConfig.API_BASE_URL)
+    private val departFlow = MutableStateFlow(DepartUi())
+    val departUi: StateFlow<DepartUi> = departFlow.asStateFlow()
+
+    /** 출발 화면에 들어온 뒤 읽은 현재 위치와 그 지점 날씨. 메모리에만 두고 저장·로그하지 않는다(AC-N-4·AC-C-10). */
+    private var here: Pair<Double, Double>? = null
+    private var weatherDep: String? = null
+    /** 마지막으로 내비에 보낸 목적지(경로 요청 실패 시 다시 시도용, 메모리만). */
+    private var lastRoute: Destination? = null
+    private var searchJob: Job? = null
+
+    /** 홈 [동승 출발] → 출발 화면. 실제 모드면 내비 후보·현재 위치·출발 날씨를 1번씩 읽는다(폴링 없음). */
+    fun openDepart() {
+        open(EffortScreen.DEPART)
+        departFlow.value = DepartUi()
+        here = null; weatherDep = null
+        if (source.demo) return
+        val n = navi ?: return
+        departFlow.update { it.copy(naviLoading = true) }
+        n.places { list -> departFlow.update { it.copy(naviOptions = list.map { p -> p.toOption() }, naviLoading = false) } }
+        n.location { loc ->
+            here = loc
+            if (loc == null) { weatherDep = WEATHER_UNKNOWN; return@location }
+            viewModelScope.launch {
+                weatherDep = withTimeoutOrNull(NET_TIMEOUT_MS) { withContext(Dispatchers.IO) { api.weather(loc.first, loc.second) } } ?: WEATHER_UNKNOWN
+                ChagokLog.event("effort_weather", "at" to "dep", "precip" to weatherDep)
+            }
+        }
+    }
+
+    fun setQuery(q: String) { departFlow.update { it.copy(query = q) } }
+
+    /** 키보드 [검색]·검색 버튼을 눌렀을 때만 1번(자동 완성 없음, #57 June). 3초 안에 못 받으면 unavailable. */
+    fun search() {
+        val q = departFlow.value.query.trim()
+        if (q.isEmpty()) return
+        searchJob?.cancel()
+        departFlow.update { it.copy(searching = true, searchStatus = null, searchResults = emptyList()) }
+        searchJob = viewModelScope.launch {
+            val r = withTimeoutOrNull(NET_TIMEOUT_MS) { withContext(Dispatchers.IO) { api.places(q, here) } }
+                ?: PlacesResult(PlacesStatus.UNAVAILABLE, emptyList())
+            departFlow.update { it.copy(searching = false, searchStatus = r.status, searchResults = r.places.map { p -> p.toOption() }) }
+            ChagokLog.event("effort_search", "status" to r.status.name, "count" to r.places.size, "here" to (here != null))
+        }
+    }
+
+    /** 목적지 고르기 → requestTrip으로 ETA·경로 거리·정체 비율을 미리 받는다(출발 뒤에는 차곡이 멈춰 못 받음, #51). */
+    fun select(o: DestOption) {
+        departFlow.update { it.copy(selected = o, preview = null, previewText = null, previewing = navi != null) }
+        navi?.preview(o.dest) { p ->
+            val text = p?.let { t -> effortConstants?.let { c -> departurePreview(t.etaS.toDouble(), t.distanceM.toDouble(), t.congestionRatio, t.congestionM, c) } }
+            departFlow.update { if (it.selected == o) it.copy(preview = p, previewText = text, previewing = false) else it }
+        }
+    }
+
     /**
-     * [출발]. 지금은 시연 데이터로만 출발 기록을 만든다. 실제 출발(목적지·requestTrip·인원 확인·requestRoute)은 2단계에서 붙인다.
+     * [출발]. 출발 기록을 먼저 저장하고(출발 직후 동결돼도 남게) 순정 내비 안내를 요청한 뒤 홈으로.
+     * 시연 모드면 시연 데이터로 출발 기록을 만든다(내비 호출 없음).
+     * @param seats 좌석 센서로 감지한 인원 → 나눠 낼 인원(인원 확인 알림 값)
      * @return 출발 기록을 새로 열었으면 true
      */
-    fun depart(): Boolean {
-        val trip = source.demoTrip() ?: return false.also { ChagokLog.event("effort_depart_skipped", "reason" to "live_not_ready") }
+    fun depart(seats: Int = 1): Boolean {
+        source.demoTrip()?.let { trip ->
+            val opened = flow.depart(trip)
+            refresh(); home()
+            return opened
+        }
+        val ui = departFlow.value
+        val sel = ui.selected ?: return false
+        if (!ui.canDepart) return false
+        val trip = departTrip(newTripId(), source.departedAt(), sel.dest, payersFor(seats), ui.preview, weatherDep ?: WEATHER_UNKNOWN, here)
         val opened = flow.depart(trip)
-        refresh()
-        home()
+        lastRoute = sel.dest
+        navi?.route(sel.dest)
+        refresh(); home()
+        departFlow.value = DepartUi()
         return opened
+    }
+
+    /** 경로 요청이 실패했을 때 홈 진행 중 카드의 [다시 시도]. 이번 실행에서 보낸 목적지가 있을 때만. */
+    fun retryRoute(): Boolean {
+        val d = lastRoute ?: return false
+        if (flow.phase != EffortPhase.DRIVING) return false
+        navi?.route(d)
+        return true
+    }
+
+    val canRetryRoute: Boolean get() = lastRoute != null
+
+    // ------------------------------------------------------------ 나눠 낼 인원(인원 확인 알림, PR #34·#40 재사용)
+    private val payers = PayerFlow(PrefsPayerStore(app))
+    private val payerFlow = MutableStateFlow(payers.state)
+    val payerState: StateFlow<PayerState> = payerFlow.asStateFlow()
+
+    fun shouldAskPayers(seats: Int): Boolean = payers.shouldAsk(seats)
+    fun payersFor(seats: Int): Int = payers.payersFor(seats)
+
+    fun confirmPayers(seats: Int, n: Int) {
+        payers.confirm(seats, n); payerFlow.value = payers.state
+        ChagokLog.event("payers_confirm", "seats" to seats, "payers" to payers.state.payers)
+    }
+
+    fun dismissPayers(seats: Int) {
+        payers.dismiss(seats); payerFlow.value = payers.state
+        ChagokLog.event("payers_dismiss", "seats" to seats)
     }
 
     /** 진행 중인 출발을 그만둔다. */
@@ -113,6 +243,7 @@ class EffortViewModel(app: Application, private val saved: SavedStateHandle) : A
     fun resetRecords() { flow.reset(); refresh(); ChagokLog.event("effort_reset") }
 
     private companion object {
+        const val NET_TIMEOUT_MS = 3_000L                   // 날씨·검색 전체 마감(AC-C-6, #57)
         const val KEY_STACK = "effort_stack"
         const val DEMO_ASSET = "data/effort/demo.json"
 

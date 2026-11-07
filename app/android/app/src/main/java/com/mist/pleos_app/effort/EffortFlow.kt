@@ -48,11 +48,11 @@ class EffortFlow(private val store: EffortStore) {
         return true
     }
 
-    /** 쉰 시간 답(F21 기본). 답을 바꾸면 자동으로 잰 정차 목록은 버리고 답만 남긴다(#55 June·효성). */
+    /** 쉰 시간 답(F21). 정차는 이 답 하나로만 뺀다(자동 측정 없음, #62 명준·효성·June). */
     fun answerRest(min: Int) {
         val cur = state.openTrip ?: return
         if (!cur.arrived) return
-        put(state.copy(openTrip = cur.copy(restAnswerMin = min, stops = null)))
+        put(state.copy(openTrip = cur.copy(restAnswerMin = min)))
     }
 
     /** 선택(F26). 열린 기록과 같은 trip_id만 받고, 기록 1건을 앞에 넣은 뒤 출발 기록을 닫는다. */
