@@ -25,8 +25,6 @@ from chagok.engine import approx, round_half_up
 
 DAY_S = 86_400
 LINE_ORDER = ("rain", "snow", "congestion", "delay", "night", "fatigue")   # 영수증 줄 순서(명세 F23 출력)
-LINE_LABEL = {"rain": "날씨", "snow": "날씨", "congestion": "정체 구간", "delay": "예상보다 더",
-              "night": "밤길", "fatigue": "장시간"}
 KNOWN_PRECIP = ("none", "rain", "snow")   # GET /v1/weather 의 precip. 그 밖(unknown·실패)은 '정보 없음', 가산 0
 ZENITH_DEG = 90.833   # 일출·일몰 천정각: 대기 굴절 34′ + 해 반지름 16′(해 윗부분이 지평선에 닿는 순간)
 
@@ -51,10 +49,34 @@ class EffortConstants:
     wage_per_hour: float                 # 1분 단가 = 시급 ÷ 60
     wage_label: str                      # 단가 출처 표기("최저임금")
     items: tuple[Item, ...]              # 방식 B 항목, 1인분 가격 오름차순
-    basis: dict[str, str]                # 줄 key → 근거 한 줄(AC-F23-4). {pct}는 rates_pct로 채운다
-    detail: dict[str, str]               # 줄 값 템플릿(weather_both_text 등). {precip}·{time}·{limit}
+    copy: "Copy"                          # 화면 문구(effort.copy) — 임시, 디자인 확정 대기
+
+
+@dataclass(frozen=True)
+class Copy:
+    """화면 문구는 모두 constants.json effort.copy에 둔다(명준 #60: 디자인이 확정해 넘겨줌). 엔진은 {…}만 채운다."""
+    text: dict[str, str]                 # *_text 템플릿(headline_text·a_main_text·b_text 등)
+    line_labels: dict[str, str]          # 줄 key → 줄 이름
+    line_detail: dict[str, str]          # 줄 값 템플릿(weather_all_text 등)
     precip_words: dict[str, str]         # rain → 비, snow → 눈
-    footnote_congestion: str             # 정체 줄이 있을 때 영수증 아래 주석
+    basis: dict[str, str]                # 줄 key → 근거 한 줄(AC-F23-4)
+    rest_answers: tuple[tuple[int, str], ...]   # 도착 때 질문의 선택지(분, 문구)
+
+
+def copy_from_json(cp: dict) -> Copy:
+    return Copy(
+        text={k: v for k, v in cp.items() if isinstance(v, str) and k.endswith("_text")},
+        line_labels=dict(cp["line_labels"]), line_detail=dict(cp["line_detail"]),
+        precip_words=dict(cp["precip_words"]), basis=dict(cp["basis"]),
+        rest_answers=tuple((int(a["min"]), a["label_text"]) for a in cp["rest_answers"]),
+    )
+
+
+def fill(template: str, **values: str) -> str:
+    """템플릿의 {이름} 자리를 채운다(Kotlin fill과 같음)."""
+    for k, v in values.items():
+        template = template.replace("{" + k + "}", v)
+    return template
 
 
 def effort_constants(const: dict) -> EffortConstants:
@@ -72,10 +94,7 @@ def effort_constants(const: dict) -> EffortConstants:
         wage_per_hour=float(e["wage_per_hour"]),
         wage_label=e["wage_label"],
         items=tuple(items),
-        basis=dict(e.get("basis", {})),
-        detail=dict(e["detail"]),
-        precip_words=dict(e["precip_words"]),
-        footnote_congestion=e["footnote_congestion_text"],
+        copy=copy_from_json(e["copy"]),
     )
 
 
@@ -258,10 +277,11 @@ def drive_text(drive_s: float) -> str:
     return f"{h}시간 {m}분"
 
 
-def multiplier_text(m100: int) -> str:
+def multiplier_text(m100: int, c: EffortConstants) -> str:
+    """배수 x.xx(명세 2절). 1.00이면 '평소와 같은 길' 문구."""
     if m100 <= 100:
-        return "평소와 같은 길"
-    return f"평소보다 {m100 // 100}.{m100 % 100:02d}배 힘든 길"
+        return c.copy.text["multiplier_same_text"]
+    return fill(c.copy.text["multiplier_more_text"], x=f"{m100 // 100}.{m100 % 100:02d}")
 
 
 def pct_text(pct: int) -> str:
@@ -274,13 +294,17 @@ def km_text(m: float) -> str:
     return f"{km}km" if km > 0 else "1km 미만"
 
 
-def congestion_text(congestion_m: float | None, ratio: float | None) -> str | None:
-    """정체 구간 줄 "38km (경로의 36%)"(노고 PRD v1.3 5-1, 열린 결정 28). km·비율을 모르면 None."""
+def ratio_text(ratio: float) -> str:
+    """정체 비율 → "36%". 0으로 어림되면 "1% 미만"."""
+    p = round_half_up(ratio * 100)
+    return f"{p}%" if p > 0 else "1% 미만"
+
+
+def congestion_text(congestion_m: float | None, ratio: float | None, c: EffortConstants) -> str | None:
+    """정체 구간 줄 값 "38km (경로의 36%)"(노고 PRD v1.3 5-1, 열린 결정 28). km·비율을 모르면 None."""
     if congestion_m is None or ratio is None:
         return None
-    p = round_half_up(ratio * 100)
-    p_t = f"경로의 {p}%" if p > 0 else "경로의 1% 미만"
-    return f"{km_text(congestion_m)} ({p_t})"
+    return fill(c.copy.line_detail["congestion_text"], km=km_text(congestion_m), pct=ratio_text(ratio))
 
 
 @dataclass
@@ -292,42 +316,37 @@ class DeparturePreview:
 
 
 def departure_preview(eta_s: float, route_m: float, congestion_ratio: float | None,
-                      congestion_m: float | None) -> DeparturePreview:
+                      congestion_m: float | None, c: EffortConstants) -> DeparturePreview:
     has = congestion_ratio is not None and congestion_ratio > 0
     return DeparturePreview(
         eta_text=drive_text(float(eta_s)),
         route_text=km_text(float(route_m)),
-        congestion_text=congestion_text(congestion_m, congestion_ratio) if has else None,
+        congestion_text=congestion_text(congestion_m, congestion_ratio, c) if has else None,
     )
 
 
 def weather_detail(key: str, weather_dep: str, weather_arr: str, c: EffortConstants) -> str | None:
-    """날씨 줄 값: 출발·도착이 같으면 "비, 주행 내내", 한쪽만이면 "비, 주행 앞 절반"·"비, 주행 뒤 절반"([제안])."""
+    """날씨 줄 값: 출발·도착이 같으면 "비, 주행 내내", 한쪽만이면 "비"(임시 문구, 디자인 확정 대기)."""
     dep, arr = weather_dep == key, weather_arr == key
-    if dep and arr:
-        t = c.detail["weather_both_text"]
-    elif dep:
-        t = c.detail["weather_first_text"]
-    elif arr:
-        t = c.detail["weather_second_text"]
-    else:
+    if not dep and not arr:
         return None
-    return t.replace("{precip}", c.precip_words[key])
+    t = c.copy.line_detail["weather_all_text" if dep and arr else "weather_part_text"]
+    return fill(t, precip=c.copy.precip_words[key])
 
 
 def time_detail(template_key: str, minutes_s: float, c: EffortConstants) -> str:
     """"+25분"·"50분"·"2시간 넘긴 10분". {time}은 운전 시간과 같은 "○시간 ○분" 표기(명세 2절)."""
-    return (c.detail[template_key].replace("{limit}", drive_text(c.fatigue_limit_min * 60))
-            .replace("{time}", drive_text(minutes_s)))
+    return fill(c.copy.line_detail[template_key], limit=drive_text(c.fatigue_limit_min * 60),
+                time=drive_text(minutes_s))
 
 
 def basis_text(key: str, c: EffortConstants) -> str | None:
     """줄 근거 한 줄(명세 v0.5 AC-F23-4). {pct}는 그 줄의 가산율(rates_pct)로 채워 숫자가 상수와 어긋나지 않게 한다."""
-    t = c.basis.get(key)
+    t = c.copy.basis.get(key)
     if t is None:
         return None
     rate = c.rates_pct.get(key)
-    return t.replace("{pct}", str(round_half_up(rate))) if rate is not None else t
+    return fill(t, pct=str(round_half_up(rate))) if rate is not None else t
 
 
 def approx_text(krw: float) -> tuple[int, str]:
@@ -406,32 +425,32 @@ def effort(inp: EffortInput, c: EffortConstants) -> Receipt:
             if k == "rain" or k == "snow":
                 detail = weather_detail(k, inp.weather_dep, inp.weather_arr, c)
             elif k == "congestion":
-                detail = congestion_text(inp.congestion_m, inp.congestion_ratio)
+                detail = congestion_text(inp.congestion_m, inp.congestion_ratio, c)
             elif k == "delay":
                 detail = time_detail("delay_text", delay, c)
             elif k == "night":
                 detail = time_detail("night_text", night, c)
             else:
                 detail = time_detail("fatigue_text", excess, c)   # 구간이 여러 개면 넘긴 시간의 합
-            lines.append(Line(k, LINE_LABEL[k], adds[k] / 6000, pct, pct_text(pct), detail, basis_text(k, c)))
+            lines.append(Line(k, c.copy.line_labels[k], adds[k] / 6000, pct, pct_text(pct), detail, basis_text(k, c)))
     m100 = round_half_up(total / drive) if drive > 0 else 100
 
     notes = []
     if inp.weather_dep not in KNOWN_PRECIP or inp.weather_arr not in KNOWN_PRECIP:
-        notes.append("날씨 정보 없음")
+        notes.append(c.copy.text["weather_unknown_text"])
     if inp.congestion_s is None and inp.congestion_ratio is None:
-        notes.append("정체 정보 없음")
+        notes.append(c.copy.text["congestion_unknown_text"])
 
     dt = drive_text(drive)
-    mt = multiplier_text(m100)
+    mt = multiplier_text(m100, c)
     return Receipt(
         method=method, elapsed_min=elapsed / 60, drive_min=drive / 60, rest_min=(elapsed - drive) / 60,
         fatigue_segments_min=[g / 60 for g in groups],
         congestion_min=congestion / 60, delay_min=delay / 60, night_min=night / 60,
         rain_min=rain / 60, snow_min=snow / 60, fatigue_excess_min=excess / 60,
         effort_min=total / 6000, multiplier=m100 / 100, lines=lines, notes=notes,
-        footnote_text=c.footnote_congestion if any(l.key == "congestion" for l in lines) else None,
-        drive_text=dt, multiplier_text=mt, headline_text=f"오늘 운전 {dt} · {mt}",
+        footnote_text=c.copy.text["footnote_congestion_text"] if any(l.key == "congestion" for l in lines) else None,
+        drive_text=dt, multiplier_text=mt, headline_text=fill(c.copy.text["headline_text"], drive=dt, multiplier=mt),
         distance_text=f"{round_half_up(inp.distance_km)}km" if inp.distance_km is not None else None,
         proposal=proposal(total, inp.n, c) if inp.n >= 2 else None,
     )
@@ -445,17 +464,19 @@ def proposal(effort_pct_s: float, n: int, c: EffortConstants) -> Proposal:
     a_v, a_t = approx_text(amount)
     p_v, p_t = approx_text(per)
     item = b_item(share, c.items)
+    t = c.copy.text
     return Proposal(
         amount_krw=amount, amount_approx=a_v, amount_text=a_t,
         per_person_krw=per, per_person_approx=p_v, per_person_text=p_t,
         driver_share_krw=share,
         a=ScreenA(
-            title_text="오늘 운전을 챙긴다면",
-            main_text=f"한 사람 {p_t}",
-            basis_text=f"운전 노고 {a_t}을 운전자 포함 {n}명이 나눈 값",
-            wage_text=f"{c.wage_label} 1분 {round_half_up(c.wage_per_hour / 60)}원 기준",
+            title_text=t["a_title_text"],
+            main_text=fill(t["a_main_text"], per_person=p_t),
+            basis_text=fill(t["a_basis_text"], amount=a_t, n=str(n)),
+            wage_text=fill(t["a_wage_text"], wage_label=c.wage_label,
+                           wage_per_min=str(round_half_up(c.wage_per_hour / 60))),
         ),
-        b=ScreenB(item.key, f"오늘은 {item.phrase_text}에서 운전자 빼고 나누는 게 어때요", list(item.examples))
+        b=ScreenB(item.key, fill(t["b_text"], phrase=item.phrase_text), list(item.examples))
         if item else None,
     )
 

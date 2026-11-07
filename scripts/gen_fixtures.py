@@ -153,7 +153,6 @@ SUN = {"sunrise": "07:13", "sunset": "17:20"}
 # R1·시연 데이터의 경로 거리. 바꾸면 정체 km 표시만 따라 바뀌고 배수·금액은 그대로(명세 12절 시연 데이터)
 R1_ROUTE_M = 104_300
 R1_RATIO = 0.36          # requestTrip 정체 비율은 4% 단위(June 실측) → 9칸
-REST_LABEL = {0: "없음", 15: "15분", 30: "30분", 60: "1시간 이상"}   # 도착 때 질문의 선택지(명세 F21)
 
 
 def at(hm: str, day: str = DAY) -> str:
@@ -203,17 +202,18 @@ def demo_fixture(r1: dict) -> None:
     """시연 데이터(명세 v0.5 12절): R1 입력 그대로 + 화면용 scene. 목업·영상·PT 앱이 같은 숫자를 쓴다.
     앱은 데모 고정 모드에서 assets/data/effort/demo.json을 읽는다(syncChagokData)."""
     r = EF.effort(EF.input_from_json(r1), EFFORT_CONST)
-    preview = EF.departure_preview(r1["eta_s"], R1_ROUTE_M, r1["congestion_ratio"], r1["congestion_m"])
+    preview = EF.departure_preview(r1["eta_s"], R1_ROUTE_M, r1["congestion_ratio"], r1["congestion_m"], EFFORT_CONST)
+    rest_label = dict(EFFORT_CONST.copy.rest_answers)[r1["rest_answer_min"]]   # 도착 때 질문의 선택지(copy)
     write(ROOT / "fixtures/effort/demo.json", {
         "id": "demo", "title": "시연 데이터: R1(PRD 대표 장면)",
         "note": "명세 v0.5 12절. gen_fixtures.py가 R1 정의로 만든다(손으로 고치지 않음). "
                 "목적지 이름·경로 거리는 바꿔도 배수·금액이 그대로(정체 km 표시만 바뀜). "
-                "dest_name은 임시(영상 쪽이 정하면 바꿈)",
+                "목적지 이름은 명준 #60. 화면 문구는 constants effort.copy의 임시 값(디자인 확정 대기)",
         "scene": {
-            "dest_name": "춘천 소양강 스카이워크",
+            "dest_name": "태안 꽃지해수욕장",
             "route_m": R1_ROUTE_M,
             "n": r1["n"],
-            "rest_answer_label": REST_LABEL[r1["rest_answer_min"]],
+            "rest_answer_label": rest_label,
             "departure_preview": dataclasses.asdict(preview),
         },
         "input": r1, "expected": r.to_json()})

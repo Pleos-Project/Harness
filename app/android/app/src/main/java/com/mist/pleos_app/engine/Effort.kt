@@ -2,6 +2,7 @@ package com.mist.pleos_app.engine
 
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
@@ -35,10 +36,6 @@ import kotlin.math.tan
 
 private const val DAY_S = 86_400L
 val EFFORT_LINE_ORDER: List<String> = listOf("rain", "snow", "congestion", "delay", "night", "fatigue")
-val EFFORT_LINE_LABEL: Map<String, String> = mapOf(
-    "rain" to "날씨", "snow" to "날씨", "congestion" to "정체 구간", "delay" to "예상보다 더",
-    "night" to "밤길", "fatigue" to "장시간",
-)
 /** GET /v1/weather 의 precip. 그 밖(unknown·실패)은 '정보 없음', 가산 0. */
 val KNOWN_PRECIP: Set<String> = setOf("none", "rain", "snow")
 /** 일출·일몰 천정각: 대기 굴절 34′ + 해 반지름 16′(해 윗부분이 지평선에 닿는 순간). */
@@ -62,11 +59,41 @@ data class EffortConstants(
     val wagePerHour: Double,                // 1분 단가 = 시급 ÷ 60
     val wageLabel: String,                  // 단가 출처 표기
     val items: List<EffortItem>,            // 방식 B 항목, 1인분 가격 오름차순
-    val basis: Map<String, String>,         // 줄 key → 근거 한 줄(AC-F23-4). {pct}는 ratesPct로 채운다
-    val detail: Map<String, String>,        // 줄 값 템플릿(weather_both_text 등). {precip}·{time}·{limit}
-    val precipWords: Map<String, String>,   // rain → 비, snow → 눈
-    val footnoteCongestion: String,         // 정체 줄이 있을 때 영수증 아래 주석
+    val copy: EffortCopy,                   // 화면 문구(effort.copy) — 임시, 디자인 확정 대기
 )
+
+/** 화면 문구는 모두 constants.json effort.copy에 둔다(명준 #60: 디자인이 확정해 넘겨줌). 엔진은 {…}만 채운다. */
+data class EffortCopy(
+    val text: Map<String, String>,          // *_text 템플릿(headline_text·a_main_text·b_text 등)
+    val lineLabels: Map<String, String>,    // 줄 key → 줄 이름
+    val lineDetail: Map<String, String>,    // 줄 값 템플릿(weather_all_text 등)
+    val precipWords: Map<String, String>,   // rain → 비, snow → 눈
+    val basis: Map<String, String>,         // 줄 key → 근거 한 줄(AC-F23-4)
+    val restAnswers: List<Pair<Int, String>>,   // 도착 때 질문의 선택지(분, 문구)
+)
+
+private fun JsonObject.strMap(k: String): Map<String, String> =
+    getValue(k).jsonObject.mapValues { (_, v) -> v.jsonPrimitive.content }
+
+fun parseEffortCopy(cp: JsonObject): EffortCopy = EffortCopy(
+    text = cp.filter { (k, v) -> v is JsonPrimitive && v.isString && k.endsWith("_text") }
+        .mapValues { (_, v) -> v.jsonPrimitive.content },
+    lineLabels = cp.strMap("line_labels"),
+    lineDetail = cp.strMap("line_detail"),
+    precipWords = cp.strMap("precip_words"),
+    basis = cp.strMap("basis"),
+    restAnswers = cp.getValue("rest_answers").jsonArray.map {
+        val a = it.jsonObject
+        a.integer("min") to a.str("label_text")
+    },
+)
+
+/** 템플릿의 {이름} 자리를 채운다(Python fill과 같음). */
+fun fill(template: String, vararg values: Pair<String, String>): String {
+    var t = template
+    for ((k, v) in values) t = t.replace("{$k}", v)
+    return t
+}
 
 /** constants.json 전체 텍스트에서 effort 블록을 읽는다(assets/data/constants.json). */
 fun parseEffortConstants(text: String): EffortConstants {
@@ -85,11 +112,7 @@ fun parseEffortConstants(text: String): EffortConstants {
             val i = it.jsonObject
             EffortItem(i.str("key"), i.str("label"), i.dbl("price_krw"), i.str("phrase_text"), i.strList("examples"))
         }.sortedBy { it.priceKrw },
-        basis = e["basis"]?.takeIf { it !is JsonNull }?.jsonObject?.mapValues { (_, v) -> v.jsonPrimitive.content }
-            ?: emptyMap(),
-        detail = e.getValue("detail").jsonObject.mapValues { (_, v) -> v.jsonPrimitive.content },
-        precipWords = e.getValue("precip_words").jsonObject.mapValues { (_, v) -> v.jsonPrimitive.content },
-        footnoteCongestion = e.str("footnote_congestion_text"),
+        copy = parseEffortCopy(e.getValue("copy").jsonObject),
     )
 }
 
@@ -242,9 +265,10 @@ fun driveText(driveS: Double): String {
     }
 }
 
-fun multiplierText(m100: Int): String =
-    if (m100 <= 100) "평소와 같은 길"
-    else "평소보다 ${m100 / 100}.${(m100 % 100).toString().padStart(2, '0')}배 힘든 길"
+/** 배수 x.xx(명세 2절). 1.00이면 '평소와 같은 길' 문구. */
+fun multiplierText(m100: Int, c: EffortConstants): String =
+    if (m100 <= 100) c.copy.text.getValue("multiplier_same_text")
+    else fill(c.copy.text.getValue("multiplier_more_text"), "x" to "${m100 / 100}.${(m100 % 100).toString().padStart(2, '0')}")
 
 fun pctText(pct: Int): String = if (pct > 0) "+$pct%" else "+1% 미만"
 
@@ -254,12 +278,16 @@ fun kmText(m: Double): String {
     return if (km > 0) "${km}km" else "1km 미만"
 }
 
-/** 정체 구간 줄 "38km (경로의 36%)"(노고 PRD v1.3 5-1, 열린 결정 28). km·비율을 모르면 null. */
-fun congestionText(congestionM: Double?, ratio: Double?): String? {
-    if (congestionM == null || ratio == null) return null
+/** 정체 비율 → "36%". 0으로 어림되면 "1% 미만". */
+fun ratioText(ratio: Double): String {
     val p = roundHalfUp(ratio * 100)
-    val pT = if (p > 0) "경로의 $p%" else "경로의 1% 미만"
-    return "${kmText(congestionM)} ($pT)"
+    return if (p > 0) "$p%" else "1% 미만"
+}
+
+/** 정체 구간 줄 값 "38km (경로의 36%)"(노고 PRD v1.3 5-1, 열린 결정 28). km·비율을 모르면 null. */
+fun congestionText(congestionM: Double?, ratio: Double?, c: EffortConstants): String? {
+    if (congestionM == null || ratio == null) return null
+    return fill(c.copy.lineDetail.getValue("congestion_text"), "km" to kmText(congestionM), "pct" to ratioText(ratio))
 }
 
 /** 출발 화면 미리보기(명세 v0.5 F20·12절 시연 순서 2). requestTrip 값으로 만든다. */
@@ -269,41 +297,41 @@ data class DeparturePreview(
     val congestionText: String?,        // "38km (경로의 36%)". 비율을 모르거나 0이면 null(정체 표시 없음)
 )
 
-fun departurePreview(etaS: Double, routeM: Double, congestionRatio: Double?, congestionM: Double?): DeparturePreview {
+fun departurePreview(
+    etaS: Double, routeM: Double, congestionRatio: Double?, congestionM: Double?, c: EffortConstants,
+): DeparturePreview {
     val has = congestionRatio != null && congestionRatio > 0
     return DeparturePreview(
         etaText = driveText(etaS),
         routeText = kmText(routeM),
-        congestionText = if (has) congestionText(congestionM, congestionRatio) else null,
+        congestionText = if (has) congestionText(congestionM, congestionRatio, c) else null,
     )
 }
 
 fun DeparturePreview.toJson(): JsonObject =
     obj("eta_text" to etaText, "route_text" to routeText, "congestion_text" to congestionText)
 
-/** 날씨 줄 값: 출발·도착이 같으면 "비, 주행 내내", 한쪽만이면 "비, 주행 앞 절반"·"비, 주행 뒤 절반"([제안]). */
+/** 날씨 줄 값: 출발·도착이 같으면 "비, 주행 내내", 한쪽만이면 "비"(임시 문구, 디자인 확정 대기). */
 fun weatherDetail(key: String, weatherDep: String, weatherArr: String, c: EffortConstants): String? {
     val dep = weatherDep == key
     val arr = weatherArr == key
-    val t = when {
-        dep && arr -> c.detail.getValue("weather_both_text")
-        dep -> c.detail.getValue("weather_first_text")
-        arr -> c.detail.getValue("weather_second_text")
-        else -> return null
-    }
-    return t.replace("{precip}", c.precipWords.getValue(key))
+    if (!dep && !arr) return null
+    val t = c.copy.lineDetail.getValue(if (dep && arr) "weather_all_text" else "weather_part_text")
+    return fill(t, "precip" to c.copy.precipWords.getValue(key))
 }
 
 /** "+25분"·"50분"·"2시간 넘긴 10분". {time}은 운전 시간과 같은 "○시간 ○분" 표기(명세 2절). */
 fun timeDetail(templateKey: String, minutesS: Double, c: EffortConstants): String =
-    c.detail.getValue(templateKey).replace("{limit}", driveText(c.fatigueLimitMin * 60))
-        .replace("{time}", driveText(minutesS))
+    fill(
+        c.copy.lineDetail.getValue(templateKey),
+        "limit" to driveText(c.fatigueLimitMin * 60), "time" to driveText(minutesS),
+    )
 
 /** 줄 근거 한 줄(명세 v0.5 AC-F23-4). {pct}는 그 줄의 가산율(ratesPct)로 채워 숫자가 상수와 어긋나지 않게 한다. */
 fun basisText(key: String, c: EffortConstants): String? {
-    val t = c.basis[key] ?: return null
+    val t = c.copy.basis[key] ?: return null
     val rate = c.ratesPct[key] ?: return t
-    return t.replace("{pct}", roundHalfUp(rate).toString())
+    return fill(t, "pct" to roundHalfUp(rate).toString())
 }
 
 /** 천 원 어림. 0이면 '1천 원 미만'(명세 v0.5 2절). */
@@ -388,30 +416,31 @@ fun effort(inp: EffortInput, c: EffortConstants): EffortReceipt {
             val pct = roundHalfUp(a / drive)
             val detail = when (k) {
                 "rain", "snow" -> weatherDetail(k, inp.weatherDep, inp.weatherArr, c)
-                "congestion" -> congestionText(inp.congestionM, inp.congestionRatio)
+                "congestion" -> congestionText(inp.congestionM, inp.congestionRatio, c)
                 "delay" -> timeDetail("delay_text", delay, c)
                 "night" -> timeDetail("night_text", night, c)
                 else -> timeDetail("fatigue_text", excess, c)   // 구간이 여러 개면 넘긴 시간의 합
             }
-            lines.add(EffortLine(k, EFFORT_LINE_LABEL.getValue(k), a / 6000, pct, pctText(pct), detail, basisText(k, c)))
+            lines.add(EffortLine(k, c.copy.lineLabels.getValue(k), a / 6000, pct, pctText(pct), detail, basisText(k, c)))
         }
     }
     val m100 = if (drive > 0) roundHalfUp(total / drive) else 100
 
     val notes = mutableListOf<String>()
-    if (inp.weatherDep !in KNOWN_PRECIP || inp.weatherArr !in KNOWN_PRECIP) notes.add("날씨 정보 없음")
-    if (inp.congestionS == null && inp.congestionRatio == null) notes.add("정체 정보 없음")
+    if (inp.weatherDep !in KNOWN_PRECIP || inp.weatherArr !in KNOWN_PRECIP) notes.add(c.copy.text.getValue("weather_unknown_text"))
+    if (inp.congestionS == null && inp.congestionRatio == null) notes.add(c.copy.text.getValue("congestion_unknown_text"))
 
     val dt = driveText(drive)
-    val mt = multiplierText(m100)
+    val mt = multiplierText(m100, c)
     return EffortReceipt(
         method = method, elapsedMin = elapsed / 60, driveMin = drive / 60, restMin = (elapsed - drive) / 60,
         fatigueSegmentsMin = groups.map { it / 60 },
         congestionMin = congestion / 60, delayMin = delay / 60, nightMin = night / 60,
         rainMin = rain / 60, snowMin = snow / 60, fatigueExcessMin = excess / 60,
         effortMin = total / 6000, multiplier = m100 / 100.0, lines = lines, notes = notes,
-        footnoteText = if (lines.any { it.key == "congestion" }) c.footnoteCongestion else null,
-        driveText = dt, multiplierText = mt, headlineText = "오늘 운전 $dt · $mt",
+        footnoteText = if (lines.any { it.key == "congestion" }) c.copy.text.getValue("footnote_congestion_text") else null,
+        driveText = dt, multiplierText = mt,
+        headlineText = fill(c.copy.text.getValue("headline_text"), "drive" to dt, "multiplier" to mt),
         distanceText = inp.distanceKm?.let { "${roundHalfUp(it)}km" },
         proposal = if (inp.n >= 2) effortProposal(total, inp.n, c) else null,
     )
@@ -426,17 +455,18 @@ fun effortProposal(effortPctS: Double, n: Int, c: EffortConstants): EffortPropos
     val (pV, pT) = approxText(per)
     val item = bItem(share, c.items)
     val perMin = roundHalfUp(c.wagePerHour / 60)
+    val t = c.copy.text
     return EffortProposal(
         amountKrw = amount, amountApprox = aV, amountText = aT,
         perPersonKrw = per, perPersonApprox = pV, perPersonText = pT,
         driverShareKrw = share,
         a = EffortScreenA(
-            titleText = "오늘 운전을 챙긴다면",
-            mainText = "한 사람 $pT",
-            basisText = "운전 노고 ${aT}을 운전자 포함 ${n}명이 나눈 값",
-            wageText = "${c.wageLabel} 1분 ${perMin}원 기준",
+            titleText = t.getValue("a_title_text"),
+            mainText = fill(t.getValue("a_main_text"), "per_person" to pT),
+            basisText = fill(t.getValue("a_basis_text"), "amount" to aT, "n" to n.toString()),
+            wageText = fill(t.getValue("a_wage_text"), "wage_label" to c.wageLabel, "wage_per_min" to perMin.toString()),
         ),
-        b = item?.let { EffortScreenB(it.key, "오늘은 ${it.phraseText}에서 운전자 빼고 나누는 게 어때요", it.examples) },
+        b = item?.let { EffortScreenB(it.key, fill(t.getValue("b_text"), "phrase" to it.phraseText), it.examples) },
     )
 }
 

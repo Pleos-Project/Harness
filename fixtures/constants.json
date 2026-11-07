@@ -22,25 +22,39 @@
     "_doc": "운전 노고(명세 v0.5 7~9절, #47). 가산율·문턱은 정수 %(0.40 → 40): 엔진이 초 × 정수 %로 더해 부동소수 경계 오차를 없앤다. 바꾸면 make fixtures",
     "rates_pct": {"rain": 40, "snow": 49, "congestion": 27, "delay": 27, "night": 4},
     "_rates_basis": "비 0.40·눈 0.49: Frontiers in Neuroscience 2026(Tian 외) Table 1 NASA-TLX 맑음 27.36 → 비 38.32 → 눈 40.89. 정체 0.27: Shakouri(LSU 2015) +27.2%. 예상보다 더 0.27: 정체 값을 빌림. 밤길 0.04: Fitri 2025 낮 85.86 → 밤 89.44",
-    "_detail_doc": "영수증 줄 값(명세 v0.5 F23 출력, 노고 PRD v1.3 5-1 예시). {precip}은 precip_words, {time}은 '○시간 ○분', {limit}은 fatigue.limit_min을 엔진이 채운다. 반쪽 표기(앞·뒤 절반)는 PRD에 없는 [제안]",
-    "detail": {
-      "weather_both_text": "{precip}, 주행 내내",
-      "weather_first_text": "{precip}, 주행 앞 절반",
-      "weather_second_text": "{precip}, 주행 뒤 절반",
-      "delay_text": "+{time}",
-      "night_text": "{time}",
-      "fatigue_text": "{limit} 넘긴 {time}"
-    },
-    "precip_words": {"rain": "비", "snow": "눈"},
-    "footnote_congestion_text": "정체 구간은 내비 안내 경로 기준",
-    "_basis_doc": "영수증 줄을 탭하면 보이는 근거 한 줄(명세 v0.5 AC-F23-4). 화면 문구라 앱은 이 값을 그대로 쓴다. {pct}는 엔진이 rates_pct 값으로 채운다. 말투는 명준 확인 전 초안",
-    "basis": {
-      "rain": "비 오는 날은 맑은 날보다 운전 부담이 {pct}% 커요 · 시뮬레이터 30명 연구(Frontiers in Neuroscience 2026)",
-      "snow": "눈 오는 날은 맑은 날보다 운전 부담이 {pct}% 커요 · 시뮬레이터 30명 연구(Frontiers in Neuroscience 2026)",
-      "congestion": "차가 몰린 길은 한산한 길보다 운전 부담이 {pct}% 커요 · 시뮬레이터 연구(Shakouri, LSU 2015)",
-      "delay": "예상보다 늦어진 시간은 정체와 같은 값으로 쳐요 · 예상 못 한 지연이 더 힘들다는 통근 연구(Wener·Evans 2011)",
-      "night": "밤에는 낮보다 운전 부담이 {pct}% 커요 · 트럭 운전자 50명 시뮬레이터 연구(Fitri 2025)",
-      "fatigue": "2시간을 넘겨 이어서 운전한 시간에 더해요 · 2시간 운전하면 15분 쉬도록 한 법령 기준(화물자동차 운수사업법 시행규칙)"
+    "_copy_doc": "화면 문구 — 임시, 디자인 확정 대기(명준 #60). 노고 PRD v1.3 5-1·5-2·5-3·명세 v0.5 F21·F23~F25 예시를 그대로 옮긴 값이고, 디자인이 확정하면 이 블록만 바꾼다(엔진 코드는 그대로). {…} 자리는 엔진이 채운다: 숫자 표기는 명세 2절(○시간 ○분·1.57·+40%·약 3만 6천 원·104km·36%), {precip}은 precip_words, {limit}은 fatigue.limit_min, basis의 {pct}는 rates_pct",
+    "copy": {
+      "headline_text": "오늘 운전 {drive} · {multiplier}",
+      "multiplier_same_text": "평소와 같은 길",
+      "multiplier_more_text": "평소보다 {x}배 힘든 길",
+      "line_labels": {"rain": "날씨", "snow": "날씨", "congestion": "정체 구간", "delay": "예상보다 더", "night": "밤길", "fatigue": "장시간"},
+      "line_detail": {
+        "weather_all_text": "{precip}, 주행 내내",
+        "weather_part_text": "{precip}",
+        "congestion_text": "{km} (경로의 {pct})",
+        "delay_text": "+{time}",
+        "night_text": "{time}",
+        "fatigue_text": "{limit} 넘긴 {time}"
+      },
+      "precip_words": {"rain": "비", "snow": "눈"},
+      "basis": {
+        "rain": "비 오는 날은 맑은 날보다 운전 부담이 {pct}% 커요 · 시뮬레이터 30명 연구(Frontiers in Neuroscience 2026)",
+        "snow": "눈 오는 날은 맑은 날보다 운전 부담이 {pct}% 커요 · 시뮬레이터 30명 연구(Frontiers in Neuroscience 2026)",
+        "congestion": "차가 몰린 길은 한산한 길보다 운전 부담이 {pct}% 커요 · 시뮬레이터 연구(Shakouri, LSU 2015)",
+        "delay": "예상보다 늦어진 시간은 정체와 같은 값으로 쳐요 · 예상 못 한 지연이 더 힘들다는 통근 연구(Wener·Evans 2011)",
+        "night": "밤에는 낮보다 운전 부담이 {pct}% 커요 · 트럭 운전자 50명 시뮬레이터 연구(Fitri 2025)",
+        "fatigue": "2시간을 넘겨 이어서 운전한 시간에 더해요 · 2시간 운전하면 15분 쉬도록 한 법령 기준(화물자동차 운수사업법 시행규칙)"
+      },
+      "footnote_congestion_text": "정체 구간은 내비 안내 경로 기준",
+      "weather_unknown_text": "날씨 정보 없음",
+      "congestion_unknown_text": "정체 정보 없음",
+      "rest_question_text": "중간에 쉰 시간",
+      "rest_answers": [{"min": 0, "label_text": "없음"}, {"min": 15, "label_text": "15분"}, {"min": 30, "label_text": "30분"}, {"min": 60, "label_text": "1시간 이상"}],
+      "a_title_text": "오늘 운전을 챙긴다면",
+      "a_main_text": "한 사람 {per_person}",
+      "a_basis_text": "운전 노고 {amount}을 운전자 포함 {n}명이 나눈 값",
+      "a_wage_text": "{wage_label} 1분 {wage_per_min}원 기준",
+      "b_text": "오늘은 {phrase}에서 운전자 빼고 나누는 게 어때요"
     },
     "delay_threshold_pct": 10,
     "fatigue": {"limit_min": 120, "rate_pct": 12.5, "reset_rest_min": 15,

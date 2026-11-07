@@ -113,7 +113,7 @@ def test_congestion_ratio_by_default_segments_when_listed():
     (400, 0.004, "1km 미만 (경로의 1% 미만)"), (None, 0.35, None), (12_000, None, None),
 ])
 def test_congestion_detail_text(m, ratio, want):
-    assert EF.congestion_text(m, ratio) == want
+    assert EF.congestion_text(m, ratio, C) == want
 
 
 BASIS_R1 = {
@@ -139,15 +139,40 @@ def test_basis_follows_rate_constant():
     assert EF.basis_text("distance", C) is None          # 거리는 표시만, 근거 없음
 
 
-def test_basis_templates_pass_copy_rules():
-    """상수의 근거 문구·B 항목 문구·예시 전부(fixture에 안 나오는 것까지)가 명세 2절 금지 문구·표기 규칙을 지킨다."""
-    assert set(C.basis) == set(EF.LINE_ORDER)
-    texts_ = [EF.basis_text(k, C) for k in C.basis]
-    texts_ += [it.phrase_text for it in C.items] + [x for it in C.items for x in it.examples]
+def _strings(obj):
+    if isinstance(obj, str):
+        yield obj
+    elif isinstance(obj, dict):
+        for v in obj.values():
+            yield from _strings(v)
+    elif isinstance(obj, list):
+        for v in obj:
+            yield from _strings(v)
+
+
+def test_all_copy_in_constants_passes_copy_rules():
+    """화면 문구는 전부 constants effort.copy·items에 있다(명준 #60). fixture에 안 나오는 것까지 금지 문구·표기 규칙을 지킨다."""
+    cp = load(ROOT / "fixtures/constants.json")["effort"]["copy"]
+    assert set(C.copy.basis) == set(EF.LINE_ORDER) and set(C.copy.line_labels) == set(EF.LINE_ORDER)
+    texts_ = list(_strings(cp)) + [it.phrase_text for it in C.items] + [x for it in C.items for x in it.examples]
     for s in texts_:
-        assert "{" not in s and "}" not in s, s
         for rx, msg in lint_copy.FORBIDDEN + lint_copy.COPY_RULES:
             assert not rx.search(s), f"{msg}: {s}"
+    for k in C.copy.basis:
+        assert "{" not in EF.basis_text(k, C)
+
+
+def test_copy_lives_only_in_constants():
+    """문구 블록만 바꾸면 화면 문구가 바뀐다(엔진 코드에 문구가 없다). 디자인 확정본을 넣을 때 이 블록만 고치면 된다."""
+    t = dict(C.copy.text, headline_text="[{drive}|{multiplier}]", a_title_text="A", b_text="B:{phrase}",
+             footnote_congestion_text="F", weather_unknown_text="W")
+    cp = dataclasses.replace(C.copy, text=t, line_labels={k: k.upper() for k in EF.LINE_ORDER},
+                             line_detail=dict(C.copy.line_detail, delay_text="D{time}"))
+    r = EF.effort(EF.input_from_json(fx("R1")["input"]), dataclasses.replace(C, copy=cp))
+    assert r.headline_text == "[2시간 10분|평소보다 1.57배 힘든 길]"
+    assert [l.label for l in r.lines] == ["RAIN", "CONGESTION", "DELAY", "NIGHT", "FATIGUE"]
+    assert r.lines[2].detail_text == "D25분" and r.footnote_text == "F"
+    assert (r.proposal.a.title_text, r.proposal.b.text) == ("A", "B:밥값")
 
 
 def test_ac_f24_1_r1_amount():
@@ -293,8 +318,10 @@ def test_weather_halves():
     r2 = run("R5", weather_dep="rain")
     assert (r2.rain_min, r2.snow_min) == (30, 30)
     assert [l.key for l in r2.lines] == ["rain", "snow"]
-    assert [(l.label, l.detail_text) for l in r2.lines] == [("날씨", "비, 주행 앞 절반"), ("날씨", "눈, 주행 뒤 절반")]
-    assert r.lines[0].detail_text == "눈, 주행 뒤 절반"   # [제안] 반쪽 표기(PRD에 없음)
+    # 한쪽만 비·눈이면 임시로 가장 단순하게 "비"·"눈"(PRD 5-1 예시에 없음, 디자인 확정 대기)
+    assert [(l.label, l.detail_text) for l in r2.lines] == [("날씨", "비"), ("날씨", "눈")]
+    assert r.lines[0].detail_text == "눈"
+    assert run("R5", weather_dep="snow").lines[0].detail_text == "눈, 주행 내내"
 
 
 @pytest.mark.parametrize("fid,key,override,want", [
@@ -333,7 +360,7 @@ def test_demo_is_r1_scene():
     assert e["proposal"]["a"]["main_text"] == "한 사람 약 9천 원"
     assert e["proposal"]["b"]["text"] == "오늘은 밥값에서 운전자 빼고 나누는 게 어때요"
     sc = DEMO["scene"]
-    assert (sc["route_m"], sc["n"], sc["rest_answer_label"]) == (104_300, 4, "없음")
+    assert (sc["dest_name"], sc["route_m"], sc["n"], sc["rest_answer_label"]) == ("태안 꽃지해수욕장", 104_300, 4, "없음")
     assert sc["departure_preview"] == {"eta_text": "1시간 45분", "route_text": "104km",
                                        "congestion_text": "38km (경로의 36%)"}
     # 정체 km = 비율 × 경로 거리(명세 F20), 거리 표시도 같은 경로
@@ -344,7 +371,7 @@ def test_demo_is_r1_scene():
 def test_demo_fixture():
     i = DEMO["input"]
     assert EF.effort(EF.input_from_json(i), C).to_json() == DEMO["expected"]
-    p = EF.departure_preview(i["eta_s"], DEMO["scene"]["route_m"], i["congestion_ratio"], i["congestion_m"])
+    p = EF.departure_preview(i["eta_s"], DEMO["scene"]["route_m"], i["congestion_ratio"], i["congestion_m"], C)
     assert dataclasses.asdict(p) == DEMO["scene"]["departure_preview"]
 
 
@@ -354,7 +381,7 @@ def test_demo_fixture():
     (7200, 80_000, None, None, ("2시간", "80km", None)),              # 정체 정보 없음
 ])
 def test_departure_preview(eta_s, route_m, ratio, cm, want):
-    p = EF.departure_preview(eta_s, route_m, ratio, cm)
+    p = EF.departure_preview(eta_s, route_m, ratio, cm, C)
     assert (p.eta_text, p.route_text, p.congestion_text) == want
 
 
@@ -384,8 +411,8 @@ DETAIL = re.compile(r"^(\d+km|1km 미만) \(경로의 (\d+%|1% 미만)\)$")
 DRIVE = re.compile(r"^(\d+시간( \d+분)?|\d+분|1분 미만)$")
 TIME = r"(\d+시간( \d+분)?|\d+분|1분 미만)"
 LINE_DETAIL = {   # 줄 값 형식(노고 PRD v1.3 5-1)
-    "rain": re.compile(r"^비, 주행 (내내|앞 절반|뒤 절반)$"),
-    "snow": re.compile(r"^눈, 주행 (내내|앞 절반|뒤 절반)$"),
+    "rain": re.compile(r"^비(, 주행 내내)?$"),
+    "snow": re.compile(r"^눈(, 주행 내내)?$"),
     "delay": re.compile(rf"^\+{TIME}$"),
     "night": re.compile(rf"^{TIME}$"),
     "fatigue": re.compile(rf"^2시간 넘긴 {TIME}$"),

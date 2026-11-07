@@ -178,6 +178,7 @@ class FixturesTest {
         val scene = fx.getValue("scene").jsonObject
         val preview = departurePreview(
             input.dbl("eta_s"), scene.dbl("route_m"), input.dblOrNull("congestion_ratio"), input.dblOrNull("congestion_m"),
+            effortConstants,
         )
         assertJson(scene.getValue("departure_preview"), preview.toJson(), "demo departure_preview")
     }
