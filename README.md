@@ -1,6 +1,12 @@
-# 차곡 (Chagok, 가제) — "지금 차에 든 돈으로, 어디까지"
+# 차곡 (Chagok, 가제) — 정산 기준을 차가 대신 잡아 준다
 
-현대자동차그룹 Pleos Connect 차량용 앱 공모전 출품작. 차 앱(AAOS·Kotlin·Jetpack Compose) + 추천 서버 모노레포.
+현대자동차그룹 Pleos Connect 차량용 앱 공모전 출품작. 차 앱(AAOS·Kotlin·Jetpack Compose) + 보조 서버 모노레포.
+
+**11/7 운전 노고 정산으로 전면 피봇했다(#46).**
+- 동승 주행이 끝나면 운전 시간과 "평소보다 ○배 힘든 길"을 영수증으로 보여 준다.
+- 그 위에 고마움의 기준(방식 A)이나 한 번 빼 주기(방식 B)를 제안한다.
+- 기준 문서는 `docs/PRD_노고정산_v1.2.md`·`docs/기능명세서_v0.5.md`이고, 수식 근거는 #47에 있다.
+- 아래 설명 중 잔고·카드·장부(`engine.py`·`cards.py`·fixture D·L·T)는 피봇 전 흐름이고, 정리하기 전까지 남아 있다.
 "차곡"은 가제다. 이름이 바뀌어도 코드 안의 `chagok`·`cg-` 같은 식별자는 변수명처럼 그대로 둔다(DECISIONS 열린 결정 22).
 일정: 11/7 개발 핸드오프 · 11/10 원티드 4차 시연 · 11/15 1차 제출 · 12/3~4 2차 PT.
 
@@ -31,14 +37,16 @@ adb forward tcp:8088 tcp:8088 && make replay   # Virtual Console로 PT 6단계 �
 | `design/illustrations/`, `icons/`, `brand/` | 테마 일러스트 `<theme>-<n>.svg`, 아이콘, 로고·앱 아이콘. 앱이 쓰는 내보낸 파일(SVG·PNG)만, 원본은 레포 밖 | BX 디자이너(제작) · 명준(레포 반영) |
 | `scripts/gen_fixtures.py`, `lint_copy.py`, `check_permissions.py` | fixture 생성 · 문구 검사 · 권한 대조 | 효성 |
 | `scripts/replay.sh` | Virtual Console PT 6단계 주입 | June |
-| `docs/` | 동결된 PRD(명준)·기능 명세서(June), 11/5 기준. 고치지 않음 | — |
+| `docs/` | 기준 문서: 노고 정산 PRD v1.2(명준·효성), 기능 명세서 v0.5(효성), 11/7. 고치지 않음. 피봇 전 문서는 `docs/archive/` | — |
 | `DECISIONS.md` | 한 줄 결정 로그 + **열린 결정**(담당·기한) | 모두 적고, 명준(PM)이 정리 |
 
 ## 규칙
 1. 브랜치는 `develop`(기본)·`main`(릴리스)·`feature/*`·`fix/*`, 둘 다 PR로만 머지(`CONTRIBUTING.md`). `fixtures/`·`contract/`를 건드리면 효성·June 둘 다 리뷰.
 2. 수식·순위 규칙은 **두 벌**(`server/chagok/*.py`, Kotlin `engine/`)이고 같은 PR에서 같이 바꾼다. 바꾸면 `make fixtures`로 재생성해 같은 PR에 넣는다. CI가 재생성 diff와 Kotlin 대조(`FixturesTest`)를 검사한다.
-3. 앱은 잔량·주행가능거리·주행거리·VIN을 서버로 보내지 않는다. 서버엔 `budget` 파생값만(PRD 5-2, 계약이 422로 막음).
-4. 화면 문구는 PRD 5-3 표기를 따른다(`make lint`): "0 원" 금지, "빠듯"과 "추가 … 없이"를 같이 쓰지 않기, 글레오 비교·"예상 vs 실제" 금지.
+3. 앱은 잔량·주행거리·VIN·위치 이력을 서버로 보내지 않는다. 날씨 조회 지점 좌표만 보내고, 서버는 저장·로그하지 않는다(명세 v0.5 AC-N-4).
+4. 화면 문구는 명세 v0.5 2절을 따른다(`make lint`).
+   - 금액은 "고마움의 기준"으로 말한다.
+   - 운송 대가 표현(운임·대가·요금·청구), "○시간어치", 순위, 운전 실력 평가, "아꼈어요", 재촉, "0 원", 쉼표 금액은 쓰지 않는다.
 5. 결정은 `DECISIONS.md` 한 줄. 문서 버전은 더 올리지 않는다. 문서와 다르게 가면 이유를 거기 적는다.
 
 ## 역할
