@@ -1,14 +1,16 @@
 {
   "id": "R3",
-  "title": "R2와 같은 거리를 쉬지 않고 180분(ETA 170분, 맑음·낮, 2명)",
+  "title": "R2와 같은 거리를 쉬지 않고 180분(쉰 시간 없음, ETA 170분, 맑음·낮, 2명)",
   "note": "장시간 (180 − 120) × 0.125 = 7.5 → 187.5 → 1.04배. R2와 비교하면 쉰 효과가 보인다",
   "input": {
     "departed_at": "2026-11-17T10:00:00+09:00",
     "arrived_at": "2026-11-17T13:00:00+09:00",
-    "stops": [],
-    "rest_answer_min": null,
+    "rest_answer_min": 0,
+    "stops": null,
     "eta_s": 10200,
-    "congestion_s": 0,
+    "congestion_ratio": 0.0,
+    "congestion_m": 0.0,
+    "congestion_s": null,
     "weather_dep": "none",
     "weather_arr": "none",
     "sunrise": "07:13",
@@ -17,7 +19,7 @@
     "distance_km": null
   },
   "expected": {
-    "method": "stops",
+    "method": "answer",
     "elapsed_min": 180.0,
     "drive_min": 180.0,
     "rest_min": 0.0,
@@ -38,7 +40,8 @@
         "label": "장시간",
         "add_min": 7.5,
         "pct": 4,
-        "pct_text": "+4%"
+        "pct_text": "+4%",
+        "detail_text": null
       }
     ],
     "notes": [],

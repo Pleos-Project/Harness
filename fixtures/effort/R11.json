@@ -1,14 +1,16 @@
 {
   "id": "R11",
-  "title": "새벽 출발: 05:30→08:00, 일출 07:13, ETA 150분, 맑음, 2명",
+  "title": "새벽 출발: 05:30→08:00, 쉰 시간 없음, 일출 07:13, ETA 150분, 맑음, 2명",
   "note": "전날 일몰 ~ 그날 일출 구간과 겹친 05:30~07:13 = 103분이 밤길 → 4.12. 장시간 30 × 0.125 = 3.75",
   "input": {
     "departed_at": "2026-11-17T05:30:00+09:00",
     "arrived_at": "2026-11-17T08:00:00+09:00",
-    "stops": [],
-    "rest_answer_min": null,
+    "rest_answer_min": 0,
+    "stops": null,
     "eta_s": 9000,
-    "congestion_s": 0,
+    "congestion_ratio": 0.0,
+    "congestion_m": 0.0,
+    "congestion_s": null,
     "weather_dep": "none",
     "weather_arr": "none",
     "sunrise": "07:13",
@@ -17,7 +19,7 @@
     "distance_km": null
   },
   "expected": {
-    "method": "stops",
+    "method": "answer",
     "elapsed_min": 150.0,
     "drive_min": 150.0,
     "rest_min": 0.0,
@@ -38,14 +40,16 @@
         "label": "밤길",
         "add_min": 4.12,
         "pct": 3,
-        "pct_text": "+3%"
+        "pct_text": "+3%",
+        "detail_text": null
       },
       {
         "key": "fatigue",
         "label": "장시간",
         "add_min": 3.75,
         "pct": 3,
-        "pct_text": "+3%"
+        "pct_text": "+3%",
+        "detail_text": null
       }
     ],
     "notes": [],

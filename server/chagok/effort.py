@@ -85,9 +85,13 @@ class EffortInput:
     sunrise_min: int                     # 출발 지점·날짜의 일출·일몰(그 날 0시부터 분, sun_times 결과)
     sunset_min: int
     n: int                               # 나눠 낼 인원(운전자 포함)
-    stops: tuple[Stop, ...] | None = None   # 1순위: 정차 목록. 빈 목록 = 신호는 받았고 정차 없음
-    rest_answer_min: int | None = None      # 2순위: 도착 때 답한 쉰 시간 Q(0·15·30·60). stops가 있으면 안 씀
-    congestion_s: float | None = None       # Σ 구간 distance ÷ avrSpeed. None = 정체 정보 없음
+    # 정차(명세 v0.5 F21, #58). 앱은 둘 중 하나를 채운다. 둘 다 오면 쉰 지점을 아는 정차 목록으로 계산한다.
+    rest_answer_min: int | None = None      # 기본: 도착 때 답한 쉰 시간 Q(0·15·30·60)
+    stops: tuple[Stop, ...] | None = None   # 보조: 나란히 배치에서 자동으로 잰 정차 목록. 빈 목록 = 정차 없음
+    # 정체(열린 결정 28, 효성). 구간 목록이 있으면 통과 시간, 없으면 비율 × T. 둘 다 없으면 정체 정보 없음
+    congestion_ratio: float | None = None   # 기본: 출발 전 requestTrip의 정체 비율(0~1)
+    congestion_m: float | None = None       # 정체 km(비율 × 경로 거리, 표시만)
+    congestion_s: float | None = None       # 보조: 구간 목록 Σ distance ÷ avrSpeed(나란히 배치)
     distance_km: float | None = None        # 표시만(누적 주행거리 Δ, 못 읽으면 route_m ÷ 1000)
 
 
@@ -98,6 +102,7 @@ class Line:
     add_min: float       # 그 항의 가산(분)
     pct: int             # 가산 ÷ T × 100, 정수 % 반올림
     pct_text: str        # "+40%", 어림이 0이면 "+1% 미만"
+    detail_text: str | None   # 정체 구간 "12km (경로의 35%)". 다른 줄은 아직 None
 
 
 @dataclass
@@ -131,7 +136,7 @@ class Proposal:
 
 @dataclass
 class Receipt:
-    method: str                      # stops(1순위 정차 목록) | answer(2순위 쉰 시간 답)
+    method: str                      # answer(기본: 쉰 시간 답) | stops(보조: 자동으로 잰 정차 목록)
     elapsed_min: float               # E
     drive_min: float                 # T
     rest_min: float                  # E − T
@@ -164,8 +169,8 @@ def input_from_json(d: dict) -> EffortInput:
         weather_dep=d["weather_dep"], weather_arr=d["weather_arr"],
         sunrise_min=parse_hhmm(d["sunrise"]), sunset_min=parse_hhmm(d["sunset"]), n=int(d["n"]),
         stops=tuple(Stop(s["start"], s["end"]) for s in stops) if stops is not None else None,
-        rest_answer_min=d.get("rest_answer_min"), congestion_s=d.get("congestion_s"),
-        distance_km=d.get("distance_km"),
+        rest_answer_min=d.get("rest_answer_min"), congestion_ratio=d.get("congestion_ratio"),
+        congestion_m=d.get("congestion_m"), congestion_s=d.get("congestion_s"), distance_km=d.get("distance_km"),
     )
 
 
@@ -249,6 +254,17 @@ def pct_text(pct: int) -> str:
     return f"+{pct}%" if pct > 0 else "+1% 미만"
 
 
+def congestion_text(congestion_m: float | None, ratio: float | None) -> str | None:
+    """정체 구간 줄 "12km (경로의 35%)"(노고 PRD v1.3 5-1, 열린 결정 28). km·비율을 모르면 None."""
+    if congestion_m is None or ratio is None:
+        return None
+    km = round_half_up(congestion_m / 1000)
+    p = round_half_up(ratio * 100)
+    km_t = f"{km}km" if km > 0 else "1km 미만"
+    p_t = f"경로의 {p}%" if p > 0 else "경로의 1% 미만"
+    return f"{km_t} ({p_t})"
+
+
 def approx_text(krw: float) -> tuple[int, str]:
     """천 원 어림. 0이면 '1천 원 미만'(명세 v0.5 2절)."""
     v, text, under = approx(krw, 1000)
@@ -264,7 +280,7 @@ def effort(inp: EffortInput, c: EffortConstants) -> Receipt:
     reset_s = c.fatigue_reset_rest_min * 60
 
     if inp.stops is not None:
-        # 1순위: 주행 구간을 안다. 15분 이상 정차에서 장시간 구간을 나누고, 짧은 정차는 시간만 뺀다.
+        # 보조(나란히 배치): 주행 구간을 안다. 15분 이상 정차에서 장시간 구간을 나누고, 짧은 정차는 시간만 뺀다.
         method = "stops"
         segs = drive_segments(dep, arr, inp.stops)
         drive = 0.0
@@ -279,7 +295,7 @@ def effort(inp: EffortInput, c: EffortConstants) -> Receipt:
             for a, b in nights:
                 night += overlap(s, e, a, b)
     else:
-        # 2순위: 쉰 총시간만 안다. 15분 이상이면 "중간쯤 한 번 쉬었다"고 보고 반으로 나눈다(#47).
+        # 기본(도착 때 묻기): 쉰 총시간만 안다. 15분 이상이면 "중간쯤 한 번 쉬었다"고 보고 반으로 나눈다(#47).
         method = "answer"
         q = float(inp.rest_answer_min or 0)
         drive = max(0.0, elapsed - q * 60)
@@ -289,7 +305,12 @@ def effort(inp: EffortInput, c: EffortConstants) -> Receipt:
             night_all += overlap(dep, arr, a, b)
         night = night_all * drive / elapsed if elapsed > 0 else 0.0
 
-    congestion = max(0.0, min(float(inp.congestion_s), drive)) if inp.congestion_s is not None else 0.0
+    if inp.congestion_s is not None:       # 구간 목록이 있으면 통과 시간 합
+        congestion = max(0.0, min(float(inp.congestion_s), drive))
+    elif inp.congestion_ratio is not None:   # 기본: 정체 비율 × T
+        congestion = max(0.0, min(float(inp.congestion_ratio) * drive, drive))
+    else:
+        congestion = 0.0
     eta = float(inp.eta_s)
     delay = max(0.0, drive - eta) if eta > 0 else 0.0
     if delay * 100 < c.delay_threshold_pct * eta:
@@ -317,13 +338,14 @@ def effort(inp: EffortInput, c: EffortConstants) -> Receipt:
         total += adds[k]
         if adds[k] > 0:
             pct = round_half_up(adds[k] / drive)
-            lines.append(Line(k, LINE_LABEL[k], adds[k] / 6000, pct, pct_text(pct)))
+            detail = congestion_text(inp.congestion_m, inp.congestion_ratio) if k == "congestion" else None
+            lines.append(Line(k, LINE_LABEL[k], adds[k] / 6000, pct, pct_text(pct), detail))
     m100 = round_half_up(total / drive) if drive > 0 else 100
 
     notes = []
     if inp.weather_dep not in KNOWN_PRECIP or inp.weather_arr not in KNOWN_PRECIP:
         notes.append("날씨 정보 없음")
-    if inp.congestion_s is None:
+    if inp.congestion_s is None and inp.congestion_ratio is None:
         notes.append("정체 정보 없음")
 
     dt = drive_text(drive)

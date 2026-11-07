@@ -1,19 +1,21 @@
 {
   "id": "R4",
-  "title": "10:00→12:40, 11:30~11:40 정차(10분), ETA 150분, 2명",
-  "note": "AC-F21-2. 10분 정차는 시간만 빠지고 장시간 구간은 이어진다(90 + 60 = 150) → 3.75. 153.75 ÷ 150 = 1.025 → 1.03(반올림 경계)",
+  "title": "보조(나란히 배치): 10:00→12:40, 11:30~11:40 정차(10분), ETA 150분, 2명",
+  "note": "AC-F21-3. 10분 정차는 시간만 빠지고 장시간 구간은 이어진다(90 + 60 = 150) → 3.75. 153.75 ÷ 150 = 1.025 → 1.03(반올림 경계)",
   "input": {
     "departed_at": "2026-11-17T10:00:00+09:00",
     "arrived_at": "2026-11-17T12:40:00+09:00",
+    "rest_answer_min": null,
     "stops": [
       {
         "start": "2026-11-17T11:30:00+09:00",
         "end": "2026-11-17T11:40:00+09:00"
       }
     ],
-    "rest_answer_min": null,
     "eta_s": 9000,
-    "congestion_s": 0,
+    "congestion_ratio": 0.0,
+    "congestion_m": 0.0,
+    "congestion_s": null,
     "weather_dep": "none",
     "weather_arr": "none",
     "sunrise": "07:13",
@@ -43,7 +45,8 @@
         "label": "장시간",
         "add_min": 3.75,
         "pct": 3,
-        "pct_text": "+3%"
+        "pct_text": "+3%",
+        "detail_text": null
       }
     ],
     "notes": [],

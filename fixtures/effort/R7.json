@@ -5,10 +5,12 @@
   "input": {
     "departed_at": "2026-11-17T10:00:00+09:00",
     "arrived_at": "2026-11-17T11:06:00+09:00",
-    "stops": [],
-    "rest_answer_min": null,
+    "rest_answer_min": 0,
+    "stops": null,
     "eta_s": 3600,
-    "congestion_s": 0,
+    "congestion_ratio": 0.0,
+    "congestion_m": 0.0,
+    "congestion_s": null,
     "weather_dep": "none",
     "weather_arr": "none",
     "sunrise": "07:13",
@@ -17,7 +19,7 @@
     "distance_km": null
   },
   "expected": {
-    "method": "stops",
+    "method": "answer",
     "elapsed_min": 66.0,
     "drive_min": 66.0,
     "rest_min": 0.0,
@@ -38,7 +40,8 @@
         "label": "예상보다 더",
         "add_min": 1.62,
         "pct": 2,
-        "pct_text": "+2%"
+        "pct_text": "+2%",
+        "detail_text": null
       }
     ],
     "notes": [],

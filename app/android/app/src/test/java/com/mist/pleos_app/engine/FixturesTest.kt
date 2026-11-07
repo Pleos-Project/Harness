@@ -172,14 +172,17 @@ class FixturesTest {
     @Test
     fun effortSpecR1() {
         val r = effort(parseEffortInput(load(File(root, "effort/R1.json")).getValue("input").jsonObject), effortConstants)
-        assertEquals("오늘 운전 2시간 10분 · 평소보다 1.56배 힘든 길", r.headlineText)
-        assertEquals(listOf("+40%", "+8%", "+5%", "+2%", "+1%"), r.lines.map { it.pctText })
+        // 정체 분 = 비율 0.35 × T 130 = 45.5(열린 결정 28) → 1.57배, 정체 +9%
+        assertEquals("오늘 운전 2시간 10분 · 평소보다 1.57배 힘든 길", r.headlineText)
+        assertEquals(listOf("+40%", "+9%", "+5%", "+2%", "+1%"), r.lines.map { it.pctText })
+        assertEquals(listOf(null, "12km (경로의 35%)", null, null, null), r.lines.map { it.detailText })
+        assertEquals("answer", r.method)
         val p = r.proposal!!
-        assertEquals(36_166.0, p.amountKrw, 0.0)
+        assertEquals(36_430.825, p.amountKrw, 0.0)
         assertEquals("약 3만 6천 원", p.amountText)
-        assertEquals(9_041.5, p.perPersonKrw, 0.0)
+        assertEquals(9_107.70625, p.perPersonKrw, 0.0)
         assertEquals("약 9천 원", p.perPersonText)
-        assertEquals(27_124.5, p.driverShareKrw, 0.0)
+        assertEquals(27_323.1, p.driverShareKrw, 0.05)
         // 방식 A 화면(노고 PRD v1.3 5-2)과 방식 B 화면은 따로다
         assertEquals("오늘 운전을 챙긴다면", p.a.titleText)
         assertEquals("한 사람 약 9천 원", p.a.mainText)
@@ -189,6 +192,13 @@ class FixturesTest {
         assertEquals("오늘은 밥값에서 운전자 빼고 나누는 게 어때요", p.b?.text)
         val r8 = effort(parseEffortInput(load(File(root, "effort/R8.json")).getValue("input").jsonObject), effortConstants)
         assertEquals(null, r8.proposal)
+        // 구간 목록(나란히 배치)이 있으면 비율 대신 통과 시간 40분 → 예전 R1 값(R14)
+        val r14 = effort(parseEffortInput(load(File(root, "effort/R14.json")).getValue("input").jsonObject), effortConstants)
+        assertEquals(202.8, r14.effortMin, 1e-9)
+        assertEquals(36_166.0, r14.proposal!!.amountKrw, 0.0)
+        // AC-F21-1: 답 30분 → T 130, 장시간 65 + 65(R9)
+        val r9 = effort(parseEffortInput(load(File(root, "effort/R9.json")).getValue("input").jsonObject), effortConstants)
+        assertEquals(listOf(65.0, 65.0), r9.fatigueSegmentsMin)
     }
 
     /** 명세 9절 경계표: 2,350 미만 제안 없음 / 7,715.5 이상 밥 / 39,865.5 이상 공동 경비. */

@@ -1,14 +1,16 @@
 {
   "id": "R5",
-  "title": "60분, 출발 맑음·도착 눈, ETA 60분, 낮, 3명",
+  "title": "60분, 출발 맑음·도착 눈, 쉰 시간 없음, ETA 60분, 낮, 3명",
   "note": "눈은 T의 뒤 절반 30분 × 0.49 = 14.7 → 74.7. 74.7 ÷ 60 = 1.245 → 1.25(반올림 경계, Decimal과 같게)",
   "input": {
     "departed_at": "2026-11-17T10:00:00+09:00",
     "arrived_at": "2026-11-17T11:00:00+09:00",
-    "stops": [],
-    "rest_answer_min": null,
+    "rest_answer_min": 0,
+    "stops": null,
     "eta_s": 3600,
-    "congestion_s": 0,
+    "congestion_ratio": 0.0,
+    "congestion_m": 0.0,
+    "congestion_s": null,
     "weather_dep": "none",
     "weather_arr": "snow",
     "sunrise": "07:13",
@@ -17,7 +19,7 @@
     "distance_km": null
   },
   "expected": {
-    "method": "stops",
+    "method": "answer",
     "elapsed_min": 60.0,
     "drive_min": 60.0,
     "rest_min": 0.0,
@@ -38,7 +40,8 @@
         "label": "눈",
         "add_min": 14.7,
         "pct": 25,
-        "pct_text": "+25%"
+        "pct_text": "+25%",
+        "detail_text": null
       }
     ],
     "notes": [],

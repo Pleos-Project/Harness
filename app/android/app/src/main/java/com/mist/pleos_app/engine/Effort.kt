@@ -90,13 +90,24 @@ data class EffortInput(
     val sunriseMin: Int,                    // 출발 지점·날짜의 일출·일몰(그 날 0시부터 분, sunTimes 결과)
     val sunsetMin: Int,
     val n: Int,                             // 나눠 낼 인원(운전자 포함)
-    val stops: List<EffortStop>? = null,    // 1순위: 정차 목록. 빈 목록 = 신호는 받았고 정차 없음
-    val restAnswerMin: Int? = null,         // 2순위: 도착 때 답한 쉰 시간 Q(0·15·30·60). stops가 있으면 안 씀
-    val congestionS: Double? = null,        // Σ 구간 distance ÷ avrSpeed. null = 정체 정보 없음
+    // 정차(명세 v0.5 F21, #58). 앱은 둘 중 하나를 채운다. 둘 다 오면 쉰 지점을 아는 정차 목록으로 계산한다.
+    val restAnswerMin: Int? = null,         // 기본: 도착 때 답한 쉰 시간 Q(0·15·30·60)
+    val stops: List<EffortStop>? = null,    // 보조: 나란히 배치에서 자동으로 잰 정차 목록. 빈 목록 = 정차 없음
+    // 정체(열린 결정 28, 효성). 구간 목록이 있으면 통과 시간, 없으면 비율 × T. 둘 다 없으면 정체 정보 없음
+    val congestionRatio: Double? = null,    // 기본: 출발 전 requestTrip의 정체 비율(0~1)
+    val congestionM: Double? = null,        // 정체 km(비율 × 경로 거리, 표시만)
+    val congestionS: Double? = null,        // 보조: 구간 목록 Σ distance ÷ avrSpeed(나란히 배치)
     val distanceKm: Double? = null,         // 표시만
 )
 
-data class EffortLine(val key: String, val label: String, val addMin: Double, val pct: Int, val pctText: String)
+data class EffortLine(
+    val key: String,
+    val label: String,
+    val addMin: Double,
+    val pct: Int,
+    val pctText: String,
+    val detailText: String?,            // 정체 구간 "12km (경로의 35%)". 다른 줄은 아직 null
+)
 
 /** 방식 A 화면(명세 v0.5 F24, 노고 PRD v1.3 5-2). 방식 B로 넘어가는 문구·버튼은 두지 않는다. */
 data class EffortScreenA(
@@ -125,7 +136,7 @@ data class EffortProposal(
 )
 
 data class EffortReceipt(
-    val method: String,                 // stops(1순위) | answer(2순위)
+    val method: String,                 // answer(기본: 쉰 시간 답) | stops(보조: 자동으로 잰 정차 목록)
     val elapsedMin: Double,
     val driveMin: Double,
     val restMin: Double,
@@ -218,6 +229,16 @@ fun multiplierText(m100: Int): String =
 
 fun pctText(pct: Int): String = if (pct > 0) "+$pct%" else "+1% 미만"
 
+/** 정체 구간 줄 "12km (경로의 35%)"(노고 PRD v1.3 5-1, 열린 결정 28). km·비율을 모르면 null. */
+fun congestionText(congestionM: Double?, ratio: Double?): String? {
+    if (congestionM == null || ratio == null) return null
+    val km = roundHalfUp(congestionM / 1000)
+    val p = roundHalfUp(ratio * 100)
+    val kmT = if (km > 0) "${km}km" else "1km 미만"
+    val pT = if (p > 0) "경로의 $p%" else "경로의 1% 미만"
+    return "$kmT ($pT)"
+}
+
 /** 천 원 어림. 0이면 '1천 원 미만'(명세 v0.5 2절). */
 fun approxText(krw: Double): Pair<Int, String> {
     val a = approx(krw, 1000)
@@ -237,7 +258,7 @@ fun effort(inp: EffortInput, c: EffortConstants): EffortReceipt {
     val groups = mutableListOf<Double>()
     val night: Double
     if (inp.stops != null) {
-        // 1순위: 주행 구간을 안다. 15분 이상 정차에서 장시간 구간을 나누고, 짧은 정차는 시간만 뺀다.
+        // 보조(나란히 배치): 주행 구간을 안다. 15분 이상 정차에서 장시간 구간을 나누고, 짧은 정차는 시간만 뺀다.
         method = "stops"
         val segs = driveSegments(dep, arr, inp.stops)
         var d = 0.0
@@ -252,7 +273,7 @@ fun effort(inp: EffortInput, c: EffortConstants): EffortReceipt {
         for ((s, e) in segs) for ((a, b) in nights) nt += overlap(s, e, a, b)
         night = nt
     } else {
-        // 2순위: 쉰 총시간만 안다. 15분 이상이면 "중간쯤 한 번 쉬었다"고 보고 반으로 나눈다(#47).
+        // 기본(도착 때 묻기): 쉰 총시간만 안다. 15분 이상이면 "중간쯤 한 번 쉬었다"고 보고 반으로 나눈다(#47).
         method = "answer"
         val q = (inp.restAnswerMin ?: 0).toDouble()
         drive = max(0.0, elapsed - q * 60)
@@ -267,7 +288,11 @@ fun effort(inp: EffortInput, c: EffortConstants): EffortReceipt {
         night = if (elapsed > 0) all * drive / elapsed else 0.0
     }
 
-    val congestion = inp.congestionS?.let { max(0.0, min(it, drive)) } ?: 0.0
+    val congestion = when {
+        inp.congestionS != null -> max(0.0, min(inp.congestionS, drive))            // 구간 목록이 있으면 통과 시간 합
+        inp.congestionRatio != null -> max(0.0, min(inp.congestionRatio * drive, drive))   // 기본: 정체 비율 × T
+        else -> 0.0
+    }
     val eta = inp.etaS
     var delay = if (eta > 0) max(0.0, drive - eta) else 0.0
     if (delay * 100 < c.delayThresholdPct * eta) delay = 0.0
@@ -294,14 +319,15 @@ fun effort(inp: EffortInput, c: EffortConstants): EffortReceipt {
         total += a
         if (a > 0) {
             val pct = roundHalfUp(a / drive)
-            lines.add(EffortLine(k, EFFORT_LINE_LABEL.getValue(k), a / 6000, pct, pctText(pct)))
+            val detail = if (k == "congestion") congestionText(inp.congestionM, inp.congestionRatio) else null
+            lines.add(EffortLine(k, EFFORT_LINE_LABEL.getValue(k), a / 6000, pct, pctText(pct), detail))
         }
     }
     val m100 = if (drive > 0) roundHalfUp(total / drive) else 100
 
     val notes = mutableListOf<String>()
     if (inp.weatherDep !in KNOWN_PRECIP || inp.weatherArr !in KNOWN_PRECIP) notes.add("날씨 정보 없음")
-    if (inp.congestionS == null) notes.add("정체 정보 없음")
+    if (inp.congestionS == null && inp.congestionRatio == null) notes.add("정체 정보 없음")
 
     val dt = driveText(drive)
     val mt = multiplierText(m100)
@@ -415,12 +441,15 @@ fun parseEffortInput(o: JsonObject): EffortInput = EffortInput(
         EffortStop(s.str("start"), s.str("end"))
     },
     restAnswerMin = o.integerOrNull("rest_answer_min"),
+    congestionRatio = o.dblOrNull("congestion_ratio"),
+    congestionM = o.dblOrNull("congestion_m"),
     congestionS = o.dblOrNull("congestion_s"),
     distanceKm = o.dblOrNull("distance_km"),
 )
 
 fun EffortLine.toJson(): JsonObject = obj(
     "key" to key, "label" to label, "add_min" to addMin, "pct" to pct, "pct_text" to pctText,
+    "detail_text" to detailText,
 )
 
 fun EffortScreenA.toJson(): JsonObject = obj(

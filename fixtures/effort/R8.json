@@ -5,10 +5,12 @@
   "input": {
     "departed_at": "2026-11-17T16:00:00+09:00",
     "arrived_at": "2026-11-17T18:10:00+09:00",
-    "stops": [],
-    "rest_answer_min": null,
+    "rest_answer_min": 0,
+    "stops": null,
     "eta_s": 6300,
-    "congestion_s": 2400,
+    "congestion_ratio": 0.35,
+    "congestion_m": 12000,
+    "congestion_s": null,
     "weather_dep": "rain",
     "weather_arr": "rain",
     "sunrise": "07:13",
@@ -17,62 +19,67 @@
     "distance_km": 104.3
   },
   "expected": {
-    "method": "stops",
+    "method": "answer",
     "elapsed_min": 130.0,
     "drive_min": 130.0,
     "rest_min": 0.0,
     "fatigue_segments_min": [
       130.0
     ],
-    "congestion_min": 40.0,
+    "congestion_min": 45.5,
     "delay_min": 25.0,
     "night_min": 50.0,
     "rain_min": 130.0,
     "snow_min": 0.0,
     "fatigue_excess_min": 10.0,
-    "effort_min": 202.8,
-    "multiplier": 1.56,
+    "effort_min": 204.285,
+    "multiplier": 1.57,
     "lines": [
       {
         "key": "rain",
         "label": "비",
         "add_min": 52.0,
         "pct": 40,
-        "pct_text": "+40%"
+        "pct_text": "+40%",
+        "detail_text": null
       },
       {
         "key": "congestion",
         "label": "정체 구간",
-        "add_min": 10.8,
-        "pct": 8,
-        "pct_text": "+8%"
+        "add_min": 12.285,
+        "pct": 9,
+        "pct_text": "+9%",
+        "detail_text": "12km (경로의 35%)"
       },
       {
         "key": "delay",
         "label": "예상보다 더",
         "add_min": 6.75,
         "pct": 5,
-        "pct_text": "+5%"
+        "pct_text": "+5%",
+        "detail_text": null
       },
       {
         "key": "night",
         "label": "밤길",
         "add_min": 2.0,
         "pct": 2,
-        "pct_text": "+2%"
+        "pct_text": "+2%",
+        "detail_text": null
       },
       {
         "key": "fatigue",
         "label": "장시간",
         "add_min": 1.25,
         "pct": 1,
-        "pct_text": "+1%"
+        "pct_text": "+1%",
+        "detail_text": null
       }
     ],
     "notes": [],
     "drive_text": "2시간 10분",
-    "multiplier_text": "평소보다 1.56배 힘든 길",
-    "headline_text": "오늘 운전 2시간 10분 · 평소보다 1.56배 힘든 길",
+    "multiplier_text": "평소보다 1.57배 힘든 길",
+    "headline_text": "오늘 운전 2시간 10분 · 평소보다 1.57배 힘든 길",
     "distance_text": "104km",
     "proposal": null
   }
