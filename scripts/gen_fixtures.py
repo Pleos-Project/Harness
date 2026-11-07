@@ -12,6 +12,7 @@ fixture 종류
 계약 샘플(contract/samples)
 - D1·D2           /v1/cards (D1·D2 fixture에서 그대로)
 - weather.*       GET /v1/weather 응답. 기상청 초단기실황 모양의 고정 응답을 chagok.weather로 해석한 값
+- places.*        GET /v1/places 응답. 카카오 로컬 키워드 검색 모양의 고정 응답을 chagok.places로 해석한 값
 """
 
 from __future__ import annotations
@@ -25,6 +26,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "server"))
 
 from chagok import engine as E  # noqa: E402
+from chagok import places as PL  # noqa: E402
 from chagok import weather as W  # noqa: E402
 from chagok.cards import SessionStore, build_cards, load_constants, load_demo_candidates, swap  # noqa: E402
 
@@ -148,6 +150,22 @@ def kma_ncst(lat: float, lng: float, pty: str, base_date: str, base_time: str) -
     return json.dumps({"response": {"header": {"resultCode": "00", "resultMsg": "NORMAL_SERVICE"},
                                     "body": {"dataType": "JSON", "items": {"item": items},
                                              "pageNo": 1, "numOfRows": 10, "totalCount": len(items)}}})
+
+
+# 카카오 로컬 키워드 검색 응답 모양(query=두물머리, 11/7 실호출의 이름·주소·id·x·y 그대로). 계약 샘플을 만들 때만 쓴다.
+# 첫 곳은 도로명 주소가 없어 지번 주소로, 둘째 곳은 도로명 주소로 나간다.
+KAKAO_DUMUL_DOCS = [
+    {"id": "7845373", "place_name": "두물머리", "address_name": "경기 양평군 양서면 양수리", "road_address_name": "",
+     "x": "127.315829778049", "y": "37.5328127891601", "distance": "23671"},
+    {"id": "2141791502", "place_name": "양서농협 두물머리로컬푸드직매장", "address_name": "경기 양평군 양서면 양수리 1161-5",
+     "road_address_name": "경기 양평군 양서면 두물머리길 38",
+     "x": "127.31911437324305", "y": "37.54082012837359", "distance": "24417"},
+]
+
+
+def kakao_keyword(docs: list[dict]) -> str:
+    return json.dumps({"documents": docs, "meta": {"is_end": True, "pageable_count": len(docs),
+                                                   "total_count": len(docs)}}, ensure_ascii=False)
 
 
 def main() -> None:
@@ -314,6 +332,11 @@ def main() -> None:
     precip, observed_at = W.parse_ncst(kma_ncst(ORIGIN["lat"], ORIGIN["lng"], "1", "20261107", "1600"))
     write(ROOT / "contract/samples/weather.rain.response.json", W.Result(precip, observed_at).public())
     write(ROOT / "contract/samples/weather.unknown.response.json", W.unknown("timeout").public())
+    # GET /v1/places (노고 PRD v1.3 8장, #56). 결과 있음 / 결과 없음 / 실패(카카오 오류·3초 초과)
+    found = PL.parse_keyword(kakao_keyword(KAKAO_DUMUL_DOCS))
+    write(ROOT / "contract/samples/places.ok.response.json", PL.Result("ok", tuple(found)).public())
+    write(ROOT / "contract/samples/places.empty.response.json", PL.Result("empty").public())
+    write(ROOT / "contract/samples/places.unavailable.response.json", PL.unavailable("timeout").public())
 
     sweep_stale("fixtures/cards", "fixtures/settle", "fixtures/ledger", "contract/samples")
 
