@@ -1,5 +1,7 @@
-"""차곡 서버. 운전 노고 정산(명세 v0.5, #46)에서 앱이 부르는 건 GET /v1/weather(출발·도착 지점 강수) 하나다.
-좌표는 기상청 조회 한 번에만 쓰고 저장·캐시·로그하지 않는다(AC-N-4, chagok/weather.py).
+"""차곡 서버. 운전 노고 정산(명세 v0.5, #46)에서 앱이 부르는 건 두 가지다.
+- GET /v1/weather: 출발·도착 지점 강수(chagok/weather.py)
+- GET /v1/places: 출발 화면 목적지 검색, 카카오 로컬 키워드 검색 대행(chagok/places.py, 노고 PRD v1.3 8장)
+좌표·검색어는 그 조회 한 번에만 쓰고 저장·캐시·로그하지 않는다(AC-N-4).
 
 피봇 전 흐름(정리 전까지 남겨 둔다, DECISIONS 11/7 '다음 PR로 넘김' ④):
 /v1/cards, /v1/cards/swap, /v1/prices(평균 단가, 읽기 전용).
@@ -20,10 +22,11 @@ from contextlib import asynccontextmanager
 from typing import Annotated, Literal
 
 from fastapi import FastAPI, HTTPException, Query, Request, Response
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, StringConstraints, model_validator
 
 from . import engine as E
 from . import live
+from . import places as PL
 from . import prices as P
 from . import routes as R
 from . import sources as S
@@ -38,7 +41,7 @@ async def _lifespan(_app):
     yield
 
 
-app = FastAPI(title="chagok", version="0.4.0", lifespan=_lifespan)
+app = FastAPI(title="chagok", version="0.5.0", lifespan=_lifespan)
 CONST = load_constants()
 DEMO = load_demo_candidates()
 STORE = SessionStore()
@@ -52,6 +55,8 @@ KAKAO = R.kakao_fetcher(ENV["KAKAO_REST_API_KEY"], timeout=live.ROUTE_TIMEOUT_S)
 PRICES = P.PriceReader()  # 오피넷 전국 평균(크론 KST 04:20 갱신). DB 없으면 /v1/prices 503
 # 기상청 초단기실황도 공공데이터포털 계정 키를 같이 쓴다(명세 v0.5 7절). 없으면 /v1/weather는 늘 unknown
 WEATHER_KEY = ENV.get("TOURAPI_SERVICE_KEY") or None
+# 목적지 검색(카카오 로컬)은 길찾기와 같은 카카오 REST 키를 쓴다. 없으면 /v1/places는 늘 unavailable
+PLACES_KEY = ENV.get("KAKAO_REST_API_KEY") or None
 
 Theme = Literal["sea", "lake", "river", "mountain", "park", "city", "island", "drive"]
 
@@ -121,6 +126,19 @@ class WeatherQuery(Strict):
     lon: float = Field(ge=-180, le=180, allow_inf_nan=False)
 
 
+class PlacesQuery(Strict):
+    # 쿼리는 검색어와 (선택) 현재 위치 lat·lng뿐. 다른 쿼리가 붙으면 422(extra="forbid")
+    query: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=100)]
+    lat: float | None = Field(None, ge=-90, le=90, allow_inf_nan=False)
+    lng: float | None = Field(None, ge=-180, le=180, allow_inf_nan=False)
+
+    @model_validator(mode="after")
+    def _both_or_neither(self):
+        if (self.lat is None) != (self.lng is None):
+            raise ValueError("lat·lng는 둘 다 보내거나 둘 다 빼요")
+        return self
+
+
 @app.get("/v1/health")
 def health() -> dict:
     rows, refreshed = INDEX.rows()
@@ -142,6 +160,20 @@ def weather(q: Annotated[WeatherQuery, Query()], response: Response) -> dict:
     res = W.lookup(q.lat, q.lon, WEATHER_KEY)
     response.headers["Cache-Control"] = "no-store"
     log("weather", status=200, ms=_ms(t0), precip=res.precip, **({"err": res.err} if res.err else {}))
+    return res.public()
+
+
+@app.get("/v1/places")
+def places_search(q: Annotated[PlacesQuery, Query()], response: Response) -> dict:
+    """출발 화면 목적지 검색(카카오 로컬 키워드 검색 대행). 노고 PRD v1.3 8장, #56.
+    결과는 최대 10곳, 실패·3초 초과는 200 + 빈 목록 + status "unavailable".
+    검색어·현재 위치·결과는 로그에 남기지 않는다(AC-N-4). URL에 검색어·좌표가 들어가므로 응답을 캐시하지 않게 한다."""
+    t0 = time.perf_counter()
+    near = (q.lat, q.lng) if q.lat is not None and q.lng is not None else None
+    res = PL.search(q.query, PLACES_KEY, near=near)
+    response.headers["Cache-Control"] = "no-store"
+    log("places", status=200, ms=_ms(t0), result=res.status, n=len(res.places), near=near is not None,
+        **({"err": res.err} if res.err else {}))
     return res.public()
 
 

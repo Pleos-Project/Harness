@@ -74,15 +74,17 @@ def test_out_of_grid():
     assert not W.in_grid(*W.to_grid(51.5, -0.12))     # 런던
 
 
-# ------------------------------------------------------------ 발표 시각 (매시 40분 이후 정시분)
+# ------------------------------------------------------------ 발표 시각 (매시 10분 이후 정시분)
 @pytest.mark.parametrize("now, expected", [
+    (datetime(2026, 11, 7, 14, 10, tzinfo=W.KST), ("20261107", "1400")),
     (datetime(2026, 11, 7, 14, 40, tzinfo=W.KST), ("20261107", "1400")),
-    (datetime(2026, 11, 7, 14, 39, 59, tzinfo=W.KST), ("20261107", "1300")),
+    (datetime(2026, 11, 7, 14, 9, 59, tzinfo=W.KST), ("20261107", "1300")),
     (datetime(2026, 11, 7, 14, 0, tzinfo=W.KST), ("20261107", "1300")),
-    (datetime(2026, 11, 8, 0, 10, tzinfo=W.KST), ("20261107", "2300")),          # 자정 직후 → 전날 23시
-    (datetime(2027, 1, 1, 0, 39, tzinfo=W.KST), ("20261231", "2300")),           # 해 넘김
-    (datetime(2026, 11, 7, 5, 45, tzinfo=timezone.utc), ("20261107", "1400")),   # 서버 시계 UTC → KST로
-    (datetime(2026, 11, 7, 15, 20, tzinfo=timezone.utc), ("20261107", "2300")),  # UTC 15:20 = KST 00:20 다음 날 → 전날 23시
+    (datetime(2026, 11, 8, 0, 10, tzinfo=W.KST), ("20261108", "0000")),          # 자정 10분 → 그날 00시
+    (datetime(2026, 11, 8, 0, 9, tzinfo=W.KST), ("20261107", "2300")),           # 자정 직후 → 전날 23시
+    (datetime(2027, 1, 1, 0, 5, tzinfo=W.KST), ("20261231", "2300")),            # 해 넘김
+    (datetime(2026, 11, 7, 5, 15, tzinfo=timezone.utc), ("20261107", "1400")),   # 서버 시계 UTC → KST로
+    (datetime(2026, 11, 7, 15, 5, tzinfo=timezone.utc), ("20261107", "2300")),   # UTC 15:05 = KST 00:05 다음 날 → 전날 23시
 ])
 def test_base_time_kst(now, expected):
     assert W.base_time(now) == expected

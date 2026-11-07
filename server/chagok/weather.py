@@ -29,7 +29,9 @@ from .engine import round_half_up
 URL = "https://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getUltraSrtNcst"
 TIMEOUT_S = 3.0          # 명세 v0.5 2절 '날씨 실패': 3초를 넘기면 unknown
 KST = timezone(timedelta(hours=9))   # 서버 시계는 UTC(deploy/crontab). base_date·base_time은 KST로 정한다
-BASE_READY_MIN = 40      # 정시 실황은 매시 40분 이후에 부른다. 그 전이면 한 시간 전 발표분
+# 정시 실황은 매시 10분 이후에 부른다. 그 전이면 한 시간 전 발표분. 활용가이드: 초단기실황 매시 10분 이후 제공
+# (40분은 초단기예보 기준, June #54). 11/7 실측: 21:00 발표분이 21:04까지 NO_DATA, 21:06부터 수신
+BASE_READY_MIN = 10
 
 # PTY: 0 없음, 1 비, 2 비/눈, 3 눈, 4 소나기, 5 빗방울, 6 빗방울눈날림, 7 눈날림(명세 v0.5 7절).
 # 4(소나기)는 단기예보 코드라 실황에는 보통 안 오지만, 오면 비로 본다(11/7 효성 결정)
