@@ -11,7 +11,10 @@ import com.mist.pleos_app.app.PrefsPayerStore
 import com.mist.pleos_app.app.PrefsSettingsStore
 import com.mist.pleos_app.app.Settings
 import com.mist.pleos_app.engine.EffortConstants
+import com.mist.pleos_app.engine.EffortReceipt
 import com.mist.pleos_app.engine.departurePreview
+import com.mist.pleos_app.engine.hhmm
+import com.mist.pleos_app.engine.sunTimes
 import com.mist.pleos_app.engine.parseEffortConstants
 import com.mist.pleos_app.navi.Destination
 import com.mist.pleos_app.navi.NaviPlace
@@ -39,18 +42,24 @@ interface DepartNavi {
     fun places(done: (List<NaviPlace>) -> Unit)
     fun preview(d: Destination, done: (TripPreview?) -> Unit)
     fun route(d: Destination)
+    /** 도착인지 중간 정차인지(F22). */
+    fun guide(done: (GuideState?) -> Unit)
 }
 
-/** 노고 흐름 화면(명세 v0.5 3절). 영수증·제안은 3~5단계에서 붙인다. */
-enum class EffortScreen { HOME, DEPART, SETTINGS }
+/** 노고 흐름 화면(명세 v0.5 3절). 제안(A/B)은 5단계에서 붙인다. */
+enum class EffortScreen { HOME, DEPART, SETTINGS, RECEIPT }
 
-/** 홈·출발 화면이 보는 상태. */
+/** 홈·출발·영수증 화면이 보는 상태. */
 data class EffortUi(
     val phase: EffortPhase,
     val openTrip: OpenTrip?,
     val recent: List<EffortRecord>,
     val demo: Boolean,              // 지금 쓰는 출처가 시연 데이터인지(AC-C-7)
     val demoAvailable: Boolean,     // 시연 데이터(assets/data/effort/demo.json)가 들어 있는지
+    val receipt: EffortReceipt? = null,                 // 도착했으면 엔진 영수증(F23)
+    val weatherPending: Boolean = false,                // 도착 날씨를 받는 중
+    val restQuestion: String? = null,                   // effort.copy rest_question_text("중간에 쉰 시간")
+    val restAnswers: List<Pair<Int, String>> = emptyList(),   // (분, 문구): 없음·15분·30분·1시간 이상
 )
 
 /**
@@ -94,13 +103,20 @@ class EffortViewModel(app: Application, private val saved: SavedStateHandle) : A
     private val ui = MutableStateFlow(uiOf())
     val state: StateFlow<EffortUi> = ui.asStateFlow()
 
-    private fun uiOf() = EffortUi(
-        phase = flow.phase,
-        openTrip = flow.state.openTrip,
-        recent = flow.recent(),
-        demo = source.demo,
-        demoAvailable = demoSource != null,
-    )
+    private fun uiOf(): EffortUi {
+        val trip = flow.state.openTrip
+        return EffortUi(
+            phase = flow.phase,
+            openTrip = trip,
+            recent = flow.recent(),
+            demo = source.demo || trip?.demo == true,
+            demoAvailable = demoSource != null,
+            receipt = receiptOf(trip, effortConstants),
+            weatherPending = trip?.arrived == true && trip.weatherArr == null,
+            restQuestion = effortConstants?.copy?.text?.get("rest_question_text"),
+            restAnswers = effortConstants?.copy?.restAnswers.orEmpty(),
+        )
+    }
 
     private fun refresh() { ui.value = uiOf() }
 
@@ -217,6 +233,78 @@ class EffortViewModel(app: Application, private val saved: SavedStateHandle) : A
     }
 
     val canRetryRoute: Boolean get() = lastRoute != null
+
+    // ------------------------------------------------------------ 도착(F22) → 영수증(F23)
+    private var lastDoorOpen: Boolean? = null
+    /** 화면이 다시 보였으니 정차 상태가 확인되면 1번 도착 여부를 본다(기본 배치에서는 도착 순간 차곡이 멈춰 있음, F22). */
+    private var resumeCheck = false
+    private var checking = false
+
+    /** 화면이 다시 보인 횟수. 기어·문 값이 그대로여도 도착 확인을 다시 돌리려고 화면 효과의 키로 쓴다. */
+    private val shownFlow = MutableStateFlow(0)
+    val shown: StateFlow<Int> = shownFlow.asStateFlow()
+
+    /** MainActivity onStart. 시연 모드는 문 열기로만 도착한다(12절 시연 순서). */
+    fun onShown() { resumeCheck = true; lastDoorOpen = null; shownFlow.value += 1 }
+
+    /**
+     * 화면이 보이는 동안 기어·문 값이 바뀔 때마다(이벤트, 폴링 없음 — AC-C-2·AC-F21-4).
+     * 진행 중 출발이 있고 정차(기어 P)일 때: 운전석 문이 열리는 순간, 또는 다시 보인 뒤 처음이면 도착인지 본다.
+     */
+    fun onCar(parked: Boolean, doorOpen: Boolean?) {
+        val opened = doorOpen == true && lastDoorOpen != true
+        lastDoorOpen = doorOpen
+        if (!parked || flow.phase != EffortPhase.DRIVING) return
+        when {
+            opened -> checkArrival("door")
+            resumeCheck && !source.demo && flow.state.openTrip?.demo != true -> checkArrival("resume")
+        }
+        resumeCheck = false
+    }
+
+    private fun checkArrival(reason: String) {
+        if (checking) return
+        val trip = flow.state.openTrip ?: return
+        if (trip.demo) { arrive(reason); return }                 // 시연: 내비 안내가 없다
+        val n = navi ?: run { arrive(reason); return }
+        checking = true
+        n.guide { g ->
+            checking = false
+            if (isMidStop(g)) ChagokLog.event("effort_mid_stop", "reason" to reason)   // 휴게소 정차: 도착 아님(PRD 8장)
+            else arrive(reason)
+        }
+    }
+
+    /** 도착 기록 → 영수증을 바로 띄우고(AC-F22-1), 도착 날씨·일출일몰은 받는 대로 채운다. */
+    private fun arrive(reason: String) {
+        val trip = flow.state.openTrip ?: return
+        val demo = trip.demo
+        val arrivedAt = if (demo) demoSource?.arrivedAt() ?: isoNow() else isoNow()
+        val weather = if (demo) demoSource?.demoWeatherArr() ?: WEATHER_UNKNOWN else null
+        if (!flow.arrive(arrivedAt, weather)) return
+        ChagokLog.event("effort_arrived", "reason" to reason, "demo" to demo)
+        refresh()
+        open(EffortScreen.RECEIPT)
+        if (weather == null) fetchArrivalWeather(arrivedAt)
+    }
+
+    /** 도착 지점 날씨(GET /v1/weather, 3초) + 출발 때 못 구한 일출·일몰(도착 좌표, 명세 F23). 좌표는 메모리에서만 쓴다. */
+    private fun fetchArrivalWeather(arrivedAt: String) {
+        val n = navi ?: run { flow.completeArrival(WEATHER_UNKNOWN); refresh(); return }
+        n.location { loc ->
+            if (loc == null) { flow.completeArrival(WEATHER_UNKNOWN); refresh(); return@location }
+            val sun = sunTimes(loc.first, loc.second, arrivedAt.take(10))
+            viewModelScope.launch {
+                val w = withTimeoutOrNull(NET_TIMEOUT_MS) { withContext(Dispatchers.IO) { api.weather(loc.first, loc.second) } } ?: WEATHER_UNKNOWN
+                flow.completeArrival(w, hhmm(sun.first), hhmm(sun.second))
+                refresh()
+                ChagokLog.event("effort_weather", "at" to "arr", "precip" to w)
+            }
+        }
+    }
+
+    /** 영수증 화면의 쉰 시간 답(F21). 고르면 바로 다시 계산한다(#55). */
+    fun answerRest(min: Int) { flow.answerRest(min); refresh(); ChagokLog.event("effort_rest", "min" to min) }
 
     // ------------------------------------------------------------ 나눠 낼 인원(인원 확인 알림, PR #34·#40 재사용)
     private val payers = PayerFlow(PrefsPayerStore(app))

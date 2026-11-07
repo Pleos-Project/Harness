@@ -2,6 +2,10 @@ package com.mist.pleos_app.navi
 
 import ai.pleos.playground.navi.constants.BookmarkType
 import ai.pleos.playground.navi.constants.NaviErrorCode
+import ai.pleos.playground.navi.constants.NaviMode
+import ai.pleos.playground.navi.data.DestinationInfo
+import ai.pleos.playground.navi.data.RouteStateInfo
+import com.mist.pleos_app.effort.GuideState
 import ai.pleos.playground.navi.constants.RoutePointType
 import ai.pleos.playground.navi.constants.TrafficCongestionType
 import ai.pleos.playground.navi.data.BookmarkInfo
@@ -62,6 +66,7 @@ class NaviRepository(context: Context) : DefaultLifecycleObserver {
     private companion object {
         const val TIMEOUT_MS = 2_000L
         const val TRIP_TIMEOUT_MS = 3_000L      // requestTrip 응답은 곳당 0.3~0.8초(app/README 4절)
+        const val GUIDE_TIMEOUT_MS = 1_500L     // 도착 판정은 1초 안에 영수증(AC-F22-1)이라 짧게
     }
 
     private val app = context.applicationContext
@@ -106,6 +111,11 @@ class NaviRepository(context: Context) : DefaultLifecycleObserver {
             // 이름이 빈 즐겨찾기(집·회사 미등록 칸)는 목록에서 뺀다 → 몇 개였는지만 남긴다(이름·좌표는 로그에 안 남김)
             ChagokLog.event("navi_bookmark", "count" to bookmarkInfoList.size, "named" to bookmarkInfoList.count { it.name.isNotBlank() })
         }
+
+        override fun onDestinationInfo(destinationInfo: DestinationInfo) = gotRemain(destinationInfo.remainDistance)
+
+        // isRouting은 안내 중에도 false로 와서 쓰지 않는다(명세 v0.5 F22, June 실측)
+        override fun onRouteStateInfo(routeStateInfo: RouteStateInfo) = gotMode(routeStateInfo.naviMode == NaviMode.ROUTE_GUIDING)
 
         override fun onTripInfo(tripInfo: TripInfo) {
             // 동시에 보낸 요청의 응답이 섞여 올 수 있다 → 목적지 이름으로 맞춘다(app/README 4절)
@@ -218,6 +228,65 @@ class NaviRepository(context: Context) : DefaultLifecycleObserver {
     private val recentListTimeout = Runnable { deliverRecentList(emptyList()) }
     private val bookmarkTimeout = Runnable { deliverBookmarks(emptyList()) }
     private var tripWaiter: Pair<String, (TripPreview?) -> Unit>? = null
+
+    // ------------------------------------------------------------ 노고 도착 판정(명세 v0.5 F22)
+    private var guideWaiter: ((GuideState?) -> Unit)? = null
+    private var guideRemain: Int? = null
+    private var guideMode: Boolean? = null
+    private var guideGotRemain = false
+    private var guideGotMode = false
+    private val guideTimeout = Runnable { finishGuide() }
+
+    /**
+     * 도착인지 중간 정차인지: getDestinationInfo(남은 거리) + getRouteStateInfo(안내 상태), P NAVI_ROUTE.
+     * 기어 P·운전석 문 열림이나 앱을 다시 열 때 1번(폴링 없음). [GUIDE_TIMEOUT_MS] 안에 둘 다 안 오면 받은 것만, 연결 실패면 null.
+     */
+    fun fetchGuide(done: (GuideState?) -> Unit) {
+        synchronized(this) {
+            guideWaiter?.let { prev -> main.post { prev(null) } }
+            guideWaiter = done
+            guideRemain = null; guideMode = null; guideGotRemain = false; guideGotMode = false
+            main.removeCallbacks(guideTimeout); main.postDelayed(guideTimeout, GUIDE_TIMEOUT_MS)
+        }
+        withNavi(fail = { failGuide() }) { n ->
+            try { n.getDestinationInfo() } catch (e: Exception) { gotRemain(null) }
+            try { n.getRouteStateInfo() } catch (e: Exception) { gotMode(null) }
+        }
+    }
+
+    /** 남은 거리가 오면(또는 못 읽으면 null) 기억. 같은 콜백이 두 번 와도 첫 값만. 둘 다 오면 끝낸다. */
+    @Synchronized
+    private fun gotRemain(v: Int?) {
+        if (guideWaiter == null || guideGotRemain) return
+        guideRemain = v; guideGotRemain = true
+        if (guideGotMode) finishGuide()
+    }
+
+    @Synchronized
+    private fun gotMode(v: Boolean?) {
+        if (guideWaiter == null || guideGotMode) return
+        guideMode = v; guideGotMode = true
+        if (guideGotRemain) finishGuide()
+    }
+
+    @Synchronized
+    private fun finishGuide() {
+        val w = guideWaiter ?: return
+        guideWaiter = null
+        main.removeCallbacks(guideTimeout)
+        val g = if (guideGotRemain || guideGotMode) GuideState(guideRemain, guideMode) else null
+        ChagokLog.event("navi_guide", "got" to (g != null), "remain" to g?.remainM, "guiding" to g?.routeGuiding)
+        main.post { w(g) }
+    }
+
+    @Synchronized
+    private fun failGuide() {
+        val w = guideWaiter ?: return
+        guideWaiter = null
+        main.removeCallbacks(guideTimeout)
+        ChagokLog.event("navi_guide", "got" to false)
+        main.post { w(null) }
+    }
     private val tripTimeout = Runnable { deliverTrip(null, null, force = true) }
     /** 연결되면 할 일(출발 화면 조회). 연결 실패·화면 가림이면 버린다. */
     private val onReady = mutableListOf<(NaviHelper) -> Unit>()
@@ -350,6 +419,7 @@ class NaviRepository(context: Context) : DefaultLifecycleObserver {
         deliverRecentList(emptyList())
         deliverBookmarks(emptyList())
         deliverTrip(null, null, force = true)
+        failGuide()
         if (flow.value == DepartState.REQUESTING) flow.value = DepartState.IDLE
     }
 }
