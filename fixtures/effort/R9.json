@@ -1,0 +1,63 @@
+{
+  "id": "R9",
+  "title": "2순위: 09:00→15:00, 쉰 시간 답 '1시간 이상'(60분), ETA 300분, 맑음·낮, 2명",
+  "note": "#47 표 '5시간 + 점심 1시간'. 언제 쉬었는지 모르니 T 300을 150 + 150으로 나눔 → 장시간 2 × 30 × 0.125 = 7.5. 307.5 ÷ 300 = 1.025 → 1.03",
+  "input": {
+    "departed_at": "2026-11-17T09:00:00+09:00",
+    "arrived_at": "2026-11-17T15:00:00+09:00",
+    "stops": null,
+    "rest_answer_min": 60,
+    "eta_s": 18000,
+    "congestion_s": 0,
+    "weather_dep": "none",
+    "weather_arr": "none",
+    "sunrise": "07:13",
+    "sunset": "17:20",
+    "n": 2,
+    "distance_km": null
+  },
+  "expected": {
+    "method": "answer",
+    "elapsed_min": 360.0,
+    "drive_min": 300.0,
+    "rest_min": 60.0,
+    "fatigue_segments_min": [
+      150.0,
+      150.0
+    ],
+    "congestion_min": 0.0,
+    "delay_min": 0.0,
+    "night_min": 0.0,
+    "rain_min": 0.0,
+    "snow_min": 0.0,
+    "fatigue_excess_min": 60.0,
+    "effort_min": 307.5,
+    "multiplier": 1.03,
+    "lines": [
+      {
+        "key": "fatigue",
+        "label": "장시간",
+        "add_min": 7.5,
+        "pct": 3,
+        "pct_text": "+3%"
+      }
+    ],
+    "notes": [],
+    "drive_text": "5시간",
+    "multiplier_text": "평소보다 1.03배 힘든 길",
+    "headline_text": "오늘 운전 5시간 · 평소보다 1.03배 힘든 길",
+    "distance_text": null,
+    "proposal": {
+      "wage_text": "최저임금 1분 178원 기준",
+      "amount_krw": 54837.5,
+      "amount_approx": 55000,
+      "amount_text": "약 5만 5천 원",
+      "per_person_krw": 27418.75,
+      "per_person_approx": 27000,
+      "per_person_text": "약 2만 7천 원",
+      "driver_share_krw": 27418.75,
+      "b_item": "meal",
+      "b_text": "오늘은 밥에서 운전자 빼고 나누는 게 어때요"
+    }
+  }
+}

@@ -1,0 +1,54 @@
+{
+  "id": "R6",
+  "title": "10분, 맑음·낮, 2명",
+  "note": "금액 1,783.3 → 약 2천, 한 사람 891.7 → 약 1천. 운전자 몫 891.7 < 커피 절반 2,350 → B 제안 없음",
+  "input": {
+    "departed_at": "2026-11-17T10:00:00+09:00",
+    "arrived_at": "2026-11-17T10:10:00+09:00",
+    "stops": [],
+    "rest_answer_min": null,
+    "eta_s": 600,
+    "congestion_s": 0,
+    "weather_dep": "none",
+    "weather_arr": "none",
+    "sunrise": "07:13",
+    "sunset": "17:20",
+    "n": 2,
+    "distance_km": null
+  },
+  "expected": {
+    "method": "stops",
+    "elapsed_min": 10.0,
+    "drive_min": 10.0,
+    "rest_min": 0.0,
+    "fatigue_segments_min": [
+      10.0
+    ],
+    "congestion_min": 0.0,
+    "delay_min": 0.0,
+    "night_min": 0.0,
+    "rain_min": 0.0,
+    "snow_min": 0.0,
+    "fatigue_excess_min": 0.0,
+    "effort_min": 10.0,
+    "multiplier": 1.0,
+    "lines": [],
+    "notes": [],
+    "drive_text": "10분",
+    "multiplier_text": "평소와 같은 길",
+    "headline_text": "오늘 운전 10분 · 평소와 같은 길",
+    "distance_text": null,
+    "proposal": {
+      "wage_text": "최저임금 1분 178원 기준",
+      "amount_krw": 1783.3333333333333,
+      "amount_approx": 2000,
+      "amount_text": "약 2천 원",
+      "per_person_krw": 891.6666666666666,
+      "per_person_approx": 1000,
+      "per_person_text": "약 1천 원",
+      "driver_share_krw": 891.6666666666666,
+      "b_item": null,
+      "b_text": null
+    }
+  }
+}

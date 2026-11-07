@@ -153,6 +153,61 @@ class FixturesTest {
         }
     }
 
+    // ------------------------------------------------------------ 운전 노고 (명세 v0.5 F21·F23~F25)
+    private val effortConstants = parseEffortConstants(File(root, "constants.json").readText())
+
+    /** AC-F23-2: R1~ 전부를 Kotlin 엔진이 서버(effort.py)와 같게 낸다. */
+    @Test
+    fun effortFixtures() {
+        val files = fixtures("effort", "R")
+        assertTrue("effort fixture가 R1~R8보다 적다: ${files.map { it.name }}", files.size >= 8)
+        for (f in files) {
+            val fx = load(f)
+            val r = effort(parseEffortInput(fx.getValue("input").jsonObject), effortConstants)
+            assertJson(fx.getValue("expected"), r.toJson(), f.name)
+        }
+    }
+
+    /** 명세 AC 숫자를 fixture와 따로 확인(AC-F23-1·AC-F24-1·AC-F25-1). */
+    @Test
+    fun effortSpecR1() {
+        val r = effort(parseEffortInput(load(File(root, "effort/R1.json")).getValue("input").jsonObject), effortConstants)
+        assertEquals("오늘 운전 2시간 10분 · 평소보다 1.56배 힘든 길", r.headlineText)
+        assertEquals(listOf("+40%", "+8%", "+5%", "+2%", "+1%"), r.lines.map { it.pctText })
+        val p = r.proposal!!
+        assertEquals(36_166.0, p.amountKrw, 0.0)
+        assertEquals("약 3만 6천 원", p.amountText)
+        assertEquals(9_041.5, p.perPersonKrw, 0.0)
+        assertEquals("약 9천 원", p.perPersonText)
+        assertEquals(27_124.5, p.driverShareKrw, 0.0)
+        assertEquals("meal", p.bItem)
+        val r8 = effort(parseEffortInput(load(File(root, "effort/R8.json")).getValue("input").jsonObject), effortConstants)
+        assertEquals(null, r8.proposal)
+    }
+
+    /** 명세 9절 경계표: 2,350 미만 제안 없음 / 7,715.5 이상 밥 / 39,865.5 이상 공동 경비. */
+    @Test
+    fun effortBBoundaries() {
+        val cases = listOf(
+            2_349.99 to null, 2_350.0 to "coffee", 7_715.49 to "coffee", 7_715.5 to "meal",
+            39_865.49 to "meal", 39_865.5 to "shared",
+        )
+        for ((share, want) in cases) assertEquals("G=$share", want, bItem(share, effortConstants.items)?.key)
+    }
+
+    /** 일출·일몰 계산이 서버와 같은 분을 낸다(fixtures/effort/sun.json). */
+    @Test
+    fun sunTimesFixture() {
+        val fx = load(File(root, "effort/sun.json"))
+        val cases = fx.getValue("cases").jsonArray
+        assertTrue(cases.isNotEmpty())
+        for (c in cases) {
+            val o = c.jsonObject
+            val (rise, set) = sunTimes(fx.dbl("lat"), fx.dbl("lng"), o.str("date"), fx.integer("tz_offset_min"))
+            assertJson(o.getValue("expected"), obj("sunrise" to hhmm(rise), "sunset" to hhmm(set)), "sun ${o.str("date")}")
+        }
+    }
+
     /** 일러스트 변형: 같은 장소 → 같은 그림, 범위는 1..variants. */
     @Test
     fun illustrationVariantIsStable() {

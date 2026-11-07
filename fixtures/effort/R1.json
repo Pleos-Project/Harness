@@ -1,0 +1,90 @@
+{
+  "id": "R1",
+  "title": "PRD 예시: 16:00→18:10, ETA 105분, 정체 40분, 비(출발·도착), 일몰 17:20, 4명",
+  "note": "AC-F23-1·AC-F24-1·AC-F25-1. 노고 130 + 비 52 + 정체 10.8 + 예상보다 더 6.75(25분) + 밤길 2(50분) + 장시간 1.25(10분) = 202.8 → 1.56배. 금액 202.8 × 10,700 ÷ 60 = 36,166 → 약 3만 6천, 한 사람 9,041.5 → 약 9천, 운전자 몫 27,124.5 → 밥",
+  "input": {
+    "departed_at": "2026-11-17T16:00:00+09:00",
+    "arrived_at": "2026-11-17T18:10:00+09:00",
+    "stops": [],
+    "rest_answer_min": null,
+    "eta_s": 6300,
+    "congestion_s": 2400,
+    "weather_dep": "rain",
+    "weather_arr": "rain",
+    "sunrise": "07:13",
+    "sunset": "17:20",
+    "n": 4,
+    "distance_km": 104.3
+  },
+  "expected": {
+    "method": "stops",
+    "elapsed_min": 130.0,
+    "drive_min": 130.0,
+    "rest_min": 0.0,
+    "fatigue_segments_min": [
+      130.0
+    ],
+    "congestion_min": 40.0,
+    "delay_min": 25.0,
+    "night_min": 50.0,
+    "rain_min": 130.0,
+    "snow_min": 0.0,
+    "fatigue_excess_min": 10.0,
+    "effort_min": 202.8,
+    "multiplier": 1.56,
+    "lines": [
+      {
+        "key": "rain",
+        "label": "비",
+        "add_min": 52.0,
+        "pct": 40,
+        "pct_text": "+40%"
+      },
+      {
+        "key": "congestion",
+        "label": "정체 구간",
+        "add_min": 10.8,
+        "pct": 8,
+        "pct_text": "+8%"
+      },
+      {
+        "key": "delay",
+        "label": "예상보다 더",
+        "add_min": 6.75,
+        "pct": 5,
+        "pct_text": "+5%"
+      },
+      {
+        "key": "night",
+        "label": "밤길",
+        "add_min": 2.0,
+        "pct": 2,
+        "pct_text": "+2%"
+      },
+      {
+        "key": "fatigue",
+        "label": "장시간",
+        "add_min": 1.25,
+        "pct": 1,
+        "pct_text": "+1%"
+      }
+    ],
+    "notes": [],
+    "drive_text": "2시간 10분",
+    "multiplier_text": "평소보다 1.56배 힘든 길",
+    "headline_text": "오늘 운전 2시간 10분 · 평소보다 1.56배 힘든 길",
+    "distance_text": "104km",
+    "proposal": {
+      "wage_text": "최저임금 1분 178원 기준",
+      "amount_krw": 36166.0,
+      "amount_approx": 36000,
+      "amount_text": "약 3만 6천 원",
+      "per_person_krw": 9041.5,
+      "per_person_approx": 9000,
+      "per_person_text": "약 9천 원",
+      "driver_share_krw": 27124.5,
+      "b_item": "meal",
+      "b_text": "오늘은 밥에서 운전자 빼고 나누는 게 어때요"
+    }
+  }
+}

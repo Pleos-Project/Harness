@@ -1,0 +1,62 @@
+{
+  "id": "R5",
+  "title": "60분, 출발 맑음·도착 눈, ETA 60분, 낮, 3명",
+  "note": "눈은 T의 뒤 절반 30분 × 0.49 = 14.7 → 74.7. 74.7 ÷ 60 = 1.245 → 1.25(반올림 경계, Decimal과 같게)",
+  "input": {
+    "departed_at": "2026-11-17T10:00:00+09:00",
+    "arrived_at": "2026-11-17T11:00:00+09:00",
+    "stops": [],
+    "rest_answer_min": null,
+    "eta_s": 3600,
+    "congestion_s": 0,
+    "weather_dep": "none",
+    "weather_arr": "snow",
+    "sunrise": "07:13",
+    "sunset": "17:20",
+    "n": 3,
+    "distance_km": null
+  },
+  "expected": {
+    "method": "stops",
+    "elapsed_min": 60.0,
+    "drive_min": 60.0,
+    "rest_min": 0.0,
+    "fatigue_segments_min": [
+      60.0
+    ],
+    "congestion_min": 0.0,
+    "delay_min": 0.0,
+    "night_min": 0.0,
+    "rain_min": 0.0,
+    "snow_min": 30.0,
+    "fatigue_excess_min": 0.0,
+    "effort_min": 74.7,
+    "multiplier": 1.25,
+    "lines": [
+      {
+        "key": "snow",
+        "label": "눈",
+        "add_min": 14.7,
+        "pct": 25,
+        "pct_text": "+25%"
+      }
+    ],
+    "notes": [],
+    "drive_text": "1시간",
+    "multiplier_text": "평소보다 1.25배 힘든 길",
+    "headline_text": "오늘 운전 1시간 · 평소보다 1.25배 힘든 길",
+    "distance_text": null,
+    "proposal": {
+      "wage_text": "최저임금 1분 178원 기준",
+      "amount_krw": 13321.5,
+      "amount_approx": 13000,
+      "amount_text": "약 1만 3천 원",
+      "per_person_krw": 4440.5,
+      "per_person_approx": 4000,
+      "per_person_text": "약 4천 원",
+      "driver_share_krw": 8881.0,
+      "b_item": "meal",
+      "b_text": "오늘은 밥에서 운전자 빼고 나누는 게 어때요"
+    }
+  }
+}
