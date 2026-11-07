@@ -1,7 +1,7 @@
 {
   "id": "R6",
-  "title": "10분, 맑음·낮, 2명",
-  "note": "금액 1,783.3 → 약 2천, 한 사람 891.7 → 약 1천. 운전자 몫 891.7 < 커피 절반 2,350 → B 제안 없음",
+  "title": "10분, 맑음·낮, 2명, 거리 0.4km",
+  "note": "금액 1,783.3 → 약 2천, 한 사람 891.7 → 약 1천. 운전자 몫 891.7 < 커피 절반 2,350 → B 제안 없음. 거리 0.4km는 어림이 0이라 '0km'가 아니라 '1km 미만'(명세 2절, June 리뷰)",
   "input": {
     "departed_at": "2026-11-17T10:00:00+09:00",
     "arrived_at": "2026-11-17T10:10:00+09:00",
@@ -16,7 +16,7 @@
     "sunrise": "07:13",
     "sunset": "17:20",
     "n": 2,
-    "distance_km": null
+    "distance_km": 0.4
   },
   "expected": {
     "method": "answer",
@@ -40,7 +40,7 @@
     "drive_text": "10분",
     "multiplier_text": "평소와 같은 길",
     "headline_text": "오늘 운전 10분 · 평소와 같은 길",
-    "distance_text": null,
+    "distance_text": "1km 미만",
     "proposal": {
       "amount_krw": 1783.3333333333333,
       "amount_approx": 2000,

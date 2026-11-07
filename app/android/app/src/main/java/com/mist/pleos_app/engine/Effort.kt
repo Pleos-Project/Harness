@@ -441,7 +441,7 @@ fun effort(inp: EffortInput, c: EffortConstants): EffortReceipt {
         footnoteText = if (lines.any { it.key == "congestion" }) c.copy.text.getValue("footnote_congestion_text") else null,
         driveText = dt, multiplierText = mt,
         headlineText = fill(c.copy.text.getValue("headline_text"), "drive" to dt, "multiplier" to mt),
-        distanceText = inp.distanceKm?.let { "${roundHalfUp(it)}km" },
+        distanceText = inp.distanceKm?.let { kmText(it * 1000) },   // 0km 대신 "1km 미만"
         proposal = if (inp.n >= 2) effortProposal(total, inp.n, c) else null,
     )
 }

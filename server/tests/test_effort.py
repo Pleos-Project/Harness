@@ -116,6 +116,13 @@ def test_congestion_detail_text(m, ratio, want):
     assert EF.congestion_text(m, ratio, C) == want
 
 
+@pytest.mark.parametrize("km,want", [(0.4, "1km 미만"), (0.49, "1km 미만"), (0.5, "1km"), (104.3, "104km"), (None, None)])
+def test_distance_text_never_zero(km, want):
+    """거리 표시도 어림이 0이면 '1km 미만'(명세 2절, June 리뷰 22:18). R6가 두 엔진에서 같은 경우를 덮는다."""
+    assert simple(10, distance_km=km).distance_text == want
+    assert run("R6").distance_text == "1km 미만"
+
+
 BASIS_R1 = {
     "rain": "비 오는 날은 맑은 날보다 운전 부담이 40% 커요 · 시뮬레이터 30명 연구(Frontiers in Neuroscience 2026)",
     "congestion": "차가 몰린 길은 한산한 길보다 운전 부담이 27% 커요 · 시뮬레이터 연구(Shakouri, LSU 2015)",

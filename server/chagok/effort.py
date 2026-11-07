@@ -451,7 +451,7 @@ def effort(inp: EffortInput, c: EffortConstants) -> Receipt:
         effort_min=total / 6000, multiplier=m100 / 100, lines=lines, notes=notes,
         footnote_text=c.copy.text["footnote_congestion_text"] if any(l.key == "congestion" for l in lines) else None,
         drive_text=dt, multiplier_text=mt, headline_text=fill(c.copy.text["headline_text"], drive=dt, multiplier=mt),
-        distance_text=f"{round_half_up(inp.distance_km)}km" if inp.distance_km is not None else None,
+        distance_text=km_text(inp.distance_km * 1000) if inp.distance_km is not None else None,   # 0km 대신 "1km 미만"
         proposal=proposal(total, inp.n, c) if inp.n >= 2 else None,
     )
 
