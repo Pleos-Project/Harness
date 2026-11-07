@@ -7,7 +7,7 @@
 | `Dockerfile` | `api` 이미지. `server/`·`fixtures/`만 들어가고 비루트(uid 1000)로 돈다. 키는 넣지 않는다 |
 | `compose.yaml` | `api`(포트는 밖에 열지 않음) + `caddy`(80·443·443/udp). 로그는 json-file 10MB×3 |
 | `Caddyfile` | `{$CHAGOK_DOMAIN}` → `api:8000`. 접근 로그 없음. 인증서는 RSA 키 + ISRG Root X1 체인(아래 'TLS 체인') |
-| `crontab` | `/etc/cron.d/chagok`. KST 04:10 `sources refresh`, 04:20 `prices refresh` (UTC로 적혀 있음) |
+| `crontab` | `/etc/cron.d/chagok`. KST 04:10 `sources refresh`, 04:20 `prices refresh` (UTC로 적혀 있음). **11/7 노고 피봇(#46)으로 두 줄 다 끔** — 날씨는 요청 때 조회라 크론이 필요 없음 |
 | `bootstrap.sh` | 인스턴스 시작 스크립트(user-data). Docker·스왑 2GB·디렉토리·로그 회전 |
 | `deploy.sh` | PC에서 실행. 코드 보내기 → 교체 → 크론 → `up --build` → (첫 배포면) refresh → https 헬스 |
 | `../.dockerignore` | 빌드 컨텍스트에서 `.env`·`app/`·`docs/` 등을 뺀다 |
