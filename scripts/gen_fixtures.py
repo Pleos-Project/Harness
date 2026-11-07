@@ -10,6 +10,10 @@ fixture 종류
 - ledger/L*.json  F8·F10·F17 로컬 장부(출발·도착·다시 열기·핀·월 합계) 이벤트 순서
 - effort/R*.json  운전 노고(명세 v0.5 F23~F25) input → expected(영수증·제안). R1~R8 = 명세 12절 표, R9 = AC-F21-1, R10~ = 하네스 추가
 - effort/sun.json 일출·일몰 계산값(엔진 두 벌 대조) + 한국천문연구원 출몰시각(참고, pytest가 ±1분 대조)
+
+계약 샘플(contract/samples)
+- D1·D2           /v1/cards (D1·D2 fixture에서 그대로)
+- weather.*       GET /v1/weather 응답. 기상청 초단기실황 모양의 고정 응답을 chagok.weather로 해석한 값
 """
 
 from __future__ import annotations
@@ -24,6 +28,7 @@ sys.path.insert(0, str(ROOT / "server"))
 
 from chagok import effort as EF  # noqa: E402
 from chagok import engine as E  # noqa: E402
+from chagok import weather as W  # noqa: E402
 from chagok.cards import SessionStore, build_cards, load_constants, load_demo_candidates, swap  # noqa: E402
 
 CONST = load_constants()
@@ -258,6 +263,17 @@ def effort_fixtures() -> None:
         "lat": KASI_SEOUL["lat"], "lng": KASI_SEOUL["lng"], "tz_offset_min": 540, "cases": sun})
 
 
+def kma_ncst(lat: float, lng: float, pty: str, base_date: str, base_time: str) -> str:
+    """기상청 getUltraSrtNcst 응답과 같은 모양(8개 항목, obsrValue는 문자열). 계약 샘플을 만들 때만 쓴다."""
+    nx, ny = W.to_grid(lat, lng)
+    vals = {"PTY": pty, "REH": "88", "RN1": "1.5", "T1H": "9.4", "UUU": "-1.2", "VEC": "310", "VVV": "1.4", "WSD": "1.9"}
+    items = [{"baseDate": base_date, "baseTime": base_time, "category": c, "nx": nx, "ny": ny, "obsrValue": v}
+             for c, v in vals.items()]
+    return json.dumps({"response": {"header": {"resultCode": "00", "resultMsg": "NORMAL_SERVICE"},
+                                    "body": {"dataType": "JSON", "items": {"item": items},
+                                             "pageNo": 1, "numOfRows": 10, "totalCount": len(items)}}})
+
+
 def main() -> None:
     effort_fixtures()
 
@@ -420,6 +436,10 @@ def main() -> None:
     write(ROOT / "contract/samples/D1.request.json", d1["request"])
     write(ROOT / "contract/samples/D1.response.json", d1["expected"])
     write(ROOT / "contract/samples/D2.recall.request.json", dict(d2["request"], session_id="<D1 응답의 session_id>"))
+    # GET /v1/weather (명세 v0.5 12절). 데모 출발지에서 R1처럼 비(PTY 1), 실패하면 unknown(AC-C-6)
+    precip, observed_at = W.parse_ncst(kma_ncst(ORIGIN["lat"], ORIGIN["lng"], "1", "20261107", "1600"))
+    write(ROOT / "contract/samples/weather.rain.response.json", W.Result(precip, observed_at).public())
+    write(ROOT / "contract/samples/weather.unknown.response.json", W.unknown("timeout").public())
 
     sweep_stale("fixtures/cards", "fixtures/settle", "fixtures/ledger", "fixtures/effort", "contract/samples")
 

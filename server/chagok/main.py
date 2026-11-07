@@ -1,4 +1,8 @@
-"""차곡 서버. 앱이 부르는 건 /v1/cards, /v1/cards/swap, /v1/prices(평균 단가, 읽기 전용).
+"""차곡 서버. 운전 노고 정산(명세 v0.5, #46)에서 앱이 부르는 건 GET /v1/weather(출발·도착 지점 강수) 하나다.
+좌표는 기상청 조회 한 번에만 쓰고 저장·캐시·로그하지 않는다(AC-N-4, chagok/weather.py).
+
+피봇 전 흐름(정리 전까지 남겨 둔다, DECISIONS 11/7 '다음 PR로 넘김' ④):
+/v1/cards, /v1/cards/swap, /v1/prices(평균 단가, 읽기 전용).
 /v1/range, /v1/settle 은 검증용 참조 구현(앱 로컬 계산과 fixture 대조용) — 앱은 부르지 않는다.
 
 모드: 요청에 demo_seed가 있으면 데모 고정(후보 = fixtures, 네트워크 없음),
@@ -13,9 +17,9 @@ from __future__ import annotations
 
 import time
 from contextlib import asynccontextmanager
-from typing import Literal
+from typing import Annotated, Literal
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Query, Request, Response
 from pydantic import BaseModel, ConfigDict, Field
 
 from . import engine as E
@@ -23,6 +27,7 @@ from . import live
 from . import prices as P
 from . import routes as R
 from . import sources as S
+from . import weather as W
 from .cards import SessionStore, build_cards, few_hint, load_constants, load_demo_candidates, swap
 from .obs import log
 
@@ -33,7 +38,7 @@ async def _lifespan(_app):
     yield
 
 
-app = FastAPI(title="chagok", version="0.3.0", lifespan=_lifespan)
+app = FastAPI(title="chagok", version="0.4.0", lifespan=_lifespan)
 CONST = load_constants()
 DEMO = load_demo_candidates()
 STORE = SessionStore()
@@ -45,6 +50,8 @@ POOLS = live.LivePools()
 ROUTE_CACHE = R.RouteCache()
 KAKAO = R.kakao_fetcher(ENV["KAKAO_REST_API_KEY"], timeout=live.ROUTE_TIMEOUT_S) if ENV.get("KAKAO_REST_API_KEY") else None
 PRICES = P.PriceReader()  # 오피넷 전국 평균(크론 KST 04:20 갱신). DB 없으면 /v1/prices 503
+# 기상청 초단기실황도 공공데이터포털 계정 키를 같이 쓴다(명세 v0.5 7절). 없으면 /v1/weather는 늘 unknown
+WEATHER_KEY = ENV.get("TOURAPI_SERVICE_KEY") or None
 
 Theme = Literal["sea", "lake", "river", "mountain", "park", "city", "island", "drive"]
 
@@ -108,15 +115,34 @@ class SettleRequest(Strict):
     span_days: int = 0
 
 
+class WeatherQuery(Strict):
+    # 쿼리는 lat·lon 둘뿐. 다른 쿼리(누적 주행거리·VIN 같은 원시 차량값)가 붙으면 422(extra="forbid")
+    lat: float = Field(ge=-90, le=90, allow_inf_nan=False)
+    lon: float = Field(ge=-180, le=180, allow_inf_nan=False)
+
+
 @app.get("/v1/health")
 def health() -> dict:
     rows, refreshed = INDEX.rows()
     return {"ok": True, "demo_candidates": len(DEMO), "constants_seed": CONST["demo_seed"],
-            "live_candidates": len(rows), "tourapi_refreshed": refreshed, "kakao": KAKAO is not None}
+            "live_candidates": len(rows), "tourapi_refreshed": refreshed, "kakao": KAKAO is not None,
+            "weather": WEATHER_KEY is not None}
 
 
 def _ms(t0: float) -> int:
     return int((time.perf_counter() - t0) * 1000)
+
+
+@app.get("/v1/weather")
+def weather(q: Annotated[WeatherQuery, Query()], response: Response) -> dict:
+    """한 지점의 지금 강수 형태(기상청 초단기실황 PTY). 명세 v0.5 F20·F22, 12절.
+    실패·3초 초과는 200 + precip "unknown" → 앱은 '정보 없음'(가산 0)으로 두고 진행한다(AC-C-6).
+    좌표·격자는 로그에 남기지 않는다(AC-N-4). URL에 좌표가 들어가므로 응답을 어디에도 캐시하지 않게 한다."""
+    t0 = time.perf_counter()
+    res = W.lookup(q.lat, q.lon, WEATHER_KEY)
+    response.headers["Cache-Control"] = "no-store"
+    log("weather", status=200, ms=_ms(t0), precip=res.precip, **({"err": res.err} if res.err else {}))
+    return res.public()
 
 
 @app.get("/v1/prices")
