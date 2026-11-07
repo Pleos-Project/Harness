@@ -84,7 +84,7 @@
 | 11/7 | 방식 B | 항목·1인분: 커피 4,700 · 밥 10,731 · 공동 경비 69,000원. 운전자 몫 G = 금액 × (n−1)/n에 가장 가까운 항목. G < 2,350원이면 제안 없음 | 제안 | #47 댓글, 명세 v0.5 F25. 출처는 스타벅스 톨(원문 확인 필요)·참가격 서울 2026·2025 국민여행조사 당일 1회 |
 | 11/7 | 정체 수집 | Navi SDK `getRouteStateInfo` → `congestionItemList`의 SLOW·HEAVY 합(출발 때, 목록이 채워진 응답). 카카오 내비 대안은 쓰지 않음. 권한 변경 없음 | 확정 | June #46 실측(11/7) |
 | 11/7 | 문구 검사 | `lint_copy.py` 금지 문구를 명세 v0.5 AC-C-8 ①~⑥(순위·실력 평가·"아꼈어요"·운송 대가·"○시간어치"·재촉)으로 바꿈. 피봇 전 PRD 기준 규칙(글레오 비교·"예상 vs 실제"·"빠듯")은 뺌. 표기 규칙("0 원"·쉼표 금액)은 유지 | 제안 | 이 PR(#46 4단계) |
-| 11/7 | 다음 PR로 넘김 | ① 계약 `GET /v1/weather`와 서버: 효성 서버 PR, June 리뷰(명세 v0.5 12절). 날씨 키 이름은 `.env.example`에. ② 권한 P `CAR_ENERGY`·A `CAR_ENERGY`·A `CAR_INFO` 제거: 매니페스트와 같이 바꿔야 해서 June 앱 PR에서 `permissions.md`와 함께(명세 11절). ③ 노고 엔진 두 벌 `effort.py`·`Effort.kt` + `fixtures/effort/R1~R8`: 효성 엔진 PR. ④ 피봇 전 코드(`/v1/cards`·`swap`·`prices`, `engine.py`·`cards.py`, Kotlin 엔진, fixture D·L·T) 정리 방법은 따로 정함 | 제안 | CI(권한 대조·fixture 재생성)를 깨지 않으려고 문서·규칙 PR과 나눔 |
+| 11/7 | 다음 PR로 넘김 | ① 계약 `GET /v1/weather`와 서버: 효성 서버 PR, June 리뷰(명세 v0.5 12절). 날씨 키는 공공데이터포털 키(`TOURAPI_SERVICE_KEY`)를 같이 씀(11/7 기상청 호출 확인). ② 권한 P `CAR_ENERGY`·A `CAR_ENERGY`·A `CAR_INFO` 제거: 매니페스트와 같이 바꿔야 해서 June 앱 PR에서 `permissions.md`와 함께(명세 11절). ③ 노고 엔진 두 벌 `effort.py`·`Effort.kt` + `fixtures/effort/R1~R8`: 효성 엔진 PR. ④ 피봇 전 코드(`/v1/cards`·`swap`·`prices`, `engine.py`·`cards.py`, Kotlin 엔진, fixture D·L·T) 정리 방법은 따로 정함. 단 TourAPI·오피넷 크론은 11/7에 끔(서버 `/etc/cron.d/chagok`·`deploy/crontab`). 캐시는 남아 있어 지금 앱의 `/v1/cards`는 그대로 동작함 | 제안 | CI(권한 대조·fixture 재생성)를 깨지 않으려고 문서·규칙 PR과 나눔 |
 | 11/7 | 범위 밖 | 데려다주기. 금전 대가를 바라는 일이 아니라 호의의 영역이다 | 확정 | 효성 11/7, PRD v1.2 10장 |
 
 ## 열린 결정

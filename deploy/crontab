@@ -1,4 +1,5 @@
 # /etc/cron.d/chagok — 차곡 서버 하루 1회 갱신. deploy.sh가 root:root 644로 설치한다.
+# 11/7 운전 노고 정산 피봇(#46)으로 TourAPI·오피넷 갱신이 필요 없어져 두 줄을 껐다. 서버의 /etc/cron.d/chagok도 같은 날 같은 방식으로 끔.
 #
 # 시간대: 서버 시계는 UTC(Lightsail Ubuntu 기본값. bootstrap.sh는 바꾸지 않는다).
 #   Ubuntu(Debian) cron의 CRON_TZ 지원에 기대지 않고 UTC로 적는다. KST = UTC + 9.
@@ -14,5 +15,5 @@
 SHELL=/bin/sh
 PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 
-10 19 * * * ubuntu { echo "== $(date -Iseconds) sources refresh"; flock -w 3600 /opt/chagok/.cron.lock docker compose --env-file /opt/chagok/compose.env -f /opt/chagok/app/deploy/compose.yaml exec -T api python -m chagok.sources refresh; echo "== 종료 코드 $?"; } >> /var/log/chagok-cron.log 2>&1
-20 19 * * * ubuntu { echo "== $(date -Iseconds) prices refresh"; flock -w 3600 /opt/chagok/.cron.lock docker compose --env-file /opt/chagok/compose.env -f /opt/chagok/app/deploy/compose.yaml exec -T api python -m chagok.prices refresh; echo "== 종료 코드 $?"; } >> /var/log/chagok-cron.log 2>&1
+# 11/7 피봇으로 끔(#46): 10 19 * * * ubuntu { echo "== $(date -Iseconds) sources refresh"; flock -w 3600 /opt/chagok/.cron.lock docker compose --env-file /opt/chagok/compose.env -f /opt/chagok/app/deploy/compose.yaml exec -T api python -m chagok.sources refresh; echo "== 종료 코드 $?"; } >> /var/log/chagok-cron.log 2>&1
+# 11/7 피봇으로 끔(#46): 20 19 * * * ubuntu { echo "== $(date -Iseconds) prices refresh"; flock -w 3600 /opt/chagok/.cron.lock docker compose --env-file /opt/chagok/compose.env -f /opt/chagok/app/deploy/compose.yaml exec -T api python -m chagok.prices refresh; echo "== 종료 코드 $?"; } >> /var/log/chagok-cron.log 2>&1
