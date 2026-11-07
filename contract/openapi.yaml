@@ -1,10 +1,12 @@
 openapi: 3.1.0
 info:
   title: chagok server
-  version: 0.4.0
+  version: 0.5.0
   description: |
-    운전 노고 정산(명세 v0.5, #46 — 0.4.0): 앱이 부르는 엔드포인트는 GET /v1/weather 하나다.
-    노고·금액·제안은 앱 로컬에서 계산하고, 서버는 출발·도착 지점의 강수 형태만 알려 준다(명세 v0.5 12절).
+    운전 노고 정산(명세 v0.5, #46): 앱이 부르는 엔드포인트는 두 가지다.
+    - GET /v1/weather (0.4.0): 출발·도착 지점의 강수 형태(명세 v0.5 12절)
+    - GET /v1/places (0.5.0): 출발 화면 목적지 검색, 카카오 로컬 키워드 검색 대행(노고 PRD v1.3 8장, #56)
+    노고·금액·제안은 앱 로컬에서 계산한다. 좌표·검색어는 그 조회에만 쓰고 서버는 저장·캐시·로그하지 않는다(AC-N-4).
 
     아래 /v1/cards, /v1/cards/swap, /v1/prices 는 피봇 전 흐름이다. 정리 방법은 따로 정하고 그때까지 남겨 둔다
     (DECISIONS 11/7 '다음 PR로 넘김' ④). /v1/range, /v1/settle 은 검증용 참조 구현 — 앱은 부르지 않는다 (11/5 안건 1).
@@ -29,7 +31,7 @@ paths:
         명세 v0.5 F20(출발 지점 → weather_dep)·F22(도착 지점 → weather_arr), 7절 강수 판정, 12절.
         - 앱은 출발 때 출발 지점, 도착 때 도착 지점으로 한 번씩 부른다. 폴링·재시도 타이머·백그라운드 호출 금지.
         - 서버는 좌표를 기상청 격자(nx, ny)로 바꿔 초단기실황(getUltraSrtNcst)을 한 번 부른다.
-          발표분은 KST 기준, 매시 40분 이후면 그 시각 정시분, 그 전이면 한 시간 전 정시분.
+          발표분은 KST 기준, 매시 10분 이후면 그 시각 정시분, 그 전이면 한 시간 전 정시분(초단기실황 제공 시각, 11/7 실측).
         - 판정: PTY 1·4·5 → rain(4 = 소나기), 2·3·6·7 → snow, 0 → none.
         - 실패는 모두 200 + unknown: 서버 키 없음, 격자 밖(국외), 연결 실패, 기상청 오류 코드·XML 오류,
           3초 초과, 위에 없는 PTY 값. 앱도 3초 안에 못 받거나, 연결이 안 되거나, 200이 아니거나, unknown이면
@@ -62,6 +64,58 @@ paths:
                 rain: { externalValue: ./samples/weather.rain.response.json }
                 unknown: { externalValue: ./samples/weather.unknown.response.json }
         '422': { description: 'validation error — lat·lon 없음·범위 밖·숫자 아님, 또는 모르는 쿼리(원시 차량값 등)' }
+  /v1/places:
+    get:
+      summary: 목적지 검색 (카카오 로컬 키워드 검색 대행, 최대 10곳)
+      description: |
+        노고 PRD v1.3 8장 출발 화면: 목적지 = 검색 또는 최근 목적지. 지도에서 찍기는 1차 제외. NaviHelper에는 검색 API가 없다(June, #51).
+        - 앱은 사용자가 검색을 실행할 때 한 번 부른다. 글자마다 부르지 않는다. 폴링·타이머·백그라운드 호출 금지.
+        - 고른 결과의 name·address·lat·lng·place_id를 그대로 requestRoute(RouteInfo)에 넘긴다
+          (poiName·address·latitude·longitude·poiId). 서버는 좌표를 고치거나 반올림하지 않는다.
+        - 현재 위치(lat·lng)를 같이 보내면 가까운 곳이 위로 온다. 서버는 카카오에 x·y와 sort=accuracy로 넘긴다:
+          이름이 분명한 곳('두물머리')은 그곳이 먼저, 체인('스타벅스')은 가까운 지점이 먼저 나온다.
+          sort=distance(순수 거리순)는 '두물머리'에서 근처 '두물머리해장국'이 먼저 나와 쓰지 않는다(11/7 실호출).
+          lat·lng는 둘 다 보내거나 둘 다 뺀다. 현재 위치를 못 읽으면 빼고 보낸다(정확도순).
+        - status: ok(결과 1곳 이상) · empty(검색은 됐고 결과 없음) · unavailable(서버 키 없음·연결 실패·카카오 오류·3초 초과).
+          셋 다 200이다. 앱은 3초 안에 못 받거나, 연결이 안 되거나, 200이 아니면 unavailable과 같게 다룬다
+          → 최근 목적지에서 고르거나 다시 검색. 출발 화면을 막지 않는다.
+          앱 표시(명준 #57): empty → "검색 결과 없음"(검색어를 바꿔 보게), unavailable → 최근 목적지·즐겨찾기에서 고르기로 바로 안내.
+          정확한 문구·배치는 디자인.
+        - 검색어·현재 위치·결과는 저장·캐시·로그하지 않는다(AC-N-4). 응답은 Cache-Control: no-store
+          (URL에 검색어·좌표가 들어가므로 앱 HTTP 캐시에도 남기지 않는다).
+        - 쿼리는 query·lat·lng뿐. 다른 쿼리(원시 차량값, 날씨의 lon 등)가 붙으면 422.
+        - 서버 구현: server/chagok/places.py. 키는 카카오 REST 키(KAKAO_REST_API_KEY)를 길찾기와 같이 쓴다.
+      parameters:
+        - name: query
+          in: query
+          required: true
+          schema: { type: string, minLength: 1, maxLength: 100 }
+          description: 검색어. 앞뒤 공백은 지우고 센다(공백뿐이면 422)
+          example: 두물머리
+        - name: lat
+          in: query
+          required: false
+          schema: { type: number, minimum: -90, maximum: 90 }
+          description: 현재 위치 위도(WGS84, 선택). lng와 같이. 앱은 소수 둘째 자리(약 1km)로 반올림해 보낸다(June #57). NaN·Infinity는 422
+          example: 37.4127
+        - name: lng
+          in: query
+          required: false
+          schema: { type: number, minimum: -180, maximum: 180 }
+          description: 현재 위치 경도(WGS84, 선택). lat와 같이. 앱은 소수 둘째 자리(약 1km)로 반올림해 보낸다. NaN·Infinity는 422
+          example: 127.0947
+      responses:
+        '200':
+          headers:
+            Cache-Control: { schema: { type: string, const: no-store } }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Places' }
+              examples:
+                ok: { externalValue: ./samples/places.ok.response.json }
+                empty: { externalValue: ./samples/places.empty.response.json }
+                unavailable: { externalValue: ./samples/places.unavailable.response.json }
+        '422': { description: 'validation error — query 없음·공백뿐·100자 초과, lat·lng 중 하나만, 범위 밖·숫자 아님, 또는 모르는 쿼리' }
   /v1/cards:
     post:
       summary: 차가 고른 한 장 + 뒤집힌 스택
@@ -139,6 +193,41 @@ paths:
       responses: { '200': { description: ok } }
 components:
   schemas:
+    Place:
+      type: object
+      additionalProperties: false
+      required: [name, address, lat, lng, place_id, category, distance_m]
+      description: '카카오 로컬 장소 하나. 앱은 RouteInfo(poiName=name, address, latitude=lat, longitude=lng, poiId=place_id)로 넘긴다'
+      properties:
+        name: { type: string, description: '카카오 place_name', examples: ['두물머리'] }
+        address: { type: string, description: '도로명 주소, 없으면 지번 주소(빈 문자열일 수 있음)', examples: ['경기 양평군 양서면 양수리'] }
+        lat: { type: number, description: '위도(카카오 y)' }
+        lng: { type: number, description: '경도(카카오 x)' }
+        place_id: { type: string, description: '카카오 장소 id(숫자 문자열)', examples: ['7845373'] }
+        category:
+          type: [string, 'null']
+          description: '카카오 category_name의 마지막 칸("여행 > 관광,명소" → "관광,명소"). 이름이 비슷한 결과를 목록에서 구분하는 데 쓴다. 분류가 없으면 null'
+          examples: ['관광,명소', '패스트푸드', '주차장']
+        distance_m:
+          type: [integer, 'null']
+          minimum: 0
+          description: '현재 위치에서의 거리(m, 카카오 distance). 현재 위치(lat·lng)를 안 보냈으면 null'
+          examples: [23671]
+    Places:
+      type: object
+      additionalProperties: false
+      required: [status, places]
+      description: 'GET /v1/places. 앱은 고른 장소의 이름(dest_name)만 출발 기록에 남긴다. 좌표는 남기지 않는다(AC-N-4)'
+      properties:
+        status:
+          type: string
+          enum: [ok, empty, unavailable]
+          description: 'ok 결과 있음 · empty 결과 없음 · unavailable 검색 실패(키 없음·연결 실패·카카오 오류·3초 초과). unavailable·empty면 places는 []'
+        places:
+          type: array
+          maxItems: 10
+          items: { $ref: '#/components/schemas/Place' }
+          description: '카카오가 준 순서 그대로(현재 위치를 보냈으면 정확도순 + 가까운 곳 우선)'
     Weather:
       type: object
       additionalProperties: false
