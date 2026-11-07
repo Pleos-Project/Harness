@@ -101,17 +101,32 @@ class Line:
 
 
 @dataclass
-class Proposal:
+class ScreenA:
+    """방식 A 화면(명세 v0.5 F24, 노고 PRD v1.3 5-2). 방식 B로 넘어가는 문구·버튼은 두지 않는다."""
+    title_text: str              # "오늘 운전을 챙긴다면"
+    main_text: str               # 큰 숫자 "한 사람 약 9천 원"(동승자 1인 몫)
+    basis_text: str              # "운전 노고 약 3만 6천 원을 운전자 포함 4명이 나눈 값"
     wage_text: str               # "최저임금 1분 178원 기준"
+
+
+@dataclass
+class ScreenB:
+    """방식 B 화면(명세 v0.5 F25, 노고 PRD v1.3 5-3). 금액은 보여 주지 않는다. 선택지는 effort.items 전부."""
+    item: str                    # 기본값으로 올릴 항목 key
+    text: str                    # "오늘은 밥값에서 운전자 빼고 나누는 게 어때요"
+
+
+@dataclass
+class Proposal:
     amount_krw: float            # 노고 금액(어림 전)
     amount_approx: int
     amount_text: str             # "약 3만 6천 원"
     per_person_krw: float        # 동승자 1인 몫 = 금액 ÷ n (어림 전 총액을 나눔)
     per_person_approx: int
-    per_person_text: str
+    per_person_text: str         # "약 9천 원"
     driver_share_krw: float      # 운전자 몫 G = 금액 × (n − 1) ÷ n
-    b_item: str | None           # 방식 B 기본값 항목 key. None = 제안 없음
-    b_text: str | None
+    a: ScreenA
+    b: ScreenB | None            # None = 방식 B 제안 없음(영수증만)
 
 
 @dataclass
@@ -326,7 +341,7 @@ def effort(inp: EffortInput, c: EffortConstants) -> Receipt:
 
 
 def proposal(effort_pct_s: float, n: int, c: EffortConstants) -> Proposal:
-    """F24 금액(방식 A)과 F25 한 번 빼 주기(방식 B). 같은 노고 금액을 보여 주는 방식만 다르다."""
+    """F24 금액(방식 A)과 F25 한 번 빼 주기(방식 B). 같은 노고 금액을 보여 주는 방식만 다르고, 두 화면은 따로다."""
     amount = effort_pct_s * c.wage_per_hour / 360_000
     per = amount / n
     share = amount * (n - 1) / n
@@ -334,12 +349,16 @@ def proposal(effort_pct_s: float, n: int, c: EffortConstants) -> Proposal:
     p_v, p_t = approx_text(per)
     item = b_item(share, c.items)
     return Proposal(
-        wage_text=f"{c.wage_label} 1분 {round_half_up(c.wage_per_hour / 60)}원 기준",
         amount_krw=amount, amount_approx=a_v, amount_text=a_t,
         per_person_krw=per, per_person_approx=p_v, per_person_text=p_t,
         driver_share_krw=share,
-        b_item=item.key if item else None,
-        b_text=f"오늘은 {item.label}에서 운전자 빼고 나누는 게 어때요" if item else None,
+        a=ScreenA(
+            title_text="오늘 운전을 챙긴다면",
+            main_text=f"한 사람 {p_t}",
+            basis_text=f"운전 노고 {a_t}을 운전자 포함 {n}명이 나눈 값",
+            wage_text=f"{c.wage_label} 1분 {round_half_up(c.wage_per_hour / 60)}원 기준",
+        ),
+        b=ScreenB(item.key, f"오늘은 {item.label}값에서 운전자 빼고 나누는 게 어때요") if item else None,
     )
 
 

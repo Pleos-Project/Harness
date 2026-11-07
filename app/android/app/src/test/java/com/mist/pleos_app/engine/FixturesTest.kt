@@ -168,7 +168,7 @@ class FixturesTest {
         }
     }
 
-    /** 명세 AC 숫자를 fixture와 따로 확인(AC-F23-1·AC-F24-1·AC-F25-1). */
+    /** 명세 AC 숫자·문구를 fixture와 따로 확인(AC-F23-1·AC-F24-1·AC-F25-1). */
     @Test
     fun effortSpecR1() {
         val r = effort(parseEffortInput(load(File(root, "effort/R1.json")).getValue("input").jsonObject), effortConstants)
@@ -180,7 +180,13 @@ class FixturesTest {
         assertEquals(9_041.5, p.perPersonKrw, 0.0)
         assertEquals("약 9천 원", p.perPersonText)
         assertEquals(27_124.5, p.driverShareKrw, 0.0)
-        assertEquals("meal", p.bItem)
+        // 방식 A 화면(노고 PRD v1.3 5-2)과 방식 B 화면은 따로다
+        assertEquals("오늘 운전을 챙긴다면", p.a.titleText)
+        assertEquals("한 사람 약 9천 원", p.a.mainText)
+        assertEquals("운전 노고 약 3만 6천 원을 운전자 포함 4명이 나눈 값", p.a.basisText)
+        assertEquals("최저임금 1분 178원 기준", p.a.wageText)
+        assertEquals("meal", p.b?.item)
+        assertEquals("오늘은 밥값에서 운전자 빼고 나누는 게 어때요", p.b?.text)
         val r8 = effort(parseEffortInput(load(File(root, "effort/R8.json")).getValue("input").jsonObject), effortConstants)
         assertEquals(null, r8.proposal)
     }

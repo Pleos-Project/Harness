@@ -98,17 +98,30 @@ data class EffortInput(
 
 data class EffortLine(val key: String, val label: String, val addMin: Double, val pct: Int, val pctText: String)
 
+/** 방식 A 화면(명세 v0.5 F24, 노고 PRD v1.3 5-2). 방식 B로 넘어가는 문구·버튼은 두지 않는다. */
+data class EffortScreenA(
+    val titleText: String,              // "오늘 운전을 챙긴다면"
+    val mainText: String,               // 큰 숫자 "한 사람 약 9천 원"(동승자 1인 몫)
+    val basisText: String,              // "운전 노고 약 3만 6천 원을 운전자 포함 4명이 나눈 값"
+    val wageText: String,               // "최저임금 1분 178원 기준"
+)
+
+/** 방식 B 화면(명세 v0.5 F25, 노고 PRD v1.3 5-3). 금액은 보여 주지 않는다. 선택지는 effort.items 전부. */
+data class EffortScreenB(
+    val item: String,                   // 기본값으로 올릴 항목 key
+    val text: String,                   // "오늘은 밥값에서 운전자 빼고 나누는 게 어때요"
+)
+
 data class EffortProposal(
-    val wageText: String,
     val amountKrw: Double,              // 노고 금액(어림 전)
     val amountApprox: Int,
-    val amountText: String,
+    val amountText: String,             // "약 3만 6천 원"
     val perPersonKrw: Double,           // 금액 ÷ n
     val perPersonApprox: Int,
-    val perPersonText: String,
+    val perPersonText: String,          // "약 9천 원"
     val driverShareKrw: Double,         // 운전자 몫 G = 금액 × (n − 1) ÷ n
-    val bItem: String?,                 // 방식 B 기본값 항목 key. null = 제안 없음
-    val bText: String?,
+    val a: EffortScreenA,
+    val b: EffortScreenB?,              // null = 방식 B 제안 없음(영수증만)
 )
 
 data class EffortReceipt(
@@ -304,7 +317,7 @@ fun effort(inp: EffortInput, c: EffortConstants): EffortReceipt {
     )
 }
 
-/** F24 금액(방식 A)과 F25 한 번 빼 주기(방식 B). 같은 노고 금액을 보여 주는 방식만 다르다. */
+/** F24 금액(방식 A)과 F25 한 번 빼 주기(방식 B). 같은 노고 금액을 보여 주는 방식만 다르고, 두 화면은 따로다. */
 fun effortProposal(effortPctS: Double, n: Int, c: EffortConstants): EffortProposal {
     val amount = effortPctS * c.wagePerHour / 360_000
     val per = amount / n
@@ -314,12 +327,16 @@ fun effortProposal(effortPctS: Double, n: Int, c: EffortConstants): EffortPropos
     val item = bItem(share, c.items)
     val perMin = roundHalfUp(c.wagePerHour / 60)
     return EffortProposal(
-        wageText = "${c.wageLabel} 1분 ${perMin}원 기준",
         amountKrw = amount, amountApprox = aV, amountText = aT,
         perPersonKrw = per, perPersonApprox = pV, perPersonText = pT,
         driverShareKrw = share,
-        bItem = item?.key,
-        bText = item?.let { "오늘은 ${it.label}에서 운전자 빼고 나누는 게 어때요" },
+        a = EffortScreenA(
+            titleText = "오늘 운전을 챙긴다면",
+            mainText = "한 사람 $pT",
+            basisText = "운전 노고 ${aT}을 운전자 포함 ${n}명이 나눈 값",
+            wageText = "${c.wageLabel} 1분 ${perMin}원 기준",
+        ),
+        b = item?.let { EffortScreenB(it.key, "오늘은 ${it.label}값에서 운전자 빼고 나누는 게 어때요") },
     )
 }
 
@@ -406,11 +423,16 @@ fun EffortLine.toJson(): JsonObject = obj(
     "key" to key, "label" to label, "add_min" to addMin, "pct" to pct, "pct_text" to pctText,
 )
 
+fun EffortScreenA.toJson(): JsonObject = obj(
+    "title_text" to titleText, "main_text" to mainText, "basis_text" to basisText, "wage_text" to wageText,
+)
+
+fun EffortScreenB.toJson(): JsonObject = obj("item" to item, "text" to text)
+
 fun EffortProposal.toJson(): JsonObject = obj(
-    "wage_text" to wageText,
     "amount_krw" to amountKrw, "amount_approx" to amountApprox, "amount_text" to amountText,
     "per_person_krw" to perPersonKrw, "per_person_approx" to perPersonApprox, "per_person_text" to perPersonText,
-    "driver_share_krw" to driverShareKrw, "b_item" to bItem, "b_text" to bText,
+    "driver_share_krw" to driverShareKrw, "a" to a.toJson(), "b" to b?.toJson(),
 )
 
 fun EffortReceipt.toJson(): JsonObject = obj(

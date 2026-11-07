@@ -39,7 +39,6 @@
     "headline_text": "오늘 운전 10분 · 평소와 같은 길",
     "distance_text": null,
     "proposal": {
-      "wage_text": "최저임금 1분 178원 기준",
       "amount_krw": 1783.3333333333333,
       "amount_approx": 2000,
       "amount_text": "약 2천 원",
@@ -47,8 +46,13 @@
       "per_person_approx": 1000,
       "per_person_text": "약 1천 원",
       "driver_share_krw": 891.6666666666666,
-      "b_item": null,
-      "b_text": null
+      "a": {
+        "title_text": "오늘 운전을 챙긴다면",
+        "main_text": "한 사람 약 1천 원",
+        "basis_text": "운전 노고 약 2천 원을 운전자 포함 2명이 나눈 값",
+        "wage_text": "최저임금 1분 178원 기준"
+      },
+      "b": null
     }
   }
 }

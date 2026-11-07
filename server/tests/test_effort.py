@@ -71,7 +71,7 @@ def test_spec_12_table(fid):
     assert r.multiplier == mult
     p = r.proposal
     assert p.amount_krw == pytest.approx(krw, abs=0.05)   # 표는 소수 첫째 자리까지(1,783.3)
-    assert (p.amount_text, p.per_person_text, p.b_item) == (krw_text, per_text, b)
+    assert (p.amount_text, p.per_person_text, p.b.item if p.b else None) == (krw_text, per_text, b)
 
 
 def test_r8_alone_receipt_only():
@@ -94,24 +94,39 @@ def test_ac_f24_1_r1_amount():
     p = run("R1").proposal
     assert p.amount_krw == 36_166 and p.amount_text == "약 3만 6천 원"
     assert p.per_person_krw == 9_041.5 and p.per_person_text == "약 9천 원"
-    assert p.wage_text == "최저임금 1분 178원 기준"
+
+
+def test_ac_f24_screen_a_copy():
+    """방식 A 화면(노고 PRD v1.3 5-2, 명세 v0.5 F24 출력). 방식 B로 넘어가는 문구는 엔진에 없다(AC-F24-4)."""
+    a = run("R1").proposal.a
+    assert dataclasses.asdict(a) == {
+        "title_text": "오늘 운전을 챙긴다면",
+        "main_text": "한 사람 약 9천 원",
+        "basis_text": "운전 노고 약 3만 6천 원을 운전자 포함 4명이 나눈 값",
+        "wage_text": "최저임금 1분 178원 기준",
+    }
+    tiny = simple(1).proposal.a                   # 어림이 0이면 '1천 원 미만'
+    assert tiny.main_text == "한 사람 1천 원 미만"
+    assert tiny.basis_text == "운전 노고 1천 원 미만을 운전자 포함 2명이 나눈 값"
 
 
 def test_ac_f24_2_wage_constant_changes_amount_and_source():
     taxi = dataclasses.replace(C, wage_per_hour=12_000, wage_label="서울 택시 시간요금")
     r = EF.effort(EF.input_from_json(fx("R1")["input"]), taxi)
-    assert r.proposal.wage_text == "서울 택시 시간요금 1분 200원 기준"
+    assert r.proposal.a.wage_text == "서울 택시 시간요금 1분 200원 기준"
     assert r.proposal.amount_krw == pytest.approx(202.8 * 200)
     assert r.proposal.amount_text == "약 4만 1천 원"
+    assert r.proposal.a.basis_text == "운전 노고 약 4만 1천 원을 운전자 포함 4명이 나눈 값"
 
 
 def test_ac_f25_1_b_suggestion():
-    assert run("R1").proposal.driver_share_krw == 27_124.5 and run("R1").proposal.b_item == "meal"
+    assert run("R1").proposal.driver_share_krw == 27_124.5 and run("R1").proposal.b.item == "meal"
     p = simple(30).proposal                       # 30분 카풀, 2명
     assert p.amount_krw == pytest.approx(5_350) and p.driver_share_krw == pytest.approx(2_675)
-    assert p.b_item == "coffee" and p.b_text == "오늘은 커피에서 운전자 빼고 나누는 게 어때요"
+    assert p.b.item == "coffee" and p.b.text == "오늘은 커피값에서 운전자 빼고 나누는 게 어때요"
+    assert run("R1").proposal.b.text == "오늘은 밥값에서 운전자 빼고 나누는 게 어때요"
     p6 = run("R6").proposal
-    assert p6.driver_share_krw == pytest.approx(891.67, abs=0.01) and p6.b_item is None and p6.b_text is None
+    assert p6.driver_share_krw == pytest.approx(891.67, abs=0.01) and p6.b is None
 
 
 @pytest.mark.parametrize("share,want", [
@@ -250,9 +265,10 @@ def texts(r):
     yield from (l.label for l in r.lines)
     if r.proposal:
         p = r.proposal
-        yield from (p.wage_text, p.amount_text, p.per_person_text)
-        if p.b_text:
-            yield p.b_text
+        yield from (p.amount_text, p.per_person_text)
+        yield from dataclasses.asdict(p.a).values()
+        if p.b:
+            yield p.b.text
 
 
 def test_copy_rules_hold_everywhere():
@@ -265,7 +281,10 @@ def test_copy_rules_hold_everywhere():
             assert PCT.match(l.pct_text) and l.add_min > 0, l
         if r.proposal:
             assert KRW.match(r.proposal.amount_text) and KRW.match(r.proposal.per_person_text), r.proposal
-            assert (r.proposal.b_item is None) == (r.proposal.b_text is None)
+            a = r.proposal.a
+            assert a.title_text == "오늘 운전을 챙긴다면"
+            assert a.main_text == f"한 사람 {r.proposal.per_person_text}"
+            assert a.basis_text.startswith(f"운전 노고 {r.proposal.amount_text}을 운전자 포함 ")
         for s in texts(r):
             for rx, msg in lint_copy.FORBIDDEN + lint_copy.COPY_RULES:
                 assert not rx.search(s), f"{msg}: {s}"
