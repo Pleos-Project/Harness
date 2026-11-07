@@ -1,12 +1,13 @@
 openapi: 3.1.0
 info:
   title: chagok server
-  version: 0.5.0
+  version: 0.6.0
   description: |
-    운전 노고 정산(명세 v0.5, #46): 앱이 부르는 엔드포인트는 두 가지다.
+    운전 노고 정산(명세 v0.5, #46): 앱이 부르는 엔드포인트는 세 가지다.
     - GET /v1/weather (0.4.0): 출발·도착 지점의 강수 형태(명세 v0.5 12절)
     - GET /v1/places (0.5.0): 출발 화면 목적지 검색, 카카오 로컬 키워드 검색 대행(노고 PRD v1.3 8장, #56)
-    노고·금액·제안은 앱 로컬에서 계산한다. 좌표·검색어는 그 조회에만 쓰고 서버는 저장·캐시·로그하지 않는다(AC-N-4).
+    - GET /v1/weather/trip (0.6.0): 도착 때 한 번, 출발~도착 1시간 조각마다 두 지점의 강수(#63)
+    노고·금액·제안은 앱 로컬에서 계산한다. 좌표·시각·검색어는 그 조회에만 쓰고 서버는 저장·캐시·로그하지 않는다(AC-N-4).
 
     아래 /v1/cards, /v1/cards/swap, /v1/prices 는 피봇 전 흐름이다. 정리 방법은 따로 정하고 그때까지 남겨 둔다
     (DECISIONS 11/7 '다음 PR로 넘김' ④). /v1/range, /v1/settle 은 검증용 참조 구현 — 앱은 부르지 않는다 (11/5 안건 1).
@@ -64,6 +65,80 @@ paths:
                 rain: { externalValue: ./samples/weather.rain.response.json }
                 unknown: { externalValue: ./samples/weather.unknown.response.json }
         '422': { description: 'validation error — lat·lon 없음·범위 밖·숫자 아님, 또는 모르는 쿼리(원시 차량값 등)' }
+  /v1/weather/trip:
+    get:
+      summary: 출발~도착 1시간 조각마다 두 지점의 강수 (기상청 초단기실황 PTY·RN1, 최근 24시간)
+      description: |
+        #63(효성 결정, 명준 질문 #55). 영수증의 비·눈 줄을 도착 때 지난 시간대별 관측으로 판정한다.
+        출발·도착 순간 1회 관측(/v1/weather)으로는 출발 때 오다 그친 비가 앞 절반 전체로 잡히고, 중간에만 온 비는 못 잡는다.
+        - 앱은 도착 때 한 번 부른다. 주행 중 호출·폴링·재시도 타이머·백그라운드 호출 금지(AC-C-2).
+        - 조각은 출발~도착에 걸친 KST 정시 1시간 [hour, hour+1시간)이다. 서버는 조각마다 출발·도착 두 지점의
+          정시 실황(getUltraSrtNcst)을 병렬로 부르고 전체 3초에서 끊는다. 같은 격자·같은 발표분은 한 번만 부른다.
+        - 조각 [H, H+1)은 H+1 정시 실황으로 판정한다: RN1 = 그 1시간 강수량, PTY = H+1 시각 강수 형태.
+          H+1 정시분이 아직 발표 전이면(매시 10분 이후 제공) 지금 부를 수 있는 가장 최근 발표분으로 대신한다(도착 무렵 한두 조각).
+        - 판정: PTY 1·4·5 → rain, 2·3·6·7 → snow. PTY가 0이거나 못 읽어도 RN1 > 0이면 rain. PTY 0·RN1 0(또는 없음) → none.
+        - 기상청은 최근 24시간 실황만 준다(11/7 실측: 23시간 전 정시분까지 수신, 24시간 전부터 resultCode 10).
+          그보다 오래된 조각은 부르지 않고 unknown.
+        - dep·arr는 같은 조각을 같은 순서로 담는다(길이 같음). 조각마다 어느 지점 관측을 쓸지는 앱 엔진이 정한다
+          (조각 가운데가 주행 경과의 앞 절반이면 출발, 뒤 절반이면 도착 — 엔진 두 벌, #63 2단계).
+        - status: ok(모든 조각 판정) · partial(일부 unknown) · unavailable(전부 unknown: 서버 키 없음·연결 실패·
+          기상청 오류·3초 초과). 셋 다 200이다. 앱은 3초 안에 못 받거나, 연결이 안 되거나, 200이 아니거나,
+          unavailable이면 지금 규칙(출발·도착 1회, 절반씩)으로 돌아간다. 도착을 막지 않는다(AC-C-6).
+        - 좌표·시각은 이 조회에만 쓴다. 서버는 저장·캐시·로그하지 않는다(AC-N-4). 응답은 Cache-Control: no-store.
+          보내는 좌표는 /v1/weather처럼 출발·도착 지점 1개씩이고 보내는 때만 도착 때 한 번으로 바뀐다.
+          출발 좌표는 앱 메모리에만 두고, 없으면 도착 좌표로 대신한다. 앱은 소수 둘째 자리(약 1km)로 반올림해 보낸다.
+        - 쿼리는 dep_lat·dep_lon·arr_lat·arr_lon·from·to뿐. 다른 쿼리(원시 차량값, /v1/weather의 lat·lon 등)가 붙으면 422.
+        - 지금 /v1/weather는 그대로 둔다(대체 경로).
+        - 서버 구현: server/chagok/weather.py(trip). 키는 /v1/weather와 같다(TOURAPI_SERVICE_KEY).
+      parameters:
+        - name: dep_lat
+          in: query
+          required: true
+          schema: { type: number, minimum: -90, maximum: 90 }
+          description: 출발 지점 위도(WGS84). 출발 좌표가 없으면 도착 좌표. NaN·Infinity는 422
+          example: 37.41
+        - name: dep_lon
+          in: query
+          required: true
+          schema: { type: number, minimum: -180, maximum: 180 }
+          description: 출발 지점 경도(WGS84). NaN·Infinity는 422
+          example: 127.09
+        - name: arr_lat
+          in: query
+          required: true
+          schema: { type: number, minimum: -90, maximum: 90 }
+          description: 도착 지점 위도(WGS84). NaN·Infinity는 422
+          example: 37.53
+        - name: arr_lon
+          in: query
+          required: true
+          schema: { type: number, minimum: -180, maximum: 180 }
+          description: 도착 지점 경도(WGS84). NaN·Infinity는 422
+          example: 127.32
+        - name: from
+          in: query
+          required: true
+          schema: { type: string, format: date-time }
+          description: 출발 시각. ISO 8601, 시간대 필수(+09:00 또는 Z). 쿼리 문자열에서 +는 %2B로 인코딩한다(안 하면 공백이 돼 422)
+          example: '2026-11-07T14:20:00+09:00'
+        - name: to
+          in: query
+          required: true
+          schema: { type: string, format: date-time }
+          description: 도착 시각. from보다 뒤, from + 24시간 이하, 서버 시각 + 10분 이하(앱 시계가 조금 빨라도 받는다). 어기면 422
+          example: '2026-11-07T16:45:00+09:00'
+      responses:
+        '200':
+          headers:
+            Cache-Control: { schema: { type: string, const: no-store } }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/WeatherTrip' }
+              examples:
+                ok: { externalValue: ./samples/weather.trip.ok.response.json }
+                partial: { externalValue: ./samples/weather.trip.partial.response.json }
+                unavailable: { externalValue: ./samples/weather.trip.unavailable.response.json }
+        '422': { description: 'validation error — 좌표·시각 없음, 범위 밖·숫자 아님, 시간대 없는 시각, from ≥ to, 24시간 초과, to가 지금 + 10분보다 늦음, 또는 모르는 쿼리' }
   /v1/places:
     get:
       summary: 목적지 검색 (카카오 로컬 키워드 검색 대행, 최대 10곳)
@@ -242,6 +317,41 @@ components:
           type: [string, 'null']
           format: date-time
           description: '기상청 실황 기준 시각(정시, +09:00). 예 2026-11-07T16:00:00+09:00. unknown이면 null'
+    WeatherHour:
+      type: object
+      additionalProperties: false
+      required: [hour, precip]
+      properties:
+        hour:
+          type: string
+          format: date-time
+          description: '1시간 조각의 시작(KST 정시, +09:00). 조각은 [hour, hour+1시간). 예 2026-11-07T14:00:00+09:00'
+        precip:
+          type: string
+          enum: [none, rain, snow, unknown]
+          description: 'none 강수 없음 · rain 비(PTY 1·4·5, 또는 PTY 0인데 RN1 > 0) · snow 눈(PTY 2·3·6·7) · unknown 정보 없음(실패·24시간보다 오래됨)'
+    WeatherTrip:
+      type: object
+      additionalProperties: false
+      required: [status, dep, arr]
+      description: 'GET /v1/weather/trip. dep·arr는 같은 조각을 같은 순서로 담는다(길이 같음, 1~25개). 앱은 조각별 precip만 엔진에 넘기고 좌표는 남기지 않는다(AC-N-4)'
+      properties:
+        status:
+          type: string
+          enum: [ok, partial, unavailable]
+          description: 'ok 모든 조각 판정 · partial 일부 unknown · unavailable 전부 unknown(키 없음·연결 실패·기상청 오류·3초 초과) → 앱은 지금 규칙(출발·도착 1회)으로'
+        dep:
+          type: array
+          minItems: 1
+          maxItems: 25
+          items: { $ref: '#/components/schemas/WeatherHour' }
+          description: '출발 지점의 조각별 강수(시각 순)'
+        arr:
+          type: array
+          minItems: 1
+          maxItems: 25
+          items: { $ref: '#/components/schemas/WeatherHour' }
+          description: '도착 지점의 조각별 강수(dep와 같은 조각)'
     Budget:
       type: object
       additionalProperties: false
