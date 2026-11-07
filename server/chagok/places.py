@@ -4,7 +4,9 @@
 GET /v1/places?query=&lat=&lng= (main.py)가 부른다. 앱은 고른 결과의 name·address·lat·lng·place_id를
 그대로 requestRoute(RouteInfo)에 넘긴다(poiName·address·latitude·longitude·poiId).
 
-- 결과는 최대 10곳. 검색은 됐는데 결과가 없으면 빈 목록 + status "empty",
+- 결과는 최대 10곳. 이름이 비슷한 결과를 목록에서 구분하도록 category(카카오 분류 마지막 칸)와
+  distance_m(현재 위치를 보냈을 때 카카오가 준 거리)을 같이 준다(June 제안 #57, 효성 결정 11/7).
+- 검색은 됐는데 결과가 없으면 빈 목록 + status "empty",
   키 없음·연결 실패·카카오 오류·3초 초과는 빈 목록 + "unavailable"(둘 다 200).
 - 현재 위치(lat·lng)를 같이 받으면 카카오에 x·y로 넘겨 가까운 곳이 위로 오게 한다. 정렬은 accuracy 그대로 둔다.
   distance(거리순)로 바꾸면 '두물머리'에서 근처 '두물머리해장국'이 두물머리보다 먼저 나온다(11/7 실호출).
@@ -25,6 +27,8 @@ import urllib.request
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import asdict, dataclass
+
+from .engine import round_half_up
 
 URL = "https://dapi.kakao.com/v2/local/search/keyword.json"
 TIMEOUT_S = 3.0          # #56: 3초 안에 돌려준다. 넘기면 unavailable
@@ -47,6 +51,8 @@ class Place:
     lat: float          # 카카오 y → RouteInfo.latitude
     lng: float          # 카카오 x → RouteInfo.longitude
     place_id: str       # 카카오 장소 id → RouteInfo.poiId
+    category: str | None = None     # 카카오 category_name 마지막 칸("여행 > 관광,명소" → "관광,명소"). 없으면 None
+    distance_m: int | None = None   # 현재 위치에서의 거리(m). 현재 위치를 안 보냈으면 카카오가 빈 값 → None
 
 
 @dataclass(frozen=True)
@@ -73,12 +79,28 @@ def _coord(v, lo: float, hi: float) -> float | None:
     return f if math.isfinite(f) and lo <= f <= hi else None
 
 
+def _category(v) -> str | None:
+    """'음식점 > 패스트푸드' → '패스트푸드'. category_group_name은 '두물머리'처럼 빈 곳이 있어 쓰지 않는다."""
+    last = str(v or "").split(">")[-1].strip()
+    return last or None
+
+
+def _distance_m(v) -> int | None:
+    """카카오 distance(m, 문자열). x·y를 안 보냈으면 "" → None."""
+    try:
+        f = float(str(v).strip())
+    except (TypeError, ValueError):
+        return None
+    return round_half_up(f) if math.isfinite(f) and f >= 0 else None
+
+
 def parse_keyword(text: str) -> list[Place]:
     """키워드 검색 JSON → Place 목록(앞에서부터 최대 MAX_RESULTS). 쓸 수 없으면 PlacesError.
 
     응답 모양: {"meta": {"total_count": 94, "is_end": false, ...},
                 "documents": [{"id": "7845373", "place_name": "두물머리", "address_name": "경기 양평군 양서면 양수리",
-                               "road_address_name": "", "x": "127.315829778049", "y": "37.5328127891601", ...}]}
+                               "road_address_name": "", "x": "127.315829778049", "y": "37.5328127891601",
+                               "category_name": "여행 > 관광,명소", "distance": "23671", ...}]}
     이름·id·좌표가 없거나 좌표가 숫자가 아닌 항목은 버린다.
     """
     try:
@@ -98,7 +120,7 @@ def parse_keyword(text: str) -> list[Place]:
         if not name or not pid or lat is None or lng is None:
             continue
         address = str(d.get("road_address_name") or "").strip() or str(d.get("address_name") or "").strip()
-        out.append(Place(name, address, lat, lng, pid))
+        out.append(Place(name, address, lat, lng, pid, _category(d.get("category_name")), _distance_m(d.get("distance"))))
         if len(out) == MAX_RESULTS:
             break
     return out

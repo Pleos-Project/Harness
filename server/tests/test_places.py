@@ -27,7 +27,8 @@ DOCS = [
      "distance": "23671", "id": "7845373", "phone": "", "place_name": "두물머리",
      "place_url": "http://place.map.kakao.com/7845373", "road_address_name": "",
      "x": "127.315829778049", "y": "37.5328127891601"},
-    {"address_name": "경기 양평군 양서면 양수리 1161-5", "category_group_code": "MT1", "category_name": "가정,생활 > 슈퍼마켓",
+    {"address_name": "경기 양평군 양서면 양수리 1161-5", "category_group_code": "MT1",
+     "category_name": "가정,생활 > 슈퍼마켓 > 대형슈퍼 > 하나로마트",
      "distance": "24417", "id": "2141791502", "phone": "031-774-5944", "place_name": "양서농협 두물머리로컬푸드직매장",
      "place_url": "http://place.map.kakao.com/2141791502", "road_address_name": "경기 양평군 양서면 두물머리길 38",
      "x": "127.31911437324305", "y": "37.54082012837359"},
@@ -42,10 +43,16 @@ def keyword(docs=None, total=None) -> dict:
 
 EXPECTED = [
     {"name": "두물머리", "address": "경기 양평군 양서면 양수리", "lat": 37.5328127891601, "lng": 127.315829778049,
-     "place_id": "7845373"},                                         # 도로명 주소가 없으면 지번 주소
+     "place_id": "7845373", "category": "관광,명소", "distance_m": 23671},   # 도로명 주소가 없으면 지번 주소
     {"name": "양서농협 두물머리로컬푸드직매장", "address": "경기 양평군 양서면 두물머리길 38",
-     "lat": 37.54082012837359, "lng": 127.31911437324305, "place_id": "2141791502"},
+     "lat": 37.54082012837359, "lng": 127.31911437324305, "place_id": "2141791502",
+     "category": "하나로마트", "distance_m": 24417},                       # 분류는 마지막 칸
 ]
+
+
+def no_location(docs):
+    """현재 위치(x·y)를 안 보냈을 때 카카오는 distance를 빈 문자열로 준다."""
+    return [dict(d, distance="") for d in docs]
 
 
 class FakeResp(io.BytesIO):
@@ -76,6 +83,29 @@ def test_parse_skips_unusable_items():
            dict(DOCS[0], y="91"), dict(DOCS[0], x="nan"), "garbage", None]
     out = PL.parse_keyword(json.dumps(keyword([*bad, DOCS[1]]), ensure_ascii=False))
     assert [p.place_id for p in out] == ["2141791502"]
+
+
+def test_parse_without_location_distance_is_null():
+    out = PL.parse_keyword(json.dumps(keyword(no_location(DOCS)), ensure_ascii=False))
+    assert [p.distance_m for p in out] == [None, None]
+    assert [p.category for p in out] == ["관광,명소", "하나로마트"]
+
+
+@pytest.mark.parametrize("category_name, category", [
+    ("여행 > 관광,명소", "관광,명소"), ("음식점 > 패스트푸드", "패스트푸드"), ("주차장", "주차장"),
+    ("", None), (None, None), ("음식점 > ", None),
+])
+def test_parse_category_last_part(category_name, category):
+    out = PL.parse_keyword(json.dumps(keyword([dict(DOCS[0], category_name=category_name)]), ensure_ascii=False))
+    assert out[0].category == category
+
+
+@pytest.mark.parametrize("distance, distance_m", [
+    ("23671", 23671), ("0", 0), ("12.5", 13), ("", None), (None, None), ("abc", None), ("-1", None), ("nan", None),
+])
+def test_parse_distance(distance, distance_m):
+    out = PL.parse_keyword(json.dumps(keyword([dict(DOCS[0], distance=distance)]), ensure_ascii=False))
+    assert out[0].distance_m == distance_m
 
 
 def test_parse_empty_documents_is_empty_list():
@@ -122,8 +152,9 @@ def test_search_ok_with_location(monkeypatch):
 
 
 def test_search_without_location_sends_no_xy(monkeypatch):
-    seen = capture(monkeypatch, keyword())
-    assert PL.search(QUERY, KEY).status == "ok"
+    seen = capture(monkeypatch, keyword(no_location(DOCS)))
+    res = PL.search(QUERY, KEY)
+    assert res.status == "ok" and [p["distance_m"] for p in res.public()["places"]] == [None, None]
     q = dict(urllib.parse.parse_qsl(urllib.parse.urlsplit(seen["url"]).query))
     assert "x" not in q and "y" not in q and q["sort"] == "accuracy"
 
@@ -286,5 +317,5 @@ def test_places_log_has_no_query_coords_results_or_key(api, monkeypatch, capsys)
         ("ok", 2, True, None), ("empty", 0, False, None), ("unavailable", 0, False, "network")]
     assert all(set(r) <= {"t", "ev", "status", "ms", "result", "n", "near", "err"} for r in recs)
     for bad in (QUERY, "없는곳", str(LAT), str(LNG), "37.41", "127.09", "37.53", "127.31", "7845373", "2141791502",
-                "양평", KEY, "dapi.kakao.com"):
+                "양평", "관광", "23671", KEY, "dapi.kakao.com"):
         assert bad not in text

@@ -13,7 +13,7 @@
 `docs/`는 고치지 않는다. `docs/archive/`는 이전 판(PRD v1.6·명세 v0.4·노고 PRD v1.2)으로, 기존 코드를 정리하기 전까지 참고용으로만 둔다.
 
 ## 꼭 지킬 것
-- **원시 차량값과 위치를 서버로 보내지 않는다.** 누적 주행거리·잔량·VIN·위치 이력이 해당한다. 예외는 날씨 조회(`GET /v1/weather`)의 출발·도착 지점 좌표 1개씩이고, 서버는 그 좌표를 저장·캐시·로그하지 않는다(명세 v0.5 AC-N-4). 서버 모델은 `extra="forbid"`를 유지한다.
+- **원시 차량값과 위치를 서버로 보내지 않는다.** 누적 주행거리·잔량·VIN·위치 이력이 해당한다. 예외는 두 가지다. ① 날씨 조회(`GET /v1/weather`)의 출발·도착 지점 좌표 1개씩 ② 목적지 검색(`GET /v1/places`)의 현재 위치 1개(선택, 가까운 곳 우선 정렬용). 앱은 둘 다 소수 둘째 자리(약 1km)로 반올림해 보낸다. 서버는 이 좌표와 검색어·검색 결과를 저장·캐시·로그하지 않는다(명세 v0.5 AC-N-4, DECISIONS 11/7 '계약: 목적지 검색'). 서버 모델은 `extra="forbid"`를 유지한다.
 - **수식은 두 벌**이다.
   - 노고 수식(명세 v0.5 F23~F25): `server/chagok/effort.py` ↔ Kotlin `engine/Effort.kt`(앞으로 만들 파일). 같은 `fixtures/effort/R*`를 통과해야 한다.
   - 피봇 전 흐름: `server/chagok/engine.py`·`cards.py` ↔ `app/android/app/src/main/java/com/mist/pleos_app/engine/`(`Engine.kt`·`DemoServer.kt`·`Ledger.kt`). 정리하기 전까지는 이 쌍도 두 벌을 유지한다.
