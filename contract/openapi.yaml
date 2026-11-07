@@ -30,7 +30,7 @@ paths:
         - 앱은 출발 때 출발 지점, 도착 때 도착 지점으로 한 번씩 부른다. 폴링·재시도 타이머·백그라운드 호출 금지.
         - 서버는 좌표를 기상청 격자(nx, ny)로 바꿔 초단기실황(getUltraSrtNcst)을 한 번 부른다.
           발표분은 KST 기준, 매시 40분 이후면 그 시각 정시분, 그 전이면 한 시간 전 정시분.
-        - 판정: PTY 1·5 → rain, 2·3·6·7 → snow, 0 → none.
+        - 판정: PTY 1·4·5 → rain(4 = 소나기), 2·3·6·7 → snow, 0 → none.
         - 실패는 모두 200 + unknown: 서버 키 없음, 격자 밖(국외), 연결 실패, 기상청 오류 코드·XML 오류,
           3초 초과, 위에 없는 PTY 값. 앱도 3초 안에 못 받거나, 연결이 안 되거나, 200이 아니거나, unknown이면
           그 지점을 '정보 없음'(가산 0)으로 두고 출발·도착을 이어 간다(AC-C-6).
@@ -148,7 +148,7 @@ components:
         precip:
           type: string
           enum: [none, rain, snow, unknown]
-          description: 'none 강수 없음 · rain 비(PTY 1·5) · snow 눈(PTY 2·3·6·7, 비/눈 포함) · unknown 정보 없음(실패 — 가산 0)'
+          description: 'none 강수 없음 · rain 비(PTY 1·4·5, 소나기 포함) · snow 눈(PTY 2·3·6·7, 비/눈 포함) · unknown 정보 없음(실패 — 가산 0)'
         observed_at:
           type: [string, 'null']
           format: date-time

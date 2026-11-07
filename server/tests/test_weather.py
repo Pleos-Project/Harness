@@ -90,7 +90,7 @@ def test_base_time_kst(now, expected):
 
 # ------------------------------------------------------------ PTY 판정
 @pytest.mark.parametrize("pty, precip", [
-    ("0", "none"), ("1", "rain"), ("5", "rain"),
+    ("0", "none"), ("1", "rain"), ("4", "rain"), ("5", "rain"),     # 4 = 소나기 → 비(11/7 효성 결정)
     ("2", "snow"), ("3", "snow"), ("6", "snow"), ("7", "snow"),
 ])
 def test_parse_pty(pty, precip):
@@ -105,7 +105,8 @@ def test_parse_single_item_dict():
 
 
 @pytest.mark.parametrize("text, kind", [
-    (json.dumps(ncst("4")), "pty_unexpected"),          # 4(소나기)는 단기예보 값. 실황에서 오면 판정하지 않는다
+    (json.dumps(ncst("8")), "pty_unexpected"),          # 판정표(0~7)에 없는 값
+    (json.dumps(ncst("-1")), "pty_unexpected"),
     (json.dumps(ncst("-")), "pty_not_number"),
     (json.dumps(ncst(code="03")), "kma_03"),            # NO_DATA (발표 전 시각 등)
     (json.dumps(ncst(code="30")), "kma_30"),
