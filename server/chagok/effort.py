@@ -100,12 +100,6 @@ def effort_constants(const: dict) -> EffortConstants:
 
 # ---------------------------------------------------------------- 입력·출력
 @dataclass(frozen=True)
-class Stop:
-    start: str   # ISO 8601 + 오프셋. 정차 시작 = 기어 P·운전석 문(안내 중, 남은 거리 > 0), 없으면 onStop
-    end: str     # 정차 끝 = 재시동 뒤 기어 D, 없으면 onStart
-
-
-@dataclass(frozen=True)
 class EffortInput:
     departed_at: str                     # ISO 8601 + 오프셋
     arrived_at: str
@@ -115,9 +109,8 @@ class EffortInput:
     sunrise_min: int                     # 출발 지점·날짜의 일출·일몰(그 날 0시부터 분, sun_times 결과)
     sunset_min: int
     n: int                               # 나눠 낼 인원(운전자 포함)
-    # 정차(명세 v0.5 F21, #58). 앱은 둘 중 하나를 채운다. 둘 다 오면 쉰 지점을 아는 정차 목록으로 계산한다.
-    rest_answer_min: int | None = None      # 기본: 도착 때 답한 쉰 시간 Q(0·15·30·60)
-    stops: tuple[Stop, ...] | None = None   # 보조: 나란히 배치에서 자동으로 잰 정차 목록. 빈 목록 = 정차 없음
+    # 정차는 도착 때 답 하나로만 센다(#62, 명준·June 합의). 자동으로 잰 정차 목록은 받지 않는다.
+    rest_answer_min: int = 0                # 도착 때 답한 쉰 시간 Q(0·15·30·60분)
     # 정체(열린 결정 28, 효성). 구간 목록이 있으면 통과 시간, 없으면 비율 × T. 둘 다 없으면 정체 정보 없음
     congestion_ratio: float | None = None   # 기본: 출발 전 requestTrip의 정체 비율(0~1)
     congestion_m: float | None = None       # 정체 km(비율 × 경로 거리, 표시만)
@@ -168,7 +161,6 @@ class Proposal:
 
 @dataclass
 class Receipt:
-    method: str                      # answer(기본: 쉰 시간 답) | stops(보조: 자동으로 잰 정차 목록)
     elapsed_min: float               # E
     drive_min: float                 # T
     rest_min: float                  # E − T
@@ -196,13 +188,11 @@ class Receipt:
 
 def input_from_json(d: dict) -> EffortInput:
     """fixture·저장 기록의 JSON → 입력. 일출·일몰은 "HH:MM"."""
-    stops = d.get("stops")
     return EffortInput(
         departed_at=d["departed_at"], arrived_at=d["arrived_at"], eta_s=float(d["eta_s"]),
         weather_dep=d["weather_dep"], weather_arr=d["weather_arr"],
         sunrise_min=parse_hhmm(d["sunrise"]), sunset_min=parse_hhmm(d["sunset"]), n=int(d["n"]),
-        stops=tuple(Stop(s["start"], s["end"]) for s in stops) if stops is not None else None,
-        rest_answer_min=d.get("rest_answer_min"), congestion_ratio=d.get("congestion_ratio"),
+        rest_answer_min=int(d.get("rest_answer_min") or 0), congestion_ratio=d.get("congestion_ratio"),
         congestion_m=d.get("congestion_m"), congestion_s=d.get("congestion_s"), distance_km=d.get("distance_km"),
     )
 
@@ -228,32 +218,6 @@ def parse_hhmm(s: str) -> int:
 
 def overlap(a0: float, a1: float, b0: float, b1: float) -> float:
     return max(0.0, min(a1, b1) - max(a0, b0))
-
-
-def drive_segments(dep: float, arr: float, stops: tuple[Stop, ...]) -> list[tuple[float, float]]:
-    """[출발, 도착] − 정차들. 정차는 [출발, 도착] 안으로 자르고 겹치거나 맞닿으면 합친다."""
-    clipped = []
-    for st in stops:
-        s = max(dep, float(epoch_s(st.start)))
-        e = min(arr, float(epoch_s(st.end)))
-        if e > s:
-            clipped.append((s, e))
-    clipped.sort()
-    merged: list[tuple[float, float]] = []
-    for s, e in clipped:
-        if merged and s <= merged[-1][1]:
-            merged[-1] = (merged[-1][0], max(merged[-1][1], e))
-        else:
-            merged.append((s, e))
-    segs = []
-    cur = dep
-    for s, e in merged:
-        if s > cur:
-            segs.append((cur, s))
-        cur = e
-    if arr > cur:
-        segs.append((cur, arr))
-    return segs
 
 
 def night_intervals(departed_at: str, arr: float, sunrise_min: int, sunset_min: int) -> list[tuple[float, float]]:
@@ -361,33 +325,16 @@ def effort(inp: EffortInput, c: EffortConstants) -> Receipt:
     arr = max(dep, float(epoch_s(inp.arrived_at)))
     elapsed = arr - dep
     nights = night_intervals(inp.departed_at, arr, inp.sunrise_min, inp.sunset_min)
-    reset_s = c.fatigue_reset_rest_min * 60
 
-    if inp.stops is not None:
-        # 보조(나란히 배치): 주행 구간을 안다. 15분 이상 정차에서 장시간 구간을 나누고, 짧은 정차는 시간만 뺀다.
-        method = "stops"
-        segs = drive_segments(dep, arr, inp.stops)
-        drive = 0.0
-        groups: list[float] = []
-        for i, (s, e) in enumerate(segs):
-            if i == 0 or s - segs[i - 1][1] >= reset_s:
-                groups.append(0.0)
-            groups[-1] += e - s
-            drive += e - s
-        night = 0.0
-        for s, e in segs:
-            for a, b in nights:
-                night += overlap(s, e, a, b)
-    else:
-        # 기본(도착 때 묻기): 쉰 총시간만 안다. 15분 이상이면 "중간쯤 한 번 쉬었다"고 보고 반으로 나눈다(#47).
-        method = "answer"
-        q = float(inp.rest_answer_min or 0)
-        drive = max(0.0, elapsed - q * 60)
-        groups = [drive / 2, drive / 2] if q >= c.fatigue_reset_rest_min else [drive]
-        night_all = 0.0
-        for a, b in nights:
-            night_all += overlap(dep, arr, a, b)
-        night = night_all * drive / elapsed if elapsed > 0 else 0.0
+    # 정차는 도착 때 답한 쉰 시간 Q만 안다(#62). 언제 쉬었는지 모르니 Q ≥ 15분이면 "중간쯤 한 번 쉬었다"고 보고
+    # 운전 시간을 반으로 나눈다(#47). 밤길은 [출발, 도착]과 밤이 겹친 분 × (T ÷ E).
+    q = float(inp.rest_answer_min)
+    drive = max(0.0, elapsed - q * 60)
+    groups = [drive / 2, drive / 2] if q >= c.fatigue_reset_rest_min else [drive]
+    night_all = 0.0
+    for a, b in nights:
+        night_all += overlap(dep, arr, a, b)
+    night = night_all * drive / elapsed if elapsed > 0 else 0.0
 
     if inp.congestion_s is not None:       # 구간 목록이 있으면 통과 시간 합
         congestion = max(0.0, min(float(inp.congestion_s), drive))
@@ -444,7 +391,7 @@ def effort(inp: EffortInput, c: EffortConstants) -> Receipt:
     dt = drive_text(drive)
     mt = multiplier_text(m100, c)
     return Receipt(
-        method=method, elapsed_min=elapsed / 60, drive_min=drive / 60, rest_min=(elapsed - drive) / 60,
+        elapsed_min=elapsed / 60, drive_min=drive / 60, rest_min=(elapsed - drive) / 60,
         fatigue_segments_min=[g / 60 for g in groups],
         congestion_min=congestion / 60, delay_min=delay / 60, night_min=night / 60,
         rain_min=rain / 60, snow_min=snow / 60, fatigue_excess_min=excess / 60,

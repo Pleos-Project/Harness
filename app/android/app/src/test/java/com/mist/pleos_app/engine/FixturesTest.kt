@@ -203,7 +203,6 @@ class FixturesTest {
             r.lines[0].basisText,
         )
         assertTrue(r.lines.all { it.basisText != null && "{pct}" !in it.basisText!! })
-        assertEquals("answer", r.method)
         val p = r.proposal!!
         assertEquals(36_493.42, p.amountKrw, 0.0)
         assertEquals("약 3만 6천 원", p.amountText)
