@@ -47,11 +47,12 @@
         "add_min": 9.6,
         "pct": 4,
         "pct_text": "+4%",
-        "detail_text": null,
+        "detail_text": "4시간",
         "basis_text": "밤에는 낮보다 운전 부담이 4% 커요 · 트럭 운전자 50명 시뮬레이터 연구(Fitri 2025)"
       }
     ],
     "notes": [],
+    "footnote_text": null,
     "drive_text": "4시간",
     "multiplier_text": "평소보다 1.04배 힘든 길",
     "headline_text": "오늘 운전 4시간 · 평소보다 1.04배 힘든 길",

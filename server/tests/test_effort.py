@@ -86,8 +86,12 @@ def test_ac_f23_1_r1_headline_and_lines():
     r = run("R1")
     assert r.headline_text == "오늘 운전 2시간 10분 · 평소보다 1.57배 힘든 길"
     assert [(l.label, l.pct_text) for l in r.lines] == [
-        ("비", "+40%"), ("정체 구간", "+10%"), ("예상보다 더", "+5%"), ("밤길", "+2%"), ("장시간", "+1%")]
-    assert [l.detail_text for l in r.lines] == [None, "38km (경로의 36%)", None, None, None]
+        ("날씨", "+40%"), ("정체 구간", "+10%"), ("예상보다 더", "+5%"), ("밤길", "+2%"), ("장시간", "+1%")]
+    # 줄 값 = 노고 PRD v1.3 5-1 영수증 예시 그대로
+    assert [l.detail_text for l in r.lines] == [
+        "비, 주행 내내", "38km (경로의 36%)", "+25분", "50분", "2시간 넘긴 10분"]
+    assert r.footnote_text == "정체 구간은 내비 안내 경로 기준"
+    assert run("R2").footnote_text is None                 # 정체 줄이 없으면 주석도 없음
     assert (r.congestion_min, r.delay_min, r.night_min, r.rain_min, r.fatigue_excess_min) == (46.8, 25, 50, 130, 10)
     assert r.distance_text == "104km"
 
@@ -289,6 +293,19 @@ def test_weather_halves():
     r2 = run("R5", weather_dep="rain")
     assert (r2.rain_min, r2.snow_min) == (30, 30)
     assert [l.key for l in r2.lines] == ["rain", "snow"]
+    assert [(l.label, l.detail_text) for l in r2.lines] == [("날씨", "비, 주행 앞 절반"), ("날씨", "눈, 주행 뒤 절반")]
+    assert r.lines[0].detail_text == "눈, 주행 뒤 절반"   # [제안] 반쪽 표기(PRD에 없음)
+
+
+@pytest.mark.parametrize("fid,key,override,want", [
+    ("R7", "delay", {"arrived_at": "2026-11-17T12:05:00+09:00"}, "+1시간 5분"),   # 60분 이상은 ○시간 ○분
+    ("R10", "night", {}, "1시간 48분"),          # 답 + 밤길 비례 108.3분 → 반올림
+    ("R12", "night", {}, "4시간"),
+    ("R13", "fatigue", {}, "2시간 넘긴 1시간"),   # 구간 150 + 150 → 넘긴 30 + 30을 합침
+])
+def test_line_detail_time_format(fid, key, override, want):
+    line = next(l for l in run(fid, **override).lines if l.key == key)
+    assert line.detail_text == want
 
 
 # ---------------------------------------------------------------- 1부: 일출·일몰 (명세 7절 '검증')
@@ -365,6 +382,14 @@ PCT = re.compile(r"^(\+[1-9]\d*%|\+1% 미만)$")
 KRW = re.compile(r"^(약 (\d+만)?( ?\d천)? 원|1천 원 미만)$")
 DETAIL = re.compile(r"^(\d+km|1km 미만) \(경로의 (\d+%|1% 미만)\)$")
 DRIVE = re.compile(r"^(\d+시간( \d+분)?|\d+분|1분 미만)$")
+TIME = r"(\d+시간( \d+분)?|\d+분|1분 미만)"
+LINE_DETAIL = {   # 줄 값 형식(노고 PRD v1.3 5-1)
+    "rain": re.compile(r"^비, 주행 (내내|앞 절반|뒤 절반)$"),
+    "snow": re.compile(r"^눈, 주행 (내내|앞 절반|뒤 절반)$"),
+    "delay": re.compile(rf"^\+{TIME}$"),
+    "night": re.compile(rf"^{TIME}$"),
+    "fatigue": re.compile(rf"^2시간 넘긴 {TIME}$"),
+}
 
 
 def receipts():
@@ -387,6 +412,8 @@ def texts(r):
     yield from (l.pct_text for l in r.lines)
     yield from (l.label for l in r.lines)
     yield from (l.detail_text for l in r.lines if l.detail_text)
+    if r.footnote_text:
+        yield r.footnote_text
     yield from (l.basis_text for l in r.lines if l.basis_text)
     if r.proposal:
         p = r.proposal
@@ -405,7 +432,11 @@ def test_copy_rules_hold_everywhere():
         assert (r.multiplier == 1.0) == (r.multiplier_text == "평소와 같은 길")
         for l in r.lines:
             assert PCT.match(l.pct_text) and l.add_min > 0, l
-            assert l.detail_text is None or (l.key == "congestion" and DETAIL.match(l.detail_text)), l
+            if l.key == "congestion":
+                assert l.detail_text is None or DETAIL.match(l.detail_text), l
+            else:
+                assert LINE_DETAIL[l.key].match(l.detail_text), l
+        assert (r.footnote_text is not None) == any(l.key == "congestion" for l in r.lines)
         if r.proposal:
             assert KRW.match(r.proposal.amount_text) and KRW.match(r.proposal.per_person_text), r.proposal
             a = r.proposal.a

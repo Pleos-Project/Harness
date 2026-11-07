@@ -189,7 +189,13 @@ class FixturesTest {
         // 정체 분 = 비율 0.36 × T 130 = 46.8(열린 결정 28) → 1.57배, 정체 +10%
         assertEquals("오늘 운전 2시간 10분 · 평소보다 1.57배 힘든 길", r.headlineText)
         assertEquals(listOf("+40%", "+10%", "+5%", "+2%", "+1%"), r.lines.map { it.pctText })
-        assertEquals(listOf(null, "38km (경로의 36%)", null, null, null), r.lines.map { it.detailText })
+        // 줄 값 = 노고 PRD v1.3 5-1 영수증 예시 그대로
+        assertEquals(listOf("날씨", "정체 구간", "예상보다 더", "밤길", "장시간"), r.lines.map { it.label })
+        assertEquals(
+            listOf("비, 주행 내내", "38km (경로의 36%)", "+25분", "50분", "2시간 넘긴 10분"),
+            r.lines.map { it.detailText },
+        )
+        assertEquals("정체 구간은 내비 안내 경로 기준", r.footnoteText)
         // AC-F23-4: 줄마다 근거 한 줄, {pct}는 rates_pct 값
         assertEquals(
             "비 오는 날은 맑은 날보다 운전 부담이 40% 커요 · 시뮬레이터 30명 연구(Frontiers in Neuroscience 2026)",

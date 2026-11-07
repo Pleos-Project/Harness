@@ -41,11 +41,12 @@
         "add_min": 1.62,
         "pct": 2,
         "pct_text": "+2%",
-        "detail_text": null,
+        "detail_text": "+6분",
         "basis_text": "예상보다 늦어진 시간은 정체와 같은 값으로 쳐요 · 예상 못 한 지연이 더 힘들다는 통근 연구(Wener·Evans 2011)"
       }
     ],
     "notes": [],
+    "footnote_text": null,
     "drive_text": "1시간 6분",
     "multiplier_text": "평소보다 1.02배 힘든 길",
     "headline_text": "오늘 운전 1시간 6분 · 평소보다 1.02배 힘든 길",

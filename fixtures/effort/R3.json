@@ -41,11 +41,12 @@
         "add_min": 7.5,
         "pct": 4,
         "pct_text": "+4%",
-        "detail_text": null,
+        "detail_text": "2시간 넘긴 1시간",
         "basis_text": "2시간을 넘겨 이어서 운전한 시간에 더해요 · 2시간 운전하면 15분 쉬도록 한 법령 기준(화물자동차 운수사업법 시행규칙)"
       }
     ],
     "notes": [],
+    "footnote_text": null,
     "drive_text": "3시간",
     "multiplier_text": "평소보다 1.04배 힘든 길",
     "headline_text": "오늘 운전 3시간 · 평소보다 1.04배 힘든 길",

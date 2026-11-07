@@ -25,7 +25,7 @@ from chagok.engine import approx, round_half_up
 
 DAY_S = 86_400
 LINE_ORDER = ("rain", "snow", "congestion", "delay", "night", "fatigue")   # 영수증 줄 순서(명세 F23 출력)
-LINE_LABEL = {"rain": "비", "snow": "눈", "congestion": "정체 구간", "delay": "예상보다 더",
+LINE_LABEL = {"rain": "날씨", "snow": "날씨", "congestion": "정체 구간", "delay": "예상보다 더",
               "night": "밤길", "fatigue": "장시간"}
 KNOWN_PRECIP = ("none", "rain", "snow")   # GET /v1/weather 의 precip. 그 밖(unknown·실패)은 '정보 없음', 가산 0
 ZENITH_DEG = 90.833   # 일출·일몰 천정각: 대기 굴절 34′ + 해 반지름 16′(해 윗부분이 지평선에 닿는 순간)
@@ -52,6 +52,9 @@ class EffortConstants:
     wage_label: str                      # 단가 출처 표기("최저임금")
     items: tuple[Item, ...]              # 방식 B 항목, 1인분 가격 오름차순
     basis: dict[str, str]                # 줄 key → 근거 한 줄(AC-F23-4). {pct}는 rates_pct로 채운다
+    detail: dict[str, str]               # 줄 값 템플릿(weather_both_text 등). {precip}·{time}·{limit}
+    precip_words: dict[str, str]         # rain → 비, snow → 눈
+    footnote_congestion: str             # 정체 줄이 있을 때 영수증 아래 주석
 
 
 def effort_constants(const: dict) -> EffortConstants:
@@ -70,6 +73,9 @@ def effort_constants(const: dict) -> EffortConstants:
         wage_label=e["wage_label"],
         items=tuple(items),
         basis=dict(e.get("basis", {})),
+        detail=dict(e["detail"]),
+        precip_words=dict(e["precip_words"]),
+        footnote_congestion=e["footnote_congestion_text"],
     )
 
 
@@ -107,7 +113,7 @@ class Line:
     add_min: float       # 그 항의 가산(분)
     pct: int             # 가산 ÷ T × 100, 정수 % 반올림
     pct_text: str        # "+40%", 어림이 0이면 "+1% 미만"
-    detail_text: str | None   # 정체 구간 "12km (경로의 35%)". 다른 줄은 아직 None
+    detail_text: str | None   # 줄 값(PRD 5-1): "비, 주행 내내"·"38km (경로의 36%)"·"+25분"·"50분"·"2시간 넘긴 10분"
     basis_text: str | None    # 줄을 탭하면 보이는 근거 한 줄(AC-F23-4, constants effort.basis)
 
 
@@ -158,6 +164,7 @@ class Receipt:
     multiplier: float                # 부담 배수, 소수 둘째 자리 반올림
     lines: list[Line]                # 가산이 0인 줄은 생략
     notes: list[str]                 # "날씨 정보 없음", "정체 정보 없음"
+    footnote_text: str | None        # 정체 줄이 있으면 "정체 구간은 내비 안내 경로 기준"
     drive_text: str                  # "2시간 10분"
     multiplier_text: str             # "평소보다 1.56배 힘든 길" | "평소와 같은 길"
     headline_text: str               # "오늘 운전 2시간 10분 · 평소보다 1.56배 힘든 길"
@@ -294,6 +301,26 @@ def departure_preview(eta_s: float, route_m: float, congestion_ratio: float | No
     )
 
 
+def weather_detail(key: str, weather_dep: str, weather_arr: str, c: EffortConstants) -> str | None:
+    """날씨 줄 값: 출발·도착이 같으면 "비, 주행 내내", 한쪽만이면 "비, 주행 앞 절반"·"비, 주행 뒤 절반"([제안])."""
+    dep, arr = weather_dep == key, weather_arr == key
+    if dep and arr:
+        t = c.detail["weather_both_text"]
+    elif dep:
+        t = c.detail["weather_first_text"]
+    elif arr:
+        t = c.detail["weather_second_text"]
+    else:
+        return None
+    return t.replace("{precip}", c.precip_words[key])
+
+
+def time_detail(template_key: str, minutes_s: float, c: EffortConstants) -> str:
+    """"+25분"·"50분"·"2시간 넘긴 10분". {time}은 운전 시간과 같은 "○시간 ○분" 표기(명세 2절)."""
+    return (c.detail[template_key].replace("{limit}", drive_text(c.fatigue_limit_min * 60))
+            .replace("{time}", drive_text(minutes_s)))
+
+
 def basis_text(key: str, c: EffortConstants) -> str | None:
     """줄 근거 한 줄(명세 v0.5 AC-F23-4). {pct}는 그 줄의 가산율(rates_pct)로 채워 숫자가 상수와 어긋나지 않게 한다."""
     t = c.basis.get(key)
@@ -376,7 +403,16 @@ def effort(inp: EffortInput, c: EffortConstants) -> Receipt:
         total += adds[k]
         if adds[k] > 0:
             pct = round_half_up(adds[k] / drive)
-            detail = congestion_text(inp.congestion_m, inp.congestion_ratio) if k == "congestion" else None
+            if k == "rain" or k == "snow":
+                detail = weather_detail(k, inp.weather_dep, inp.weather_arr, c)
+            elif k == "congestion":
+                detail = congestion_text(inp.congestion_m, inp.congestion_ratio)
+            elif k == "delay":
+                detail = time_detail("delay_text", delay, c)
+            elif k == "night":
+                detail = time_detail("night_text", night, c)
+            else:
+                detail = time_detail("fatigue_text", excess, c)   # 구간이 여러 개면 넘긴 시간의 합
             lines.append(Line(k, LINE_LABEL[k], adds[k] / 6000, pct, pct_text(pct), detail, basis_text(k, c)))
     m100 = round_half_up(total / drive) if drive > 0 else 100
 
@@ -394,6 +430,7 @@ def effort(inp: EffortInput, c: EffortConstants) -> Receipt:
         congestion_min=congestion / 60, delay_min=delay / 60, night_min=night / 60,
         rain_min=rain / 60, snow_min=snow / 60, fatigue_excess_min=excess / 60,
         effort_min=total / 6000, multiplier=m100 / 100, lines=lines, notes=notes,
+        footnote_text=c.footnote_congestion if any(l.key == "congestion" for l in lines) else None,
         drive_text=dt, multiplier_text=mt, headline_text=f"오늘 운전 {dt} · {mt}",
         distance_text=f"{round_half_up(inp.distance_km)}km" if inp.distance_km is not None else None,
         proposal=proposal(total, inp.n, c) if inp.n >= 2 else None,

@@ -42,6 +42,7 @@
     "multiplier": 1.0,
     "lines": [],
     "notes": [],
+    "footnote_text": null,
     "drive_text": "3시간",
     "multiplier_text": "평소와 같은 길",
     "headline_text": "오늘 운전 3시간 · 평소와 같은 길",

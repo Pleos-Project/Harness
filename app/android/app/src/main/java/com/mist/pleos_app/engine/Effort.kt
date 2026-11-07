@@ -36,7 +36,7 @@ import kotlin.math.tan
 private const val DAY_S = 86_400L
 val EFFORT_LINE_ORDER: List<String> = listOf("rain", "snow", "congestion", "delay", "night", "fatigue")
 val EFFORT_LINE_LABEL: Map<String, String> = mapOf(
-    "rain" to "비", "snow" to "눈", "congestion" to "정체 구간", "delay" to "예상보다 더",
+    "rain" to "날씨", "snow" to "날씨", "congestion" to "정체 구간", "delay" to "예상보다 더",
     "night" to "밤길", "fatigue" to "장시간",
 )
 /** GET /v1/weather 의 precip. 그 밖(unknown·실패)은 '정보 없음', 가산 0. */
@@ -63,6 +63,9 @@ data class EffortConstants(
     val wageLabel: String,                  // 단가 출처 표기
     val items: List<EffortItem>,            // 방식 B 항목, 1인분 가격 오름차순
     val basis: Map<String, String>,         // 줄 key → 근거 한 줄(AC-F23-4). {pct}는 ratesPct로 채운다
+    val detail: Map<String, String>,        // 줄 값 템플릿(weather_both_text 등). {precip}·{time}·{limit}
+    val precipWords: Map<String, String>,   // rain → 비, snow → 눈
+    val footnoteCongestion: String,         // 정체 줄이 있을 때 영수증 아래 주석
 )
 
 /** constants.json 전체 텍스트에서 effort 블록을 읽는다(assets/data/constants.json). */
@@ -84,6 +87,9 @@ fun parseEffortConstants(text: String): EffortConstants {
         }.sortedBy { it.priceKrw },
         basis = e["basis"]?.takeIf { it !is JsonNull }?.jsonObject?.mapValues { (_, v) -> v.jsonPrimitive.content }
             ?: emptyMap(),
+        detail = e.getValue("detail").jsonObject.mapValues { (_, v) -> v.jsonPrimitive.content },
+        precipWords = e.getValue("precip_words").jsonObject.mapValues { (_, v) -> v.jsonPrimitive.content },
+        footnoteCongestion = e.str("footnote_congestion_text"),
     )
 }
 
@@ -116,7 +122,7 @@ data class EffortLine(
     val addMin: Double,
     val pct: Int,
     val pctText: String,
-    val detailText: String?,            // 정체 구간 "12km (경로의 35%)". 다른 줄은 아직 null
+    val detailText: String?,            // 줄 값(PRD 5-1): "비, 주행 내내"·"38km (경로의 36%)"·"+25분"·"50분"·"2시간 넘긴 10분"
     val basisText: String?,             // 줄을 탭하면 보이는 근거 한 줄(AC-F23-4, constants effort.basis)
 )
 
@@ -163,6 +169,7 @@ data class EffortReceipt(
     val multiplier: Double,
     val lines: List<EffortLine>,        // 가산이 0인 줄은 생략
     val notes: List<String>,
+    val footnoteText: String?,          // 정체 줄이 있으면 "정체 구간은 내비 안내 경로 기준"
     val driveText: String,
     val multiplierText: String,
     val headlineText: String,
@@ -274,6 +281,24 @@ fun departurePreview(etaS: Double, routeM: Double, congestionRatio: Double?, con
 fun DeparturePreview.toJson(): JsonObject =
     obj("eta_text" to etaText, "route_text" to routeText, "congestion_text" to congestionText)
 
+/** 날씨 줄 값: 출발·도착이 같으면 "비, 주행 내내", 한쪽만이면 "비, 주행 앞 절반"·"비, 주행 뒤 절반"([제안]). */
+fun weatherDetail(key: String, weatherDep: String, weatherArr: String, c: EffortConstants): String? {
+    val dep = weatherDep == key
+    val arr = weatherArr == key
+    val t = when {
+        dep && arr -> c.detail.getValue("weather_both_text")
+        dep -> c.detail.getValue("weather_first_text")
+        arr -> c.detail.getValue("weather_second_text")
+        else -> return null
+    }
+    return t.replace("{precip}", c.precipWords.getValue(key))
+}
+
+/** "+25분"·"50분"·"2시간 넘긴 10분". {time}은 운전 시간과 같은 "○시간 ○분" 표기(명세 2절). */
+fun timeDetail(templateKey: String, minutesS: Double, c: EffortConstants): String =
+    c.detail.getValue(templateKey).replace("{limit}", driveText(c.fatigueLimitMin * 60))
+        .replace("{time}", driveText(minutesS))
+
 /** 줄 근거 한 줄(명세 v0.5 AC-F23-4). {pct}는 그 줄의 가산율(ratesPct)로 채워 숫자가 상수와 어긋나지 않게 한다. */
 fun basisText(key: String, c: EffortConstants): String? {
     val t = c.basis[key] ?: return null
@@ -361,7 +386,13 @@ fun effort(inp: EffortInput, c: EffortConstants): EffortReceipt {
         total += a
         if (a > 0) {
             val pct = roundHalfUp(a / drive)
-            val detail = if (k == "congestion") congestionText(inp.congestionM, inp.congestionRatio) else null
+            val detail = when (k) {
+                "rain", "snow" -> weatherDetail(k, inp.weatherDep, inp.weatherArr, c)
+                "congestion" -> congestionText(inp.congestionM, inp.congestionRatio)
+                "delay" -> timeDetail("delay_text", delay, c)
+                "night" -> timeDetail("night_text", night, c)
+                else -> timeDetail("fatigue_text", excess, c)   // 구간이 여러 개면 넘긴 시간의 합
+            }
             lines.add(EffortLine(k, EFFORT_LINE_LABEL.getValue(k), a / 6000, pct, pctText(pct), detail, basisText(k, c)))
         }
     }
@@ -379,6 +410,7 @@ fun effort(inp: EffortInput, c: EffortConstants): EffortReceipt {
         congestionMin = congestion / 60, delayMin = delay / 60, nightMin = night / 60,
         rainMin = rain / 60, snowMin = snow / 60, fatigueExcessMin = excess / 60,
         effortMin = total / 6000, multiplier = m100 / 100.0, lines = lines, notes = notes,
+        footnoteText = if (lines.any { it.key == "congestion" }) c.footnoteCongestion else null,
         driveText = dt, multiplierText = mt, headlineText = "오늘 운전 $dt · $mt",
         distanceText = inp.distanceKm?.let { "${roundHalfUp(it)}km" },
         proposal = if (inp.n >= 2) effortProposal(total, inp.n, c) else null,
@@ -512,7 +544,7 @@ fun EffortReceipt.toJson(): JsonObject = obj(
     "congestion_min" to congestionMin, "delay_min" to delayMin, "night_min" to nightMin,
     "rain_min" to rainMin, "snow_min" to snowMin, "fatigue_excess_min" to fatigueExcessMin,
     "effort_min" to effortMin, "multiplier" to multiplier,
-    "lines" to lines.map { it.toJson() }, "notes" to notes,
+    "lines" to lines.map { it.toJson() }, "notes" to notes, "footnote_text" to footnoteText,
     "drive_text" to driveText, "multiplier_text" to multiplierText, "headline_text" to headlineText,
     "distance_text" to distanceText, "proposal" to proposal?.toJson(),
 )

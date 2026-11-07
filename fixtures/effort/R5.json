@@ -37,15 +37,16 @@
     "lines": [
       {
         "key": "snow",
-        "label": "눈",
+        "label": "날씨",
         "add_min": 14.7,
         "pct": 25,
         "pct_text": "+25%",
-        "detail_text": null,
+        "detail_text": "눈, 주행 뒤 절반",
         "basis_text": "눈 오는 날은 맑은 날보다 운전 부담이 49% 커요 · 시뮬레이터 30명 연구(Frontiers in Neuroscience 2026)"
       }
     ],
     "notes": [],
+    "footnote_text": null,
     "drive_text": "1시간",
     "multiplier_text": "평소보다 1.25배 힘든 길",
     "headline_text": "오늘 운전 1시간 · 평소보다 1.25배 힘든 길",
