@@ -4,6 +4,7 @@ import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import java.time.LocalDate
 import java.time.OffsetDateTime
 import java.time.temporal.ChronoUnit
@@ -55,6 +56,7 @@ data class EffortConstants(
     val wagePerHour: Double,                // 1분 단가 = 시급 ÷ 60
     val wageLabel: String,                  // 단가 출처 표기
     val items: List<EffortItem>,            // 방식 B 항목, 1인분 가격 오름차순
+    val basis: Map<String, String>,         // 줄 key → 근거 한 줄(AC-F23-4). {pct}는 ratesPct로 채운다
 )
 
 /** constants.json 전체 텍스트에서 effort 블록을 읽는다(assets/data/constants.json). */
@@ -74,6 +76,8 @@ fun parseEffortConstants(text: String): EffortConstants {
             val i = it.jsonObject
             EffortItem(i.str("key"), i.str("label"), i.dbl("price_krw"))
         }.sortedBy { it.priceKrw },
+        basis = e["basis"]?.takeIf { it !is JsonNull }?.jsonObject?.mapValues { (_, v) -> v.jsonPrimitive.content }
+            ?: emptyMap(),
     )
 }
 
@@ -107,6 +111,7 @@ data class EffortLine(
     val pct: Int,
     val pctText: String,
     val detailText: String?,            // 정체 구간 "12km (경로의 35%)". 다른 줄은 아직 null
+    val basisText: String?,             // 줄을 탭하면 보이는 근거 한 줄(AC-F23-4, constants effort.basis)
 )
 
 /** 방식 A 화면(명세 v0.5 F24, 노고 PRD v1.3 5-2). 방식 B로 넘어가는 문구·버튼은 두지 않는다. */
@@ -239,6 +244,13 @@ fun congestionText(congestionM: Double?, ratio: Double?): String? {
     return "$kmT ($pT)"
 }
 
+/** 줄 근거 한 줄(명세 v0.5 AC-F23-4). {pct}는 그 줄의 가산율(ratesPct)로 채워 숫자가 상수와 어긋나지 않게 한다. */
+fun basisText(key: String, c: EffortConstants): String? {
+    val t = c.basis[key] ?: return null
+    val rate = c.ratesPct[key] ?: return t
+    return t.replace("{pct}", roundHalfUp(rate).toString())
+}
+
 /** 천 원 어림. 0이면 '1천 원 미만'(명세 v0.5 2절). */
 fun approxText(krw: Double): Pair<Int, String> {
     val a = approx(krw, 1000)
@@ -320,7 +332,7 @@ fun effort(inp: EffortInput, c: EffortConstants): EffortReceipt {
         if (a > 0) {
             val pct = roundHalfUp(a / drive)
             val detail = if (k == "congestion") congestionText(inp.congestionM, inp.congestionRatio) else null
-            lines.add(EffortLine(k, EFFORT_LINE_LABEL.getValue(k), a / 6000, pct, pctText(pct), detail))
+            lines.add(EffortLine(k, EFFORT_LINE_LABEL.getValue(k), a / 6000, pct, pctText(pct), detail, basisText(k, c)))
         }
     }
     val m100 = if (drive > 0) roundHalfUp(total / drive) else 100
@@ -449,7 +461,7 @@ fun parseEffortInput(o: JsonObject): EffortInput = EffortInput(
 
 fun EffortLine.toJson(): JsonObject = obj(
     "key" to key, "label" to label, "add_min" to addMin, "pct" to pct, "pct_text" to pctText,
-    "detail_text" to detailText,
+    "detail_text" to detailText, "basis_text" to basisText,
 )
 
 fun EffortScreenA.toJson(): JsonObject = obj(

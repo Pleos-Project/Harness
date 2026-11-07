@@ -49,6 +49,7 @@ class EffortConstants:
     wage_per_hour: float                 # 1분 단가 = 시급 ÷ 60
     wage_label: str                      # 단가 출처 표기("최저임금")
     items: tuple[Item, ...]              # 방식 B 항목, 1인분 가격 오름차순
+    basis: dict[str, str]                # 줄 key → 근거 한 줄(AC-F23-4). {pct}는 rates_pct로 채운다
 
 
 def effort_constants(const: dict) -> EffortConstants:
@@ -65,6 +66,7 @@ def effort_constants(const: dict) -> EffortConstants:
         wage_per_hour=float(e["wage_per_hour"]),
         wage_label=e["wage_label"],
         items=tuple(items),
+        basis=dict(e.get("basis", {})),
     )
 
 
@@ -103,6 +105,7 @@ class Line:
     pct: int             # 가산 ÷ T × 100, 정수 % 반올림
     pct_text: str        # "+40%", 어림이 0이면 "+1% 미만"
     detail_text: str | None   # 정체 구간 "12km (경로의 35%)". 다른 줄은 아직 None
+    basis_text: str | None    # 줄을 탭하면 보이는 근거 한 줄(AC-F23-4, constants effort.basis)
 
 
 @dataclass
@@ -265,6 +268,15 @@ def congestion_text(congestion_m: float | None, ratio: float | None) -> str | No
     return f"{km_t} ({p_t})"
 
 
+def basis_text(key: str, c: EffortConstants) -> str | None:
+    """줄 근거 한 줄(명세 v0.5 AC-F23-4). {pct}는 그 줄의 가산율(rates_pct)로 채워 숫자가 상수와 어긋나지 않게 한다."""
+    t = c.basis.get(key)
+    if t is None:
+        return None
+    rate = c.rates_pct.get(key)
+    return t.replace("{pct}", str(round_half_up(rate))) if rate is not None else t
+
+
 def approx_text(krw: float) -> tuple[int, str]:
     """천 원 어림. 0이면 '1천 원 미만'(명세 v0.5 2절)."""
     v, text, under = approx(krw, 1000)
@@ -339,7 +351,7 @@ def effort(inp: EffortInput, c: EffortConstants) -> Receipt:
         if adds[k] > 0:
             pct = round_half_up(adds[k] / drive)
             detail = congestion_text(inp.congestion_m, inp.congestion_ratio) if k == "congestion" else None
-            lines.append(Line(k, LINE_LABEL[k], adds[k] / 6000, pct, pct_text(pct), detail))
+            lines.append(Line(k, LINE_LABEL[k], adds[k] / 6000, pct, pct_text(pct), detail, basis_text(k, c)))
     m100 = round_half_up(total / drive) if drive > 0 else 100
 
     notes = []

@@ -112,6 +112,39 @@ def test_congestion_detail_text(m, ratio, want):
     assert EF.congestion_text(m, ratio) == want
 
 
+BASIS_R1 = {
+    "rain": "비 오는 날은 맑은 날보다 운전 부담이 40% 커요 · 시뮬레이터 30명 연구(Frontiers in Neuroscience 2026)",
+    "congestion": "차가 몰린 길은 한산한 길보다 운전 부담이 27% 커요 · 시뮬레이터 연구(Shakouri, LSU 2015)",
+    "delay": "예상보다 늦어진 시간은 정체와 같은 값으로 쳐요 · 예상 못 한 지연이 더 힘들다는 통근 연구(Wener·Evans 2011)",
+    "night": "밤에는 낮보다 운전 부담이 4% 커요 · 트럭 운전자 50명 시뮬레이터 연구(Fitri 2025)",
+    "fatigue": "2시간을 넘겨 이어서 운전한 시간에 더해요 · 2시간 운전하면 15분 쉬도록 한 법령 기준(화물자동차 운수사업법 시행규칙)",
+}
+
+
+def test_ac_f23_4_basis_line_per_shown_line():
+    """줄을 탭하면 근거 한 줄(AC-F23-4). 보이는 줄마다 있고, 숫자는 rates_pct에서 채운다."""
+    assert {l.key: l.basis_text for l in run("R1").lines} == BASIS_R1
+    assert run("R5").lines[0].basis_text == (
+        "눈 오는 날은 맑은 날보다 운전 부담이 49% 커요 · 시뮬레이터 30명 연구(Frontiers in Neuroscience 2026)")
+
+
+def test_basis_follows_rate_constant():
+    """가산율을 바꾸면 근거 문구의 숫자도 같이 바뀐다(상수 하나만 고치면 되게)."""
+    c2 = dataclasses.replace(C, rates_pct=dict(C.rates_pct, rain=45))
+    assert "운전 부담이 45% 커요" in EF.basis_text("rain", c2)
+    assert EF.basis_text("distance", C) is None          # 거리는 표시만, 근거 없음
+
+
+def test_basis_templates_pass_copy_rules():
+    """상수의 근거 문구 전부(줄이 안 보여 fixture에 안 나오는 것까지)가 명세 2절 금지 문구·표기 규칙을 지킨다."""
+    assert set(C.basis) == set(EF.LINE_ORDER)
+    for k in C.basis:
+        s = EF.basis_text(k, C)
+        assert "{" not in s and "}" not in s, s
+        for rx, msg in lint_copy.FORBIDDEN + lint_copy.COPY_RULES:
+            assert not rx.search(s), f"{msg}: {s}"
+
+
 def test_ac_f24_1_r1_amount():
     p = run("R1").proposal
     assert p.amount_krw == 36_430.825 and p.amount_text == "약 3만 6천 원"
@@ -305,6 +338,7 @@ def texts(r):
     yield from (l.pct_text for l in r.lines)
     yield from (l.label for l in r.lines)
     yield from (l.detail_text for l in r.lines if l.detail_text)
+    yield from (l.basis_text for l in r.lines if l.basis_text)
     if r.proposal:
         p = r.proposal
         yield from (p.amount_text, p.per_person_text)

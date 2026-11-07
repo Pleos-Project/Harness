@@ -41,7 +41,8 @@
         "add_min": 4.12,
         "pct": 3,
         "pct_text": "+3%",
-        "detail_text": null
+        "detail_text": null,
+        "basis_text": "밤에는 낮보다 운전 부담이 4% 커요 · 트럭 운전자 50명 시뮬레이터 연구(Fitri 2025)"
       },
       {
         "key": "fatigue",
@@ -49,7 +50,8 @@
         "add_min": 3.75,
         "pct": 3,
         "pct_text": "+3%",
-        "detail_text": null
+        "detail_text": null,
+        "basis_text": "2시간을 넘겨 이어서 운전한 시간에 더해요 · 2시간 운전하면 15분 쉬도록 한 법령 기준(화물자동차 운수사업법 시행규칙)"
       }
     ],
     "notes": [],

@@ -176,6 +176,12 @@ class FixturesTest {
         assertEquals("오늘 운전 2시간 10분 · 평소보다 1.57배 힘든 길", r.headlineText)
         assertEquals(listOf("+40%", "+9%", "+5%", "+2%", "+1%"), r.lines.map { it.pctText })
         assertEquals(listOf(null, "12km (경로의 35%)", null, null, null), r.lines.map { it.detailText })
+        // AC-F23-4: 줄마다 근거 한 줄, {pct}는 rates_pct 값
+        assertEquals(
+            "비 오는 날은 맑은 날보다 운전 부담이 40% 커요 · 시뮬레이터 30명 연구(Frontiers in Neuroscience 2026)",
+            r.lines[0].basisText,
+        )
+        assertTrue(r.lines.all { it.basisText != null && "{pct}" !in it.basisText!! })
         assertEquals("answer", r.method)
         val p = r.proposal!!
         assertEquals(36_430.825, p.amountKrw, 0.0)

@@ -41,7 +41,8 @@
         "add_min": 52.0,
         "pct": 40,
         "pct_text": "+40%",
-        "detail_text": null
+        "detail_text": null,
+        "basis_text": "비 오는 날은 맑은 날보다 운전 부담이 40% 커요 · 시뮬레이터 30명 연구(Frontiers in Neuroscience 2026)"
       },
       {
         "key": "congestion",
@@ -49,7 +50,8 @@
         "add_min": 12.285,
         "pct": 9,
         "pct_text": "+9%",
-        "detail_text": "12km (경로의 35%)"
+        "detail_text": "12km (경로의 35%)",
+        "basis_text": "차가 몰린 길은 한산한 길보다 운전 부담이 27% 커요 · 시뮬레이터 연구(Shakouri, LSU 2015)"
       },
       {
         "key": "delay",
@@ -57,7 +59,8 @@
         "add_min": 6.75,
         "pct": 5,
         "pct_text": "+5%",
-        "detail_text": null
+        "detail_text": null,
+        "basis_text": "예상보다 늦어진 시간은 정체와 같은 값으로 쳐요 · 예상 못 한 지연이 더 힘들다는 통근 연구(Wener·Evans 2011)"
       },
       {
         "key": "night",
@@ -65,7 +68,8 @@
         "add_min": 2.0,
         "pct": 2,
         "pct_text": "+2%",
-        "detail_text": null
+        "detail_text": null,
+        "basis_text": "밤에는 낮보다 운전 부담이 4% 커요 · 트럭 운전자 50명 시뮬레이터 연구(Fitri 2025)"
       },
       {
         "key": "fatigue",
@@ -73,7 +77,8 @@
         "add_min": 1.25,
         "pct": 1,
         "pct_text": "+1%",
-        "detail_text": null
+        "detail_text": null,
+        "basis_text": "2시간을 넘겨 이어서 운전한 시간에 더해요 · 2시간 운전하면 15분 쉬도록 한 법령 기준(화물자동차 운수사업법 시행규칙)"
       }
     ],
     "notes": [],
