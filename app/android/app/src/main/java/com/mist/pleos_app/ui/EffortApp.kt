@@ -3,6 +3,9 @@ package com.mist.pleos_app.ui
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
@@ -75,7 +78,15 @@ import java.time.LocalDate
  * 화면 코드에는 금액·배수·시간 계산을 두지 않는다(engine 패키지·constants effort.copy만).
  */
 @Composable
-fun EffortApp(vm: EffortViewModel, driving: Boolean, seats: Int, route: DepartState, onExit: () -> Unit) {
+fun EffortApp(
+    vm: EffortViewModel,
+    driving: Boolean,
+    parked: Boolean,
+    doorOpen: Boolean?,
+    seats: Int,
+    route: DepartState,
+    onExit: () -> Unit,
+) {
     val stack by vm.stack.collectAsStateWithLifecycle()
     val screen = stack.last()
     val ui by vm.state.collectAsStateWithLifecycle()
@@ -84,6 +95,9 @@ fun EffortApp(vm: EffortViewModel, driving: Boolean, seats: Int, route: DepartSt
     val payer by vm.payerState.collectAsStateWithLifecycle()
     // CCP Back: 최상단(홈)에서는 finish 하지 않고 숨긴다. 주행 중 Back은 받아서 무시(가림 화면 유지)
     BackHandler { if (!driving && !vm.back()) onExit() }
+    // F22 도착: 기어·운전석 문이 바뀔 때, 그리고 화면이 다시 보일 때(이벤트, 폴링 없음). 기어 P + 문 열림이면 도착인지 본다
+    val shown by vm.shown.collectAsStateWithLifecycle()
+    LaunchedEffect(parked, doorOpen, shown) { vm.onCar(parked, doorOpen) }
     // 인원 확인 알림(PR #34·#40 재사용): 출발 화면에서 2명 이상 + 지난번 확인값과 다르면(노고 PRD v1.3 8장)
     val askPayers = remember(seats, payer, screen) { screen == EffortScreen.DEPART && vm.shouldAskPayers(seats) }
     EffortFrame(demoValues = ui.demo, driving = driving, toast = {
@@ -97,6 +111,7 @@ fun EffortApp(vm: EffortViewModel, driving: Boolean, seats: Int, route: DepartSt
                 onDiscard = vm::discardTrip,
                 onRetry = { vm.retryRoute() },
                 onSettings = { vm.open(EffortScreen.SETTINGS) },
+                onReceipt = { vm.open(EffortScreen.RECEIPT) },
             )
             EffortScreen.DEPART -> {
                 val demo = (vm.source as? DemoEffortSource)?.scene
@@ -107,6 +122,7 @@ fun EffortApp(vm: EffortViewModel, driving: Boolean, seats: Int, route: DepartSt
                 )
             }
             EffortScreen.SETTINGS -> EffortSettings(settings, onChange = vm::updateSettings, onReset = vm::resetRecords)
+            EffortScreen.RECEIPT -> EffortReceiptScreen(ui, onRest = vm::answerRest, onHome = { vm.back() })
         }
     }
 }
@@ -135,6 +151,7 @@ private fun EffortHome(
     onDiscard: () -> Unit,
     onRetry: () -> Unit,
     onSettings: () -> Unit,
+    onReceipt: () -> Unit = {},
 ) {
     val gap = Arrangement.spacedBy(24.gpx)
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()), verticalArrangement = gap) {
@@ -142,7 +159,7 @@ private fun EffortHome(
         when (ui.phase) {
             EffortPhase.IDLE -> CgButton(stringResource(R.string.effort_depart_start), onDepart, Modifier.fillMaxWidth())
             EffortPhase.DRIVING -> trip?.let { TripCard(it, arrived = false, routeFailed = routeFailed, onDiscard = onDiscard, onRetry = onRetry) }
-            EffortPhase.ARRIVED -> trip?.let { TripCard(it, arrived = true, routeFailed = false, onDiscard = onDiscard, onRetry = onRetry) }
+            EffortPhase.ARRIVED -> trip?.let { TripCard(it, arrived = true, routeFailed = false, onDiscard = onDiscard, onRetry = onRetry, onReceipt = onReceipt) }
         }
         CgCaption(stringResource(R.string.effort_recent))
         if (ui.recent.isEmpty()) {
@@ -156,12 +173,20 @@ private fun EffortHome(
 
 /** 진행 중인 출발(X2 '재시작 중 열린 출발 기록'). 목적지 이름만 보여 준다(좌표 없음). */
 @Composable
-private fun TripCard(trip: OpenTrip, arrived: Boolean, routeFailed: Boolean, onDiscard: () -> Unit, onRetry: () -> Unit) {
+private fun TripCard(
+    trip: OpenTrip,
+    arrived: Boolean,
+    routeFailed: Boolean,
+    onDiscard: () -> Unit,
+    onRetry: () -> Unit,
+    onReceipt: () -> Unit = {},
+) {
     CgCard(Modifier.fillMaxWidth()) {
         CgTitle(stringResource(if (arrived) R.string.effort_arrived else R.string.effort_driving, trip.destName))
         if (routeFailed) CgNotice(stringResource(R.string.effort_route_failed))
         else if (!arrived) CgBody(stringResource(R.string.effort_driving_hint), secondary = true)
         Row(horizontalArrangement = Arrangement.spacedBy(24.gpx)) {
+            if (arrived) CgButton(stringResource(R.string.effort_receipt_open), onReceipt)
             if (routeFailed) CgButton(stringResource(R.string.effort_route_retry), onRetry)
             CgButton(stringResource(R.string.effort_discard), onDiscard, kind = CgButtonKind.Basic)
         }
@@ -292,6 +317,61 @@ private fun DestRow(o: DestOption, selected: Boolean, onClick: () -> Unit) {
             tag?.let { CgCaption(it) }
         }
         o.dest.address?.takeIf { it.isNotBlank() }?.let { CgBody(it, secondary = true) }
+    }
+}
+
+// ------------------------------------------------------------ 영수증(F23) + 쉰 시간 질문(F21)
+/**
+ * 노고 영수증. 글자는 모두 엔진 출력(constants effort.copy로 만든 headline·줄 이름·줄 값·% ·근거)을 그대로 쓴다.
+ * 쉰 시간은 이 화면 안에서 묻고, 고르면 바로 다시 계산한다(#55). 모양은 임시 배치(디자인 #60 대기).
+ * 줄을 탭하면 근거 한 줄(AC-F23-4). 주행 중에는 프레임이 가린다(X1).
+ */
+@Composable
+private fun EffortReceiptScreen(ui: EffortUi, onRest: (Int) -> Unit, onHome: () -> Unit) {
+    val gap = Arrangement.spacedBy(24.gpx)
+    val r = ui.receipt
+    var open by rememberSaveable { mutableStateOf<String?>(null) }
+    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()), verticalArrangement = gap) {
+        if (r == null) {
+            CgNotice(stringResource(R.string.effort_receipt_none))
+            CgButton(stringResource(R.string.effort_home), onHome, Modifier.fillMaxWidth(), kind = CgButtonKind.Basic)
+            return@Column
+        }
+        ui.openTrip?.let { CgCaption(it.destName) }
+        CgTitle(r.headlineText)
+
+        // 쉰 시간(F21): 없음·15분·30분·1시간 이상. 답이 없으면 0분으로 계산해 두고 고르게 한다
+        ui.restQuestion?.let { q ->
+            CgCard(Modifier.fillMaxWidth()) {
+                CgBody(q)
+                Row(horizontalArrangement = Arrangement.spacedBy(16.gpx)) {
+                    ui.restAnswers.forEach { (min, label) ->
+                        CgChip(label, selected = ui.openTrip?.restAnswerMin == min, onClick = { onRest(min) })
+                    }
+                }
+            }
+        }
+
+        CgCard(Modifier.fillMaxWidth()) {
+            r.lines.forEach { line ->
+                Column(
+                    Modifier.fillMaxWidth().clickable(role = Role.Button) { open = if (open == line.key) null else line.key },
+                    verticalArrangement = Arrangement.spacedBy(8.gpx),
+                ) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(24.gpx), verticalAlignment = Alignment.CenterVertically) {
+                        CgBody(line.label, Modifier.width(240.gpx))
+                        CgBody(line.detailText.orEmpty(), Modifier.weight(1f), secondary = true)
+                        Text(line.pctText, style = Chagok.type.titleS, color = Chagok.colors.textPrimary)
+                    }
+                    if (open == line.key) line.basisText?.let { CgCaption(it) }
+                }
+            }
+            r.distanceText?.let { CgCaption(it) }
+            r.footnoteText?.let { CgCaption(it) }
+        }
+        if (ui.weatherPending) CgCaption(stringResource(R.string.effort_weather_pending))
+        r.notes.forEach { CgNotice(it) }
+        CgButton(stringResource(R.string.effort_home), onHome, Modifier.fillMaxWidth(), kind = CgButtonKind.Basic)
     }
 }
 

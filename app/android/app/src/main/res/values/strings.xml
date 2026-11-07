@@ -164,6 +164,10 @@
     <string name="effort_preview_congestion">정체 구간 %1$s</string>
     <string name="effort_route_failed">내비 안내를 시작하지 못했어요</string>
     <string name="effort_route_retry">다시 시도</string>
+    <string name="effort_receipt_open">영수증 보기</string>
+    <string name="effort_receipt_none">아직 도착 전이에요</string>
+    <string name="effort_weather_pending">도착 날씨를 확인하고 있어요</string>
+    <string name="effort_home">홈으로</string>
     <string name="effort_settings_method">제안 방식</string>
     <string name="effort_settings_method_a">A · 금액</string>
     <string name="effort_settings_method_b">B · 한 번 빼 주기</string>

@@ -39,13 +39,31 @@ class EffortFlow(private val store: EffortStore) {
         return true
     }
 
-    /** 도착(F22). 열린 기록이 없거나 이미 도착했으면 false. */
-    fun arrive(arrivedAt: String, weatherArr: String = WEATHER_UNKNOWN): Boolean {
+    /**
+     * 도착(F22). 열린 기록이 없거나 이미 도착했으면 false.
+     * @param weatherArr null이면 "받는 중" → 영수증을 먼저 띄우고 [completeArrival]로 채운다(AC-F22-1: 1초 안에 영수증)
+     */
+    fun arrive(arrivedAt: String, weatherArr: String? = WEATHER_UNKNOWN): Boolean {
         val cur = state.openTrip ?: return false.also { ChagokLog.event("effort_arrive_ignored", "reason" to "no_trip") }
         if (cur.arrived) return false
         put(state.copy(openTrip = cur.copy(arrivedAt = arrivedAt, weatherArr = weatherArr)))
-        ChagokLog.event("effort_arrive", "weather" to weatherArr)
+        ChagokLog.event("effort_arrive", "weather" to (weatherArr ?: "pending"))
         return true
+    }
+
+    /**
+     * 도착 뒤 받은 도착 날씨, 그리고 출발 때 못 구한 일출·일몰(도착 좌표로 계산, 명세 F23)을 채운다.
+     * 이미 채워진 값은 바꾸지 않는다.
+     */
+    fun completeArrival(weatherArr: String, sunrise: String? = null, sunset: String? = null) {
+        val cur = state.openTrip ?: return
+        if (!cur.arrived) return
+        val next = cur.copy(
+            weatherArr = cur.weatherArr ?: weatherArr,
+            sunrise = cur.sunrise ?: sunrise,
+            sunset = cur.sunset ?: sunset,
+        )
+        if (next != cur) put(state.copy(openTrip = next))
     }
 
     /** 쉰 시간 답(F21). 정차는 이 답 하나로만 뺀다(자동 측정 없음, #62 명준·효성·June). */
