@@ -211,7 +211,7 @@ private fun TodayPickCard(onClick: () -> Unit, ev: Boolean, modifier: Modifier) 
 
 // ------------------------------------------------------------ 주행 중 가림 (X1). 금액·카드 없음(AC-C-8 주행 중 금액 미터 금지)
 @Composable
-private fun DrivingCover() {
+internal fun DrivingCover() {
     Box(Modifier.fillMaxSize().background(Chagok.colors.bgSecondary), contentAlignment = Alignment.Center) {
         CgBody(stringResource(R.string.driving_hidden), secondary = true)
     }
