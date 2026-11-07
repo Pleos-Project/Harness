@@ -4,28 +4,25 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
-import androidx.lifecycle.DefaultLifecycleObserver
-import androidx.lifecycle.LifecycleOwner
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.mist.pleos_app.app.AppViewModel
-import com.mist.pleos_app.app.homeBalance
-import com.mist.pleos_app.ui.ChagokApp
+import com.mist.pleos_app.effort.EffortViewModel
+import com.mist.pleos_app.ui.EffortApp
 import com.mist.pleos_app.ui.theme.ChagokTheme
 import com.mist.pleos_app.util.ChagokLog
-import com.mist.pleos_app.navi.Destination
 import com.mist.pleos_app.navi.NaviRepository
 import com.mist.pleos_app.vehicle.PleosVehicleRepository
 import com.mist.pleos_app.vehicle.isDriving
 
 /**
- * 한 Activity + Compose. 차량값은 [PleosVehicleRepository]가 이 Activity 수명주기에 맞춰
- * 화면이 보일 때만 리스너를 등록한다(AC-C-2). 화면 이동·복원은 [AppViewModel].
+ * 한 Activity + Compose. 첫 화면은 노고 정산 흐름(명세 v0.5 3절, [EffortApp])이다.
+ * 차량값은 [PleosVehicleRepository]가 이 Activity 수명주기에 맞춰 화면이 보일 때만 리스너를 등록한다(AC-C-2).
+ * 피봇 전 흐름(잔고·한 장·장부: AppViewModel·ChagokApp)은 CI가 옛 fixture를 대조하는 동안 코드만 남겨 두고,
+ * 12/3 전 정리 PR에서 지운다(DECISIONS '기존 기획 코드 정리 순서').
  */
 class MainActivity : ComponentActivity() {
 
-    private val vm: AppViewModel by viewModels()
+    private val vm: EffortViewModel by viewModels()
     private lateinit var vehicle: PleosVehicleRepository
     private lateinit var navi: NaviRepository
 
@@ -33,35 +30,17 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         vehicle = PleosVehicleRepository(this)
         lifecycle.addObserver(vehicle)
-        navi = NaviRepository(this)
+        navi = NaviRepository(this)                      // 출발 화면(F20, 2단계)에서 목적지·requestTrip·requestRoute에 쓴다
         lifecycle.addObserver(navi)
-        vm.locator = navi::fetchLocation                 // 카드 출발점 = 내비 현재 위치(명세 F5)
-        // 화면이 가려지면 다음에 보일 때 다시 정산(F10 "다른 앱에서 복귀")
-        lifecycle.addObserver(object : DefaultLifecycleObserver {
-            override fun onStop(owner: LifecycleOwner) = vm.onHidden()
-        })
         ChagokLog.event("app_create", "restored" to (savedInstanceState != null))
         setContent {
             val snapshot by vehicle.state.collectAsStateWithLifecycle()
-            val depart by navi.state.collectAsStateWithLifecycle()
-            // 차종·단가·모의 연료 %는 설정(S1). 바꾸고 홈으로 돌아오면 바로 다시 계산(AC-F1-3·AC-S1-1)
-            val settings by vm.settings.collectAsStateWithLifecycle()
-            val model = settings.model
-            val avgGas by vm.avgGasPrice.collectAsStateWithLifecycle()   // 서버 평균 단가가 오면 다시 계산
-            val balance = remember(snapshot, settings, avgGas) {
-                homeBalance(vm.constants, model, snapshot, mockFuelPct = settings.mockFuelPct, price = settings.priceFor(vm.constants))
-            }
             ChagokTheme {
-                ChagokApp(vm, snapshot, model, balance, driving = isDriving(snapshot), depart = depart, onDepart = { card ->
-                    // F8: 출발 1탭 → 순정 내비. 최근 방문에 넣고(다음 뽑기에서 빠짐) 경로 요청
-                    vm.recordDeparture(card, snapshot)
-                    navi.depart(Destination(card.id, card.name, card.lat, card.lng))
-                }, fetchRecent = navi::fetchRecent, onExit = {
+                EffortApp(vm, driving = isDriving(snapshot), onExit = {
                     val moved = moveTaskToBack(true)
                     ChagokLog.event("back_to_background", "moved" to moved)
                 })
             }
         }
     }
-
 }
