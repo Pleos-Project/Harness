@@ -2,10 +2,11 @@
 PY ?= python
 GRADLEW ?= ./gradlew
 
+# --no-access-log: 접근 로그에 /v1/weather 쿼리(좌표)가 찍히지 않게 한다(AC-N-4). 배포 Dockerfile과 같다
 dev:       ## 서버 개발 (--reload: 코드가 바뀌면 세션이 날아감). 에뮬에서 http://10.0.2.2:8000
-	cd server && uvicorn chagok.main:app --reload --port 8000 --host 0.0.0.0
+	cd server && uvicorn chagok.main:app --reload --port 8000 --host 0.0.0.0 --no-access-log
 serve:     ## 리허설·PT용 서버 (reload 없음)
-	cd server && uvicorn chagok.main:app --port 8000 --host 0.0.0.0
+	cd server && uvicorn chagok.main:app --port 8000 --host 0.0.0.0 --no-access-log
 test:      ## 서버 pytest (fixtures 대조 + 표기 규칙 불변식)
 	cd server && $(PY) -m pytest -q
 lint:      ## 화면 문구 전수 검사 (fixtures·design·app의 strings.xml·.kt·.html)
