@@ -1,0 +1,75 @@
+{
+  "id": "R7",
+  "title": "지연 문턱: ETA 60분, T 66분, 맑음·낮, 2명",
+  "note": "예상보다 더 6분 = ETA의 10%라 문턱(10% 미만이면 0)에 걸리지 않고 셈에 들어간다 → 67.62. 운전자 몫 6,029.45 → 커피",
+  "input": {
+    "departed_at": "2026-11-17T10:00:00+09:00",
+    "arrived_at": "2026-11-17T11:06:00+09:00",
+    "rest_answer_min": 0,
+    "stops": null,
+    "eta_s": 3600,
+    "congestion_ratio": 0.0,
+    "congestion_m": 0.0,
+    "congestion_s": null,
+    "weather_dep": "none",
+    "weather_arr": "none",
+    "sunrise": "07:13",
+    "sunset": "17:20",
+    "n": 2,
+    "distance_km": null
+  },
+  "expected": {
+    "method": "answer",
+    "elapsed_min": 66.0,
+    "drive_min": 66.0,
+    "rest_min": 0.0,
+    "fatigue_segments_min": [
+      66.0
+    ],
+    "congestion_min": 0.0,
+    "delay_min": 6.0,
+    "night_min": 0.0,
+    "rain_min": 0.0,
+    "snow_min": 0.0,
+    "fatigue_excess_min": 0.0,
+    "effort_min": 67.62,
+    "multiplier": 1.02,
+    "lines": [
+      {
+        "key": "delay",
+        "label": "예상보다 더",
+        "add_min": 1.62,
+        "pct": 2,
+        "pct_text": "+2%",
+        "detail_text": "+6분",
+        "basis_text": "예상보다 늦어진 시간은 정체와 같은 값으로 쳐요 · 예상 못 한 지연이 더 힘들다는 통근 연구(Wener·Evans 2011)"
+      }
+    ],
+    "notes": [],
+    "footnote_text": null,
+    "drive_text": "1시간 6분",
+    "multiplier_text": "평소보다 1.02배 힘든 길",
+    "headline_text": "오늘 운전 1시간 6분 · 평소보다 1.02배 힘든 길",
+    "distance_text": null,
+    "proposal": {
+      "amount_krw": 12058.9,
+      "amount_approx": 12000,
+      "amount_text": "약 1만 2천 원",
+      "per_person_krw": 6029.45,
+      "per_person_approx": 6000,
+      "per_person_text": "약 6천 원",
+      "driver_share_krw": 6029.45,
+      "a": {
+        "title_text": "오늘 운전을 챙긴다면",
+        "main_text": "한 사람 약 6천 원",
+        "basis_text": "운전 노고 약 1만 2천 원을 운전자 포함 2명이 나눈 값",
+        "wage_text": "최저임금 1분 178원 기준"
+      },
+      "b": {
+        "item": "coffee",
+        "text": "오늘은 커피값에서 운전자 빼고 나누는 게 어때요",
+        "item_examples": []
+      }
+    }
+  }
+}

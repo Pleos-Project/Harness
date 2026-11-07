@@ -1,0 +1,81 @@
+{
+  "id": "R12",
+  "title": "보조 + 자정 넘김 + 정확히 15분 정차: 22:00 출발, 00:00~00:15 정차, 02:15 도착, ETA 240분, 2명",
+  "note": "15분 '이상'이면 나눈다 → 120 + 120, 장시간 0. 날짜를 넘겨도 밤길 240분 전부 → 9.6",
+  "input": {
+    "departed_at": "2026-11-17T22:00:00+09:00",
+    "arrived_at": "2026-11-18T02:15:00+09:00",
+    "rest_answer_min": null,
+    "stops": [
+      {
+        "start": "2026-11-18T00:00:00+09:00",
+        "end": "2026-11-18T00:15:00+09:00"
+      }
+    ],
+    "eta_s": 14400,
+    "congestion_ratio": 0.0,
+    "congestion_m": 0.0,
+    "congestion_s": null,
+    "weather_dep": "none",
+    "weather_arr": "none",
+    "sunrise": "07:13",
+    "sunset": "17:20",
+    "n": 2,
+    "distance_km": null
+  },
+  "expected": {
+    "method": "stops",
+    "elapsed_min": 255.0,
+    "drive_min": 240.0,
+    "rest_min": 15.0,
+    "fatigue_segments_min": [
+      120.0,
+      120.0
+    ],
+    "congestion_min": 0.0,
+    "delay_min": 0.0,
+    "night_min": 240.0,
+    "rain_min": 0.0,
+    "snow_min": 0.0,
+    "fatigue_excess_min": 0.0,
+    "effort_min": 249.6,
+    "multiplier": 1.04,
+    "lines": [
+      {
+        "key": "night",
+        "label": "밤길",
+        "add_min": 9.6,
+        "pct": 4,
+        "pct_text": "+4%",
+        "detail_text": "4시간",
+        "basis_text": "밤에는 낮보다 운전 부담이 4% 커요 · 트럭 운전자 50명 시뮬레이터 연구(Fitri 2025)"
+      }
+    ],
+    "notes": [],
+    "footnote_text": null,
+    "drive_text": "4시간",
+    "multiplier_text": "평소보다 1.04배 힘든 길",
+    "headline_text": "오늘 운전 4시간 · 평소보다 1.04배 힘든 길",
+    "distance_text": null,
+    "proposal": {
+      "amount_krw": 44512.0,
+      "amount_approx": 45000,
+      "amount_text": "약 4만 5천 원",
+      "per_person_krw": 22256.0,
+      "per_person_approx": 22000,
+      "per_person_text": "약 2만 2천 원",
+      "driver_share_krw": 22256.0,
+      "a": {
+        "title_text": "오늘 운전을 챙긴다면",
+        "main_text": "한 사람 약 2만 2천 원",
+        "basis_text": "운전 노고 약 4만 5천 원을 운전자 포함 2명이 나눈 값",
+        "wage_text": "최저임금 1분 178원 기준"
+      },
+      "b": {
+        "item": "meal",
+        "text": "오늘은 밥값에서 운전자 빼고 나누는 게 어때요",
+        "item_examples": []
+      }
+    }
+  }
+}

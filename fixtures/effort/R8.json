@@ -1,0 +1,92 @@
+{
+  "id": "R8",
+  "title": "혼자: R1과 같은 주행, 1명",
+  "note": "나눠 낼 인원 1명이면 영수증만 보여 주고 제안(A·B)은 하지 않는다(명세 3절) → proposal null",
+  "input": {
+    "departed_at": "2026-11-17T16:00:00+09:00",
+    "arrived_at": "2026-11-17T18:10:00+09:00",
+    "rest_answer_min": 0,
+    "stops": null,
+    "eta_s": 6300,
+    "congestion_ratio": 0.36,
+    "congestion_m": 37548.0,
+    "congestion_s": null,
+    "weather_dep": "rain",
+    "weather_arr": "rain",
+    "sunrise": "07:13",
+    "sunset": "17:20",
+    "n": 1,
+    "distance_km": 104.3
+  },
+  "expected": {
+    "method": "answer",
+    "elapsed_min": 130.0,
+    "drive_min": 130.0,
+    "rest_min": 0.0,
+    "fatigue_segments_min": [
+      130.0
+    ],
+    "congestion_min": 46.8,
+    "delay_min": 25.0,
+    "night_min": 50.0,
+    "rain_min": 130.0,
+    "snow_min": 0.0,
+    "fatigue_excess_min": 10.0,
+    "effort_min": 204.636,
+    "multiplier": 1.57,
+    "lines": [
+      {
+        "key": "rain",
+        "label": "날씨",
+        "add_min": 52.0,
+        "pct": 40,
+        "pct_text": "+40%",
+        "detail_text": "비, 주행 내내",
+        "basis_text": "비 오는 날은 맑은 날보다 운전 부담이 40% 커요 · 시뮬레이터 30명 연구(Frontiers in Neuroscience 2026)"
+      },
+      {
+        "key": "congestion",
+        "label": "정체 구간",
+        "add_min": 12.636,
+        "pct": 10,
+        "pct_text": "+10%",
+        "detail_text": "38km (경로의 36%)",
+        "basis_text": "차가 몰린 길은 한산한 길보다 운전 부담이 27% 커요 · 시뮬레이터 연구(Shakouri, LSU 2015)"
+      },
+      {
+        "key": "delay",
+        "label": "예상보다 더",
+        "add_min": 6.75,
+        "pct": 5,
+        "pct_text": "+5%",
+        "detail_text": "+25분",
+        "basis_text": "예상보다 늦어진 시간은 정체와 같은 값으로 쳐요 · 예상 못 한 지연이 더 힘들다는 통근 연구(Wener·Evans 2011)"
+      },
+      {
+        "key": "night",
+        "label": "밤길",
+        "add_min": 2.0,
+        "pct": 2,
+        "pct_text": "+2%",
+        "detail_text": "50분",
+        "basis_text": "밤에는 낮보다 운전 부담이 4% 커요 · 트럭 운전자 50명 시뮬레이터 연구(Fitri 2025)"
+      },
+      {
+        "key": "fatigue",
+        "label": "장시간",
+        "add_min": 1.25,
+        "pct": 1,
+        "pct_text": "+1%",
+        "detail_text": "2시간 넘긴 10분",
+        "basis_text": "2시간을 넘겨 이어서 운전한 시간에 더해요 · 2시간 운전하면 15분 쉬도록 한 법령 기준(화물자동차 운수사업법 시행규칙)"
+      }
+    ],
+    "notes": [],
+    "footnote_text": "정체 구간은 내비 안내 경로 기준",
+    "drive_text": "2시간 10분",
+    "multiplier_text": "평소보다 1.57배 힘든 길",
+    "headline_text": "오늘 운전 2시간 10분 · 평소보다 1.57배 힘든 길",
+    "distance_text": "104km",
+    "proposal": null
+  }
+}
