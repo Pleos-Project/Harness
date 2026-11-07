@@ -241,15 +241,38 @@ fun multiplierText(m100: Int): String =
 
 fun pctText(pct: Int): String = if (pct > 0) "+$pct%" else "+1% 미만"
 
-/** 정체 구간 줄 "12km (경로의 35%)"(노고 PRD v1.3 5-1, 열린 결정 28). km·비율을 모르면 null. */
+/** 거리 m → "104km"(명세 2절 km 정수). 0으로 어림되면 "1km 미만". */
+fun kmText(m: Double): String {
+    val km = roundHalfUp(m / 1000)
+    return if (km > 0) "${km}km" else "1km 미만"
+}
+
+/** 정체 구간 줄 "38km (경로의 36%)"(노고 PRD v1.3 5-1, 열린 결정 28). km·비율을 모르면 null. */
 fun congestionText(congestionM: Double?, ratio: Double?): String? {
     if (congestionM == null || ratio == null) return null
-    val km = roundHalfUp(congestionM / 1000)
     val p = roundHalfUp(ratio * 100)
-    val kmT = if (km > 0) "${km}km" else "1km 미만"
     val pT = if (p > 0) "경로의 $p%" else "경로의 1% 미만"
-    return "$kmT ($pT)"
+    return "${kmText(congestionM)} ($pT)"
 }
+
+/** 출발 화면 미리보기(명세 v0.5 F20·12절 시연 순서 2). requestTrip 값으로 만든다. */
+data class DeparturePreview(
+    val etaText: String,                // "1시간 45분"
+    val routeText: String,              // "104km"
+    val congestionText: String?,        // "38km (경로의 36%)". 비율을 모르거나 0이면 null(정체 표시 없음)
+)
+
+fun departurePreview(etaS: Double, routeM: Double, congestionRatio: Double?, congestionM: Double?): DeparturePreview {
+    val has = congestionRatio != null && congestionRatio > 0
+    return DeparturePreview(
+        etaText = driveText(etaS),
+        routeText = kmText(routeM),
+        congestionText = if (has) congestionText(congestionM, congestionRatio) else null,
+    )
+}
+
+fun DeparturePreview.toJson(): JsonObject =
+    obj("eta_text" to etaText, "route_text" to routeText, "congestion_text" to congestionText)
 
 /** 줄 근거 한 줄(명세 v0.5 AC-F23-4). {pct}는 그 줄의 가산율(ratesPct)로 채워 숫자가 상수와 어긋나지 않게 한다. */
 fun basisText(key: String, c: EffortConstants): String? {

@@ -9,7 +9,7 @@
     "stops": [],
     "eta_s": 6300,
     "congestion_ratio": 0.36,
-    "congestion_m": 37548,
+    "congestion_m": 37548.0,
     "congestion_s": 2400,
     "weather_dep": "rain",
     "weather_arr": "rain",

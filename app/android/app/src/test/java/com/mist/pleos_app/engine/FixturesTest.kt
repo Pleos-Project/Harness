@@ -168,6 +168,20 @@ class FixturesTest {
         }
     }
 
+    /** 시연 데이터(명세 v0.5 12절): R1 입력 그대로, 엔진 출력과 출발 화면 미리보기가 서버와 같다. */
+    @Test
+    fun effortDemo() {
+        val fx = load(File(root, "effort/demo.json"))
+        val input = fx.getValue("input").jsonObject
+        assertJson(load(File(root, "effort/R1.json")).getValue("input"), input, "demo input = R1 input")
+        assertJson(fx.getValue("expected"), effort(parseEffortInput(input), effortConstants).toJson(), "demo expected")
+        val scene = fx.getValue("scene").jsonObject
+        val preview = departurePreview(
+            input.dbl("eta_s"), scene.dbl("route_m"), input.dblOrNull("congestion_ratio"), input.dblOrNull("congestion_m"),
+        )
+        assertJson(scene.getValue("departure_preview"), preview.toJson(), "demo departure_preview")
+    }
+
     /** 명세 AC 숫자·문구를 fixture와 따로 확인(AC-F23-1·AC-F24-1·AC-F25-1). */
     @Test
     fun effortSpecR1() {

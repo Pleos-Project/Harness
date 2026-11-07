@@ -261,15 +261,37 @@ def pct_text(pct: int) -> str:
     return f"+{pct}%" if pct > 0 else "+1% 미만"
 
 
+def km_text(m: float) -> str:
+    """거리 m → "104km"(명세 2절 km 정수). 0으로 어림되면 "1km 미만"."""
+    km = round_half_up(m / 1000)
+    return f"{km}km" if km > 0 else "1km 미만"
+
+
 def congestion_text(congestion_m: float | None, ratio: float | None) -> str | None:
-    """정체 구간 줄 "12km (경로의 35%)"(노고 PRD v1.3 5-1, 열린 결정 28). km·비율을 모르면 None."""
+    """정체 구간 줄 "38km (경로의 36%)"(노고 PRD v1.3 5-1, 열린 결정 28). km·비율을 모르면 None."""
     if congestion_m is None or ratio is None:
         return None
-    km = round_half_up(congestion_m / 1000)
     p = round_half_up(ratio * 100)
-    km_t = f"{km}km" if km > 0 else "1km 미만"
     p_t = f"경로의 {p}%" if p > 0 else "경로의 1% 미만"
-    return f"{km_t} ({p_t})"
+    return f"{km_text(congestion_m)} ({p_t})"
+
+
+@dataclass
+class DeparturePreview:
+    """출발 화면 미리보기(명세 v0.5 F20·12절 시연 순서 2). requestTrip 값으로 만든다."""
+    eta_text: str                    # "1시간 45분"
+    route_text: str                  # "104km"
+    congestion_text: str | None      # "38km (경로의 36%)". 비율을 모르거나 0이면 None(정체 표시 없음)
+
+
+def departure_preview(eta_s: float, route_m: float, congestion_ratio: float | None,
+                      congestion_m: float | None) -> DeparturePreview:
+    has = congestion_ratio is not None and congestion_ratio > 0
+    return DeparturePreview(
+        eta_text=drive_text(float(eta_s)),
+        route_text=km_text(float(route_m)),
+        congestion_text=congestion_text(congestion_m, congestion_ratio) if has else None,
+    )
 
 
 def basis_text(key: str, c: EffortConstants) -> str | None:

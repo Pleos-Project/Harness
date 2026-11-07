@@ -303,6 +303,44 @@ def test_sun_matches_kasi_within_one_minute():
             assert abs(got - kasi) <= 1, f"{c['date']} {k}: 엔진 {c['expected'][k]} vs 천문연 {c['kasi'][k]}"
 
 
+# ---------------------------------------------------------------- 1부: 시연 데이터 (명세 v0.5 12절)
+DEMO = load(ROOT / "fixtures/effort/demo.json")
+
+
+def test_demo_is_r1_scene():
+    """시연 데이터 = R1 입력 그대로 + 화면용 scene. 목업·영상·PT가 같은 숫자(1.57배·한 사람 약 9천 원·밥)를 쓴다."""
+    assert DEMO["input"] == fx("R1")["input"]
+    e = DEMO["expected"]
+    assert e["headline_text"] == "오늘 운전 2시간 10분 · 평소보다 1.57배 힘든 길"
+    assert [l["pct_text"] for l in e["lines"]] == ["+40%", "+10%", "+5%", "+2%", "+1%"]
+    assert e["proposal"]["a"]["main_text"] == "한 사람 약 9천 원"
+    assert e["proposal"]["b"]["text"] == "오늘은 밥값에서 운전자 빼고 나누는 게 어때요"
+    sc = DEMO["scene"]
+    assert (sc["route_m"], sc["n"], sc["rest_answer_label"]) == (104_300, 4, "없음")
+    assert sc["departure_preview"] == {"eta_text": "1시간 45분", "route_text": "104km",
+                                       "congestion_text": "38km (경로의 36%)"}
+    # 정체 km = 비율 × 경로 거리(명세 F20), 거리 표시도 같은 경로
+    assert DEMO["input"]["congestion_m"] == DEMO["input"]["congestion_ratio"] * sc["route_m"]
+    assert DEMO["input"]["distance_km"] * 1000 == sc["route_m"]
+
+
+def test_demo_fixture():
+    i = DEMO["input"]
+    assert EF.effort(EF.input_from_json(i), C).to_json() == DEMO["expected"]
+    p = EF.departure_preview(i["eta_s"], DEMO["scene"]["route_m"], i["congestion_ratio"], i["congestion_m"])
+    assert dataclasses.asdict(p) == DEMO["scene"]["departure_preview"]
+
+
+@pytest.mark.parametrize("eta_s,route_m,ratio,cm,want", [
+    (6300, 104_300, 0.36, 37_548, ("1시간 45분", "104km", "38km (경로의 36%)")),
+    (600, 400, 0.0, 0, ("10분", "1km 미만", None)),                 # 정체 0이면 정체 표시 없음
+    (7200, 80_000, None, None, ("2시간", "80km", None)),              # 정체 정보 없음
+])
+def test_departure_preview(eta_s, route_m, ratio, cm, want):
+    p = EF.departure_preview(eta_s, route_m, ratio, cm)
+    assert (p.eta_text, p.route_text, p.congestion_text) == want
+
+
 # ---------------------------------------------------------------- 2부: fixture 전수
 def test_effort_fixtures_are_contiguous():
     assert [p.stem for p in EFFORT] == [f"R{i}" for i in range(1, len(EFFORT) + 1)]
