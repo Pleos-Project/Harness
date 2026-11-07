@@ -8,6 +8,8 @@ fixture 종류
 - cards/D*.json   app_local(앱 로컬 E1 기대값) → request(앱이 보낼 요청) → expected(서버·오프라인 데모 응답)
 - settle/T*.json  E4 정산 경계 케이스
 - ledger/L*.json  F8·F10·F17 로컬 장부(출발·도착·다시 열기·핀·월 합계) 이벤트 순서
+- effort/R*.json  운전 노고(명세 v0.5 F23~F25) input → expected(영수증·제안). R1~R8 = 명세 12절 표, R9 = AC-F21-1, R10~ = 하네스 추가
+- effort/sun.json 일출·일몰 계산값(엔진 두 벌 대조) + 한국천문연구원 출몰시각(참고, pytest가 ±1분 대조)
 
 계약 샘플(contract/samples)
 - D1·D2           /v1/cards (D1·D2 fixture에서 그대로)
@@ -18,6 +20,7 @@ fixture 종류
 from __future__ import annotations
 
 import copy
+import dataclasses
 import json
 import sys
 from pathlib import Path
@@ -25,6 +28,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "server"))
 
+from chagok import effort as EF  # noqa: E402
 from chagok import engine as E  # noqa: E402
 from chagok import places as PL  # noqa: E402
 from chagok import weather as W  # noqa: E402
@@ -141,6 +145,161 @@ def ev_open(ts: str, odo: float, seats: int = 1, recent: dict | None = None, **k
             "recent_destination": recent}
 
 
+# ---------------------------------------------------------------- 운전 노고 (명세 v0.5 F21·F23~F25)
+EFFORT_CONST = EF.effort_constants(CONST)
+# 날짜는 서울 2026-11-17: 이 날 일몰 계산값이 명세 R1의 17:20이다(일출 07:13). 일출·일몰은 입력으로 고정해
+# 일출·일몰 계산(sun.json)이 바뀌어도 R 기대값은 그대로 둔다.
+DAY = "2026-11-17"
+NEXT_DAY = "2026-11-18"
+SUN = {"sunrise": "07:13", "sunset": "17:20"}
+# R1·시연 데이터의 경로 거리. 바꾸면 정체 km 표시만 따라 바뀌고 배수·금액은 그대로(명세 12절 시연 데이터)
+R1_ROUTE_M = 104_300
+R1_RATIO = 0.36          # requestTrip 정체 비율은 4% 단위(June 실측) → 9칸
+
+
+def at(hm: str, day: str = DAY) -> str:
+    return f"{day}T{hm}:00+09:00"
+
+
+def effort_input(dep: str, arr: str, *, eta_min: float, n: int, answer: int | None = None,
+                 stops: list[tuple[str, str]] | None = None, ratio: float | None = 0.0,
+                 congestion_m: float | None = 0.0, segments_min: float | None = None, wdep: str = "none",
+                 warr: str = "none", distance_km: float | None = None, arr_day: str = DAY) -> dict:
+    """정차: answer = 기본(도착 때 답한 쉰 시간, 분), stops = 보조(자동으로 잰 정차 목록, 빈 목록이면 정차 없음). 둘 중 하나만.
+    정체: ratio·congestion_m = 기본(출발 전 requestTrip 비율·정체 거리 m = 비율 × 경로 거리, 없으면 None),
+    segments_min = 보조(구간 목록 통과 시간)."""
+    assert (stops is None) != (answer is None)
+    return {
+        "departed_at": at(dep), "arrived_at": at(arr, arr_day),
+        "rest_answer_min": answer,
+        "stops": [{"start": s, "end": e} for s, e in stops] if stops is not None else None,
+        "eta_s": eta_min * 60,
+        "congestion_ratio": ratio,
+        "congestion_m": congestion_m,
+        "congestion_s": segments_min * 60 if segments_min is not None else None,
+        "weather_dep": wdep, "weather_arr": warr, **SUN, "n": n, "distance_km": distance_km,
+    }
+
+
+def effort_fixture(fid: str, title: str, note: str, inp: dict) -> dict:
+    r = EF.effort(EF.input_from_json(inp), EFFORT_CONST)
+    return {"id": fid, "title": title, "note": note, "input": inp, "expected": r.to_json()}
+
+
+# 한국천문연구원 출몰시각(서울, 11/7 조회). 엔진 계산값과 ±1분 안인지 pytest가 본다(명세 7절 '검증').
+# 좌표는 역서 범례의 서울시청(북위 37°34′0″, 동경 126°58′42″). 손으로 옮긴 참고값이라 엔진이 바뀌어도 그대로 둔다.
+KASI_SEOUL: dict = {
+    "place": "서울시청", "lat": 37.566667, "lng": 126.978333,
+    "source": "천문연 월별 해/달 출몰시각(astro.kasi.re.kr/life/pageView/6, location=서울)·2026 천문력",
+    "days": {
+        "2026-03-20": {"sunrise": "06:36", "sunset": "18:44"},
+        "2026-06-21": {"sunrise": "05:11", "sunset": "19:57"},
+        "2026-11-07": {"sunrise": "07:03", "sunset": "17:28"},
+        "2026-12-03": {"sunrise": "07:30", "sunset": "17:14"},
+    },
+}
+
+
+def demo_fixture(r1: dict) -> None:
+    """시연 데이터(명세 v0.5 12절): R1 입력 그대로 + 화면용 scene. 목업·영상·PT 앱이 같은 숫자를 쓴다.
+    앱은 데모 고정 모드에서 assets/data/effort/demo.json을 읽는다(syncChagokData)."""
+    r = EF.effort(EF.input_from_json(r1), EFFORT_CONST)
+    preview = EF.departure_preview(r1["eta_s"], R1_ROUTE_M, r1["congestion_ratio"], r1["congestion_m"], EFFORT_CONST)
+    rest_label = dict(EFFORT_CONST.copy.rest_answers)[r1["rest_answer_min"]]   # 도착 때 질문의 선택지(copy)
+    write(ROOT / "fixtures/effort/demo.json", {
+        "id": "demo", "title": "시연 데이터: R1(PRD 대표 장면)",
+        "note": "명세 v0.5 12절. gen_fixtures.py가 R1 정의로 만든다(손으로 고치지 않음). "
+                "목적지 이름·경로 거리는 바꿔도 배수·금액이 그대로(정체 km 표시만 바뀜). "
+                "목적지 이름은 명준 #60. 화면 문구는 constants effort.copy의 임시 값(디자인 확정 대기)",
+        "scene": {
+            "dest_name": "태안 꽃지해수욕장",
+            "route_m": R1_ROUTE_M,
+            "n": r1["n"],
+            "rest_answer_label": rest_label,
+            "departure_preview": dataclasses.asdict(preview),
+        },
+        "input": r1, "expected": r.to_json()})
+
+
+def effort_fixtures() -> None:
+    # 정체 km = 비율 × 경로 거리 = 0.36 × 104,300m = 37,548m(명세 F20). 거리 표시도 같은 경로 거리
+    r1 = effort_input("16:00", "18:10", answer=0, eta_min=105, ratio=R1_RATIO, congestion_m=R1_RATIO * R1_ROUTE_M,
+                      wdep="rain", warr="rain", n=4, distance_km=R1_ROUTE_M / 1000)
+    r13 = effort_input("09:00", "15:00", answer=60, eta_min=300, n=2)
+    cases = [
+        ("R1", "PRD 예시: 16:00→18:10, ETA 105분, 정체 38km(경로의 36%), 비(출발·도착), 일몰 17:20, 쉰 시간 없음, 4명",
+         "AC-F23-1·AC-F24-1·AC-F25-1. 정체 분 = 비율 0.36 × T 130 = 46.8(열린 결정 28). 노고 130 + 비 52 + 정체 12.636 "
+         "+ 예상보다 더 6.75(25분) + 밤길 2(50분) + 장시간 1.25(10분) = 204.636 → 1.57배, 정체 줄 +10%. "
+         "금액 204.636 × 10,700 ÷ 60 = 36,493.42 → 약 3만 6천, 한 사람 9,123.36 → 약 9천, 운전자 몫 27,370.07 → 밥. "
+         "정체 값은 효성 결정(11/7): 35%·12km는 거리 104km와 맞지 않고 4% 단위가 아니어서 36%·38km", r1),
+        ("R2", "보조(나란히 배치): 10:00 출발, 12:00~12:20 정차, 13:20 도착, ETA 170분, 맑음·낮, 2명",
+         "AC-F21-2. 자동으로 잰 정차 20분(15분 이상)에서 장시간 구간이 120분 + 60분으로 나뉘어 장시간 0. "
+         "예상보다 더 10분 < ETA의 10%(17분) → 0. 180 → 평소와 같은 길",
+         effort_input("10:00", "13:20", stops=[(at("12:00"), at("12:20"))], eta_min=170, n=2)),
+        ("R3", "R2와 같은 거리를 쉬지 않고 180분(쉰 시간 없음, ETA 170분, 맑음·낮, 2명)",
+         "장시간 (180 − 120) × 0.125 = 7.5 → 187.5 → 1.04배. R2와 비교하면 쉰 효과가 보인다",
+         effort_input("10:00", "13:00", answer=0, eta_min=170, n=2)),
+        ("R4", "보조(나란히 배치): 10:00→12:40, 11:30~11:40 정차(10분), ETA 150분, 2명",
+         "AC-F21-3. 10분 정차는 시간만 빠지고 장시간 구간은 이어진다(90 + 60 = 150) → 3.75. "
+         "153.75 ÷ 150 = 1.025 → 1.03(반올림 경계)",
+         effort_input("10:00", "12:40", stops=[(at("11:30"), at("11:40"))], eta_min=150, n=2)),
+        ("R5", "60분, 출발 맑음·도착 눈, 쉰 시간 없음, ETA 60분, 낮, 3명",
+         "눈은 T의 뒤 절반 30분 × 0.49 = 14.7 → 74.7. 74.7 ÷ 60 = 1.245 → 1.25(반올림 경계, Decimal과 같게)",
+         effort_input("10:00", "11:00", answer=0, eta_min=60, warr="snow", n=3)),
+        ("R6", "10분, 맑음·낮, 2명, 거리 0.4km",
+         "금액 1,783.3 → 약 2천, 한 사람 891.7 → 약 1천. 운전자 몫 891.7 < 커피 절반 2,350 → B 제안 없음. "
+         "거리 0.4km는 어림이 0이라 '0km'가 아니라 '1km 미만'(명세 2절, June 리뷰)",
+         effort_input("10:00", "10:10", answer=0, eta_min=10, n=2, distance_km=0.4)),
+        ("R7", "지연 문턱: ETA 60분, T 66분, 맑음·낮, 2명",
+         "예상보다 더 6분 = ETA의 10%라 문턱(10% 미만이면 0)에 걸리지 않고 셈에 들어간다 → 67.62. 운전자 몫 6,029.45 → 커피",
+         effort_input("10:00", "11:06", answer=0, eta_min=60, n=2)),
+        ("R8", "혼자: R1과 같은 주행, 1명",
+         "나눠 낼 인원 1명이면 영수증만 보여 주고 제안(A·B)은 하지 않는다(명세 3절) → proposal null", dict(r1, n=1)),
+        ("R9", "기본(도착 때 묻기): 10:00→12:40, 쉰 시간 답 30분, ETA 130분, 맑음·낮, 2명",
+         "AC-F21-1. 경과 160 − 답 30 = T 130. 언제 쉬었는지 모르니 65 + 65로 나눠 장시간 0"
+         "(쉬지 않은 130분 한 구간이면 장시간 10 × 0.125 = 1.25). 130 → 평소와 같은 길",
+         effort_input("10:00", "12:40", answer=30, eta_min=130, n=2)),
+        # ---- 하네스 추가: 명세 표에 없는 경로(밤 경계·정보 없음·구간 목록)를 엔진 두 벌이 같게 내는지
+        ("R10", "답 + 밤길 비례 + 정보 없음: 16:30→19:30, 쉰 시간 30분, ETA 140분, 날씨·정체 정보 없음, 3명",
+         "T = 180 − 30 = 150(75 + 75, 장시간 0). 밤 = 일몰 17:20~19:30 130분 × (150 ÷ 180) = 108.3분 → 4.33. "
+         "날씨 '정보 없음'(가산 0), 출발 전 정체 비율도 구간 목록도 없음 → '정체 정보 없음'(F20·X2)",
+         effort_input("16:30", "19:30", answer=30, eta_min=140, ratio=None, congestion_m=None, wdep="unknown",
+                      warr="unknown", n=3)),
+        ("R11", "새벽 출발: 05:30→08:00, 쉰 시간 없음, 일출 07:13, ETA 150분, 맑음, 2명",
+         "전날 일몰 ~ 그날 일출 구간과 겹친 05:30~07:13 = 103분이 밤길 → 4.12. 장시간 30 × 0.125 = 3.75",
+         effort_input("05:30", "08:00", answer=0, eta_min=150, n=2)),
+        ("R12", "보조 + 자정 넘김 + 정확히 15분 정차: 22:00 출발, 00:00~00:15 정차, 02:15 도착, ETA 240분, 2명",
+         "15분 '이상'이면 나눈다 → 120 + 120, 장시간 0. 날짜를 넘겨도 밤길 240분 전부 → 9.6",
+         effort_input("22:00", "02:15", stops=[(at("00:00", NEXT_DAY), at("00:15", NEXT_DAY))], eta_min=240, n=2,
+                      arr_day=NEXT_DAY)),
+        ("R13", "답 '1시간 이상'(60분): 09:00→15:00, ETA 300분, 맑음·낮, 2명",
+         "#47 표 '5시간 + 점심 1시간'. 언제 쉬었는지 모르니 T 300을 150 + 150으로 나눔 → 장시간 2 × 30 × 0.125 = 7.5. "
+         "307.5 ÷ 300 = 1.025 → 1.03(반올림 경계)", r13),
+        ("R14", "보조(나란히 배치)로 구간 목록을 받은 R1: 정체 통과 시간 합 40분, 비율 36%·38km도 있음, 4명",
+         "구간 목록이 있으면 비율 × T(46.8분) 대신 통과 시간 40분을 쓴다(명세 7절). 노고 202.8 → 1.56배, 정체 +8%, "
+         "금액 36,166 → 약 3만 6천, 한 사람 약 9천, 운전자 몫 27,124.5 → 밥. 정체 줄 문구는 그대로 '38km (경로의 36%)'",
+         dict(r1, rest_answer_min=None, stops=[], congestion_s=2400)),
+        ("R15", "공동 경비: R13과 같은 주행(09:00→15:00, 답 60분, ETA 300분, 맑음·낮), 4명",
+         "금액 54,837.5 → 운전자 몫 54,837.5 × 3 ÷ 4 = 41,128.1 ≥ 39,865.5 → 공동 경비. "
+         "B 문장은 '공동 경비에서'('값' 없음, 명준 결정), item_examples = 그 자리에 차례로 보일 예시(constants effort.items)",
+         dict(r13, n=4)),
+    ]
+    for fid, title, note, inp in cases:
+        write(ROOT / "fixtures/effort" / f"{fid}.json", effort_fixture(fid, title, note, inp))
+
+    demo_fixture(r1)
+
+    sun = []
+    for day, kasi in sorted(KASI_SEOUL["days"].items()):
+        rise, sset = EF.sun_times(KASI_SEOUL["lat"], KASI_SEOUL["lng"], day)
+        sun.append({"date": day, "expected": {"sunrise": EF.hhmm(rise), "sunset": EF.hhmm(sset)}, "kasi": kasi})
+    write(ROOT / "fixtures/effort/sun.json", {
+        "id": "SUN", "title": f"일출·일몰: {KASI_SEOUL['place']}({KASI_SEOUL['lat']}, {KASI_SEOUL['lng']}), KST",
+        "note": "expected = 엔진 계산값(분 단위 반올림, 두 벌이 같아야 함). kasi = 한국천문연구원 출몰시각(참고, ±1분). "
+                f"출처: {KASI_SEOUL['source']}",
+        "lat": KASI_SEOUL["lat"], "lng": KASI_SEOUL["lng"], "tz_offset_min": 540, "cases": sun})
+
+
 def kma_ncst(lat: float, lng: float, pty: str, base_date: str, base_time: str) -> str:
     """기상청 getUltraSrtNcst 응답과 같은 모양(8개 항목, obsrValue는 문자열). 계약 샘플을 만들 때만 쓴다."""
     nx, ny = W.to_grid(lat, lng)
@@ -169,6 +328,8 @@ def kakao_keyword(docs: list[dict]) -> str:
 
 
 def main() -> None:
+    effort_fixtures()
+
     # ---------------- 카드 (D1~D4: 엔진 PRD 7절, D7~: 하네스 추가)
     # PT 콘솔 값(DECISIONS "PT 콘솔 값"): 두물머리가 앞면이 되는 D1 범위 200~280km의 가운데, 같은 카드가 +1만이 되는 D2 범위 60~120km의 가운데
     d1_in = {"model": "ioniq5_lr", "level_pct": 80, "remaining_range_m": 245_000, "price": 300}
@@ -338,7 +499,7 @@ def main() -> None:
     write(ROOT / "contract/samples/places.empty.response.json", PL.Result("empty").public())
     write(ROOT / "contract/samples/places.unavailable.response.json", PL.unavailable("timeout").public())
 
-    sweep_stale("fixtures/cards", "fixtures/settle", "fixtures/ledger", "contract/samples")
+    sweep_stale("fixtures/cards", "fixtures/settle", "fixtures/ledger", "fixtures/effort", "contract/samples")
 
 
 if __name__ == "__main__":

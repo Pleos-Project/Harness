@@ -153,6 +153,113 @@ class FixturesTest {
         }
     }
 
+    // ------------------------------------------------------------ 운전 노고 (명세 v0.5 F21·F23~F25)
+    private val effortConstants = parseEffortConstants(File(root, "constants.json").readText())
+
+    /** AC-F23-2: R1~ 전부를 Kotlin 엔진이 서버(effort.py)와 같게 낸다. */
+    @Test
+    fun effortFixtures() {
+        val files = fixtures("effort", "R")
+        assertTrue("effort fixture가 R1~R8보다 적다: ${files.map { it.name }}", files.size >= 8)
+        for (f in files) {
+            val fx = load(f)
+            val r = effort(parseEffortInput(fx.getValue("input").jsonObject), effortConstants)
+            assertJson(fx.getValue("expected"), r.toJson(), f.name)
+        }
+    }
+
+    /** 시연 데이터(명세 v0.5 12절): R1 입력 그대로, 엔진 출력과 출발 화면 미리보기가 서버와 같다. */
+    @Test
+    fun effortDemo() {
+        val fx = load(File(root, "effort/demo.json"))
+        val input = fx.getValue("input").jsonObject
+        assertJson(load(File(root, "effort/R1.json")).getValue("input"), input, "demo input = R1 input")
+        assertJson(fx.getValue("expected"), effort(parseEffortInput(input), effortConstants).toJson(), "demo expected")
+        val scene = fx.getValue("scene").jsonObject
+        val preview = departurePreview(
+            input.dbl("eta_s"), scene.dbl("route_m"), input.dblOrNull("congestion_ratio"), input.dblOrNull("congestion_m"),
+            effortConstants,
+        )
+        assertJson(scene.getValue("departure_preview"), preview.toJson(), "demo departure_preview")
+    }
+
+    /** 명세 AC 숫자·문구를 fixture와 따로 확인(AC-F23-1·AC-F24-1·AC-F25-1). */
+    @Test
+    fun effortSpecR1() {
+        val r = effort(parseEffortInput(load(File(root, "effort/R1.json")).getValue("input").jsonObject), effortConstants)
+        // 정체 분 = 비율 0.36 × T 130 = 46.8(열린 결정 28) → 1.57배, 정체 +10%
+        assertEquals("오늘 운전 2시간 10분 · 평소보다 1.57배 힘든 길", r.headlineText)
+        assertEquals(listOf("+40%", "+10%", "+5%", "+2%", "+1%"), r.lines.map { it.pctText })
+        // 줄 값 = 노고 PRD v1.3 5-1 영수증 예시 그대로
+        assertEquals(listOf("날씨", "정체 구간", "예상보다 더", "밤길", "장시간"), r.lines.map { it.label })
+        assertEquals(
+            listOf("비, 주행 내내", "38km (경로의 36%)", "+25분", "50분", "2시간 넘긴 10분"),
+            r.lines.map { it.detailText },
+        )
+        assertEquals("정체 구간은 내비 안내 경로 기준", r.footnoteText)
+        // AC-F23-4: 줄마다 근거 한 줄, {pct}는 rates_pct 값
+        assertEquals(
+            "비 오는 날은 맑은 날보다 운전 부담이 40% 커요 · 시뮬레이터 30명 연구(Frontiers in Neuroscience 2026)",
+            r.lines[0].basisText,
+        )
+        assertTrue(r.lines.all { it.basisText != null && "{pct}" !in it.basisText!! })
+        assertEquals("answer", r.method)
+        val p = r.proposal!!
+        assertEquals(36_493.42, p.amountKrw, 0.0)
+        assertEquals("약 3만 6천 원", p.amountText)
+        assertEquals(9_123.355, p.perPersonKrw, 1e-9)
+        assertEquals("약 9천 원", p.perPersonText)
+        assertEquals(27_370.065, p.driverShareKrw, 1e-6)
+        // 방식 A 화면(노고 PRD v1.3 5-2)과 방식 B 화면은 따로다
+        assertEquals("오늘 운전을 챙긴다면", p.a.titleText)
+        assertEquals("한 사람 약 9천 원", p.a.mainText)
+        assertEquals("운전 노고 약 3만 6천 원을 운전자 포함 4명이 나눈 값", p.a.basisText)
+        assertEquals("최저임금 1분 178원 기준", p.a.wageText)
+        assertEquals("meal", p.b?.item)
+        assertEquals("오늘은 밥값에서 운전자 빼고 나누는 게 어때요", p.b?.text)
+        assertEquals(emptyList<String>(), p.b?.itemExamples)
+        val r8 = effort(parseEffortInput(load(File(root, "effort/R8.json")).getValue("input").jsonObject), effortConstants)
+        assertEquals(null, r8.proposal)
+        // 거리 0.4km → "0km"가 아니라 "1km 미만"(명세 2절, June 리뷰)
+        val r6 = effort(parseEffortInput(load(File(root, "effort/R6.json")).getValue("input").jsonObject), effortConstants)
+        assertEquals("1km 미만", r6.distanceText)
+        // 구간 목록(나란히 배치)이 있으면 비율 대신 통과 시간 40분 → 예전 R1 값(R14)
+        val r14 = effort(parseEffortInput(load(File(root, "effort/R14.json")).getValue("input").jsonObject), effortConstants)
+        assertEquals(202.8, r14.effortMin, 1e-9)
+        assertEquals(36_166.0, r14.proposal!!.amountKrw, 0.0)
+        // AC-F21-1: 답 30분 → T 130, 장시간 65 + 65(R9)
+        val r9 = effort(parseEffortInput(load(File(root, "effort/R9.json")).getValue("input").jsonObject), effortConstants)
+        assertEquals(listOf(65.0, 65.0), r9.fatigueSegmentsMin)
+        // 공동 경비: "값" 없이 "공동 경비에서", 그 자리 예시 목록(R15)
+        val b15 = effort(parseEffortInput(load(File(root, "effort/R15.json")).getValue("input").jsonObject), effortConstants)
+            .proposal!!.b!!
+        assertEquals("오늘은 공동 경비에서 운전자 빼고 나누는 게 어때요", b15.text)
+        assertEquals(listOf("공동 경비", "장 본 값", "펜션비", "바베큐장 이용료", "입장료", "물품 구매비"), b15.itemExamples)
+    }
+
+    /** 명세 9절 경계표: 2,350 미만 제안 없음 / 7,715.5 이상 밥 / 39,865.5 이상 공동 경비. */
+    @Test
+    fun effortBBoundaries() {
+        val cases = listOf(
+            2_349.99 to null, 2_350.0 to "coffee", 7_715.49 to "coffee", 7_715.5 to "meal",
+            39_865.49 to "meal", 39_865.5 to "shared",
+        )
+        for ((share, want) in cases) assertEquals("G=$share", want, bItem(share, effortConstants.items)?.key)
+    }
+
+    /** 일출·일몰 계산이 서버와 같은 분을 낸다(fixtures/effort/sun.json). */
+    @Test
+    fun sunTimesFixture() {
+        val fx = load(File(root, "effort/sun.json"))
+        val cases = fx.getValue("cases").jsonArray
+        assertTrue(cases.isNotEmpty())
+        for (c in cases) {
+            val o = c.jsonObject
+            val (rise, set) = sunTimes(fx.dbl("lat"), fx.dbl("lng"), o.str("date"), fx.integer("tz_offset_min"))
+            assertJson(o.getValue("expected"), obj("sunrise" to hhmm(rise), "sunset" to hhmm(set)), "sun ${o.str("date")}")
+        }
+    }
+
     /** 일러스트 변형: 같은 장소 → 같은 그림, 범위는 1..variants. */
     @Test
     fun illustrationVariantIsStable() {

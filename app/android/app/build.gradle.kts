@@ -46,7 +46,8 @@ android {
 // Kotlin 엔진(com.mist.pleos_app.engine)이 읽는다. 사본은 커밋하지 않는다(단일 출처는 fixtures/).
 val repoFixtures = rootProject.file("../../fixtures")
 val syncChagokData by tasks.registering(Copy::class) {
-    from(repoFixtures) { include("constants.json", "candidates_demo.json") }
+    // effort/demo.json = 시연 데이터(명세 v0.5 12절): 데모 고정 모드에서 assets/data/effort/demo.json으로 읽는다
+    from(repoFixtures) { include("constants.json", "candidates_demo.json", "effort/demo.json") }
     into(layout.projectDirectory.dir("src/main/assets/data"))
 }
 tasks.named("preBuild") { dependsOn(syncChagokData) }

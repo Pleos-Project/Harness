@@ -18,6 +18,8 @@ data class Settings(
     val seatInvert: Boolean = true,
     /** 데모 고정 모드(명세 S1, 기본 켜짐): 네트워크 없이 내장 후보(DemoServer). 끄면 서버 실서비스(app/README 3절). */
     val demoFixed: Boolean = true,
+    /** 노고 제안 방식(명세 v0.5 S20, A/B 테스트용 개발자 설정): A 금액 / B 한 번 빼 주기. 두 화면은 서로 넘어가지 않는다. */
+    val proposalMethod: String = METHOD_A,
 ) {
     /** 잔고·카드·정산에 쓰는 단가. EV는 집 충전 단가(엔진 기본값과 같은 기준), 급속은 F9 충전 카드에서. */
     fun priceFor(c: Constants?): Double? =
@@ -26,6 +28,8 @@ data class Settings(
     companion object {
         const val DEFAULT_MODEL = "ioniq5_lr"          // 에뮬 기본(명세 S1)
         const val DEFAULT_MOCK_FUEL_PCT = 50
+        const val METHOD_A = "A"
+        const val METHOD_B = "B"
         val MODELS = listOf("grandeur_25", "grandeur_hev", "avante_hev", "tucson_hev", "ioniq5_lr", "ioniq6_lr")
     }
 }
@@ -54,6 +58,7 @@ class PrefsSettingsStore(context: Context) : SettingsStore {
         mockFuelPct = p.getInt("mock_fuel_pct", Settings.DEFAULT_MOCK_FUEL_PCT),
         seatInvert = p.getBoolean("seat_invert", true),
         demoFixed = p.getBoolean("demo_fixed_mode", true),
+        proposalMethod = p.getString("proposal_method", null)?.takeIf { it == Settings.METHOD_B } ?: Settings.METHOD_A,
     )
 
     override fun save(s: Settings) {
@@ -65,6 +70,7 @@ class PrefsSettingsStore(context: Context) : SettingsStore {
             .putInt("mock_fuel_pct", s.mockFuelPct)
             .putBoolean("seat_invert", s.seatInvert)
             .putBoolean("demo_fixed_mode", s.demoFixed)
+            .putString("proposal_method", s.proposalMethod)
             .apply()
     }
 }

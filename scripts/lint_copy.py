@@ -1,7 +1,8 @@
 """화면 문구 전수 검사 (기능명세서 v0.5 2절: AC-C-4 노고 표기, AC-C-8 금지 문구).
 
 검사 대상
-- fixtures/**/*.json, contract/samples/*.json 안의 화면 문구 필드(text·*_text·reason·card)
+- fixtures/**/*.json, contract/samples/*.json 안의 화면 문구 필드(text·*_text·reason·card,
+  예시 목록 examples·*_examples — 문자열 목록이면 항목마다)
 - design/**/*.html, app/**/*.html 의 보이는 글자
 - app/**/res/values*/strings.xml 의 문자열 (Compose 화면 문구)
 - app/**/*.kt 의 문자열 리터럴(주석 제외, 테스트 폴더 제외) — 엔진 문구 템플릿·화면 코드
@@ -37,11 +38,11 @@ COPY_RULES = [
     (re.compile(r"(^|[^0-9])0 원"), "'0 원' 표기 금지 — 어림이 0이면 '1천 원 미만'(명세 v0.5 2절)"),
     (re.compile(r"\d{1,3}(,\d{3})+\s?원"), "화면 금액은 '약 3만 6천 원'처럼(쉼표 숫자 금지, 명세 v0.5 2절)"),
 ]
-COPY_KEYS = {"text", "reason", "card"}
+COPY_KEYS = {"text", "reason", "card", "examples"}
 
 
 def is_copy_key(k: str) -> bool:
-    return k in COPY_KEYS or k.endswith("_text")
+    return k in COPY_KEYS or k.endswith("_text") or k.endswith("_examples")
 
 
 def walk(obj, path=""):
@@ -49,6 +50,10 @@ def walk(obj, path=""):
         for k, v in obj.items():
             if isinstance(v, str) and is_copy_key(k):
                 yield f"{path}.{k}", v
+            elif isinstance(v, list) and is_copy_key(k) and all(isinstance(x, str) for x in v):
+                # 화면에 차례로 보이는 문구 목록(방식 B 공동 경비 예시 등, constants effort.items)
+                for i, x in enumerate(v):
+                    yield f"{path}.{k}[{i}]", x
             else:
                 yield from walk(v, f"{path}.{k}")
     elif isinstance(obj, list):
