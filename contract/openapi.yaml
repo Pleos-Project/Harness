@@ -1,10 +1,13 @@
 openapi: 3.1.0
 info:
   title: chagok server
-  version: 0.3.0
+  version: 0.4.0
   description: |
-    앱이 부르는 엔드포인트는 /v1/cards, /v1/cards/swap, /v1/prices(평균 단가, 읽기 전용 — 0.3.0 제안).
-    /v1/range, /v1/settle 은 검증용 참조 구현 — 앱은 부르지 않는다 (11/5 안건 1).
+    운전 노고 정산(명세 v0.5, #46 — 0.4.0): 앱이 부르는 엔드포인트는 GET /v1/weather 하나다.
+    노고·금액·제안은 앱 로컬에서 계산하고, 서버는 출발·도착 지점의 강수 형태만 알려 준다(명세 v0.5 12절).
+
+    아래 /v1/cards, /v1/cards/swap, /v1/prices 는 피봇 전 흐름이다. 정리 방법은 따로 정하고 그때까지 남겨 둔다
+    (DECISIONS 11/7 '다음 PR로 넘김' ④). /v1/range, /v1/settle 은 검증용 참조 구현 — 앱은 부르지 않는다 (11/5 안건 1).
 
     원칙 (PRD 5-2, 7-1)
     - 앱은 잔량·주행가능거리·누적 주행거리·VIN 같은 원시 차량값을 보내지 않는다.
@@ -19,6 +22,46 @@ servers:
   - url: http://10.0.2.2:8000
     description: 개발용 — 에뮬레이터에서 보는 호스트 PC. 배포는 HTTPS(AC-N-3), app/README.md 네트워크 절 참고
 paths:
+  /v1/weather:
+    get:
+      summary: 한 지점의 지금 강수 형태 (기상청 초단기실황 PTY)
+      description: |
+        명세 v0.5 F20(출발 지점 → weather_dep)·F22(도착 지점 → weather_arr), 7절 강수 판정, 12절.
+        - 앱은 출발 때 출발 지점, 도착 때 도착 지점으로 한 번씩 부른다. 폴링·재시도 타이머·백그라운드 호출 금지.
+        - 서버는 좌표를 기상청 격자(nx, ny)로 바꿔 초단기실황(getUltraSrtNcst)을 한 번 부른다.
+          발표분은 KST 기준, 매시 40분 이후면 그 시각 정시분, 그 전이면 한 시간 전 정시분.
+        - 판정: PTY 1·4·5 → rain(4 = 소나기), 2·3·6·7 → snow, 0 → none.
+        - 실패는 모두 200 + unknown: 서버 키 없음, 격자 밖(국외), 연결 실패, 기상청 오류 코드·XML 오류,
+          3초 초과, 위에 없는 PTY 값. 앱도 3초 안에 못 받거나, 연결이 안 되거나, 200이 아니거나, unknown이면
+          그 지점을 '정보 없음'(가산 0)으로 두고 출발·도착을 이어 간다(AC-C-6).
+        - 좌표는 이 조회에만 쓴다. 서버는 좌표를 저장·캐시·로그하지 않는다(AC-N-4). 응답은 Cache-Control: no-store —
+          URL에 좌표가 들어가므로 앱 HTTP 캐시에도 남기지 않는다.
+        - 쿼리는 lat·lon 둘뿐. 다른 쿼리(누적 주행거리·VIN 같은 원시 차량값 등)가 붙으면 422.
+        - 서버 구현: server/chagok/weather.py. 키는 공공데이터포털 계정 인증키(TOURAPI_SERVICE_KEY)를 같이 쓴다.
+      parameters:
+        - name: lat
+          in: query
+          required: true
+          schema: { type: number, minimum: -90, maximum: 90 }
+          description: 위도(WGS84). NaN·Infinity는 422
+          example: 37.4127
+        - name: lon
+          in: query
+          required: true
+          schema: { type: number, minimum: -180, maximum: 180 }
+          description: 경도(WGS84). NaN·Infinity는 422
+          example: 127.0947
+      responses:
+        '200':
+          headers:
+            Cache-Control: { schema: { type: string, const: no-store } }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Weather' }
+              examples:
+                rain: { externalValue: ./samples/weather.rain.response.json }
+                unknown: { externalValue: ./samples/weather.unknown.response.json }
+        '422': { description: 'validation error — lat·lon 없음·범위 밖·숫자 아님, 또는 모르는 쿼리(원시 차량값 등)' }
   /v1/cards:
     post:
       summary: 차가 고른 한 장 + 뒤집힌 스택
@@ -96,6 +139,20 @@ paths:
       responses: { '200': { description: ok } }
 components:
   schemas:
+    Weather:
+      type: object
+      additionalProperties: false
+      required: [precip, observed_at]
+      description: 'GET /v1/weather. 앱은 출발 기록에 weather_dep, 도착 때 weather_arr로 precip만 남긴다(좌표는 남기지 않는다)'
+      properties:
+        precip:
+          type: string
+          enum: [none, rain, snow, unknown]
+          description: 'none 강수 없음 · rain 비(PTY 1·4·5, 소나기 포함) · snow 눈(PTY 2·3·6·7, 비/눈 포함) · unknown 정보 없음(실패 — 가산 0)'
+        observed_at:
+          type: [string, 'null']
+          format: date-time
+          description: '기상청 실황 기준 시각(정시, +09:00). 예 2026-11-07T16:00:00+09:00. unknown이면 null'
     Budget:
       type: object
       additionalProperties: false
