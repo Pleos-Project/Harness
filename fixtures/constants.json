@@ -54,9 +54,12 @@
       "a_main_text": "한 사람 {per_person}",
       "a_basis_text": "운전 노고 {amount}을 운전자 포함 {n}명이 나눈 값",
       "a_wage_text": "{wage_label} 1분 {wage_per_min}원 기준",
-      "b_text": "오늘은 {phrase}에서 운전자 빼고 나누는 게 어때요"
+      "b_text": "오늘은 {phrase}에서 운전자 빼고 나누는 게 어때요",
+      "unsettled_text": "이번 주행은 정리하지 못했어요"
     },
     "delay_threshold_pct": 10,
+    "arrival_cap": {"eta_times": 2, "eta_plus_min": 60, "max_min": 720,
+                    "_doc": "도착 시각 상한(#68, 효성 결정 11/8). 경과 = 도착 − 출발(쉰 시간 빼지 않음)이 max(ETA × eta_times, ETA + eta_plus_min) 또는 max_min을 넘으면 영수증 대신 '정리하지 못함'. 같으면 영수증. ETA를 모르면(0 이하) max_min만"},
     "fatigue": {"limit_min": 120, "rate_pct": 12.5, "reset_rest_min": 15,
                 "_basis": "화물자동차 운수사업법 시행규칙 제21조 제23호(운송사업자)·제22조 제6호(운수종사자): 2시간 연속 운전 → 15분 이상 휴게. 0.125 = 15 ÷ 120"},
     "wage_per_hour": 10700,
