@@ -1,5 +1,7 @@
 package com.mist.pleos_app.ui.components
 
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.CubicBezierEasing
@@ -667,4 +669,40 @@ fun Modifier.cgDashed(radius: Dp, color: Color): Modifier = this.drawBehind {
 @Composable
 fun CgIllustrationCircle(size: Dp, modifier: Modifier = Modifier, content: @Composable BoxScope.() -> Unit) {
     Box(modifier.size(size).background(Chagok.colors.placeholder, CircleShape), content = content)
+}
+
+// ------------------------------------------------------------ segmented · switch (#75 v41 설정)
+/** 둘로 나뉜 알약(`components/segmented`): 고른 쪽만 흰 면 + 굵게, 높이 76(분할 64). */
+@Composable
+fun CgSegmented(options: List<String>, selected: Int, onSelect: (Int) -> Unit, modifier: Modifier = Modifier, compact: Boolean = false) {
+    val c = Chagok.colors
+    Row(modifier.background(c.btnBasic, CircleShape).padding(6.gpx), horizontalArrangement = Arrangement.spacedBy(4.gpx)) {
+        options.forEachIndexed { i, label ->
+            val on = i == selected
+            Box(
+                Modifier.then(if (compact) Modifier.weight(1f) else Modifier).height(if (compact) 64.gpx else 76.gpx)
+                    .then(if (on) Modifier.shadow(2.gpx, CircleShape).background(c.surfaceCard, CircleShape) else Modifier)
+                    .clickable(role = Role.RadioButton) { onSelect(i) }.padding(horizontal = if (compact) 12.gpx else 30.gpx),
+                contentAlignment = Alignment.Center,
+            ) {
+                val st = if (compact) Chagok.type.bodyM else Chagok.type.bodyL
+                Text(label, style = st.copy(fontWeight = if (on) FontWeight.Bold else FontWeight.Normal), color = if (on) c.textPrimary else c.textTertiary, maxLines = 1)
+            }
+        }
+    }
+}
+
+/** 스위치 116 × 68(`components/switch`): 켜짐 = 검은 바탕 + 동그라미 오른쪽. */
+@Composable
+fun CgSwitch(checked: Boolean, onToggle: (Boolean) -> Unit, label: String, modifier: Modifier = Modifier) {
+    val c = Chagok.colors
+    val x by animateFloatAsState(if (checked) 1f else 0f, tween(320, easing = EaseRise), label = "sw")
+    Box(
+        modifier.size(116.gpx, 68.gpx).background(if (checked) c.textPrimary else c.lineStrong, RoundedCornerShape(34.gpx))
+            .semantics { contentDescription = label }
+            .toggleable(checked, role = Role.Switch, onValueChange = onToggle).padding(6.gpx),
+    ) {
+        val shift = 48.gpx
+        Box(Modifier.graphicsLayer { translationX = x * shift.toPx() }.size(56.gpx).shadow(2.gpx, CircleShape).background(c.surfaceCard, CircleShape))
+    }
 }
