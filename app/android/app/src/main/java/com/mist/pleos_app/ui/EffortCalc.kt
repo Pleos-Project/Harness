@@ -72,6 +72,11 @@ import com.mist.pleos_app.effort.CalcFx
 import com.mist.pleos_app.effort.CalcItem
 import com.mist.pleos_app.effort.CalcSay
 import com.mist.pleos_app.effort.EffortUi
+import com.mist.pleos_app.ui.components.CgButton
+import com.mist.pleos_app.ui.components.CgButtonKind
+import com.mist.pleos_app.ui.components.CgLoadingDots
+import com.mist.pleos_app.ui.components.CgSize
+import com.mist.pleos_app.ui.components.CgTitleBar
 import com.mist.pleos_app.ui.theme.Chagok
 import com.mist.pleos_app.ui.theme.ChagokColors
 import com.mist.pleos_app.ui.theme.gpx
@@ -167,13 +172,13 @@ internal fun EffortCalcScreen(ui: EffortUi, items: List<CalcItem>, onDone: () ->
         else -> sayText(items[step].say)
     }
     Column(Modifier.fillMaxSize()) {
-        Row(Modifier.fillMaxWidth().height(80.gpx), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(24.gpx)) {
-            Text(stringResource(R.string.effort_arrive_title, trip.destName), Modifier.weight(1f), style = if (narrow) t.titleL else t.headlineS, color = c.textPrimary, maxLines = 1)
-            SkipButton(stringResource(R.string.effort_calc_skip)) { done() }
-        }
+        CgTitleBar(
+            stringResource(R.string.effort_arrive_title, trip.destName), compact = narrow,
+            trailing = { CgButton(stringResource(R.string.effort_calc_skip), { done() }, kind = CgButtonKind.Basic, size = CgSize.S) },
+        )
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.gpx)) {
             Text(say, style = if (narrow) t.bodyL else t.titleS, color = c.textSecondary)
-            if (loading) LoadingDots()
+            if (loading) CgLoadingDots()
         }
         BoxWithConstraints(Modifier.fillMaxWidth().weight(1f)) {
             val d = LocalDensity.current
@@ -520,31 +525,6 @@ private fun Car(
             rotate(-90f, Offset(cx, cy)) {
                 scale(-sx, sy, Offset(cx, cy)) { drawCar(paths, Offset(cx - carW / 2, cy - carH / 2), carW, c.textPrimary, c.surfaceCard, c.placeholderStrong, wheel) }
             }
-        }
-    }
-}
-
-@Composable
-private fun SkipButton(text: String, onClick: () -> Unit) {
-    val c = Chagok.colors
-    val src = remember { MutableInteractionSource() }
-    val pressed by src.collectIsPressedAsState()
-    Box(
-        Modifier.defaultMinSize(minHeight = 64.gpx).background(if (pressed) c.btnBasicPressed else c.btnBasic, RoundedCornerShape(16.gpx))
-            .clickable(src, indication = null, role = Role.Button, onClick = onClick).padding(horizontal = 22.gpx, vertical = 12.gpx),
-        contentAlignment = Alignment.Center,
-    ) { Text(text, style = Chagok.type.bodyS, color = c.textPrimary) }
-}
-
-/** 기다림 점 세 개(1초, 0.15초씩 지연). */
-@Composable
-private fun LoadingDots() {
-    val c = Chagok.colors
-    val inf = rememberInfiniteTransition(label = "dots")
-    Row(horizontalArrangement = Arrangement.spacedBy(6.gpx)) {
-        repeat(3) { i ->
-            val a by inf.animateFloat(.25f, 1f, infiniteRepeatable(keyframes { durationMillis = 1000; .25f at 0; 1f at 300 + i * 150; .25f at 1000 }), label = "d$i")
-            Box(Modifier.size(10.gpx).graphicsLayer { alpha = a }.background(c.textSecondary, CircleShape))
         }
     }
 }
