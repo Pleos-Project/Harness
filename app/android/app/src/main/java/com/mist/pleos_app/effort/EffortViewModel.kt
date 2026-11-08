@@ -255,14 +255,19 @@ class EffortViewModel(app: Application, private val saved: SavedStateHandle) : A
      * 진행 중 출발이 있고 정차(기어 P)일 때: 운전석 문이 열리는 순간, 또는 다시 보인 뒤 처음이면 도착인지 본다.
      */
     fun onCar(parked: Boolean, doorOpen: Boolean?) {
-        val opened = doorOpen == true && lastDoorOpen != true
+        val cue = when {
+            doorOpen == true && lastDoorOpen == false -> ArrivalCue.DOOR
+            doorOpen == true && lastDoorOpen == null -> ArrivalCue.DOOR_ON_SHOW
+            else -> null
+        }
         lastDoorOpen = doorOpen
         if (!parked || flow.phase != EffortPhase.DRIVING) return
-        when {
-            opened -> checkArrival("door")
-            resumeCheck && !source.demo && flow.state.openTrip?.demo != true -> checkArrival("resume")
-        }
+        val trip = flow.state.openTrip ?: return
+        val resume = resumeCheck && !source.demo && !trip.demo
         resumeCheck = false
+        val c = cue ?: (if (resume) ArrivalCue.RESUME else return)
+        if (!autoArrivalAllowed(trip, c)) { ChagokLog.event("effort_auto_arrive_skip", "cue" to c.name, "eta" to false); return }
+        checkArrival(c.name.lowercase())
     }
 
     private fun checkArrival(reason: String) {
