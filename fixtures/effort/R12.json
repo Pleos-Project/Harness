@@ -18,6 +18,9 @@
     "distance_km": null
   },
   "expected": {
+    "status": "ok",
+    "status_text": null,
+    "elapsed_limit_min": 480.0,
     "elapsed_min": 255.0,
     "drive_min": 240.0,
     "rest_min": 15.0,
