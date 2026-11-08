@@ -1,7 +1,8 @@
-"""차곡 서버. 운전 노고 정산(명세 v0.5, #46)에서 앱이 부르는 건 두 가지다.
+"""차곡 서버. 운전 노고 정산(명세 v0.5, #46)에서 앱이 부르는 건 세 가지다.
 - GET /v1/weather: 출발·도착 지점 강수(chagok/weather.py)
+- GET /v1/weather/trip: 도착 때 한 번, 출발~도착 1시간 조각마다 두 지점 강수(chagok/weather.py, #63)
 - GET /v1/places: 출발 화면 목적지 검색, 카카오 로컬 키워드 검색 대행(chagok/places.py, 노고 PRD v1.3 8장)
-좌표·검색어는 그 조회 한 번에만 쓰고 저장·캐시·로그하지 않는다(AC-N-4).
+좌표·시각·검색어는 그 조회 한 번에만 쓰고 저장·캐시·로그하지 않는다(AC-N-4).
 
 피봇 전 흐름(정리 전까지 남겨 둔다, DECISIONS 11/7 '다음 PR로 넘김' ④):
 /v1/cards, /v1/cards/swap, /v1/prices(평균 단가, 읽기 전용).
@@ -22,7 +23,7 @@ from contextlib import asynccontextmanager
 from typing import Annotated, Literal
 
 from fastapi import FastAPI, HTTPException, Query, Request, Response
-from pydantic import BaseModel, ConfigDict, Field, StringConstraints, model_validator
+from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, StringConstraints, model_validator
 
 from . import engine as E
 from . import live
@@ -41,7 +42,7 @@ async def _lifespan(_app):
     yield
 
 
-app = FastAPI(title="chagok", version="0.5.0", lifespan=_lifespan)
+app = FastAPI(title="chagok", version="0.6.0", lifespan=_lifespan)
 CONST = load_constants()
 DEMO = load_demo_candidates()
 STORE = SessionStore()
@@ -126,6 +127,27 @@ class WeatherQuery(Strict):
     lon: float = Field(ge=-180, le=180, allow_inf_nan=False)
 
 
+class WeatherTripQuery(Strict):
+    # 쿼리는 두 지점 좌표와 출발·도착 시각뿐. 다른 쿼리(원시 차량값, /v1/weather의 lat·lon 등)가 붙으면 422(extra="forbid")
+    dep_lat: float = Field(ge=-90, le=90, allow_inf_nan=False)
+    dep_lon: float = Field(ge=-180, le=180, allow_inf_nan=False)
+    arr_lat: float = Field(ge=-90, le=90, allow_inf_nan=False)
+    arr_lon: float = Field(ge=-180, le=180, allow_inf_nan=False)
+    # ISO 8601, 시간대 필수(2026-11-07T14:20:00+09:00 또는 ...Z). 쿼리에서 +는 %2B로 보낸다(안 그러면 공백이 돼 422)
+    from_: AwareDatetime = Field(alias="from")
+    to: AwareDatetime
+
+    @model_validator(mode="after")
+    def _span(self):
+        if self.from_ >= self.to:
+            raise ValueError("from은 to보다 앞이어야 해요")
+        if self.to - self.from_ > W.TRIP_MAX:
+            raise ValueError("출발~도착은 24시간까지만 받아요(기상청은 최근 24시간 실황만 줘요)")
+        if self.to > W.now_kst() + W.FUTURE_SLACK:
+            raise ValueError("to가 지금보다 10분 넘게 늦어요")
+        return self
+
+
 class PlacesQuery(Strict):
     # 쿼리는 검색어와 (선택) 현재 위치 lat·lng뿐. 다른 쿼리가 붙으면 422(extra="forbid")
     query: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=100)]
@@ -160,6 +182,19 @@ def weather(q: Annotated[WeatherQuery, Query()], response: Response) -> dict:
     res = W.lookup(q.lat, q.lon, WEATHER_KEY)
     response.headers["Cache-Control"] = "no-store"
     log("weather", status=200, ms=_ms(t0), precip=res.precip, **({"err": res.err} if res.err else {}))
+    return res.public()
+
+
+@app.get("/v1/weather/trip")
+def weather_trip(q: Annotated[WeatherTripQuery, Query()], response: Response) -> dict:
+    """도착 때 한 번, 출발~도착 1시간 조각마다 출발·도착 지점 강수(기상청 초단기실황 PTY·RN1). #63.
+    실패·3초 초과 조각은 unknown, 전부 실패면 status "unavailable"(모두 200) → 앱은 지금 규칙(출발·도착 1회)으로.
+    좌표·시각은 로그에 남기지 않는다(AC-N-4). URL에 좌표가 들어가므로 응답을 캐시하지 않게 한다."""
+    t0 = time.perf_counter()
+    res = W.trip((q.dep_lat, q.dep_lon), (q.arr_lat, q.arr_lon), q.from_, q.to, WEATHER_KEY, now=W.now_kst())
+    response.headers["Cache-Control"] = "no-store"
+    log("weather_trip", status=200, ms=_ms(t0), result=res.status, hours=len(res.hours), calls=res.calls,
+        unknown=res.unknown, **({"err": ",".join(res.errs)} if res.errs else {}))
     return res.public()
 
 
