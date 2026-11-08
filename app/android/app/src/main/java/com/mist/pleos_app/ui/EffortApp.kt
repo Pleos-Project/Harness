@@ -93,7 +93,7 @@ fun EffortApp(
     val depart by vm.departUi.collectAsStateWithLifecycle()
     val payer by vm.payerState.collectAsStateWithLifecycle()
     // CCP Back: 최상단(홈)에서는 finish 하지 않고 숨긴다. 주행 중 Back은 받아서 무시(가림 화면 유지)
-    BackHandler { if (!driving && !vm.back()) onExit() }
+    BackHandler { if (driving) return@BackHandler; if (screen == EffortScreen.CALC) vm.calcDone() else if (!vm.back()) onExit() }
     // F22 도착: 기어·운전석 문이 바뀔 때, 그리고 화면이 다시 보일 때(이벤트, 폴링 없음). 기어 P + 문 열림이면 도착인지 본다
     val shown by vm.shown.collectAsStateWithLifecycle()
     LaunchedEffect(parked, doorOpen, shown) { vm.onCar(parked, doorOpen) }
@@ -122,6 +122,7 @@ fun EffortApp(
                 )
             }
             EffortScreen.SETTINGS -> EffortSettings(settings, onChange = vm::updateSettings, onReset = vm::resetRecords)
+            EffortScreen.CALC -> if (ui.calcItems.isEmpty()) LaunchedEffect(Unit) { vm.calcDone() } else EffortCalcScreen(ui, ui.calcItems, onDone = vm::calcDone)
             EffortScreen.RECEIPT -> EffortArriveScreen(ui, onRest = vm::answerRest, onPick = vm::pick, onClose = vm::closeArrive)
         }
     }
