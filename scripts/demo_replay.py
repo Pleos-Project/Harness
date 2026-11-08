@@ -224,18 +224,25 @@ def step0(r: Run, reset: bool) -> None:
             tap("닫기")
         elif has("뒤로", ts):
             tap("뒤로")
+        elif has("제안 방식", ts):                     # 설정 화면은 [뒤로] 단추가 없어 BACK 키(앱 BackHandler → 홈)
+            adb("shell", "input", "keyevent", "4")
         time.sleep(0.8)
     if has("가는 중이에요") and tap("›"):            # 지난 리허설이 남긴 진행 중 출발은 그만두기(기록 안 남음)
         r.check("남은 진행 중 출발 그만두기", tap("그만두기"))
         time.sleep(0.8)
     r.check("홈 설정 단추", tap("설정"))
     time.sleep(0.8)
-    if reset:
-        r.check("기록 초기화", tap("기록 초기화") and tap("지우기")); time.sleep(0.6)
     on = [(t, x, y) for t, x, y in texts() if t == "켜기"]
     r.check("데모 고정 모드 켜기", bool(on))
     adb("shell", "input", "tap", str(on[0][1]), str(on[0][2]))
     time.sleep(0.5)
+    if reset:
+        # 설정 아래쪽(단가 출처 칸 밑, #82)이라 넘겨서 누르고, [뒤로]가 보이게 다시 위로 올린다
+        adb("shell", "input", "swipe", "1700", "1100", "1700", "300", "300")
+        time.sleep(0.6)
+        r.check("기록 초기화", tap("기록 초기화") and tap("지우기")); time.sleep(0.6)
+        adb("shell", "input", "swipe", "1700", "300", "1700", "1100", "300")
+        time.sleep(0.6)
     tap("뒤로") or adb("shell", "input", "keyevent", "4")
     time.sleep(0.8)
 
