@@ -186,6 +186,30 @@
     <string name="effort_receipt_total">합계</string>
     <string name="effort_rest_sheet_title">중간에 쉰 시간이 있었나요?</string>
     <string name="effort_rest_sheet_sub">고르면 운전 시간에서 빼고 영수증을 고쳐요</string>
+    <!-- 계산 연출(Design v2 screens/calc.html, 프로토타입 문구 그대로 · 임시) -->
+    <string name="effort_calc_loading">도착한 곳의 날씨를 확인하고 있어요</string>
+    <string name="effort_calc_start">오늘 운전의 노고를 하나씩 세어 볼게요</string>
+    <string name="effort_calc_done">다 셌어요. 오늘 운전 정말 수고 많았어요</string>
+    <string name="effort_calc_skip">건너뛰기</string>
+    <string name="effort_calc_total">오늘 운전 %1$s</string>
+    <string name="effort_calc_none">없음</string>
+    <string name="effort_calc_unknown">정보 없음</string>
+    <string name="effort_calc_honk">빵!</string>
+    <string name="effort_calc_zip">쌩</string>
+    <string name="effort_calc_say_rain">쏟아지는 비를 뚫고 달린 시간 세는 중…</string>
+    <string name="effort_calc_say_snow">미끄러운 눈길을 조심조심 달린 시간 세는 중…</string>
+    <string name="effort_calc_say_weather_none">날씨는 이번엔 확인하지 못했어요</string>
+    <string name="effort_calc_say_clear">맑은 하늘 확인 중… 오늘은 날씨가 도와줬네요</string>
+    <string name="effort_calc_say_jam">꽉 막힌 길에서 지루함을 꾹 참은 시간 세는 중…</string>
+    <string name="effort_calc_say_jam_none">막힘 없이 달렸는지 확인 중…</string>
+    <string name="effort_calc_say_late">예상보다 길어진 운전을 버틴 시간 세는 중…</string>
+    <string name="effort_calc_say_late_none">예상한 시간 안에 왔는지 확인 중…</string>
+    <string name="effort_calc_say_night">어두운 밤길에 눈을 부릅뜬 시간 세는 중…</string>
+    <string name="effort_calc_say_night_none">밤길이 있었는지 확인 중…</string>
+    <string name="effort_calc_say_long">쉬지 않고 2시간 넘게 핸들을 잡은 시간 세는 중…</string>
+    <string name="effort_calc_say_long_none">쉬지 않고 오래 달렸는지 확인 중…</string>
+    <string name="effort_calc_say_dist_group">오늘 모두를 태우고 달린 거리 세는 중…</string>
+    <string name="effort_calc_say_dist_solo">오늘 달린 거리 세는 중…</string>
     <!-- F24 방식 A 버튼: PRD 5-2 "[받아들이기] 글자는 디자인 확인" → 시안 [좋아요] -->
     <string name="effort_offer_like">좋아요</string>
     <string name="effort_offer_a_done">좋아요, 오늘 기록에 남겼어요</string>

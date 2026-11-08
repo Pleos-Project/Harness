@@ -48,7 +48,7 @@ interface DepartNavi {
 
 /** 노고 흐름 화면(명세 v0.5 3절). */
 /** 도착 화면(RECEIPT)은 영수증과 제안을 한 화면에 둔다(Design v2 arrive, #75). */
-enum class EffortScreen { HOME, DEPART, SETTINGS, RECEIPT }
+enum class EffortScreen { HOME, DEPART, SETTINGS, CALC, RECEIPT }
 
 /** 홈·출발·영수증 화면이 보는 상태. */
 data class EffortUi(
@@ -65,6 +65,7 @@ data class EffortUi(
     val unsettled: Boolean = false,                     // 정리하지 못함(#68): 영수증 대신 안내 문구(receipt.statusText)와 [닫기]만
     val items: List<com.mist.pleos_app.engine.EffortItem> = emptyList(),   // 방식 B 항목(공동 경비 예시 포함)
     val done: ArriveDone? = null,                       // 고른 뒤: 기록은 남겼고 같은 화면에 "남겼어요"를 보여 주는 중
+    val calcItems: List<CalcItem> = emptyList(),        // 계산 연출 체크포인트 6개(도착 뒤, 정리하지 못함이 아닐 때)
 )
 
 /**
@@ -129,6 +130,8 @@ class EffortViewModel(app: Application, private val saved: SavedStateHandle) : A
             unsettled = isUnsettled(receipt),
             items = effortConstants?.items.orEmpty(),
             done = d,
+            calcItems = if (trip?.arrived == true && receipt != null && !isUnsettled(receipt) && effortConstants != null)
+                calcItems(trip, receipt, effortConstants, getApplication<Application>().getString(com.mist.pleos_app.R.string.effort_receipt_distance)) else emptyList(),
         )
     }
 
@@ -304,7 +307,8 @@ class EffortViewModel(app: Application, private val saved: SavedStateHandle) : A
         if (!flow.arrive(arrivedAt, weather)) return
         ChagokLog.event("effort_arrived", "reason" to reason, "demo" to demo)
         refresh()
-        open(EffortScreen.RECEIPT)
+        // 계산 연출(Design v2 #75) → 영수증. 정리하지 못함은 셀 것이 없어 바로 안내로
+        open(if (ui.value.unsettled) EffortScreen.RECEIPT else EffortScreen.CALC)
         if (ui.value.unsettled) ChagokLog.event("effort_unsettled", "reason" to reason)   // 날씨를 받아도 영수증이 안 나오니 부르지 않는다
         else if (weather == null) fetchArrivalWeather(arrivedAt)
     }
@@ -332,6 +336,12 @@ class EffortViewModel(app: Application, private val saved: SavedStateHandle) : A
 
     /** 영수증 화면의 쉰 시간 답(F21). 고르면 바로 다시 계산한다(#55). */
     fun answerRest(min: Int) { flow.answerRest(min); refresh(); ChagokLog.event("effort_rest", "min" to min) }
+
+    /** 계산 연출이 끝나거나 [건너뛰기]·뒤로 → 영수증. 스택에서 연출 자리를 영수증으로 바꿔 뒤로 가면 홈. */
+    fun calcDone() {
+        val names = saved.get<List<String>>(KEY_STACK) ?: listOf(EffortScreen.HOME.name)
+        saved[KEY_STACK] = names.filter { it != EffortScreen.CALC.name && it != EffortScreen.RECEIPT.name } + EffortScreen.RECEIPT.name
+    }
 
     // ------------------------------------------------------------ 제안(F24·F25) → 선택·기록(F26)
     /**
