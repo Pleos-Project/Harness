@@ -47,6 +47,7 @@ data class EffortItem(
     val priceKrw: Double,
     val phraseText: String = "",            // B 문장에 들어갈 말 "커피값"·"밥값"·"공동 경비"
     val examples: List<String> = emptyList(),   // 그 자리 글자가 차례로 바뀌는 예시(공동 경비만, 첫 값 = phraseText)
+    val source: String = "",                // 가격 출처(설정 › 단가 출처, S20)
 )
 
 data class EffortConstants(
@@ -115,7 +116,7 @@ fun parseEffortConstants(text: String): EffortConstants {
         wageLabel = e.str("wage_label"),
         items = e.getValue("items").jsonArray.map {
             val i = it.jsonObject
-            EffortItem(i.str("key"), i.str("label"), i.dbl("price_krw"), i.str("phrase_text"), i.strList("examples"))
+            EffortItem(i.str("key"), i.str("label"), i.dbl("price_krw"), i.str("phrase_text"), i.strList("examples"), i.str("source"))
         }.sortedBy { it.priceKrw },
         copy = parseEffortCopy(e.getValue("copy").jsonObject),
     )
@@ -420,6 +421,9 @@ fun effort(inp: EffortInput, c: EffortConstants): EffortReceipt {
     )
 }
 
+/** 1분 단가(원, 표기용) = 시급 ÷ 60을 원 단위로. 금액 계산은 반올림 전 시급을 그대로 쓴다. */
+fun wagePerMin(c: EffortConstants): Int = roundHalfUp(c.wagePerHour / 60)
+
 /** F24 금액(방식 A)과 F25 한 번 빼 주기(방식 B). 같은 노고 금액을 보여 주는 방식만 다르고, 두 화면은 따로다. */
 fun effortProposal(effortPctS: Double, n: Int, c: EffortConstants): EffortProposal {
     val amount = effortPctS * c.wagePerHour / 360_000
@@ -428,7 +432,7 @@ fun effortProposal(effortPctS: Double, n: Int, c: EffortConstants): EffortPropos
     val (aV, aT) = approxText(amount)
     val (pV, pT) = approxText(per)
     val item = bItem(share, c.items)
-    val perMin = roundHalfUp(c.wagePerHour / 60)
+    val perMin = wagePerMin(c)
     val t = c.copy.text
     return EffortProposal(
         amountKrw = amount, amountApprox = aV, amountText = aT,

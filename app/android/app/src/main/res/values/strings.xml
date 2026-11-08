@@ -275,5 +275,9 @@
     <string name="effort_settings_method_b">B · 한 번 빼 주기</string>
     <string name="effort_settings_method_hint">A/B 테스트용이에요. 두 방식은 서로 다른 화면이에요</string>
     <string name="effort_settings_demo_hint">켜면 시연 데이터(정해 둔 출발·도착 시각과 날씨)로 진행해요</string>
+    <string name="effort_settings_wage">단가 출처</string>
+    <string name="effort_settings_wage_how">1분 단가는 %1$s 시급 %2$s을 60분으로 나눈 %3$s이에요</string>
+    <string name="effort_settings_wage_use">운전 노고는 운전한 분 × 1분 단가 × 오늘 배수예요</string>
+    <string name="effort_settings_items">한 번 빼 주기 항목</string>
     <string name="effort_reset_body">진행 중인 출발과 지난 기록이 지워져요</string>
 </resources>

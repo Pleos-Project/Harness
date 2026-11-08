@@ -49,6 +49,8 @@ import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.mist.pleos_app.R
 import com.mist.pleos_app.app.Settings
+import com.mist.pleos_app.effort.WageSource
+import com.mist.pleos_app.effort.wageSourceOf
 import com.mist.pleos_app.effort.EffortPhase
 import com.mist.pleos_app.effort.EffortRecord
 import com.mist.pleos_app.effort.EffortScreen
@@ -126,7 +128,7 @@ fun EffortApp(
                     onConfirmPayers = { vm.confirmPayers(seats, it) }, onDismissPayers = { vm.dismissPayers(seats) },
                 )
             }
-            EffortScreen.SETTINGS -> EffortSettings(settings, onChange = vm::updateSettings, onReset = vm::resetRecords)
+            EffortScreen.SETTINGS -> EffortSettings(settings, ui.constants?.let(::wageSourceOf), onChange = vm::updateSettings, onReset = vm::resetRecords)
             EffortScreen.CALC -> if (ui.calcItems.isEmpty()) LaunchedEffect(Unit) { vm.calcDone() } else EffortCalcScreen(ui, ui.calcItems, onDone = vm::calcDone)
             EffortScreen.RECEIPT -> EffortArriveScreen(ui, onRest = vm::answerRest, onPick = vm::pick, onClose = vm::closeArrive)
         }
@@ -154,9 +156,9 @@ private fun EffortFrame(demoValues: Boolean, driving: Boolean, toast: @Composabl
 
 // ------------------------------------------------------------ 도착: 영수증(F23) + 쉰 시간(F21) + 제안(F24·F25) 한 화면 → EffortArrive.kt
 
-// ------------------------------------------------------------ 설정(S20): 제안 방식 A/B · 데모 고정 모드 · 기록 초기화
+// ------------------------------------------------------------ 설정(S20): 제안 방식 A/B · 데모 고정 모드 · 단가 출처 · 기록 초기화
 @Composable
-private fun EffortSettings(s: Settings, onChange: (Settings) -> Unit, onReset: () -> Unit) {
+private fun EffortSettings(s: Settings, wage: WageSource?, onChange: (Settings) -> Unit, onReset: () -> Unit) {
     val gap = Arrangement.spacedBy(24.gpx)
     var confirmReset by rememberSaveable { mutableStateOf(false) }
     var resetDone by rememberSaveable { mutableStateOf(false) }
@@ -177,6 +179,31 @@ private fun EffortSettings(s: Settings, onChange: (Settings) -> Unit, onReset: (
                 CgChip(stringResource(R.string.off), selected = !s.demoFixed, onClick = { onChange(s.copy(demoFixed = false)) })
             }
             CgCaption(stringResource(R.string.effort_settings_demo_hint))
+        }
+        // 단가 출처(S20, 노고 PRD 5-2): A 화면 근거 줄과 같은 문구 + 시급·1분 단가 + B 항목 가격·출처. 상수를 못 읽으면 칸을 숨김
+        if (wage != null) {
+            CgCaption(stringResource(R.string.effort_settings_wage))
+            CgCard(Modifier.fillMaxWidth()) {
+                CgBody(wage.wageText)
+                CgCaption(stringResource(R.string.effort_settings_wage_how, wage.wageLabel, wage.hourlyText, wage.perMinText))
+                CgCaption(stringResource(R.string.effort_settings_wage_use))
+            }
+            if (wage.items.isNotEmpty()) {
+                CgCaption(stringResource(R.string.effort_settings_items))
+                CgCard(Modifier.fillMaxWidth()) {
+                    Column(verticalArrangement = Arrangement.spacedBy(20.gpx)) {
+                        wage.items.forEach { i ->
+                            Column {
+                                Row(horizontalArrangement = gap, verticalAlignment = Alignment.CenterVertically) {
+                                    CgBody(i.label, Modifier.weight(1f))
+                                    CgBody(i.priceText)
+                                }
+                                if (i.source.isNotBlank()) CgCaption(i.source)
+                            }
+                        }
+                    }
+                }
+            }
         }
         CgCaption(stringResource(R.string.settings_records))
         CgButton(stringResource(R.string.settings_reset), { confirmReset = true }, Modifier.fillMaxWidth(), kind = CgButtonKind.Basic)
