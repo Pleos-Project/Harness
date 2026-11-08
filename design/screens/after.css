@@ -1,0 +1,34 @@
+/* Design v2(운전 노고 정산) — 아티팩트 시안에서 옮김. 값은 tokens.css의 --cg-* 변수, 크기는 Connect-S 실제 픽셀(1dp = 1px). */
+/* 맨 마지막에 읽는 것: 움직임 줄이기 · 야간 전용 덮어쓰기 */
+@media (prefers-reduced-motion:reduce){
+  .cg-tsmoke{display:none}
+}
+@media (prefers-reduced-motion:reduce){
+  .cg-smoke{display:none}
+}
+@media (prefers-reduced-motion:reduce){
+  .cg-cc-car,.cg-cfill{transition:none}
+  .cg-fx{animation:none;opacity:0}
+}
+@media (prefers-reduced-motion:reduce){
+  .cg-arr.cg-print .cg-paperwrap > .cg-paper,.cg-arr.cg-print .cg-paperwrap::after,.cg-arr.cg-print .cg-offer{animation:none}
+}
+@media (prefers-reduced-motion:reduce){
+  .cg-rsheet{animation:none}
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .cg-hcard .cg-go .cg-ar{background:#13141726}}
+:root[data-theme="dark"] .cg-hcard .cg-go .cg-ar{background:#13141726}
+@media (prefers-reduced-motion:reduce){
+  .cg-hero .cg-ill .cg-car,.cg-home.cg-enter .cg-hero,.cg-home.cg-enter .cg-hsearch,.cg-home.cg-enter .cg-hcard,.cg-hcard .cg-go{animation:none}
+}
+@media (prefers-reduced-motion:reduce){
+  .cg-play .cg-pbar{animation:none}
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .cg-cta .cg-ar{background:#13141726}}
+:root[data-theme="dark"] .cg-cta .cg-ar{background:#13141726}
+@media (prefers-reduced-motion:reduce){
+  .cg-skel,.cg-dots i,.cg-prog .cg-pdot,.cg-play .cg-chg,.cg-play .cg-rec.cg-new,.cg-play .cg-isheet{animation:none}
+}
+@media (prefers-reduced-motion:reduce){
+  .cg-opt b.cg-rot .cg-rl{animation:none}
+}

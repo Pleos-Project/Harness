@@ -1,0 +1,58 @@
+/* Design v2(운전 노고 정산) — 아티팩트 시안에서 옮김. 값은 tokens.css의 --cg-* 변수, 크기는 Connect-S 실제 픽셀(1dp = 1px). */
+/* ── 출발 화면 (PRD 8장): 목적지 검색창 + 최근 목적지(지도 없음) + 인원 + 출발 ── */
+.cg-field{display:flex;align-items:center;gap:20px;height:100px;padding:0 18px 0 28px;border:2px solid var(--cg-line-strong);border-radius:24px;background:var(--cg-surface-card);flex:none;font:var(--cg-title-s);color:var(--cg-text-tertiary);cursor:text}
+.cg-field.cg-on{border:3px solid var(--cg-text-primary)}
+.cg-field .cg-ph{margin-right:auto}
+.cg-field .cg-q{margin-right:auto;color:var(--cg-text-primary)}
+.cg-field .cg-q::after{content:"";display:inline-block;width:3px;height:36px;margin-left:4px;vertical-align:-6px;background:var(--cg-text-primary)}
+.cg-list{display:flex;flex-direction:column;padding:12px;flex:none}
+.cg-list .cg-lh{font:var(--cg-body-s);color:var(--cg-text-tertiary);padding:8px 16px 8px}
+.cg-dst{display:flex;align-items:center;gap:20px;min-height:112px;padding:0 24px;border-radius:24px;cursor:pointer}
+.cg-dst + .cg-dst{border-top:1px solid var(--cg-line)}
+.cg-dst.cg-on,.cg-dst.cg-on + .cg-dst{border-top-color:transparent}
+.cg-dst.cg-on{box-shadow:inset 0 0 0 3px var(--cg-text-primary)}
+.cg-dst .cg-tx{display:flex;flex-direction:column;gap:2px;margin-right:auto;min-width:0}
+.cg-dst .cg-nm{font:var(--cg-body-l);white-space:nowrap}
+.cg-dst .cg-ad{font:var(--cg-label-m);color:var(--cg-text-tertiary);white-space:nowrap}
+.cg-dst .cg-km{font:var(--cg-body-m);color:var(--cg-text-secondary);white-space:nowrap}
+.cg-acts{width:540px;flex:none}
+.cg-sum{padding:8px 28px}
+.cg-srow{display:flex;align-items:center;gap:16px;min-height:112px}
+.cg-srow + .cg-srow{border-top:1px solid var(--cg-line)}
+.cg-srow .cg-k{font:var(--cg-body-m);color:var(--cg-text-secondary);width:170px;flex:none}
+.cg-srow .cg-v{font:var(--cg-body-l);margin-right:auto;min-width:0;white-space:nowrap}
+.cg-srow .cg-v.cg-empty{color:var(--cg-text-quaternary)}
+.cg-kbd{position:absolute;left:0;right:0;bottom:0;height:400px;z-index:5;background:var(--cg-bg-primary);border-top:3px dashed var(--cg-line-strong);display:grid;place-items:center;font:var(--cg-title-s);color:var(--cg-text-tertiary)}
+.cg-p .cg-field{height:88px;font:var(--cg-body-l)}
+.cg-p .cg-list{padding:8px}
+.cg-p .cg-list .cg-lh{padding:4px 12px}
+.cg-p .cg-dst{min-height:88px;padding:0 16px}
+.cg-p .cg-dst .cg-nm{font:var(--cg-body-m-b)}
+.cg-p .cg-dst .cg-ad{font:var(--cg-label-s)}
+.cg-p .cg-sum{padding:4px 24px;flex:none}
+.cg-favs{display:flex;gap:12px;padding:4px 12px 12px;border-bottom:1px solid var(--cg-line);margin-bottom:4px}
+.cg-favs .cg-btn.cg-sel{background:var(--cg-surface-card);box-shadow:inset 0 0 0 3px var(--cg-text-primary)}
+.cg-p .cg-favs{padding:0 8px 8px}
+.cg-p .cg-srow{min-height:84px}
+.cg-p .cg-srow .cg-k{width:150px;font:var(--cg-label-m)}
+.cg-p .cg-srow .cg-v{font:var(--cg-body-m-b)}
+.cg-home > .cg-card.cg-list{margin-top:24px;align-self:center;width:1040px;max-width:100%}
+/* 출발 화면 */
+.cg-home.cg-dp > .cg-hsearch{margin-top:28px}
+.cg-home.cg-dp .cg-hcards{height:300px}
+.cg-home.cg-dp .cg-hcard .cg-nm{white-space:normal;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;line-height:48px}
+.cg-dst.cg-sk .cg-tx{gap:12px;width:60%}
+.cg-home.cg-dp.cg-p > .cg-hsearch{margin-top:20px}
+.cg-home.cg-dp.cg-p .cg-hcards{height:auto}
+.cg-home.cg-dp.cg-p .cg-hcard .cg-nm{line-height:40px}
+.cg-home.cg-dp.cg-p .cg-pv{flex-direction:column;align-items:stretch;padding:20px 24px;gap:12px;margin-top:16px}
+.cg-home.cg-dp.cg-p .cg-pv.cg-empty{font:var(--cg-body-m)}
+.cg-home.cg-dp.cg-p .cg-pv .cg-pvl{gap:8px}
+.cg-home.cg-dp.cg-p .cg-pv .cg-pvl > b{font:var(--cg-title-s)}
+.cg-home.cg-dp.cg-p .cg-pst3{gap:20px}
+.cg-home.cg-dp.cg-p .cg-pst3 .cg-st{font:var(--cg-body-l);min-width:0}
+.cg-home.cg-dp.cg-p .cg-pv .cg-pvn{font:var(--cg-label-m)}
+.cg-home.cg-dp.cg-p .cg-pv .cg-cta{align-self:stretch;justify-content:space-between}
+.cg-home.cg-dp.cg-p .cg-recempty.cg-dc{height:240px}
+.cg-home.cg-dp.cg-p .cg-pv .cg-pvl{gap:14px}
+.cg-home.cg-dp.cg-p .cg-pst3 .cg-st{font:var(--cg-title-s)}

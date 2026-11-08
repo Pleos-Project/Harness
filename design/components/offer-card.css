@@ -1,0 +1,30 @@
+/* Design v2(운전 노고 정산) — 아티팩트 시안에서 옮김. 값은 tokens.css의 --cg-* 변수, 크기는 Connect-S 실제 픽셀(1dp = 1px). */
+.cg-offer{flex:1;display:flex;flex-direction:column;gap:20px;padding:40px;min-width:0;min-height:0}
+.cg-offer .cg-cap2{font:var(--cg-body-m);color:var(--cg-text-tertiary)}
+.cg-offer .cg-head{font:var(--cg-headline-s)}
+.cg-offer .cg-head.cg-dim{color:var(--cg-text-tertiary)}
+.cg-offer .cg-big{font:var(--cg-headline-l);white-space:nowrap}
+.cg-offer .cg-why{font:var(--cg-body-m);color:var(--cg-text-secondary)}
+.cg-offer .cg-note{font:var(--cg-body-m);color:var(--cg-text-tertiary)}
+.cg-offer .cg-bts{display:flex;gap:16px}
+.cg-offer .cg-bts .cg-btn{flex:1}
+/* 방식 B 항목 = Basic Button L 100(고르면 바로 받아들이기). 기본값 = 채움 */
+.cg-opts{display:flex;flex-direction:column;gap:12px}
+.cg-opt{display:flex;align-items:center;gap:16px;min-height:100px;padding:0 36px;border-radius:32px;background:var(--cg-btn-basic);color:var(--cg-text-primary);cursor:pointer}
+.cg-opt:active{background:var(--cg-btn-basic-pressed)}
+.cg-opt b{font:var(--cg-title-s);margin-right:auto;white-space:nowrap}
+.cg-opt small{font:var(--cg-body-m);color:var(--cg-text-secondary);white-space:nowrap}
+.cg-opt.cg-def{background:var(--cg-btn-filled);color:var(--cg-btn-filled-text)}
+.cg-opt.cg-def small{color:inherit;opacity:.82}
+.cg-p .cg-offer{flex:1;padding:22px 24px;gap:12px}
+.cg-p .cg-offer .cg-head{font:var(--cg-title-l)}
+.cg-p .cg-offer .cg-big{font:var(--cg-headline-s)}
+.cg-p .cg-offer .cg-why,.cg-p .cg-offer .cg-note,.cg-p .cg-offer .cg-cap2{font:var(--cg-label-m)}
+.cg-p .cg-offer .cg-bts .cg-btn.cg-l{height:80px;border-radius:24px;font:var(--cg-body-l)}
+.cg-p .cg-opts{flex-direction:row}
+.cg-p .cg-opt{flex:1;min-width:0;flex-direction:column;justify-content:center;align-items:flex-start;gap:2px;min-height:96px;padding:8px 20px;border-radius:24px}
+.cg-p .cg-opt b{font:var(--cg-body-l);margin:0}
+.cg-p .cg-opt small{font:var(--cg-label-s);white-space:normal}
+.cg-opt b.cg-rot{display:block;height:1.25em;line-height:1.25em;overflow:hidden;margin-right:auto}
+.cg-opt b.cg-rot .cg-rl{display:flex;flex-direction:column;animation:cg-rot 12s cubic-bezier(.65,0,.35,1) infinite}
+.cg-opt b.cg-rot i{font-style:normal;display:block;height:1.25em;white-space:nowrap}

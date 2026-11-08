@@ -1,0 +1,4 @@
+/* Design v2(운전 노고 정산) — 아티팩트 시안에서 옮김. 값은 tokens.css의 --cg-* 변수, 크기는 Connect-S 실제 픽셀(1dp = 1px). */
+.cg-tbtn{height:72px;display:inline-grid;place-items:center;padding:0 22px;border-radius:36px;font:var(--cg-title-s);color:var(--cg-text-tertiary);cursor:pointer;white-space:nowrap;flex:none}
+.cg-tbtn.cg-pri{color:var(--cg-text-primary);font-weight:800}
+.cg-tbtn:active{background:var(--cg-btn-basic-pressed)}

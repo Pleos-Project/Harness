@@ -1,0 +1,11 @@
+/* Design v2(운전 노고 정산) — 아티팩트 시안에서 옮김. 값은 tokens.css의 --cg-* 변수, 크기는 Connect-S 실제 픽셀(1dp = 1px). */
+/* ── 도착: 영수증(5-1) + 제안(5-2 / 5-3)을 한 화면에 (5-4 "근거가 보인다") ── */
+.cg-arr{flex:1;min-height:0;display:flex;gap:24px}
+.cg-p .cg-arr{flex-direction:column;gap:16px}
+/* 출력 연출: 종이가 슬롯에서 1.1초에 걸쳐 내려오고, 제안 카드는 종이가 거의 나온 뒤 올라온다 */
+.cg-arr.cg-print .cg-paperwrap > .cg-paper,.cg-arr.cg-print .cg-paperwrap::after{animation:cg-print 1.1s cubic-bezier(.25,.8,.3,1) both}
+.cg-arr.cg-print .cg-offer{animation:cg-offer .45s cubic-bezier(.2,.7,.2,1) .9s both}
+.cg-arr .cg-offer{flex:0 0 640px}
+.cg-p .cg-arr .cg-offer{flex:1 1 auto}
+.cg-chg{background:var(--cg-placeholder-strong);box-shadow:-12px 0 0 var(--cg-placeholder-strong),12px 0 0 var(--cg-placeholder-strong);border-radius:8px}
+.cg-play .cg-chg{animation:cg-chg 1.8s ease-out forwards}

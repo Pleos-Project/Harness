@@ -1,0 +1,13 @@
+/* Design v2(운전 노고 정산) — 아티팩트 시안에서 옮김. 값은 tokens.css의 --cg-* 변수, 크기는 Connect-S 실제 픽셀(1dp = 1px). */
+.cg-pv{margin-top:28px;flex:1;min-height:0;border-radius:40px;background:var(--cg-surface-card);border:2px solid var(--cg-line);box-shadow:var(--cg-shadow-1);display:flex;align-items:center;gap:32px;padding:28px 28px 28px 44px}
+.cg-pv.cg-empty{background:transparent;border:3px dashed var(--cg-line-strong);box-shadow:none;justify-content:center;font:var(--cg-body-l);color:var(--cg-text-tertiary);padding:28px}
+.cg-pv .cg-pvl{flex:1;min-width:0;display:flex;flex-direction:column;gap:14px}
+.cg-pv .cg-pvl > b{font:var(--cg-title-l);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cg-pst3{display:flex;gap:48px}
+.cg-pst3 .cg-st{display:flex;flex-direction:column;gap:2px;font:var(--cg-title-s);min-width:150px;white-space:nowrap}
+.cg-pst3 .cg-st .cg-k{font:var(--cg-label-m);color:var(--cg-text-tertiary);font-style:normal}
+.cg-pv .cg-pvn{font:var(--cg-body-m);color:var(--cg-text-tertiary)}
+.cg-pv .cg-cta{align-self:center;margin-top:0}
+.cg-pvfail{display:flex;align-items:center;gap:12px;font:var(--cg-body-l);color:var(--cg-text-secondary)}
+.cg-pst3 .cg-skel{height:30px;margin-top:6px}
+.cg-pst3 .cg-st .cg-k .cg-skel{height:18px;margin:0}

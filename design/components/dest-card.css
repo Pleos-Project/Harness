@@ -1,0 +1,23 @@
+/* Design v2(운전 노고 정산) — 아티팩트 시안에서 옮김. 값은 tokens.css의 --cg-* 변수, 크기는 Connect-S 실제 픽셀(1dp = 1px). */
+.cg-hcards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:24px;height:320px;flex:none}
+.cg-hcard{border-radius:40px;background:var(--cg-placeholder);padding:8px;cursor:pointer;min-width:0;transition:background .2s cubic-bezier(.32,.72,0,1)}
+.cg-hcard .cg-in{height:100%;border-radius:32px;background:var(--cg-surface-card);box-shadow:var(--cg-shadow-1);padding:28px 28px 22px;display:flex;flex-direction:column;gap:6px;position:relative;min-width:0;transition:box-shadow .2s cubic-bezier(.32,.72,0,1)}
+.cg-hcard .cg-tag{display:flex;align-items:center;gap:10px;font:var(--cg-body-s);color:var(--cg-text-tertiary)}
+.cg-hcard .cg-tag .cg-ico{width:28px;height:28px;border-radius:8px}
+.cg-hcard .cg-nm{font:var(--cg-title-l);margin-top:auto;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cg-hcard .cg-mt{font:var(--cg-body-m);color:var(--cg-text-secondary);white-space:nowrap}
+.cg-hcard:active .cg-in{transform:scale(.985)}
+.cg-hcard.cg-on{background:var(--cg-text-primary)}
+.cg-hcard.cg-on .cg-nm{margin-top:12px}
+.cg-hcard .cg-go{margin-top:auto;height:80px;border-radius:999px;background:var(--cg-btn-filled);color:var(--cg-btn-filled-text);display:flex;align-items:center;justify-content:space-between;padding:0 10px 0 30px;font:var(--cg-body-l);cursor:pointer;animation:cg-go .35s cubic-bezier(.32,.72,0,1) both}
+.cg-hcard .cg-go .cg-ar{width:60px;height:60px;border-radius:50%;background:#ffffff26;display:grid;place-items:center}
+.cg-hcard .cg-go .cg-ic{width:36px;height:36px}
+.cg-home.cg-p .cg-hcards{grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;height:auto;grid-auto-rows:200px}
+.cg-home.cg-p .cg-hcard{border-radius:32px;padding:6px}
+.cg-home.cg-p .cg-hcard .cg-in{border-radius:26px;padding:20px 22px 16px}
+.cg-home.cg-p .cg-hcard .cg-nm{font:var(--cg-title-s)}
+.cg-home.cg-p .cg-hcard .cg-mt{font:var(--cg-label-m)}
+.cg-home.cg-p .cg-hcard .cg-tag{font:var(--cg-label-m)}
+.cg-home.cg-p .cg-hcard .cg-go{height:60px;font:var(--cg-body-m-b);padding:0 6px 0 22px}
+.cg-home.cg-p .cg-hcard .cg-go .cg-ar{width:48px;height:48px}
+.cg-home.cg-p .cg-hcard.cg-on .cg-nm{margin-top:4px}

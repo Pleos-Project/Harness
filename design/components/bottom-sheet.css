@@ -1,0 +1,30 @@
+/* Design v2(운전 노고 정산) — 아티팩트 시안에서 옮김. 값은 tokens.css의 --cg-* 변수, 크기는 Connect-S 실제 픽셀(1dp = 1px). */
+/* 2안: 짧은 하단 시트. 딤 없음(뒤 화면이 그대로 보여 뎁스가 느껴지지 않게), 고르면 바로 닫힘 */
+.cg-rsheet{position:absolute;left:24px;right:24px;bottom:24px;z-index:9;background:var(--cg-surface-card);border:1px solid var(--cg-line-strong);border-radius:40px;box-shadow:var(--cg-shadow-3);padding:16px 40px 36px;display:flex;flex-direction:column;gap:20px}
+.cg-rsheet .cg-grab{align-self:center;width:80px;height:6px;border-radius:999px;background:var(--cg-line-strong)}
+.cg-rsheet .cg-h{display:flex;flex-direction:column;gap:4px}
+.cg-rsheet .cg-h b{font:var(--cg-title-m)}
+.cg-rsheet .cg-chips{flex-wrap:nowrap}
+.cg-rsheet .cg-chip{flex:1;min-width:0}
+.cg-a-p1 .cg-rsheet{padding:14px 24px 24px;gap:14px}
+.cg-a-p1 .cg-rsheet .cg-h b{font:var(--cg-body-l)}
+.cg-a-p1 .cg-rsheet .cg-chips{flex-wrap:wrap}
+.cg-a-p1 .cg-rsheet .cg-chip{flex:1 1 40%;height:72px;font:var(--cg-body-m-b)}
+/* 쉰 시간 시트: 가로 창은 제안 칸 위로만 올라와 영수증을 가리지 않음, 세로 창은 아래 전체. 딤 없음, 영수증이 다 나온 뒤(1.3초) 올라옴 */
+.cg-rsheet{left:auto;right:40px;bottom:40px;width:640px;border-radius:32px;border-width:2px}
+/* 11/7 명준: 뒤의 제안 카드와 같은 폭·가장자리·모서리 */
+.cg-play .cg-rsheet{animation:cg-sheet .38s cubic-bezier(.2,.7,.2,1) both}
+.cg-play .cg-rsheet.cg-late{animation-delay:1.3s}
+.cg-rsheet .cg-h small{font:var(--cg-body-m);color:var(--cg-text-secondary)}
+.cg-rsheet .cg-chips{flex-wrap:wrap}
+.cg-rsheet .cg-chip{flex:1 1 40%}
+.cg-a-p1 .cg-rsheet{left:40px;right:40px;width:auto}
+.cg-isheet{position:absolute;z-index:9;left:50%;bottom:40px;width:760px;margin-left:-380px;background:var(--cg-surface-card);border:2px solid var(--cg-line-strong);border-radius:40px;box-shadow:var(--cg-shadow-3);padding:16px 40px 24px;display:flex;flex-direction:column;gap:8px}
+.cg-isheet .cg-grab{align-self:center;width:80px;height:6px;border-radius:999px;background:var(--cg-line-strong);margin-bottom:8px}
+.cg-isheet b{font:var(--cg-title-m)}
+.cg-isheet .cg-isub{font:var(--cg-body-m);color:var(--cg-text-secondary)}
+.cg-isheet .cg-inote{font:var(--cg-label-m);color:var(--cg-text-tertiary)}
+.cg-isheet .cg-tbtn{align-self:flex-end}
+.cg-play .cg-isheet{animation:cg-sheet .38s cubic-bezier(.2,.7,.2,1) both}
+.cg-a-p1 .cg-isheet{left:24px;right:24px;width:auto;margin-left:0;padding:14px 26px 18px}
+.cg-a-p1 .cg-isheet b{font:var(--cg-body-l)}

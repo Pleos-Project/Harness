@@ -1,0 +1,22 @@
+/* Design v2(운전 노고 정산) — 아티팩트 시안에서 옮김. 값은 tokens.css의 --cg-* 변수, 크기는 Connect-S 실제 픽셀(1dp = 1px). */
+/* ── 순정 내비(와이어) · 주행 차단 ── 캡처 대신 흑백 와이어(11/7 요청). 차곡이 그리는 화면이 아님 */
+.cg-navi-wf{position:absolute;inset:0;background:var(--cg-surface-card);overflow:hidden}
+.cg-navi-wf::before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent 0 119px,var(--cg-line) 119px 121px),repeating-linear-gradient(90deg,transparent 0 119px,var(--cg-line) 119px 121px)}
+.cg-navi-wf svg{position:absolute;left:80px;top:180px;width:calc(100% - 160px);height:calc(100% - 420px)}
+.cg-navi-wf polyline{fill:none;stroke:var(--cg-text-primary);stroke-width:10;stroke-linejoin:round;stroke-linecap:round}
+.cg-navi-wf circle{fill:var(--cg-surface-card);stroke:var(--cg-text-primary);stroke-width:8}
+.cg-navi-wf rect{fill:var(--cg-text-primary)}
+.cg-navi-wf .cg-tbt{position:absolute;left:32px;top:32px;display:flex;align-items:center;gap:20px;padding:24px 32px;border-radius:32px;background:var(--cg-btn-filled);color:var(--cg-btn-filled-text);font:var(--cg-body-l)}
+.cg-navi-wf .cg-tbt b{font:var(--cg-headline-s);margin-right:12px}
+.cg-navi-wf .cg-tbt .cg-ico{width:64px;height:64px;opacity:.7}
+.cg-navi-wf .cg-wm{position:absolute;right:40px;top:44px;font:var(--cg-title-s);color:var(--cg-text-tertiary)}
+.cg-navi-wf .cg-eta{position:absolute;left:32px;right:32px;bottom:32px;display:flex;align-items:baseline;gap:24px;padding:28px 36px;border-radius:32px;background:var(--cg-surface-card);border:2px solid var(--cg-line-strong)}
+.cg-navi-wf .cg-eta b{font:var(--cg-title-m);margin-right:auto;white-space:nowrap}
+.cg-navi-wf .cg-eta span{font:var(--cg-body-l);color:var(--cg-text-secondary);white-space:nowrap}
+.cg-p .cg-navi-wf .cg-wm{top:auto;bottom:220px;right:32px}
+.cg-p .cg-navi-wf .cg-eta{flex-direction:column;gap:4px}
+.cg-p .cg-navi-wf svg{left:40px;width:calc(100% - 80px)}
+.cg-block{position:absolute;inset:0;background:var(--cg-bg-primary);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;text-align:center;padding:40px}
+.cg-block .cg-ico{width:96px;height:96px;border-radius:24px}
+.cg-block b{font:var(--cg-title-l)}
+.cg-block span{font:var(--cg-body-m);color:var(--cg-text-tertiary)}

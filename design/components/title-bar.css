@@ -1,0 +1,17 @@
+/* Design v2(운전 노고 정산) — 아티팩트 시안에서 옮김. 값은 tokens.css의 --cg-* 변수, 크기는 Connect-S 실제 픽셀(1dp = 1px). */
+/* Title(Page Navigation) — Main / Depth: 높이 80, 뒤로 아이콘 56, 제목 Title L 40/52 */
+.cg-hd{height:80px;display:flex;align-items:center;gap:24px;flex:none;margin:0 -16px 0 0}
+.cg-hd .cg-name{font:var(--cg-headline-s);margin-right:auto;white-space:nowrap}
+.cg-hd .cg-ttl{font:var(--cg-title-l);margin-right:auto;white-space:nowrap}
+.cg-hd .cg-cap{white-space:nowrap}
+.cg-hd > .cg-btn.cg-ib.cg-plain:first-child{margin-left:-12px}
+.cg-p .cg-hd .cg-name{font:var(--cg-title-l)}
+.cg-p .cg-hd .cg-ttl{font:var(--cg-title-m)}
+.cg-p .cg-hd .cg-cap{display:none}
+.cg-hbar{height:80px;display:flex;align-items:center;justify-content:space-between;position:relative;flex:none}
+.cg-hbar .cg-logo{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font:800 44px/52px var(--cg-font);letter-spacing:.08em}
+/* 세로 840 */
+.cg-home.cg-p .cg-hbar .cg-logo{font:800 36px/44px var(--cg-font)}
+/* ── 11/8 유저 플로우 반영: 홈 · 출발 화면 · 로딩·에러·빈 상태·누른 뒤 (흑백, 지금 부품·간격 그대로) ── */
+.cg-hbar-r{width:80px;flex:none}
+.cg-hbar .cg-logo.cg-t{font:var(--cg-title-l);letter-spacing:0}

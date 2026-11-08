@@ -1,0 +1,10 @@
+/* Design v2(운전 노고 정산) — 아티팩트 시안에서 옮김. 값은 tokens.css의 --cg-* 변수, 크기는 Connect-S 실제 픽셀(1dp = 1px). */
+.cg-hsearch{align-self:center;width:1040px;max-width:100%;height:100px;flex:none;border-radius:50px;background:var(--cg-surface-card);border:2px solid var(--cg-line);box-shadow:var(--cg-shadow-1);display:flex;align-items:center;gap:20px;padding:0 18px 0 36px;font:var(--cg-title-s);color:var(--cg-text-tertiary);cursor:text}
+.cg-hsearch .cg-ph{margin-right:auto}
+.cg-hsearch .cg-mic{width:64px;height:64px;border-radius:50%;background:var(--cg-btn-basic);display:grid;place-items:center;flex:none}
+.cg-hsearch .cg-mic .cg-ico{width:30px;height:30px;border-radius:10px}
+.cg-hsearch.cg-on{border:3px solid var(--cg-text-primary);margin-top:24px}
+.cg-hsearch .cg-q{margin-right:auto;color:var(--cg-text-primary)}
+.cg-hsearch .cg-q::after{content:"";display:inline-block;width:3px;height:36px;margin-left:4px;vertical-align:-6px;background:var(--cg-text-primary)}
+.cg-home.cg-p .cg-hsearch{height:88px;font:var(--cg-body-l);padding:0 14px 0 26px}
+.cg-hsearch.cg-dis{opacity:.45;pointer-events:none}

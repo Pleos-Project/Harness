@@ -15,22 +15,25 @@
 - 시안에 없는 앱 요소가 기능(AC 번호가 있는 것)이면 반영 PR이 지우지 않고 "확인 필요"로 남긴다. 디자이너가 다음 디자인 PR에서 자리를 정한다.
 - 화면 시안은 `design/screens/<화면>.html`(+ 같은 이름 `.css`), 상태가 여럿이면 한 파일 안에 `data-state="기본|정산 닫음|…"` 블록으로 나눈다. 부품은 `design/components/`.
 
-### 시안 ↔ 앱 파일 대응표 (반영 PR이 고칠 곳)
+### 시안 ↔ 앱 파일 대응표 (반영 PR이 고칠 곳) — Design v2(운전 노고 정산, 11/8)
 | 시안 | 앱(Compose) | 비고 |
 |---|---|---|
-| `screens/home.html` | `ui/ChagokApp.kt` `HomeScreen`·`BalanceCard`·`TodayPickCard`, `ui/RecordScreen.kt` `SettleCard` | 정산 카드·잔고·오늘의 한 곳·상황 카드 자리 |
-| `screens/people-toast.html` | 홈 위 겹침(새로) · `ui/components` | 동승 인원 확인 토스트(F11, 토스트형 확정) |
-| `screens/range.html` | `ui/RangeScreen.kt` | 조건 바꾸기 |
-| `screens/card.html` | `ui/CardScreen.kt` `Shown`·`FrontCard`·`CostBreakdown` | 한 장 · 교체 · 3번째 넘김 · 비용 분해 |
-| `screens/record.html` | `ui/RecordScreen.kt` `RecordScreen` | 기록 |
-| `screens/charge.html` · `fuel.html` · `settings.html` · `error.html` | 없으면 새 화면(`Placeholder` 교체) | 충전 끝 · 주유 확인 · 설정 · 불러오기 실패 |
-| `components/<부품>.html` | `ui/components/Components.kt` `Cg*` | 버튼·칩·카드·배지·안내 등. 화면마다 따로 만들지 않는다 |
-| 모든 시안의 화면 문구 | `res/values/strings.xml` | 문구는 여기서만 고친다. 표기 규칙(PRD 5-3)·금지 문구 |
+| `screens/home.html` | `ui/EffortApp.kt` `EffortHome`·`RecordCard` | 시작 화면(새로) · 첫 사용 · 기본 · 진행 중(+시트) · 방금 끝난 기록 |
+| `screens/depart.html` | `ui/EffortApp.kt` `EffortDepart`·`DestRow`·`DemoDepart`, `ui/PayerToast.kt` | 목록형 → 목적지 카드 4장 + 미리보기 칸. 인원 확인은 위 바 줄 알림 바 |
+| `screens/search.html` | `ui/EffortApp.kt` `EffortDepart` 검색 상태 | 결과 · 검색 중 · 결과 없음 · 안 됨 · 위치 못 받음 |
+| `screens/drive.html` | 그리지 않음(순정 내비 · 시스템 차단 `DrivingCover`) | 참고용 |
+| `screens/calc.html` | 새 화면 `EffortCalcScreen`(가칭) | 도착 → 계산 연출(약 13초, 건너뛰기) → 영수증. 움직임은 `HANDOFF_v2.md` 3절 |
+| `screens/arrive.html` | `ui/EffortApp.kt` `EffortReceiptScreen` + `EffortProposalScreen` → **한 화면으로 합침** | 왼쪽 영수증 · 오른쪽 제안 카드(가로) / 위·아래(분할). 쉰 시간은 짧은 하단 시트 |
+| `screens/record.html` | `ui/RecordScreen.kt` · 기록 상세(새로, 디자인 제안) | 기록 상세 · 목록(자리) |
+| `components/<부품>.html` | `ui/components/Components.kt` `Cg*` | 버튼·칩·카드·시트 등. 화면마다 따로 만들지 않는다 |
+| 모든 시안의 화면 문구 | `res/values/strings.xml` | 문구는 여기서만 고친다. 임시 문구는 디자인이 확정 전(PR 본문에 목록) |
+- 피봇 전 시안 대응(`home`·`card`·`range` 등 옛 이름)은 쓰지 않는다. `components/badge`·`card-front`는 피봇 전 부품으로 이력만 남긴다.
 - 대응표에 없는 시안이 오면 반영 PR이 가장 가까운 파일을 고르고 PR 본문에 적는다. 화면 파일 이름이 바뀌면 이 표를 같이 고친다(개발 PR에서).
 
 ## 1. 값은 전부 tokens.css 변수로 — 기준은 Pleos Connect UI Design Guide
 - 색·글자·간격은 `design/tokens.css`의 `--cg-*` 변수만. 하드코딩 금지.
 - 기준은 [Pleos Connect UI Design Guide](https://document.pleos.ai/docs/connect/guide/docs-design/Introduction/intro)의 Foundations(Colors·Typography)와 Basic button. 지금 값은 H_Mate(June)가 가이드에서 옮긴 것이고, 확정은 명준이 한다(키 컬러는 BX와 함께).
+- **Design v2 화면 크기:** `screens/`·`components/`의 배치 크기(폭·높이·간격·모서리)는 Connect-S 실제 픽셀(2560 × 1440, 1dp = 1px)로 적는다. 색과 글자는 반드시 `--cg-*` 토큰. 앱 창은 가로 1700 × 1184, 분할 840 × 1184.
 - **크기 단위:** 가이드 크기는 디스플레이 실제 픽셀이다 → `calc(가이드값 * var(--u))`. 글자는 `font: var(--cg-body-s)`처럼 타이포 토큰을 통째로 쓴다(Headline 60/56/48 · Title 40/36/32 · Body 30/28/26 · Label 24/20). 터치 영역(48)처럼 dp 기준 값만 그냥 px. CSS에는 `sp`가 없다.
 - **주간/야간:** 기본은 Dark, 시스템이 Light면 Light(`prefers-color-scheme`). 앱이 따로 할 일은 없다. `preview.html`의 버튼만 `data-theme`로 강제한다.
 - **대비 4.5:1**은 주간·야간 둘 다 계산해서 확인한다. 가이드 informative 색(초록·파랑·빨강)은 주간 바탕 위 글자색으로 쓰면 미달이라 배지는 색 바탕 + `--cg-badge-*-text`로 쓴다.
@@ -44,23 +47,23 @@
   - `data-derived="theme_ko"` — 앱이 만드는 값: `theme_ko`(THEME_KO), `minutes_text`("1시간 10분"), `swaps_left`, `stack_left`, `illustration`, `balance_text`·정산·월 합계 문구(앱 로컬 계산)
 - 샘플 문구도 PRD 5-3 표기를 지킨다(`python scripts/lint_copy.py`가 검사): "0 원"·"7,920원" 금지, "빠듯"과 "추가 … 없이"를 같이 쓰지 않기, 글레오 비교 금지.
 
-### 만들어야 할 조각 (명세서 v0.4 화면 기준)
-| 조각 | 화면·기능 | 상태 |
+### 조각 목록 (Design v2, 11/8)
+| 조각 | 쓰는 곳 | Pleos 대응 |
 |---|---|---|
-| `card-front` | 한 장 앞면(F5) | 초안 있음 |
-| `badge` | 배지 3변형(F5) | 초안 있음 |
-| `card-stack` | 뒤집힌 스택 모서리 + "다른 후보 n"(F5) | |
-| `cost-sheet` | 비용 분해 바텀시트: 연료·통행료·주차("정보 없음")·합계·1인 몫·경유지 추가(F5·F8) | |
-| `per-person` | "1인 7천 원 안팎" 배지(F11) | |
-| `balance` | 홈 잔고 "배터리에 1만 9천 원어치 · 약 326km" + 단가 출처 작게("평균 단가")(F1) | |
-| `chip` | 프리셋·당일/1박·인원·테마 칩, 비활성 상태(추가 0원 불가)(F2·F3) | |
-| `charge-card` | "방금 약 1만 4천 원어치 충전 → 갈 곳 한 장 볼까요?"(F9) | |
-| `seat-banner` | "3명 · 1인 기준으로 볼까요?"(F11) | |
-| `settle-card` | "지난번 이후 132km · 약 8천 원 · 마지막 목적지 양평"(F10) | |
-| `record-summary` | "이번 달 이동비 약 7만 원 · 다녀온 곳 3곳" + 지도 핀·핀 상세(F17) | |
-| `demo-mark` | 화면 구석 "시연용 값"(AC-C-7) | |
-| `notice` | X2 안내 문구 9종 상태(잠시 후 다시·위치 확인 중·차량 정보를 읽는 중·범위 안 후보가 적어요 등) | |
-| `empty` | "첫 드라이브를 기다리는 중"(F17) | |
+| `button` · `icon-button` | 모든 화면 | Basic Button M 80 · L 100 · S 64 / Icon Button 80 · 64 |
+| `cta` | 홈 출발하기 · 미리보기 출발 | Basic Button L 채움 변형(알약 + 화살표 원) |
+| `text-button` | 인원 알림 확인 · 닫기 · 다시 시도 | 디자인 제안(면 없음) |
+| `chip` | 쉰 시간 4택 | Toggle Button M 80 |
+| `stepper` | 인원 | Stepper 420 × 100 |
+| `title-bar` | 모든 화면 위 | Title Main · Depth 80 |
+| `pill` | 인원 · 진행 중 | 디자인 제안 |
+| `search-field` | 출발 · 검색 | Text Field 100 알약 변형 |
+| `dest-card` · `record-card` · `preview-panel` | 출발 · 홈 | Card |
+| `people-alert` | 출발 화면 인원 확인 | System Notification 한 줄 변형 |
+| `bottom-sheet` | 쉰 시간 · 진행 중 출발 정보 | Bottom Sheet(딤 · 끌기 없음) |
+| `receipt` · `offer-card` | 도착 | 디자인 제안 · Card + Basic Button L |
+| `loading` · `empty` · `notice` | 로딩 · 빈 상태 · 에러 · 시연 표시 | — |
+- 움직임: 등장 움직임 규칙은 `.cg-play` 아래에 있다(시안 정지 화면은 끝 상태). 계산 연출처럼 JS로 차례를 짜는 움직임은 `prototype/`과 `HANDOFF_v2.md`가 기준.
 
 ## 3. 일러스트·아이콘·브랜드
 - 테마 8개 × 변형 3~4장(PRD 7-5). 파일명 `design/illustrations/<theme>-<n>.svg`, `<theme>` = 서버 `theme` 값:
@@ -83,7 +86,7 @@ Co-authored-by: <BX 디자이너 이름> <GitHub에 쓸 이메일>
 - 터치 영역 48px 이상, 글자 최소 12sp, 대비 4.5:1(주간·야간 둘 다).
 - Window Policy: 900px 이하(1:1 분할·세로 창)에서는 한 단으로 쌓는다(H_Mate 실측 기준).
 - 정차 화면만 있다(1차). 카드 뒤집기 전환은 1초 안. 자동 스크롤 없음.
-- 가로·세로·멀티윈도우(한 장만) 세 레이아웃. `design/preview.html`에서 셋 다 확인하고 PR.
+- 레이아웃은 앱 1개(1700 × 1184)와 분할(840 × 1184) 두 가지를 상태마다 함께 그린다(`screens/*.html`). `design/preview.html`에서 확인하고 PR.
 
 ## 5. 넘기는 방법
 - PR 제목 `design: <무엇>`. 리뷰는 June(연동). 시안 자체는 디자이너가 정하므로 리뷰는 Compose로 옮길 수 있는지·빠진 기능이 없는지를 본다.
@@ -100,3 +103,9 @@ Co-authored-by: <BX 디자이너 이름> <GitHub에 쓸 이메일>
   - 다시 돌리려면 Actions → design-handoff → Run workflow에서 디자인 PR 번호를 넣는다(라벨과 무관하게 돈다).
   - 모델은 Sonnet 5.5(effort high), 한 번에 최대 80턴. 사용량은 레포 시크릿 `CLAUDE_CODE_OAUTH_TOKEN` 주인(명준)의 Claude 구독 한도에서 나가고, 따로 청구되지 않는다.
 - 피그마를 쓴다면 Variables·Component·프레임 이름(테마 키) 세 가지만 지키고, PR 또는 팀 채널에 "토큰 갱신"을 남기면 개발이 가져간다.
+
+## 6. 프로토타입 (`design/prototype/`)
+- 디자인 아티팩트(Design v2) 원본 사본이다. JS로 화면을 그리고 눌러 볼 수 있으며, 계산 연출 · 영수증 출력 같은 움직임을 실제로 재생한다. **예시·참고용**이며 자동 반영 대상이 아니다(2절 "JS 없음" 규칙의 예외).
+- 화면 생김새의 기준은 `screens/`, 흐름·움직임의 기준은 `HANDOFF_v2.md`. 셋이 어긋나면 디자이너가 맞춘다.
+- 최신 아티팩트: https://claude.ai/artifact/MnKCLMKHXYrZqX72A2rgS9 (링크가 레포보다 앞설 수 있음 — 레포에 들어온 판이 넘긴 판)
+

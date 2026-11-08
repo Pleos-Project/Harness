@@ -1,0 +1,106 @@
+/* Design v2(운전 노고 정산) — 아티팩트 시안에서 옮김. 값은 tokens.css의 --cg-* 변수, 크기는 Connect-S 실제 픽셀(1dp = 1px). */
+/* ── 흑백 로우 와이어프레임 v2.1 (11/7 기획 요청 [2026-11-07-08]) ──
+   화이트·블랙과 그 사이 회색만. 포인트 색·그라데이션·일러스트 없음. 화면 틀 이미지(도로·GNB)도 흑백으로.
+   부품 크기·모서리·글자 크기는 Pleos design assets 2.1.5 그대로, 면 대신 선(테두리) 위주 */
+.cg-app img{filter:grayscale(1)}
+.cg-pg{position:absolute;inset:0;padding:40px;display:flex;flex-direction:column;gap:24px;word-break:keep-all;overflow-wrap:break-word}
+.cg-card{background:var(--cg-surface-card);border:2px solid var(--cg-line-strong);border-radius:32px;position:relative;min-width:0}
+.cg-cap{font:var(--cg-label-m);color:var(--cg-text-tertiary)}
+.cg-bar{display:block;height:24px;border-radius:12px;background:var(--cg-placeholder-strong)}
+.cg-split{flex:1;display:flex;gap:24px;min-height:0}
+.cg-col{display:flex;flex-direction:column;gap:24px;min-width:0;min-height:0}
+.cg-grow{flex:1}
+.cg-sp{flex:1;min-height:0}
+.cg-note{font:var(--cg-label-m);color:var(--cg-text-tertiary)}
+/* 인원 확인 알림 = System Notification(에셋 ivi_notification_system) 700: 모서리 48·그림자 Level3, 버튼 M 80 두 개. 앱 안 겹침, 자동으로 안 사라짐 */
+.cg-toast{position:absolute;z-index:10;left:50%;top:24px;transform:translateX(-50%);max-width:calc(100% - 48px);background:var(--cg-surface-card);border:1px solid var(--cg-line-strong);display:flex;flex-direction:column}
+.cg-toast.cg-nb{width:700px;border-radius:48px;box-shadow:var(--cg-shadow-3);overflow:hidden}
+.cg-toast.cg-nb .cg-nh{display:flex;flex-direction:column;gap:12px;padding:36px 40px 16px}
+.cg-toast.cg-nb .cg-nh .cg-t1{font:800 36px/44px var(--cg-font)}
+.cg-toast.cg-nb .cg-nh .cg-t2{font:400 26px/34px var(--cg-font);color:var(--cg-text-tertiary)}
+.cg-toast.cg-nb .cg-nm{display:flex;justify-content:center;padding:8px 32px 0}
+.cg-toast.cg-nb .cg-bt{display:flex;gap:16px;padding:24px}
+.cg-rcpt{flex:1.15;display:flex;flex-direction:column;padding:32px 40px;min-width:0;min-height:0}
+.cg-rcpt .cg-rh{display:flex;align-items:baseline;gap:20px}
+.cg-rcpt .cg-rh .cg-t{font:var(--cg-title-m);color:var(--cg-text-secondary)}
+.cg-rcpt .cg-rh .cg-tot{font:var(--cg-headline-m)}
+.cg-rcpt .cg-rh .cg-tot.cg-dim{color:var(--cg-text-quaternary)}
+.cg-rcpt .cg-mult{font:var(--cg-title-s);padding:4px 0 20px;border-bottom:3px solid var(--cg-text-primary)}
+.cg-ph-rows{display:flex;flex-direction:column;gap:32px;padding-top:32px}
+.cg-ph-rows .cg-bar:nth-child(2){width:78%}
+.cg-ph-rows .cg-bar:nth-child(3){width:64%}
+.cg-ph-rows .cg-bar:nth-child(4){width:40%}
+.cg-p .cg-rcpt{flex:none;padding:20px 24px}
+.cg-p .cg-rcpt .cg-rh .cg-t{font:var(--cg-body-l)}
+.cg-p .cg-rcpt .cg-rh .cg-tot{font:var(--cg-title-l)}
+.cg-p .cg-rcpt .cg-mult{font:var(--cg-body-l);padding:0 0 10px}
+.cg-p .cg-ph-rows{gap:20px;padding-top:20px}
+@keyframes cg-pop{0%{transform:scale(.55)}60%{transform:scale(1.2)}100%{transform:scale(1)}}
+@keyframes cg-rev{to{transform:translateX(-4px) scale(1.04,.88)}}
+@keyframes cg-jolt{0%{transform:scale(1.04,.88)}35%{transform:translateX(3px) scale(.97,1.05)}100%{transform:none}}
+@keyframes cg-tire{
+  0%{opacity:0;transform:translateX(0) scale(.08,.2);animation-timing-function:cubic-bezier(.2,.7,.3,1)}
+  8%{opacity:1}
+  11%{transform:translateX(2px) scale(.32,.36);animation-timing-function:cubic-bezier(.3,1.1,.5,1)}
+  46%{transform:translateX(var(--fx)) scale(1,.92);animation-timing-function:ease-out}
+  60%{opacity:1;transform:translateX(calc(var(--fx) - 6px)) scale(1.06,1);animation-timing-function:cubic-bezier(.3,0,.6,1)}
+  100%{opacity:0;transform:translateX(calc(var(--fx) - 30px)) translateY(-4px) scale(1.22,1.12)}}
+@keyframes cg-ex-grow{from{scale:.05 .3}to{scale:1 1}}
+@keyframes cg-ex-drift{from{translate:0 0}to{translate:-30px -18px}}
+@keyframes cg-ex-fade{from{opacity:1}to{opacity:0}}
+@keyframes cg-billow{from{scale:.96 1.03}to{scale:1.04 .97}}
+@keyframes cg-bob{to{transform:translateY(-1.5px)}}
+@keyframes cg-spin{to{transform:rotate(360deg)}}
+.cg-car .cg-cb{fill:var(--cg-surface-card);stroke:var(--cg-text-primary);stroke-width:5;stroke-linejoin:round}
+.cg-car .cg-cw{fill:var(--cg-placeholder-strong);stroke:var(--cg-text-primary);stroke-width:3;stroke-linejoin:round}
+.cg-car .cg-wh{transform-box:fill-box;transform-origin:center}
+.cg-car .cg-wh circle{fill:var(--cg-text-primary)}
+.cg-car .cg-wh .cg-hub{fill:var(--cg-surface-card)}
+.cg-car .cg-wh rect{fill:var(--cg-surface-card)}
+@keyframes cg-hop{40%{transform:translateY(-14px)}100%{transform:none}}
+@keyframes cg-fx{0%{opacity:0;transform:translateY(18px) scale(.86)}14%{opacity:1;transform:translateY(0) scale(1.04)}22%{transform:scale(1)}80%{opacity:1;transform:none;animation-timing-function:cubic-bezier(.4,0,1,1)}100%{opacity:0;transform:translateY(-14px) scale(.96)}}
+@keyframes cg-rain{0%{transform:translateY(0);opacity:0}20%{opacity:1}100%{transform:translateY(120px);opacity:0}}
+@keyframes cg-snow{0%{transform:translate(0,0);opacity:0}15%{opacity:1}50%{transform:translate(14px,62px)}100%{transform:translate(-6px,128px);opacity:0}}
+@keyframes cg-leaf{0%{transform:translate(-20px,0) rotate(0);opacity:0}15%{opacity:1}50%{transform:translate(22px,66px) rotate(160deg)}100%{transform:translate(-8px,150px) rotate(320deg);opacity:0}}
+@keyframes cg-crawl{to{transform:translateX(20px)}}
+@keyframes cg-jit{to{transform:translateY(-3px)}}
+@keyframes cg-honk{0%{transform:scale(0) rotate(-14deg);opacity:0}55%{transform:scale(1.12) rotate(4deg);opacity:1}100%{transform:scale(1) rotate(0);opacity:1}}
+@keyframes cg-zip{from{transform:translateX(-20px)}to{transform:translateX(170px)}}
+.cg-fx-zip .cg-tg{left:110px;top:70px}
+@keyframes cg-rise{from{transform:translateY(40px) rotate(-20deg)}to{transform:none}}
+@keyframes cg-twk{from{transform:scale(.4);opacity:.3}to{transform:scale(1.15);opacity:1}}
+@keyframes cg-flip{0%,35%{transform:rotate(0)}65%,100%{transform:rotate(180deg)}}
+@keyframes cg-road{to{background-position:-52px 0}}
+@keyframes cg-print{from{transform:translateY(-105%)}to{transform:none}}
+@keyframes cg-offer{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+@keyframes cg-sheet{from{transform:translateY(115%)}to{transform:none}}
+/* ── 홈(Nogo 가칭, 11/8): 레퍼런스 짜임 + Pleos 부품 + 흑백. 넉넉한 여백, 가운데 정렬, 카드는 바깥 틀 + 안쪽 판(이중 테두리) ── */
+.cg-home{position:absolute;inset:0;padding:40px;display:flex;flex-direction:column}
+@keyframes cg-idle{to{transform:translateY(-5px)}}
+@keyframes cg-go{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@keyframes cg-up{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:none}}
+@keyframes cg-drop{from{opacity:0;transform:translateY(-16px) scale(.98)}to{opacity:1;transform:none}}
+@keyframes cg-blink{from{opacity:.3}to{opacity:1}}
+@keyframes cg-skel{from{opacity:.45}to{opacity:1}}
+@keyframes cg-dot{0%,100%{opacity:.25;transform:translateY(0)}50%{opacity:1;transform:translateY(-4px)}}
+@keyframes cg-chg{0%,40%{background:var(--cg-placeholder-strong);box-shadow:-12px 0 0 var(--cg-placeholder-strong),12px 0 0 var(--cg-placeholder-strong)}100%{background:transparent;box-shadow:0 0 0 transparent}}
+@keyframes cg-rot{0%,14%{transform:translateY(0)}16.67%,30.67%{transform:translateY(-1.25em)}33.33%,47.33%{transform:translateY(-2.5em)}50%,64%{transform:translateY(-3.75em)}66.67%,80.67%{transform:translateY(-5em)}83.33%,97.33%{transform:translateY(-6.25em)}100%{transform:translateY(-7.5em)}}
+[data-go],[data-act]{cursor:pointer}
+
+/* ── 시안 보기 틀(앱 아님) ── */
+.cg-sheet{margin:0;background:var(--cg-bg-secondary);color:var(--cg-text-primary);font:16px/1.5 var(--cg-font);padding:24px}
+.cg-sheet > header{max-width:1300px;margin:0 0 24px}
+.cg-sheet > header h1{font-size:22px;margin:0 0 6px}
+.cg-sheet > header p{margin:0;color:var(--cg-text-secondary)}
+.cg-state{margin:0 0 48px;padding-top:24px;border-top:1px solid var(--cg-line)}
+.cg-state > h2{font-size:17px;margin:0 0 4px}
+.cg-state > h2 small{font-weight:400;color:var(--cg-text-tertiary);font-size:13px;margin-left:8px}
+.cg-state > p{margin:0 0 6px;color:var(--cg-text-secondary);max-width:1300px}
+.cg-state > ul{margin:0 0 12px;padding-left:20px;color:var(--cg-text-tertiary);font-size:14px;max-width:1300px}
+.cg-frames{display:flex;gap:48px;align-items:flex-start;flex-wrap:wrap;zoom:.5}
+.cg-frame-cap{font:700 26px/34px var(--cg-font);color:var(--cg-text-tertiary);margin-bottom:10px}
+.cg-win{position:relative;height:1184px;border-radius:var(--cg-radius-win);overflow:hidden;background:var(--cg-bg-primary);border:1px solid var(--cg-line-weak);flex:none}
+.cg-win--land{width:1700px}
+.cg-win--port{width:840px}
+.cg-app{position:absolute;inset:0;color:var(--cg-text-primary);font:14px/1.5 var(--cg-font)}
+.cg-app,.cg-app *,.cg-app *::before,.cg-app *::after{box-sizing:border-box}

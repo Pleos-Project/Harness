@@ -1,0 +1,1645 @@
+<meta charset="utf-8">
+<title>Design v2</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;800&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Asta+Sans:wght@400;700;800&display=swap">
+<style>
+/* 레이아웃: 디자인 캔버스. 캔버스 = 흐름 순서로 정렬한 화면 프레임 격자 + 프레임마다 한 줄 설명, 프로토타입 = 한 화면을 크게 놓고 눌러서 이동. 오른쪽은 화면 목록·구조·Pleos 체크리스트 아코디언 */
+:root{
+  --page:#e9eaee; --ui:#ffffff; --ink:#131417; --ink-2:#131417d6; --ink-3:#131417a3; --line:#1314171a; --chip:#1314170d; --accent:#0064ff; --ok:#02a35a; --warn:#d97400;
+  --font:"Asta Sans","Noto Sans KR",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--page:#0c0d0f;--ui:#1d1e21;--ink:#ffffff;--ink-2:#ffffffd6;--ink-3:#ffffffa3;--line:#ffffff1a;--chip:#ffffff0d;--accent:#5c9bff;--ok:#3ad889;--warn:#ffa940;color-scheme:dark}}
+:root[data-theme="dark"]{--page:#0c0d0f;--ui:#1d1e21;--ink:#ffffff;--ink-2:#ffffffd6;--ink-3:#ffffffa3;--line:#ffffff1a;--chip:#ffffff0d;--accent:#5c9bff;--ok:#3ad889;--warn:#ffa940;color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--page);color:var(--ink);font-family:var(--font);font-size:14px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:16px 40px}
+.top{max-width:1760px;margin:0 auto 14px;display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center}
+.top h1{font-size:17px;margin:0;font-weight:800;margin-right:auto}
+.top h1 span{font-weight:500;color:var(--ink-3);font-size:13px}
+.top a{color:var(--accent);font-weight:700;font-size:13px}
+.seg{display:inline-flex;background:var(--chip);border-radius:11px;padding:3px;gap:2px;flex-wrap:wrap}
+.seg button,.tb{all:unset;cursor:pointer;padding:5px 11px;border-radius:8px;font-size:12.5px;font-weight:700;color:var(--ink-3)}
+.seg button[aria-pressed="true"]{background:var(--ui);color:var(--ink);box-shadow:0 1px 3px #0000001f}
+.tb{background:var(--chip);color:var(--ink-2)}
+.tb:hover{color:var(--ink)}
+.seg button:focus-visible,.chk input:focus-visible,summary:focus-visible,.tb:focus-visible,.frame .open:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.chk{display:inline-flex;gap:6px;align-items:center;font-size:12.5px;font-weight:700;color:var(--ink-3);cursor:pointer}
+.chk input{accent-color:var(--accent)}
+
+.layout{max-width:1760px;margin:0 auto;display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:20px;align-items:start}
+@media (max-width:1000px){.layout{grid-template-columns:minmax(0,1fr)}}
+.main{min-width:0;display:flex;flex-direction:column;gap:28px}
+.group{display:flex;flex-direction:column;gap:12px;min-width:0}
+/* 카테고리 구분: 앞 카테고리 마지막 화면과 간격 + 구분선 (11/6 명준 코멘트) */
+.group + .group{margin-top:44px;padding-top:28px;border-top:1px solid var(--line)}
+.group > h2{font-size:15px;margin:0;font-weight:800;display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
+.group > h2 small{font-size:12.5px;font-weight:600;color:var(--ink-3)}
+.psub{margin:6px 0 0;font-size:13px;font-weight:800;color:var(--ink-3);display:flex;gap:8px;align-items:baseline}
+.psub small{font-weight:600}
+.grid.pgrid{grid-template-columns:repeat(auto-fill,minmax(min(100%,232px),1fr));gap:14px}
+.pgrid .frame .tag{font-size:12px}
+.pgrid .frame .desc{display:none}
+.pgrid .stage{padding:6px}
+[hidden]{display:none!important}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,520px),1fr));gap:18px}
+.frame{display:flex;flex-direction:column;gap:6px;min-width:0}
+.frame .tag{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:800;color:var(--ink-3)}
+.frame .tag b{color:var(--ink)}
+.frame .open{all:unset;cursor:pointer;margin-left:auto;font-size:13px;font-weight:800;color:var(--accent);width:28px;height:24px;display:inline-grid;place-items:center;border-radius:6px}
+.frame .open:hover{background:var(--chip)}
+.frame .desc{font-size:13.5px;color:var(--ink-2);margin:0}
+.frame.sel .stage{outline:3px solid var(--accent);outline-offset:2px}
+.stage{background:#2a2b2f;border-radius:14px;padding:10px;overflow:hidden}
+.stage.actual{overflow:auto;max-height:86vh}
+.fit{position:relative}
+.stage.actual .fit{height:auto!important}
+.protobar{display:flex;flex-wrap:wrap;gap:8px 10px;align-items:center}
+.protobar .lbl{font-size:12px;font-weight:800;color:var(--ink-3)}
+.protobar .now{font-size:14px;font-weight:800;margin-right:auto}
+.proto .stage{padding:12px}
+
+/* 오른쪽 아코디언 */
+.side{position:sticky;top:max(16px,env(safe-area-inset-top,0px));display:flex;flex-direction:column;gap:10px;max-height:calc(100vh - 32px);overflow:auto;min-width:0}
+@media (max-width:1000px){.side{position:static;max-height:none}}
+.side h2{font-size:12px;font-weight:800;color:var(--ink-3);margin:6px 2px 0}
+details{background:var(--ui);border:1px solid var(--line);border-radius:14px}
+summary{cursor:pointer;list-style:none;padding:12px 14px;font-weight:800;font-size:13.5px;display:flex;gap:8px;align-items:center}
+summary::-webkit-details-marker{display:none}
+summary::after{content:"";margin-left:auto;width:8px;height:8px;border-right:2px solid var(--ink-3);border-bottom:2px solid var(--ink-3);transform:rotate(45deg);transition:transform .15s}
+details[open] summary::after{transform:rotate(-135deg)}
+summary small{font-weight:600;color:var(--ink-3);font-size:12px}
+details ul{margin:0;padding:0 14px 14px 30px;display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--ink-2)}
+details ul.check,details ul.nav{list-style:none;padding-left:14px}
+details ul.check li{display:grid;grid-template-columns:34px 1fr;gap:4px}
+details ul.nav li button{all:unset;cursor:pointer;display:flex;gap:8px;width:100%;padding:3px 4px;border-radius:6px;font-size:13px}
+details ul.nav li button:hover{background:var(--chip)}
+details ul.nav li button.on{background:var(--chip);color:var(--ink);font-weight:800}
+details ul.nav li.g{font-size:11.5px;font-weight:800;color:var(--ink-3);margin-top:6px}
+.ok{color:var(--ok);font-weight:800}
+.q{color:var(--warn);font-weight:800}
+@media (prefers-reduced-motion:reduce){summary::after{transition:none}}
+
+/* ── 화면(2560×1440, 1dp = 1px) ── Pleos 토큰: display guide·design assets 2.1.5 */
+.screen{position:absolute;left:0;top:0;width:2560px;height:1440px;transform-origin:0 0;overflow:hidden;border-radius:12px;font-family:var(--font);
+  --bg:#ffffff;--win:#f7f8fa;--card:#ffffff;--txt:#131417;--txt2:#131417d6;--txt3:#131417a3;--txt4:#13141752;--div:#1314170d;--div2:#1314171a;--div3:#13141733;--handle:#13141733;
+  --btn-fill:#44464e;--btn-fill-txt:#ffffff;--btn-basic:#1314170d;--ph:#1314170d;--ph2:#1314171a;--dim:#13141766;
+  --btn-fill-p:#313236;--btn-basic-p:#1314171a;--btn-off:#ffffff33;--toggle-on:#ffffff;--toast:#44464e;--toast-txt:#ffffff;--switch-on:#02c265;
+  --sh1:0 6px 24px #00000014;--sh2:0 2px 2px #00000014,0 8px 32px #00000029;--sh3:0 2px 4px #00000033,0 20px 40px #0000003d;
+  --r-win:40px;--pad:20px;
+  --headline-l:800 60px/80px var(--font);--headline-m:800 56px/72px var(--font);--headline-s:800 48px/64px var(--font);
+  --title-l:700 40px/52px var(--font);--title-m:700 36px/44px var(--font);--title-s:700 32px/40px var(--font);
+  --body-l:700 30px/38px var(--font);--body-m:400 28px/36px var(--font);--body-m-b:700 28px/36px var(--font);--body-s:700 26px/34px var(--font);
+  --label-m:400 24px/28px var(--font);--label-s:400 20px/24px var(--font)}
+.stage.actual .screen{position:relative}
+.screen.dark{--bg:#131417;--win:#1d1e21;--card:#26272b;--txt:#ffffff;--txt2:#ffffffd6;--txt3:#ffffffa3;--txt4:#ffffff52;--div:#ffffff0d;--div2:#ffffff1a;--div3:#ffffff33;--handle:#ffffff33;
+  --btn-fill:#ffffff;--btn-fill-txt:#131417;--btn-basic:#ffffff1a;--ph:#ffffff0d;--ph2:#ffffff1a;--dim:#00000099;
+  /* 야간 값 중 아래는 에셋에서 확인 못 한 임시값 [미확인] */
+  --btn-fill-p:#e3e3e6;--btn-basic-p:#ffffff26;--btn-off:#ffffff0d;--toggle-on:#44464e;--toast:#e3e3e6;--toast-txt:#131417;
+  --sh1:0 6px 24px #00000052;--sh2:0 2px 2px #00000052,0 8px 32px #00000066;--sh3:0 2px 4px #00000066,0 20px 40px #0000007a}
+.bg{position:absolute;inset:0;background:var(--bg)}
+.status{position:absolute;left:840px;right:0;top:0;height:96px;padding:0 24px;display:flex;align-items:center;justify-content:flex-end;font:700 34px/44px var(--font);color:var(--txt)}
+.dv{position:absolute;left:0;top:0;width:840px;height:1280px;overflow:hidden}
+.bird{position:absolute;left:0;top:200px;width:840px;height:1280px;overflow:hidden}
+.bird .roadgrp{position:absolute;left:-590px;top:-109.06px;width:2020px;height:1387px}
+.bird .roadgrp img,.bird .car{position:absolute;display:block;max-width:none}
+.bird .lane-r{left:1058.1px;top:14.98px;width:535.5px;height:1372px}
+.bird .lane-l{left:440.6px;top:14.98px;width:523.5px;height:1372px;transform:scaleX(-1)}
+.bird .road{left:10.1px;top:0;width:1999.8px;height:1387px}
+.bird .car{left:-580px;top:-109.06px;width:2000px;height:1387px}
+.mask{position:absolute;pointer-events:none}
+.m-top{left:0;top:0;width:840px;height:278px;background:linear-gradient(var(--bg) 0 78px,transparent 278px)}
+.m-bot{left:0;bottom:0;width:840px;height:140px;background:linear-gradient(transparent 0,var(--bg) 100px)}
+.m-left{left:0;top:0;width:100px;height:1280px;background:linear-gradient(90deg,var(--bg),transparent)}
+.m-right{right:0;top:0;width:100px;height:1280px;background:linear-gradient(90deg,transparent,var(--bg))}
+.screen.dark .bird .road{filter:brightness(.72)}
+.screen.dark .bird .lane-r,.screen.dark .bird .lane-l{opacity:.45}
+.win{position:absolute;top:96px;height:1184px;background:var(--win);border:1px solid var(--div);border-radius:var(--r-win);overflow:hidden;color:var(--txt)}
+.win .app{position:absolute;inset:0}
+.handle{position:absolute;top:96px;width:20px;height:1184px;display:flex;align-items:center;justify-content:center}
+.handle i{width:4px;height:160px;border-radius:999px;background:var(--handle)}
+.gnb{position:absolute;left:0;top:1280px;width:2560px;height:160px;display:block;max-width:none}
+.guide{position:absolute;inset:var(--pad);border:2px dashed #00a3ff66;border-radius:calc(var(--r-win) - var(--pad));pointer-events:none;z-index:20}
+.guide b{position:absolute;right:12px;bottom:10px;font:700 22px/28px var(--font);color:#00a3ffaa}
+.no-guide .guide{display:none}
+
+/* ── 흑백 로우 와이어프레임 v2.1 (11/7 기획 요청 [2026-11-07-08]) ──
+   화이트·블랙과 그 사이 회색만. 포인트 색·그라데이션·일러스트 없음. 화면 틀 이미지(도로·GNB)도 흑백으로.
+   부품 크기·모서리·글자 크기는 Pleos design assets 2.1.5 그대로, 면 대신 선(테두리) 위주 */
+.screen img{filter:grayscale(1)}
+.pg{position:absolute;inset:0;padding:40px;display:flex;flex-direction:column;gap:24px;word-break:keep-all;overflow-wrap:break-word}
+/* Title(Page Navigation) — Main / Depth: 높이 80, 뒤로 아이콘 56, 제목 Title L 40/52 */
+.hd{height:80px;display:flex;align-items:center;gap:24px;flex:none;margin:0 -16px 0 0}
+.hd .name{font:var(--headline-s);margin-right:auto;white-space:nowrap}
+.hd .ttl{font:var(--title-l);margin-right:auto;white-space:nowrap}
+.hd .cap{white-space:nowrap}
+.hd > .btn.ib.plain:first-child{margin-left:-12px}
+.p .hd .name{font:var(--title-l)}
+.p .hd .ttl{font:var(--title-m)}
+.p .hd .cap{display:none}
+/* Basic Button — 에셋 ivi_basic_button. 기본=회색 면, 채움=#44464e. 눌림·비활성 상태 포함 */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:14px;white-space:nowrap;font:var(--body-l);color:var(--txt);background:var(--btn-basic);border:2px solid transparent;border-radius:24px;height:80px;padding:0 30px;min-width:120px;position:relative;flex:none;cursor:pointer;transition:background .12s}
+.btn:active{background:var(--btn-basic-p)}
+.btn.l{height:100px;border-radius:32px;padding:0 38px;min-width:140px;gap:16px;font:var(--title-s)}
+.btn.s{height:64px;border-radius:16px;padding:0 22px;min-width:100px;gap:12px;font:var(--body-s)}
+.btn.fill{background:var(--btn-fill);color:var(--btn-fill-txt)}
+.btn.fill:active{background:var(--btn-fill-p)}
+.btn.ghost{background:transparent;padding:0 16px;min-width:0}
+.btn.off,.btn.fill.off{background:var(--btn-off);border-color:var(--div2);color:var(--txt4);pointer-events:none}
+.btn.full{align-self:stretch}
+.btn.ib{width:80px;min-width:80px;padding:0;border-radius:20px;border:none}
+.btn.ib.plain{background:transparent}
+.btn.ib.plain:active{background:var(--btn-basic-p)}
+.btn.ib.s{width:64px;min-width:64px;height:64px;border-radius:16px}
+/* 아이콘: 에셋 SVG를 마스크로(뒤로·+·−·화살표). 에셋에 없는 아이콘은 점선 자리 */
+.ic{width:40px;height:40px;flex:none;display:inline-block;background:currentColor;-webkit-mask:var(--m) center/contain no-repeat;mask:var(--m) center/contain no-repeat}
+.btn.l .ic{width:52px;height:52px}
+.btn.s .ic{width:32px;height:32px}
+.btn.ib .ic{width:56px;height:56px}
+.btn.ib.s .ic{width:44px;height:44px}
+.ic-back{--m:url(img/pleos/ic_back_56.svg)}
+.ic-plus{--m:url(img/pleos/ic_plus_56.svg)}
+.ic-minus{--m:url(img/pleos/ic_minus_44.svg)}
+.ic-arrow{--m:url(img/pleos/ic_arrow_40.svg)}
+.ico{width:40px;height:40px;border-radius:12px;border:3px dashed currentColor;opacity:.45;flex:none;display:inline-block}
+.btn.s .ico{width:32px;height:32px;border-radius:10px}
+.card{background:var(--card);border:2px solid var(--div3);border-radius:32px;position:relative;min-width:0}
+.cap{font:var(--label-m);color:var(--txt3)}
+.bar{display:block;height:24px;border-radius:12px;background:var(--ph2)}
+.split{flex:1;display:flex;gap:24px;min-height:0}
+.col{display:flex;flex-direction:column;gap:24px;min-width:0;min-height:0}
+.grow{flex:1}
+.sp{flex:1;min-height:0}
+.note{font:var(--label-m);color:var(--txt3)}
+.chips{display:flex;gap:12px;flex-wrap:wrap}
+/* Toggle Button — 에셋 ivi_toggle_button S 64·모서리 16. 켜짐 = 흰 바탕 + 검은 테두리 3(흑백안) */
+.chip{display:inline-flex;align-items:center;justify-content:center;font:var(--body-l);color:var(--txt);background:var(--btn-basic);border-radius:24px;height:80px;padding:0 32px;min-width:120px;white-space:nowrap;cursor:pointer;transition:background .12s}
+.chip:active{background:var(--btn-basic-p)}
+.chip.on{background:var(--card);box-shadow:inset 0 0 0 3px var(--txt)}
+.chip.sm{font:var(--body-s);height:64px;border-radius:16px;padding:0 24px;min-width:0}
+/* Stepper — 에셋 ivi_stepper 420×100 */
+.stepper{display:flex;align-items:center;gap:24px;width:420px;height:100px;padding:0 22px;flex:none;background:var(--card);border:2px solid var(--div2);border-radius:24px;box-shadow:var(--sh1)}
+.stepper .btn.ib{width:64px;min-width:64px;height:64px;border-radius:16px;background:transparent}
+.stepper .btn.ib:active{background:var(--btn-basic-p)}
+.stepper .btn.ib .ic{width:44px;height:44px}
+.stepper .dv2{width:2px;height:64px;background:var(--div2);flex:none}
+.stepper .val{flex:1;min-width:0;text-align:center;font:700 36px/44px var(--font);white-space:nowrap}
+/* 인원 확인 알림 = System Notification(에셋 ivi_notification_system) 700: 모서리 48·그림자 Level3, 버튼 M 80 두 개. 앱 안 겹침, 자동으로 안 사라짐 */
+.toast{position:absolute;z-index:10;left:50%;top:24px;transform:translateX(-50%);max-width:calc(100% - 48px);background:var(--card);border:1px solid var(--div3);display:flex;flex-direction:column}
+.toast.nb{width:700px;border-radius:48px;box-shadow:var(--sh3);overflow:hidden}
+.toast.nb .nh{display:flex;flex-direction:column;gap:12px;padding:36px 40px 16px}
+.toast.nb .nh .t1{font:800 36px/44px var(--font)}
+.toast.nb .nh .t2{font:400 26px/34px var(--font);color:var(--txt3)}
+.toast.nb .nm{display:flex;justify-content:center;padding:8px 32px 0}
+.toast.nb .bt{display:flex;gap:16px;padding:24px}
+.toast.nb .bt .btn{flex:1}
+.p .toast.nb .stepper{width:100%}
+
+/* ── 출발 화면 (PRD 8장): 목적지 검색창 + 최근 목적지(지도 없음) + 인원 + 출발 ── */
+.field{display:flex;align-items:center;gap:20px;height:100px;padding:0 18px 0 28px;border:2px solid var(--div3);border-radius:24px;background:var(--card);flex:none;font:var(--title-s);color:var(--txt3);cursor:text}
+.field.on{border:3px solid var(--txt)}
+.field .ph{margin-right:auto}
+.field .q{margin-right:auto;color:var(--txt)}
+.field .q::after{content:"";display:inline-block;width:3px;height:36px;margin-left:4px;vertical-align:-6px;background:var(--txt)}
+.list{display:flex;flex-direction:column;padding:12px;flex:none}
+.list .lh{font:var(--body-s);color:var(--txt3);padding:8px 16px 8px}
+.dst{display:flex;align-items:center;gap:20px;min-height:112px;padding:0 24px;border-radius:24px;cursor:pointer}
+.dst + .dst{border-top:1px solid var(--div2)}
+.dst.on,.dst.on + .dst{border-top-color:transparent}
+.dst.on{box-shadow:inset 0 0 0 3px var(--txt)}
+.dst .tx{display:flex;flex-direction:column;gap:2px;margin-right:auto;min-width:0}
+.dst .nm{font:var(--body-l);white-space:nowrap}
+.dst .ad{font:var(--label-m);color:var(--txt3);white-space:nowrap}
+.dst .km{font:var(--body-m);color:var(--txt2);white-space:nowrap}
+.acts{width:540px;flex:none}
+.sum{padding:8px 28px}
+.srow{display:flex;align-items:center;gap:16px;min-height:112px}
+.srow + .srow{border-top:1px solid var(--div2)}
+.srow .k{font:var(--body-m);color:var(--txt2);width:170px;flex:none}
+.srow .v{font:var(--body-l);margin-right:auto;min-width:0;white-space:nowrap}
+.srow .v.empty{color:var(--txt4)}
+.kbd{position:absolute;left:0;right:0;bottom:0;height:400px;z-index:5;background:var(--win);border-top:3px dashed var(--div3);display:grid;place-items:center;font:var(--title-s);color:var(--txt3)}
+.p .field{height:88px;font:var(--body-l)}
+.p .list{padding:8px}
+.p .list .lh{padding:4px 12px}
+.p .dst{min-height:88px;padding:0 16px}
+.p .dst .nm{font:var(--body-m-b)}
+.p .dst .ad{font:var(--label-s)}
+.p .sum{padding:4px 24px;flex:none}
+.favs{display:flex;gap:12px;padding:4px 12px 12px;border-bottom:1px solid var(--div2);margin-bottom:4px}
+.favs .btn.sel{background:var(--card);box-shadow:inset 0 0 0 3px var(--txt)}
+.p .favs{padding:0 8px 8px}
+.p .srow{min-height:84px}
+.p .srow .k{width:150px;font:var(--label-m)}
+.p .srow .v{font:var(--body-m-b)}
+
+/* ── 순정 내비(와이어) · 주행 차단 ── 캡처 대신 흑백 와이어(11/7 요청). 차곡이 그리는 화면이 아님 */
+.navi-wf{position:absolute;inset:0;background:var(--card);overflow:hidden}
+.navi-wf::before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent 0 119px,var(--div2) 119px 121px),repeating-linear-gradient(90deg,transparent 0 119px,var(--div2) 119px 121px)}
+.navi-wf svg{position:absolute;left:80px;top:180px;width:calc(100% - 160px);height:calc(100% - 420px)}
+.navi-wf polyline{fill:none;stroke:var(--txt);stroke-width:10;stroke-linejoin:round;stroke-linecap:round}
+.navi-wf circle{fill:var(--card);stroke:var(--txt);stroke-width:8}
+.navi-wf rect{fill:var(--txt)}
+.navi-wf .tbt{position:absolute;left:32px;top:32px;display:flex;align-items:center;gap:20px;padding:24px 32px;border-radius:32px;background:var(--btn-fill);color:var(--btn-fill-txt);font:var(--body-l)}
+.navi-wf .tbt b{font:var(--headline-s);margin-right:12px}
+.navi-wf .tbt .ico{width:64px;height:64px;opacity:.7}
+.navi-wf .wm{position:absolute;right:40px;top:44px;font:var(--title-s);color:var(--txt3)}
+.navi-wf .eta{position:absolute;left:32px;right:32px;bottom:32px;display:flex;align-items:baseline;gap:24px;padding:28px 36px;border-radius:32px;background:var(--card);border:2px solid var(--div3)}
+.navi-wf .eta b{font:var(--title-m);margin-right:auto;white-space:nowrap}
+.navi-wf .eta span{font:var(--body-l);color:var(--txt2);white-space:nowrap}
+.p .navi-wf .wm{top:auto;bottom:220px;right:32px}
+.p .navi-wf .eta{flex-direction:column;gap:4px}
+.p .navi-wf svg{left:40px;width:calc(100% - 80px)}
+.block{position:absolute;inset:0;background:var(--win);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;text-align:center;padding:40px}
+.block .ico{width:96px;height:96px;border-radius:24px}
+.block b{font:var(--title-l)}
+.block span{font:var(--body-m);color:var(--txt3)}
+
+/* ── 도착: 영수증(5-1) + 제안(5-2 / 5-3)을 한 화면에 (5-4 "근거가 보인다") ── */
+.arr{flex:1;min-height:0;display:flex;gap:24px}
+.p .arr{flex-direction:column;gap:16px}
+.rcpt{flex:1.15;display:flex;flex-direction:column;padding:32px 40px;min-width:0;min-height:0}
+.rcpt .rh{display:flex;align-items:baseline;gap:20px}
+.rcpt .rh .t{font:var(--title-m);color:var(--txt2)}
+.rcpt .rh .tot{font:var(--headline-m)}
+.rcpt .rh .tot.dim{color:var(--txt4)}
+.rcpt .mult{font:var(--title-s);padding:4px 0 20px;border-bottom:3px solid var(--txt)}
+.rrow{display:grid;grid-template-columns:200px minmax(0,1fr) 120px 28px;align-items:center;column-gap:16px;min-height:100px;border-bottom:1px dashed var(--div3);cursor:pointer}
+.rrow .k{font:var(--body-m);color:var(--txt2)}
+.rrow .v{font:var(--body-l);min-width:0}
+.rrow .v small{display:block;font:var(--label-m);color:var(--txt3);margin-top:2px}
+.rrow .pc{font:var(--title-s);text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.rrow .pc.cap{font:var(--label-m);color:var(--txt3)}
+.rrow .chev{width:16px;height:16px;border-right:4px solid var(--txt3);border-bottom:4px solid var(--txt3);transform:rotate(45deg);justify-self:center;margin-top:-8px}
+.rrow.unfold .chev{transform:rotate(-135deg);margin-top:8px}
+.rrow.km{cursor:default;border-bottom:none}
+.rrow.km .chev{visibility:hidden}
+.rrow .wy{grid-column:1/-1;font:var(--label-m);color:var(--txt2);background:var(--ph);border-radius:16px;padding:12px 18px;margin:0 0 18px}
+.rnone{font:var(--body-m);color:var(--txt3);padding:28px 0;border-bottom:1px dashed var(--div3)}
+.restq{display:flex;flex-direction:column;gap:14px;padding:0 0 24px;margin-bottom:20px;border-bottom:1px dashed var(--div3)}
+.restq .k{font:var(--body-l)}
+.restq .k small{font:var(--label-m);color:var(--txt3);margin-left:14px}
+.ph-rows{display:flex;flex-direction:column;gap:32px;padding-top:32px}
+.ph-rows .bar:nth-child(2){width:78%}
+.ph-rows .bar:nth-child(3){width:64%}
+.ph-rows .bar:nth-child(4){width:40%}
+.p .rcpt{flex:none;padding:20px 24px}
+.p .rcpt .rh .t{font:var(--body-l)}
+.p .rcpt .rh .tot{font:var(--title-l)}
+.p .rcpt .mult{font:var(--body-l);padding:0 0 10px}
+.p .rrow{grid-template-columns:128px minmax(0,1fr) 92px 22px;column-gap:10px;min-height:60px}
+.p .rrow .k{font:var(--label-m)}
+.p .rrow .v{font:var(--body-m-b)}
+.p .rrow .v small{display:inline;margin-left:8px;font:var(--label-s)}
+.p .rrow .pc{font:var(--body-l)}
+.p .rrow .chev{width:12px;height:12px;border-width:3px}
+.p .rrow .wy{font:var(--label-s);padding:8px 14px;margin:0 0 10px}
+.p .rnone{padding:14px 0;font:var(--label-m)}
+.p .restq{gap:8px;padding:0 0 14px;margin-bottom:10px}
+.p .restq .k{font:var(--body-m-b)}
+.p .restq .k small{font:var(--label-s)}
+.p .restq .chip.sm{padding:0 18px}
+.p .ph-rows{gap:20px;padding-top:20px}
+.restline{display:flex;align-items:center;gap:16px;padding:0 0 18px;margin-bottom:18px;border-bottom:1px dashed var(--div3)}
+.restline .k{font:var(--body-m);color:var(--txt2)}
+.restline b{font:var(--body-l);margin-right:auto}
+.p .restline{padding:0 0 10px;margin-bottom:10px}
+.p .restline .k{font:var(--label-m)}
+.p .restline b{font:var(--body-m-b)}
+/* 2안: 짧은 하단 시트. 딤 없음(뒤 화면이 그대로 보여 뎁스가 느껴지지 않게), 고르면 바로 닫힘 */
+.rsheet{position:absolute;left:24px;right:24px;bottom:24px;z-index:9;background:var(--card);border:1px solid var(--div3);border-radius:40px;box-shadow:var(--sh3);padding:16px 40px 36px;display:flex;flex-direction:column;gap:20px}
+.rsheet .grab{align-self:center;width:80px;height:6px;border-radius:999px;background:var(--div3)}
+.rsheet .h{display:flex;flex-direction:column;gap:4px}
+.rsheet .h b{font:var(--title-m)}
+.rsheet .chips{flex-wrap:nowrap}
+.rsheet .chip{flex:1;min-width:0}
+.a-p1 .rsheet{padding:14px 24px 24px;gap:14px}
+.a-p1 .rsheet .h b{font:var(--body-l)}
+.a-p1 .rsheet .chips{flex-wrap:wrap}
+.a-p1 .rsheet .chip{flex:1 1 40%;height:72px;font:var(--body-m-b)}
+.offer{flex:1;display:flex;flex-direction:column;gap:20px;padding:40px;min-width:0;min-height:0}
+.offer .cap2{font:var(--body-m);color:var(--txt3)}
+.offer .head{font:var(--headline-s)}
+.offer .head.dim{color:var(--txt3)}
+.offer .big{font:var(--headline-l);white-space:nowrap}
+.offer .why{font:var(--body-m);color:var(--txt2)}
+.offer .note{font:var(--body-m);color:var(--txt3)}
+.offer .bts{display:flex;gap:16px}
+.offer .bts .btn{flex:1}
+/* 방식 B 항목 = Basic Button L 100(고르면 바로 받아들이기). 기본값 = 채움 */
+.opts{display:flex;flex-direction:column;gap:12px}
+.opt{display:flex;align-items:center;gap:16px;min-height:100px;padding:0 36px;border-radius:32px;background:var(--btn-basic);color:var(--txt);cursor:pointer}
+.opt:active{background:var(--btn-basic-p)}
+.opt b{font:var(--title-s);margin-right:auto;white-space:nowrap}
+.opt small{font:var(--body-m);color:var(--txt2);white-space:nowrap}
+.opt.def{background:var(--btn-fill);color:var(--btn-fill-txt)}
+.opt.def small{color:inherit;opacity:.82}
+.p .offer{flex:1;padding:22px 24px;gap:12px}
+.p .offer .head{font:var(--title-l)}
+.p .offer .big{font:var(--headline-s)}
+.p .offer .why,.p .offer .note,.p .offer .cap2{font:var(--label-m)}
+.p .offer .bts .btn.l{height:80px;border-radius:24px;font:var(--body-l)}
+.p .opts{flex-direction:row}
+.p .opt{flex:1;min-width:0;flex-direction:column;justify-content:center;align-items:flex-start;gap:2px;min-height:96px;padding:8px 20px;border-radius:24px}
+.p .opt b{font:var(--body-l);margin:0}
+.p .opt small{font:var(--label-s);white-space:normal}
+/* 기록(자리) */
+.logl{display:flex;flex-direction:column;padding:8px 0;flex:none}
+.logr{display:flex;flex-direction:column;gap:4px;padding:24px 36px}
+.logr + .logr{border-top:1px solid var(--div2)}
+.logr b{font:var(--body-l)}
+.logr span{font:var(--body-m);color:var(--txt2)}
+.p .logr{padding:18px 24px}
+.p .logr b{font:var(--body-m-b)}
+.p .logr span{font:var(--label-m)}
+/* ── 도착 계산 연출 (영수증 전, 11/7 명준 요청) ──
+   내 차(2D 옆모습)가 항목 체크포인트를 왼→오로 하나씩 들르고, 닿으면 빈 원이 채워지며 원 위에 그 항목 그래픽이 1.75초 나타났다 사라진다.
+   모션 성격 = Playful(ease-out-back 팝) + 차 이동은 ease-in-out 550ms. 흑백 유지(기획 요청), 움직임 줄이기 설정이면 바로 결과 */
+.cprog{font:var(--body-l);color:var(--txt2);margin-top:-12px}
+.calc{position:absolute;inset:0;pointer-events:none}
+.ctrack{position:absolute;left:320px;right:240px;top:620px;height:0;border-top:4px solid var(--div3)}
+.cfill{position:absolute;left:0;top:-4px;height:4px;width:100%;background:var(--txt);transform-origin:0 50%;transform:scaleX(calc(var(--k,0) / (var(--n) - 1)));transition:transform .55s cubic-bezier(.45,0,.25,1);will-change:transform}
+.cn{position:absolute;left:calc(var(--i) / (var(--n) - 1) * 100%);top:-2px;width:0;height:0}
+.cn .dot{position:absolute;left:-30px;top:-30px;width:60px;height:60px;border-radius:50%;border:8px solid var(--div3);background:var(--card)}
+.cn.on .dot{background:var(--txt);border-color:var(--txt);animation:cg-pop .38s cubic-bezier(.175,.885,.32,1.275)}
+.cn.zero .dot{background:var(--txt4);border-color:var(--txt4);animation:cg-pop .38s cubic-bezier(.175,.885,.32,1.275)}
+@keyframes cg-pop{0%{transform:scale(.55)}60%{transform:scale(1.2)}100%{transform:scale(1)}}
+.cn .lb{position:absolute;left:-150px;width:300px;top:52px;text-align:center;font:var(--body-l);color:var(--txt2);white-space:nowrap}
+.cn .vl{position:absolute;left:-150px;width:300px;top:96px;text-align:center;font:var(--title-s);white-space:nowrap;opacity:0;transform:translateY(10px);transition:opacity .25s ease-out,transform .35s cubic-bezier(.175,.885,.32,1.275)}
+.cn.on .vl,.cn.zero .vl{opacity:1;transform:none}
+.cn.zero .vl{font:var(--body-l);color:var(--txt3)}
+.cn .slot{position:absolute;left:-150px;width:300px;bottom:54px;height:240px}
+.cc-car{position:absolute;top:-4px;left:calc(var(--k,0) / (var(--n) - 1) * 100% - var(--st,0px));width:105px;height:43px;transform:translate(calc(-100% - 36px),-100%);transition:translate .55s cubic-bezier(.45,0,.25,1);will-change:transform,translate}
+.cc-o{position:absolute;inset:0}
+.cc-car svg{width:100%;height:100%;overflow:visible;display:block}
+.cc-car::after{content:"";position:absolute;left:12%;right:12%;bottom:-5px;height:5px;border-radius:50%;background:var(--div2)}
+.calc.p .cc-car::after{display:none}
+.cc-car.moving svg{animation:cg-bob .32s ease-in-out infinite alternate}
+/* 출발 직전: 뒤로 살짝 웅크렸다(0.2초) 튀어 나감 */
+.cc-car.rev svg{animation:cg-rev .26s cubic-bezier(.3,0,.3,1) forwards;transform-origin:50% 100%}
+@keyframes cg-rev{to{transform:translateX(-4px) scale(1.04,.88)}}
+/* 출발 자리 = 날씨 원 앞 주차 자리보다 60px 뒤. 튀어 나갈 때만 살짝 지나쳤다 돌아오는 곡선 */
+.cc-car.start{--st:60px}
+.calc.p .cc-car.start{--st:0px}
+.cc-car.launch{transition:translate .46s cubic-bezier(.3,1.3,.5,1)}
+.cc-car.launch svg{animation:cg-jolt .46s cubic-bezier(.2,.8,.3,1)}
+@keyframes cg-jolt{0%{transform:scale(1.04,.88)}35%{transform:translateX(3px) scale(.97,1.05)}100%{transform:none}}
+/* 타이어 연기(레퍼런스): 바닥에 붙은 평평한 밑면 + 뭉게뭉게 윗면. 뒷바퀴 접지점에서 뒤로 퍼지며 부풀고, 차가 떠난 자리에 남았다 흩어짐(1.1초) */
+.tsmoke{position:absolute;z-index:1;left:-263px;top:-47px;width:94px;height:43px;pointer-events:none;transform-origin:100% 100%}
+.tsmoke .plume{--fx:60px;position:absolute;inset:0;transform-origin:100% 100%;opacity:0;animation:cg-tire 1.3s linear forwards}
+.tsmoke svg{display:block;width:100%;height:100%;overflow:visible}
+.tsmoke path{fill:var(--card);stroke:var(--txt);stroke-width:4;stroke-linejoin:round}
+/* 웅크림 중(바퀴 헛돌기)에 바퀴에서 생겨 → 차가 튀어 나가는 0.46초 동안 접지점이 차를 따라가며 늘어남(--fx) → 차가 떠나면 그 자리에 남아 뒤로 퍼지며 흩어짐 */
+@keyframes cg-tire{
+  0%{opacity:0;transform:translateX(0) scale(.08,.2);animation-timing-function:cubic-bezier(.2,.7,.3,1)}
+  8%{opacity:1}
+  11%{transform:translateX(2px) scale(.32,.36);animation-timing-function:cubic-bezier(.3,1.1,.5,1)}
+  46%{transform:translateX(var(--fx)) scale(1,.92);animation-timing-function:ease-out}
+  60%{opacity:1;transform:translateX(calc(var(--fx) - 6px)) scale(1.06,1);animation-timing-function:cubic-bezier(.3,0,.6,1)}
+  100%{opacity:0;transform:translateX(calc(var(--fx) - 30px)) translateY(-4px) scale(1.22,1.12)}}
+.calc.p .tsmoke{left:-98px;top:-140px;transform:rotate(90deg) scaleY(-1) scale(.62)}
+.calc.p .tsmoke .plume{--fx:0px}
+@media (prefers-reduced-motion:reduce){.tsmoke{display:none}}
+/* 배기구 연기: 차 뒤쪽 아래에서 동글동글한 선 그림 연기가 커지며 뒤로 흩어짐(0.75초, 0.09초 간격) */
+/* 시동 배기(처음 한 번만, 11/7 명준 스케치): 떨어진 구름이 아니라 배기구에 붙은 한 덩어리 연기가 관에서 밀려 나오듯 부풀어(0~50%),
+   뭉게뭉게 커지며 뒤쪽 위로 떨어져 나가 흩어짐(50~100%). 오른쪽 끝은 열린 선이라 차 뒤범퍼 밑으로 들어가 이어져 보임. 1초 */
+.cc-car{z-index:2}
+.smoke{position:absolute;z-index:1;left:-271px;top:-46px;width:80px;height:44px;pointer-events:none;will-change:translate;transform-origin:80px 30px;scale:.95}  /* 11/7 명준: 5% 작게(배기구 붙는 점 기준) */
+.smoke.follow{transition:translate .46s cubic-bezier(.3,1.3,.5,1)}
+/* 끊김 없는 배기: 부풀기(scale) · 뒤로 흐르기(translate) · 옅어지기(opacity)를 서로 다른 한 곡선 애니메이션으로 겹침. 키프레임 단계가 없어 중간에 멈칫하지 않음 */
+.smoke .plume{position:absolute;inset:0;transform-origin:80px 30px;will-change:transform,opacity;
+  animation:cg-ex-grow .62s cubic-bezier(.2,.7,.3,1) both,cg-ex-drift 1.15s cubic-bezier(.45,0,.55,1) both,cg-ex-fade .5s .62s cubic-bezier(.4,0,1,1) forwards}
+.smoke svg{display:block;width:100%;height:100%;overflow:visible;transform-origin:100% 68%;animation:cg-billow .4s ease-in-out infinite alternate}
+.smoke path{fill:var(--card);stroke:var(--txt);stroke-width:4;stroke-linejoin:round;stroke-linecap:round}
+@keyframes cg-ex-grow{from{scale:.05 .3}to{scale:1 1}}
+@keyframes cg-ex-drift{from{translate:0 0}to{translate:-30px -18px}}
+@keyframes cg-ex-fade{from{opacity:1}to{opacity:0}}
+@keyframes cg-billow{from{scale:.96 1.03}to{scale:1.04 .97}}
+.calc.p .smoke{left:-95px;top:-126px;transform-origin:80px 30px;transform:rotate(90deg)}
+@media (prefers-reduced-motion:reduce){.smoke{display:none}}
+.cc-car.moving .wh{animation:cg-spin .3s linear infinite}
+@keyframes cg-bob{to{transform:translateY(-1.5px)}}
+@keyframes cg-spin{to{transform:rotate(360deg)}}
+.cg-car .cb{fill:var(--card);stroke:var(--txt);stroke-width:5;stroke-linejoin:round}
+.cg-car .cw{fill:var(--ph2);stroke:var(--txt);stroke-width:3;stroke-linejoin:round}
+.cg-car .wh{transform-box:fill-box;transform-origin:center}
+.cg-car .wh circle{fill:var(--txt)}
+.cg-car .wh .hub{fill:var(--card)}
+.cg-car .wh rect{fill:var(--card)}
+.ctot{position:absolute;left:0;right:0;bottom:150px;display:flex;flex-direction:column;align-items:center;gap:8px;opacity:0;transform:translateY(24px) scale(.96)}
+.ctot .t1{font:var(--headline-m)}
+.ctot .t2{font:var(--title-m);color:var(--txt2)}
+.calc.done .ctot{opacity:1;transform:none;transition:opacity .35s ease-out,transform .5s cubic-bezier(.175,.885,.32,1.275)}
+.calc.done .cc-car svg{animation:cg-hop .5s cubic-bezier(.3,0,.3,1) 2}
+@keyframes cg-hop{40%{transform:translateY(-14px)}100%{transform:none}}
+/* 세로 840: 위→아래 */
+.calc.p .ctrack{left:200px;right:auto;top:352px;bottom:178px;width:0;height:auto;border-top:none;border-left:4px solid var(--div3)}
+.calc.p .cfill{left:-4px;top:0;width:4px;height:100%;transform-origin:50% 0;transform:scaleY(calc(var(--k,0) / (var(--n) - 1)))}
+.calc.p .cn{left:-2px;top:calc(var(--i) / (var(--n) - 1) * 100%)}
+.calc.p .cn .dot{left:-26px;top:-26px;width:52px;height:52px;border-width:7px}
+.calc.p .cn .lb{left:52px;width:auto;top:-38px;text-align:left;font:var(--body-m-b)}
+.calc.p .cn .vl{left:52px;width:auto;top:0;text-align:left;font:var(--body-l)}
+.calc.p .cn.zero .vl{font:var(--body-m)}
+.calc.p .cn .slot{left:330px;width:165px;bottom:auto;top:-66px;height:132px}
+.calc.p .slot .fxi{transform:scale(.55);transform-origin:0 0}
+/* 세로 레일: 차를 돌려 앞이 아래, 바퀴가 레일에 닿게 */
+.calc.p .cc-car{left:-4px;top:calc(var(--k,0) / (var(--n) - 1) * 100%);width:32px;height:77px;transform:translate(-100%,calc(-100% - 28px))}
+.calc.p .cc-o{inset:auto;left:50%;top:50%;width:77px;height:32px;margin:-16px 0 0 -38.5px;transform:rotate(-90deg) scaleX(-1)}
+.calc.p .ctot{bottom:28px;left:40px;right:40px;align-items:flex-start}
+.calc.p .ctot .t1{font:var(--headline-s)}
+.calc.p .ctot .t2{font:var(--body-l)}
+/* 항목 그래픽(원 위 300×240). 나타남 ease-out-back → 머묾 → 위로 흩어지며 사라짐, 전체 1.75초 */
+.fx{position:absolute;inset:0;animation:cg-fx 1.75s cubic-bezier(.2,.7,.2,1) forwards;pointer-events:none}
+@keyframes cg-fx{0%{opacity:0;transform:translateY(18px) scale(.86)}14%{opacity:1;transform:translateY(0) scale(1.04)}22%{transform:scale(1)}80%{opacity:1;transform:none;animation-timing-function:cubic-bezier(.4,0,1,1)}100%{opacity:0;transform:translateY(-14px) scale(.96)}}
+.fx.still{animation:none}
+.fx.still *{animation-play-state:paused!important}
+.fxi{position:absolute;left:0;top:0;width:300px;height:240px}
+.fx .cloud{position:absolute;left:65px;top:0;width:170px;height:80px;overflow:visible}
+.fx .cloud path{fill:var(--card);stroke:var(--txt);stroke-width:5;stroke-linejoin:round}
+.fx .dr{position:absolute;top:86px;width:5px;height:26px;border-radius:3px;background:var(--txt);animation:cg-rain .6s ease-in infinite;animation-delay:calc(var(--d) * -1s)}
+@keyframes cg-rain{0%{transform:translateY(0);opacity:0}20%{opacity:1}100%{transform:translateY(120px);opacity:0}}
+.fx .sf{position:absolute;top:84px;width:18px;height:18px;border-radius:50%;background:var(--card);border:4px solid var(--txt);animation:cg-snow 1.4s ease-in-out infinite;animation-delay:calc(var(--d) * -1s)}
+@keyframes cg-snow{0%{transform:translate(0,0);opacity:0}15%{opacity:1}50%{transform:translate(14px,62px)}100%{transform:translate(-6px,128px);opacity:0}}
+.fx .sun{position:absolute;left:118px;top:10px;width:64px;height:64px;border-radius:50%;border:5px solid var(--txt);background:var(--card)}
+.fx .sun::before{content:"";position:absolute;inset:-24px;border-radius:50%;border:6px dotted var(--txt3);animation:cg-spin 5s linear infinite}
+.fx .lf{position:absolute;top:60px;width:32px;height:18px;border-radius:0 100% 0 100%;background:var(--txt3);animation:cg-leaf 1.6s ease-in-out infinite;animation-delay:calc(var(--d) * -1s)}
+@keyframes cg-leaf{0%{transform:translate(-20px,0) rotate(0);opacity:0}15%{opacity:1}50%{transform:translate(22px,66px) rotate(160deg)}100%{transform:translate(-8px,150px) rotate(320deg);opacity:0}}
+.fx .jc{position:absolute;top:150px;width:86px;height:36px;animation:cg-crawl 1.75s cubic-bezier(.3,.6,.4,1) forwards}
+.fx .jc svg{width:100%;height:100%;overflow:visible;display:block;animation:cg-jit .16s ease-in-out infinite alternate;animation-delay:calc(var(--d) * -1s)}
+@keyframes cg-crawl{to{transform:translateX(20px)}}
+@keyframes cg-jit{to{transform:translateY(-3px)}}
+.fx .hk{position:absolute;left:18px;top:-64px;font:800 24px/1 var(--font);background:var(--card);border:3px solid var(--txt);border-radius:16px;padding:7px 10px;white-space:nowrap;opacity:0;animation:cg-honk .5s cubic-bezier(.175,.885,.32,1.275) var(--h) forwards}
+.fx .hk::after{content:"";position:absolute;left:18px;bottom:-11px;width:12px;height:12px;background:var(--card);border-right:3px solid var(--txt);border-bottom:3px solid var(--txt);transform:rotate(45deg)}
+@keyframes cg-honk{0%{transform:scale(0) rotate(-14deg);opacity:0}55%{transform:scale(1.12) rotate(4deg);opacity:1}100%{transform:scale(1) rotate(0);opacity:1}}
+.fx .zc{position:absolute;left:20px;top:150px;width:86px;height:36px;animation:cg-zip 1.1s cubic-bezier(.6,0,.2,1) forwards}
+.fx .zc svg{width:100%;height:100%;overflow:visible;display:block}
+@keyframes cg-zip{from{transform:translateX(-20px)}to{transform:translateX(170px)}}
+.fx .tg{position:absolute;left:180px;top:60px;font:800 28px/1 var(--font);background:var(--card);border:3px solid var(--txt);border-radius:18px;padding:9px 14px;white-space:nowrap;opacity:0;animation:cg-honk .5s cubic-bezier(.175,.885,.32,1.275) .35s forwards}
+.fx-zip .tg{left:110px;top:70px}
+.fx .clk{position:absolute;left:95px;top:30px;width:110px;height:110px;border-radius:50%;border:6px solid var(--txt);background:var(--card)}
+.fx .clk::after{content:"";position:absolute;left:50%;top:50%;width:14px;height:14px;margin:-7px;border-radius:50%;background:var(--txt)}
+.fx .hand{position:absolute;left:50%;top:calc(50% - 38px);width:6px;height:38px;margin-left:-3px;border-radius:3px;background:var(--txt);transform-origin:50% 100%;animation:cg-spin .5s cubic-bezier(.4,0,.6,1) 3}
+.fx .moon{position:absolute;left:100px;top:34px;width:96px;height:96px;border-radius:50%;box-shadow:inset -26px 10px 0 0 var(--txt);animation:cg-rise 1.2s cubic-bezier(.2,.7,.2,1) both}
+@keyframes cg-rise{from{transform:translateY(40px) rotate(-20deg)}to{transform:none}}
+.fx .st{position:absolute;width:20px;height:20px;background:var(--txt);clip-path:polygon(50% 0,62% 38%,100% 50%,62% 62%,50% 100%,38% 62%,0 50%,38% 38%);animation:cg-twk .7s ease-in-out infinite alternate;animation-delay:calc(var(--d) * -1s)}
+@keyframes cg-twk{from{transform:scale(.4);opacity:.3}to{transform:scale(1.15);opacity:1}}
+.fx .hg{position:absolute;left:110px;top:24px;width:80px;height:124px;overflow:visible;animation:cg-flip 1.75s cubic-bezier(.6,0,.2,1) both}
+.fx .hg path{fill:none;stroke:var(--txt);stroke-width:6;stroke-linejoin:round;stroke-linecap:round}
+.fx .hg .sand{fill:var(--txt);stroke:none}
+@keyframes cg-flip{0%,35%{transform:rotate(0)}65%,100%{transform:rotate(180deg)}}
+.fx .road{position:absolute;left:20px;right:20px;top:192px;height:6px;background:repeating-linear-gradient(90deg,var(--txt3) 0 30px,transparent 30px 52px);animation:cg-road .35s linear infinite}
+@keyframes cg-road{to{background-position:-52px 0}}
+.fx .dc{position:absolute;left:107px;top:150px;width:86px;height:36px}
+.fx .dc svg{width:100%;height:100%;overflow:visible;display:block;animation:cg-jit .18s ease-in-out infinite alternate}
+.fx .cnt{position:absolute;left:0;right:0;top:46px;text-align:center;font:var(--headline-m);font-variant-numeric:tabular-nums;white-space:nowrap}
+.fx .cnt small{font:var(--title-s);color:var(--txt2);margin-left:6px}
+.fx .none{position:absolute;left:90px;top:110px;font:var(--title-s);color:var(--txt3);background:var(--card);border:3px dashed var(--div3);border-radius:20px;padding:10px 24px;animation:cg-honk .45s cubic-bezier(.175,.885,.32,1.275) .1s both}
+.fx.still .hk,.fx.still .tg,.fx.still .none{opacity:1;animation:none}
+@media (prefers-reduced-motion:reduce){.cc-car,.cfill{transition:none}.fx{animation:none;opacity:0}}
+/* ── 영수증 = 출력 종이(11/7 명준 레퍼런스: 프린터 슬롯 + 지그재그 끝 종이 + 이중선 + 항목/값 2단 + 소계·합계 + 바코드). 흑백 ── */
+.rcol{flex:1.15;display:flex;flex-direction:column;min-width:0;min-height:0}
+.rcol .restq,.rcol .restline{background:var(--card);border:2px solid var(--div3);border-radius:24px;padding:16px 24px;margin:0 0 16px;flex:none}
+.prn{position:relative;z-index:2;flex:none;height:60px;border-radius:20px;background:var(--btn-basic);border:2px solid var(--div3);box-shadow:var(--sh1)}
+.prn i{position:absolute;left:44px;right:44px;top:50%;height:8px;margin-top:-4px;border-radius:4px;background:var(--txt)}
+.paperwrap{flex:1;min-height:0;margin:-30px 56px 0;overflow:hidden;display:flex;flex-direction:column;filter:drop-shadow(0 6px 12px #0000001f)}
+.paper{position:relative;flex:0 1 auto;min-height:0;overflow:hidden;background:var(--card);padding:58px 44px 24px;display:flex;flex-direction:column}
+.paperwrap::after{content:"";display:block;flex:none;height:12px;margin-top:-1px;background:linear-gradient(135deg,var(--card) 25%,transparent 25%) -12px 0/24px 24px repeat-x,linear-gradient(225deg,var(--card) 25%,transparent 25%) -12px 0/24px 24px repeat-x}
+.paper.wait{min-height:240px;align-items:center;justify-content:center}
+.paper .ph{display:flex;flex-direction:column;align-items:center;gap:4px;text-align:center;flex:none}
+.paper .ph b{font:var(--title-l);letter-spacing:.02em}
+.paper .ph span{font:var(--label-m);color:var(--txt3)}
+.paper .rule2{display:block;flex:none;height:8px;border-top:2px solid var(--txt);border-bottom:2px solid var(--txt);margin:22px 0 14px}
+.paper .rhd{display:flex;justify-content:space-between;font:var(--body-m-b);padding:2px 0 6px;flex:none}
+.paper .rhd span:last-child{font:var(--body-m);color:var(--txt2)}
+.paper .rrow{grid-template-columns:170px minmax(0,1fr) 100px 22px;min-height:58px;border-bottom:none;flex:none}
+.paper .rrow .k{font:var(--body-m);color:var(--txt)}
+.paper .rrow .v{font:var(--body-m);color:var(--txt2)}
+.paper .rrow .v small{font:var(--label-s);margin-top:0}
+.paper .rrow .pc{font:var(--body-l)}
+.paper .rrow .chev{width:12px;height:12px;border-width:3px}
+.paper .rrow .wy{margin:0 0 10px}
+.paper .rnone{border-bottom:none;padding:14px 0;flex:none}
+.paper .rsum{display:flex;justify-content:space-between;align-items:baseline;gap:16px;min-height:46px;font:var(--body-m);flex:none}
+.paper .rsum b{font:var(--body-l);white-space:nowrap}
+.paper .rs1{margin-top:16px;padding-top:14px;border-top:2px dashed var(--div3)}
+.paper .rsum.tot span{font:var(--body-l)}
+.paper .rsum.tot b{font:var(--title-s)}
+.paper .bc{display:flex;flex-direction:column;align-items:center;gap:8px;margin-top:22px;flex:0 1 auto;min-height:0;overflow:hidden}
+.paper .bars{display:block;flex:none;width:100%;height:56px;background:repeating-linear-gradient(90deg,var(--txt) 0 3px,transparent 3px 6px,var(--txt) 6px 7px,transparent 7px 11px,var(--txt) 11px 15px,transparent 15px 17px,var(--txt) 17px 18px,transparent 18px 23px)}
+.paper .bc span{font:var(--label-m);letter-spacing:.1em;white-space:nowrap}
+/* 출력 연출: 종이가 슬롯에서 1.1초에 걸쳐 내려오고, 제안 카드는 종이가 거의 나온 뒤 올라온다 */
+.arr.print .paperwrap > .paper,.arr.print .paperwrap::after{animation:cg-print 1.1s cubic-bezier(.25,.8,.3,1) both}
+.arr.print .offer{animation:cg-offer .45s cubic-bezier(.2,.7,.2,1) .9s both}
+@keyframes cg-print{from{transform:translateY(-105%)}to{transform:none}}
+@keyframes cg-offer{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.arr.print .paperwrap > .paper,.arr.print .paperwrap::after,.arr.print .offer{animation:none}}
+.p .rcol{flex:none}
+.p .rcol .restq,.p .rcol .restline{padding:10px 16px;margin-bottom:10px}
+.p .prn{height:40px;border-radius:14px}
+.p .prn i{left:28px;right:28px;height:6px;margin-top:-3px}
+.p .paperwrap{flex:none;margin:-20px 28px 0}
+.p .paper{padding:30px 24px 12px}
+.p .paper .ph b{font:var(--body-l)}
+.p .paper .ph span,.p .paper .rhd,.p .paper .bc{display:none}
+.p .paper .rule2{margin:8px 0 4px;height:6px}
+.p .paper .rrow{grid-template-columns:120px minmax(0,1fr) 80px 18px;min-height:44px;column-gap:10px}
+.p .paper .rrow .k,.p .paper .rrow .v{font:var(--label-m)}
+.p .paper .rrow .v small{display:block;margin:0;font:var(--label-s)}
+.p .paper .rrow .pc{font:var(--body-m-b)}
+.p .paper .rsum{min-height:36px;font:var(--label-m)}
+.p .paper .rsum b{font:var(--body-m-b)}
+.p .paper .rs1{margin-top:4px;padding-top:4px}
+.p .paper .rsum.tot span{font:var(--body-m-b)}
+.p .paper .rsum.tot b{font:var(--body-l)}
+/* 11/7 명준 코멘트: 영수증을 크게, 글자·간격을 키워 가독성. 제안 칸은 640 고정 */
+.rcol{flex:1}
+.arr .offer{flex:0 0 640px}
+.paperwrap{margin:-30px 36px 0}
+.paper{padding:48px 56px 24px}
+.paper .ph b{font:var(--title-l)}
+.paper .ph span{font:var(--body-m)}
+.paper .rule2{margin:24px 0 16px}
+.paper .rhd{font:var(--body-l);padding:4px 0 10px}
+.paper .rhd span:last-child{font:400 30px/38px var(--font)}
+.paper .rrow{grid-template-columns:230px minmax(0,1fr) 120px 26px;min-height:64px}
+.paper .rrow .k{font:400 30px/38px var(--font);color:var(--txt)}
+.paper .rrow .v{font:400 30px/38px var(--font)}
+.paper .rrow .v small{font:var(--label-m)}
+.paper .rrow .pc{font:var(--title-s)}
+.paper .rrow .chev{width:14px;height:14px;border-width:4px}
+.paper .rrow .wy{font:var(--body-m);padding:14px 20px}
+.rrow .wy{display:flex;flex-direction:column;gap:4px}
+.rrow .wy b{font:var(--body-l);color:var(--txt)}
+.rrow .wy small{font:var(--label-m);color:var(--txt3)}
+.p .paper .rrow .wy b{font:700 24px/28px var(--font)}
+.p .paper .rrow .wy span{font:var(--label-s)}
+.p .paper .rrow .wy small{font:var(--label-s)}
+/* 줄을 펼치면 바코드를 접고(가로), 세로 창은 다른 줄 높이를 줄여 합계·제안이 밀리지 않게 */
+.paper:has(.unfold) .bc{display:none}
+.p .paper:has(.unfold) .rrow:not(.unfold){min-height:42px}
+.p .paper:has(.unfold) .rsum{min-height:34px}
+.paper .rnone{font:400 30px/38px var(--font)}
+.paper .rsum{min-height:52px;font:400 30px/38px var(--font)}
+.paper .rsum b{font:var(--title-s)}
+.paper .rsum .rr{display:flex;align-items:center;gap:4px}
+.paper .rs1{margin-top:20px;padding-top:18px}
+.paper .rsum.tot span{font:var(--title-s)}
+.paper .rsum.tot b{font:var(--title-m)}
+.p .arr .offer{flex:1 1 auto}
+.p .paperwrap{margin:-20px 16px 0}
+.p .paper{padding:24px 28px 10px}
+.p .paper .ph b{font:var(--title-m)}
+.p .paper .rrow{grid-template-columns:130px minmax(0,1fr) 88px 18px;min-height:48px}
+.p .paper .rrow .k,.p .paper .rrow .v,.p .paper .rnone{font:var(--body-m)}
+.p .paper .rrow .v small{font:var(--label-s)}
+.p .paper .rrow .pc{font:var(--body-l)}
+.p .paper .rsum{min-height:38px;font:var(--body-m)}
+.p .paper .rsum b{font:var(--body-l)}
+.p .paper .rsum .rr .btn{height:48px;padding:0 12px;font:var(--label-m)}
+.p .paper .rsum.tot span{font:var(--body-l)}
+.p .paper .rsum.tot b{font:var(--title-s)}
+/* 쉰 시간 시트: 가로 창은 제안 칸 위로만 올라와 영수증을 가리지 않음, 세로 창은 아래 전체. 딤 없음, 영수증이 다 나온 뒤(1.3초) 올라옴 */
+.rsheet{left:auto;right:40px;bottom:40px;width:640px;border-radius:32px;border-width:2px}  /* 11/7 명준: 뒤의 제안 카드와 같은 폭·가장자리·모서리 */
+.proto-on .rsheet{animation:cg-sheet .38s cubic-bezier(.2,.7,.2,1) both}
+.proto-on .rsheet.late{animation-delay:1.3s}
+.rsheet .h small{font:var(--body-m);color:var(--txt2)}
+.rsheet .chips{flex-wrap:wrap}
+.rsheet .chip{flex:1 1 40%}
+.a-p1 .rsheet{left:40px;right:40px;width:auto}
+@keyframes cg-sheet{from{transform:translateY(115%)}to{transform:none}}
+@media (prefers-reduced-motion:reduce){.rsheet{animation:none}}
+/* ── 홈(Nogo 가칭, 11/8): 레퍼런스 짜임 + Pleos 부품 + 흑백. 넉넉한 여백, 가운데 정렬, 카드는 바깥 틀 + 안쪽 판(이중 테두리) ── */
+.home{position:absolute;inset:0;padding:40px;display:flex;flex-direction:column}
+.hbar{height:80px;display:flex;align-items:center;justify-content:space-between;position:relative;flex:none}
+.hbar .logo{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font:800 44px/52px var(--font);letter-spacing:.08em}
+.ppl{display:inline-flex;align-items:center;gap:12px;height:64px;padding:0 22px 0 18px;border-radius:999px;background:var(--btn-basic);font:var(--body-l);white-space:nowrap;cursor:pointer}
+.ppl .ico{width:32px;height:32px;border-radius:50%}
+.ppl .chev{width:12px;height:12px;border-right:3px solid var(--txt3);border-bottom:3px solid var(--txt3);transform:rotate(45deg);margin:-6px 4px 0 2px}
+.hero{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;gap:64px}
+.hero .ill{width:300px;height:300px;flex:none;border-radius:50%;background:var(--ph);position:relative}
+.hero .ill .cg-car{position:absolute;left:50%;bottom:92px;width:200px;height:82px;margin-left:-100px;overflow:visible;animation:cg-idle 1.8s cubic-bezier(.45,0,.55,1) infinite alternate}
+.hero .ill::after{content:"";position:absolute;left:60px;right:60px;bottom:88px;height:4px;border-radius:2px;background:var(--div3)}
+@keyframes cg-idle{to{transform:translateY(-5px)}}
+.hero .tx{display:flex;flex-direction:column;gap:14px;max-width:820px}
+.hero .sub{font:var(--body-m);color:var(--txt3)}
+.hero .h{font:var(--headline-l);letter-spacing:-.01em}
+.hsearch{align-self:center;width:1040px;max-width:100%;height:100px;flex:none;border-radius:50px;background:var(--card);border:2px solid var(--div2);box-shadow:var(--sh1);display:flex;align-items:center;gap:20px;padding:0 18px 0 36px;font:var(--title-s);color:var(--txt3);cursor:text}
+.hsearch .ph{margin-right:auto}
+.hsearch .mic{width:64px;height:64px;border-radius:50%;background:var(--btn-basic);display:grid;place-items:center;flex:none}
+.hsearch .mic .ico{width:30px;height:30px;border-radius:10px}
+.hsearch.on{border:3px solid var(--txt);margin-top:24px}
+.hsearch .q{margin-right:auto;color:var(--txt)}
+.hsearch .q::after{content:"";display:inline-block;width:3px;height:36px;margin-left:4px;vertical-align:-6px;background:var(--txt)}
+.home > .card.list{margin-top:24px;align-self:center;width:1040px;max-width:100%}
+.hlabel{font:var(--body-s);color:var(--txt3);margin:40px 8px 14px;flex:none}
+.hcards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:24px;height:320px;flex:none}
+.hcard{border-radius:40px;background:var(--ph);padding:8px;cursor:pointer;min-width:0;transition:background .2s cubic-bezier(.32,.72,0,1)}
+.hcard .in{height:100%;border-radius:32px;background:var(--card);box-shadow:var(--sh1);padding:28px 28px 22px;display:flex;flex-direction:column;gap:6px;position:relative;min-width:0;transition:box-shadow .2s cubic-bezier(.32,.72,0,1)}
+.hcard .tag{display:flex;align-items:center;gap:10px;font:var(--body-s);color:var(--txt3)}
+.hcard .tag .ico{width:28px;height:28px;border-radius:8px}
+.hcard .nm{font:var(--title-l);margin-top:auto;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hcard .mt{font:var(--body-m);color:var(--txt2);white-space:nowrap}
+.hcard:active .in{transform:scale(.985)}
+.hcard.on{background:var(--txt)}
+.hcard.on .nm{margin-top:12px}
+.hcard .go{margin-top:auto;height:80px;border-radius:999px;background:var(--btn-fill);color:var(--btn-fill-txt);display:flex;align-items:center;justify-content:space-between;padding:0 10px 0 30px;font:var(--body-l);cursor:pointer;animation:cg-go .35s cubic-bezier(.32,.72,0,1) both}
+.hcard .go .ar{width:60px;height:60px;border-radius:50%;background:#ffffff26;display:grid;place-items:center}
+.screen.dark .hcard .go .ar{background:#13141726}
+.hcard .go .ic{width:36px;height:36px}
+@keyframes cg-go{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.home.enter .hero,.home.enter .hsearch,.home.enter .hcard{animation:cg-up .7s cubic-bezier(.32,.72,0,1) both}
+.home.enter .hsearch{animation-delay:.08s}
+.home.enter .hcard{animation-delay:calc(.16s + var(--i) * .06s)}
+@keyframes cg-up{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.hero .ill .cg-car,.home.enter .hero,.home.enter .hsearch,.home.enter .hcard,.hcard .go{animation:none}}
+/* 세로 840 */
+.home.p .hbar .logo{font:800 36px/44px var(--font)}
+.home.p .ppl{height:56px;padding:0 16px 0 12px;font:var(--body-m-b);gap:8px}
+.home.p .ppl .ico{width:26px;height:26px}
+.home.p .hero{gap:28px;flex:0 0 300px}
+.home.p .hero .ill{width:180px;height:180px}
+.home.p .hero .ill .cg-car{width:130px;height:54px;margin-left:-65px;bottom:58px}
+.home.p .hero .ill::after{left:34px;right:34px;bottom:55px}
+.home.p .hero .sub{font:var(--label-m)}
+.home.p .hero .h{font:var(--headline-s)}
+.home.p .hsearch{height:88px;font:var(--body-l);padding:0 14px 0 26px}
+.home.p .hlabel{margin:28px 8px 10px}
+.home.p .hcards{grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;height:auto;grid-auto-rows:200px}
+.home.p .hcard{border-radius:32px;padding:6px}
+.home.p .hcard .in{border-radius:26px;padding:20px 22px 16px}
+.home.p .hcard .nm{font:var(--title-s)}
+.home.p .hcard .mt{font:var(--label-m)}
+.home.p .hcard .tag{font:var(--label-m)}
+.home.p .hcard .go{height:60px;font:var(--body-m-b);padding:0 6px 0 22px}
+.home.p .hcard .go .ar{width:48px;height:48px}
+.home.p .hcard.on .nm{margin-top:4px}
+/* 인원 확인 알림(11/8 명준 코멘트 2): 위 바 줄에 맞춰 높이 120으로 키우고 글자·간격 키움. 버튼은 면 없이 글자 색 위계만 — 확인 = 진한 색, 닫기 = 옅은 색 */
+.pbar{position:absolute;z-index:10;top:40px;left:50%;width:1120px;margin-left:-560px;height:120px;border-radius:60px;background:var(--card);border:1px solid var(--div3);box-shadow:var(--sh2);display:flex;align-items:center;gap:28px;padding:0 20px 0 48px}
+.proto-on .pbar{animation:cg-drop .42s cubic-bezier(.32,.72,0,1) both}
+@keyframes cg-drop{from{opacity:0;transform:translateY(-16px) scale(.98)}to{opacity:1;transform:none}}
+.pbar .pt{display:flex;flex-direction:column;gap:6px;margin-right:auto;min-width:0}
+.pbar .pt b{font:800 36px/44px var(--font);white-space:nowrap}
+.pbar .pt small{font:var(--label-s);color:var(--txt3);white-space:nowrap}
+.pbar .pst{display:flex;align-items:center;height:80px;border-radius:40px;background:var(--btn-basic);flex:none}
+.pbar .pst .btn.ib{border-radius:40px}
+.pbar .pst .v{min-width:96px;text-align:center;font:var(--title-m)}
+.pbar .pdv{width:2px;height:56px;background:var(--div2);flex:none}
+.pbar .tbtn{height:80px;display:grid;place-items:center;padding:0 22px;border-radius:40px;font:var(--title-s);color:var(--txt3);white-space:nowrap;cursor:pointer;flex:none}
+.pbar .tbtn.pri{color:var(--txt);font-weight:800}
+.pbar .tbtn:active{background:var(--btn-basic-p)}
+.pbar .tbtn + .tbtn{margin-left:-20px}
+.a-p1 .pbar{left:136px;right:40px;width:auto;margin-left:0;height:104px;border-radius:52px;padding:0 10px 0 26px;gap:12px}
+.a-p1 .pbar .pt small{display:none}
+.a-p1 .pbar .pt b{font:var(--title-s)}
+.a-p1 .pbar .pst{height:64px}
+.a-p1 .pbar .pst .btn.ib{width:56px;min-width:56px;height:56px}
+.a-p1 .pbar .pst .btn.ib .ic{width:40px;height:40px}
+.a-p1 .pbar .pst .v{min-width:56px;font:var(--body-l)}
+.a-p1 .pbar .pdv{height:44px}
+.a-p1 .pbar .tbtn{height:64px;padding:0 12px;font:var(--body-l)}
+.a-p1 .pbar .tbtn + .tbtn{margin-left:-8px}
+@media (prefers-reduced-motion:reduce){.proto-on .pbar{animation:none}}
+/* ── 11/8 유저 플로우 반영: 홈 · 출발 화면 · 로딩·에러·빈 상태·누른 뒤 (흑백, 지금 부품·간격 그대로) ── */
+.hbar-r{width:80px;flex:none}
+.hbar .logo.t{font:var(--title-l);letter-spacing:0}
+.home.hm .hero .tx{gap:16px}
+.cta{align-self:flex-start;display:inline-flex;align-items:center;gap:20px;height:100px;padding:0 12px 0 40px;border-radius:999px;background:var(--btn-fill);color:var(--btn-fill-txt);font:var(--title-s);cursor:pointer;white-space:nowrap;flex:none;margin-top:12px}
+.cta .ar{width:76px;height:76px;border-radius:50%;background:#ffffff26;display:grid;place-items:center}
+.screen.dark .cta .ar{background:#13141726}
+.cta .ic{width:40px;height:40px}
+.cta:active{transform:scale(.98)}
+.cta.off{background:var(--btn-off);color:var(--txt4);border:2px solid var(--div2);pointer-events:none}
+.cta.off .ar{background:var(--ph)}
+.cta .dots{margin-right:24px}
+.prog{align-self:flex-start;display:inline-flex;align-items:center;gap:16px;height:80px;padding:0 24px 0 28px;border-radius:999px;background:var(--card);border:2px solid var(--txt);font:var(--body-l);cursor:pointer;margin-top:12px;white-space:nowrap}
+.prog .pdot{width:14px;height:14px;border-radius:50%;background:var(--txt);animation:cg-blink 1.2s ease-in-out infinite alternate}
+.prog .chev{width:12px;height:12px;border-right:3px solid var(--txt3);border-bottom:3px solid var(--txt3);transform:rotate(-45deg);margin-left:4px}
+@keyframes cg-blink{from{opacity:.3}to{opacity:1}}
+.recs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px;height:240px;flex:none}
+.rec{border-radius:32px;background:var(--card);border:2px solid var(--div2);box-shadow:var(--sh1);padding:26px 30px;display:flex;flex-direction:column;gap:4px;cursor:pointer;min-width:0}
+.rec .tag{font:var(--body-s);color:var(--txt3)}
+.rec b{font:var(--title-m);margin-top:auto;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rec .mt{font:var(--body-m);color:var(--txt2);white-space:nowrap}
+.rec .rr{font:var(--label-m);color:var(--txt3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rec.new{border:3px solid var(--txt)}
+.rec.new .tag{color:var(--txt);font-weight:800}
+.proto-on .rec.new{animation:cg-up .7s cubic-bezier(.32,.72,0,1) both}
+.recempty{height:240px;flex:none;border-radius:32px;border:3px dashed var(--div3);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;text-align:center;padding:0 32px}
+.recempty b{font:var(--title-s)}
+.recempty span{font:var(--body-m);color:var(--txt3)}
+.recempty.dc{height:300px}
+.tbtn{height:72px;display:inline-grid;place-items:center;padding:0 22px;border-radius:36px;font:var(--title-s);color:var(--txt3);cursor:pointer;white-space:nowrap;flex:none}
+.tbtn.pri{color:var(--txt);font-weight:800}
+.tbtn:active{background:var(--btn-basic-p)}
+.isheet{position:absolute;z-index:9;left:50%;bottom:40px;width:760px;margin-left:-380px;background:var(--card);border:2px solid var(--div3);border-radius:40px;box-shadow:var(--sh3);padding:16px 40px 24px;display:flex;flex-direction:column;gap:8px}
+.isheet .grab{align-self:center;width:80px;height:6px;border-radius:999px;background:var(--div3);margin-bottom:8px}
+.isheet b{font:var(--title-m)}
+.isheet .isub{font:var(--body-m);color:var(--txt2)}
+.isheet .inote{font:var(--label-m);color:var(--txt3)}
+.isheet .tbtn{align-self:flex-end}
+.proto-on .isheet{animation:cg-sheet .38s cubic-bezier(.2,.7,.2,1) both}
+.a-p1 .isheet{left:24px;right:24px;width:auto;margin-left:0;padding:14px 26px 18px}
+.a-p1 .isheet b{font:var(--body-l)}
+/* 출발 화면 */
+.home.dp > .hsearch{margin-top:28px}
+.home.dp .hcards{height:300px}
+.home.dp .hcard .nm{white-space:normal;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;line-height:48px}
+.hsearch.dis{opacity:.45;pointer-events:none}
+.offl{align-self:center;display:flex;align-items:center;gap:14px;height:64px;padding:0 28px;border-radius:999px;background:var(--ph2);font:var(--body-m-b);margin-top:20px;flex:none;white-space:nowrap}
+.offl .ico{width:28px;height:28px;border-radius:50%}
+.pv{margin-top:28px;flex:1;min-height:0;border-radius:40px;background:var(--card);border:2px solid var(--div2);box-shadow:var(--sh1);display:flex;align-items:center;gap:32px;padding:28px 28px 28px 44px}
+.pv.empty{background:transparent;border:3px dashed var(--div3);box-shadow:none;justify-content:center;font:var(--body-l);color:var(--txt3);padding:28px}
+.pv .pvl{flex:1;min-width:0;display:flex;flex-direction:column;gap:14px}
+.pv .pvl > b{font:var(--title-l);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pst3{display:flex;gap:48px}
+.pst3 .st{display:flex;flex-direction:column;gap:2px;font:var(--title-s);min-width:150px;white-space:nowrap}
+.pst3 .st .k{font:var(--label-m);color:var(--txt3);font-style:normal}
+.pv .pvn{font:var(--body-m);color:var(--txt3)}
+.pv .cta{align-self:center;margin-top:0}
+.pvfail{display:flex;align-items:center;gap:12px;font:var(--body-l);color:var(--txt2)}
+.skel{display:block;height:22px;border-radius:11px;background:var(--ph2);animation:cg-skel 1.1s ease-in-out infinite alternate}
+.pst3 .skel{height:30px;margin-top:6px}
+.pst3 .st .k .skel{height:18px;margin:0}
+@keyframes cg-skel{from{opacity:.45}to{opacity:1}}
+.dst.sk .tx{gap:12px;width:60%}
+.dots{display:inline-flex;gap:6px;margin-left:12px;vertical-align:middle}
+.dots i{width:8px;height:8px;border-radius:50%;background:currentColor;animation:cg-dot 1s ease-in-out infinite}
+.dots i:nth-child(2){animation-delay:.15s}
+.dots i:nth-child(3){animation-delay:.3s}
+@keyframes cg-dot{0%,100%{opacity:.25;transform:translateY(0)}50%{opacity:1;transform:translateY(-4px)}}
+.card.notice{margin-top:24px;align-self:center;width:1040px;max-width:100%;padding:36px 40px;display:flex;flex-direction:column;gap:8px;flex:none}
+.card.notice b{font:var(--title-m)}
+.card.notice span{font:var(--body-m);color:var(--txt3)}
+.lnote{font:var(--label-m);color:var(--txt3);padding:8px 16px}
+/* 스플래시 */
+.splash{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px}
+.splash .ill{width:240px;height:240px;border-radius:50%;background:var(--ph);position:relative}
+.splash .ill .cg-car{position:absolute;left:50%;bottom:74px;width:160px;height:66px;margin-left:-80px;overflow:visible;animation:cg-idle 1.8s cubic-bezier(.45,0,.55,1) infinite alternate}
+.splash .ill::after{content:"";position:absolute;left:48px;right:48px;bottom:70px;height:4px;border-radius:2px;background:var(--div3)}
+.splash .logo{font:800 64px/72px var(--font);letter-spacing:.08em}
+.splash .ld{font:var(--body-m);color:var(--txt3)}
+/* 시연 표시 · 값 바뀐 순간 */
+.demotag{position:absolute;z-index:11;right:24px;bottom:16px;font:var(--label-s);color:var(--txt3);background:var(--card);border:1px dashed var(--div3);border-radius:999px;padding:4px 14px}
+.chg{background:var(--ph2);box-shadow:-12px 0 0 var(--ph2),12px 0 0 var(--ph2);border-radius:8px}
+.proto-on .chg{animation:cg-chg 1.8s ease-out forwards}
+@keyframes cg-chg{0%,40%{background:var(--ph2);box-shadow:-12px 0 0 var(--ph2),12px 0 0 var(--ph2)}100%{background:transparent;box-shadow:0 0 0 transparent}}
+@media (prefers-reduced-motion:reduce){.skel,.dots i,.prog .pdot,.proto-on .chg,.proto-on .rec.new,.proto-on .isheet{animation:none}}
+/* 세로 840 */
+.home.hm.p .recs{grid-template-columns:1fr;height:auto;grid-auto-rows:116px;gap:12px}
+.home.hm.p .rec{padding:14px 22px;gap:2px}
+.home.hm.p .rec b{font:var(--body-l);margin-top:0}
+.home.hm.p .rec .mt{font:var(--label-m)}
+.home.hm.p .rec .rr{display:none}
+.home.p .cta{height:80px;font:var(--body-l);padding:0 8px 0 28px}
+.home.p .cta .ar{width:60px;height:60px}
+.home.p .prog{height:64px;font:var(--body-m-b);padding:0 18px 0 20px}
+.home.p .recempty{height:200px}
+.home.dp.p > .hsearch{margin-top:20px}
+.home.dp.p .hcards{height:auto}
+.home.dp.p .hcard .nm{line-height:40px}
+.home.dp.p .pv{flex-direction:column;align-items:stretch;padding:20px 24px;gap:12px;margin-top:16px}
+.home.dp.p .pv.empty{font:var(--body-m)}
+.home.dp.p .pv .pvl{gap:8px}
+.home.dp.p .pv .pvl > b{font:var(--title-s)}
+.home.dp.p .pst3{gap:20px}
+.home.dp.p .pst3 .st{font:var(--body-l);min-width:0}
+.home.dp.p .pv .pvn{font:var(--label-m)}
+.home.dp.p .pv .cta{align-self:stretch;justify-content:space-between}
+.home.p .card.notice{padding:24px 28px}
+.home.p .card.notice b{font:var(--body-l)}
+.home.p .offl{font:var(--label-m);height:52px;padding:0 18px;white-space:normal}
+.home.dp.p .recempty.dc{height:240px}
+.opt b.rot{display:block;height:1.25em;line-height:1.25em;overflow:hidden;margin-right:auto}
+.opt b.rot .rl{display:flex;flex-direction:column;animation:cg-rot 12s cubic-bezier(.65,0,.35,1) infinite}
+.opt b.rot i{font-style:normal;display:block;height:1.25em;white-space:nowrap}
+@keyframes cg-rot{0%,14%{transform:translateY(0)}16.67%,30.67%{transform:translateY(-1.25em)}33.33%,47.33%{transform:translateY(-2.5em)}50%,64%{transform:translateY(-3.75em)}66.67%,80.67%{transform:translateY(-5em)}83.33%,97.33%{transform:translateY(-6.25em)}100%{transform:translateY(-7.5em)}}
+@media (prefers-reduced-motion:reduce){.opt b.rot .rl{animation:none}}
+[data-go],[data-act]{cursor:pointer}
+/* ── 11/8 명준 코멘트: 분할 화면(840)에서 내용이 깨지지 않게, 각 섹션을 아래 빈 곳까지 내려 채움 ── */
+.home.hm.p .recs{flex:1;min-height:0;height:auto;grid-template-columns:1fr;grid-auto-rows:minmax(0,1fr);gap:16px}
+.home.hm.p .rec{padding:18px 28px;gap:6px;justify-content:center}
+.home.hm.p .rec .tag{font:var(--label-m)}
+.home.hm.p .rec b{font:var(--title-s);margin-top:0;line-height:44px;flex:none}
+.home.hm.p .rec .mt{font:var(--body-m)}
+.home.hm.p .rec .rr{display:block;font:var(--label-m)}
+.home.hm.p .recempty{flex:1;height:auto;min-height:200px}
+.home.dp.p .pv .pvl{gap:14px}
+.home.dp.p .pst3 .st{font:var(--title-s)}
+/* 계산 연출: 레일·항목을 창 가운데로(11/8 명준 "화면 중앙으로 오도록 정렬") */
+.calc.p .ctrack{left:308px}
+.calc.p .cn .slot{left:250px}
+.calc.p .ctot{align-items:center;text-align:center}
+/* 영수증: 줄 높이·글자를 키워 제안 카드 위 빈 곳을 채움 */
+.p .paper .ph b{font:var(--title-s)}
+.p .paper .rrow{grid-template-columns:140px minmax(0,1fr) 84px 18px;min-height:54px}
+.p .paper .rrow .k,.p .paper .rrow .v{font:var(--body-m)}
+.p .paper .rrow .pc{font:var(--body-l)}
+.p .paper .rsum{min-height:46px;font:var(--body-m)}
+.p .paper .rsum b{font:var(--body-l)}
+.p .paper .rsum.tot span{font:var(--body-l)}
+/* 기록(자리): 목록을 아래까지 */
+.pg.p .logl{flex:1;min-height:0;display:flex;flex-direction:column}
+.pg.p .logr{flex:1;display:flex;flex-direction:column;justify-content:center;gap:6px}
+.pg.p .logr b{font:var(--title-s)}
+.pg.p .logr span{font:var(--body-m)}
+
+
+/* ── 디자인 시스템 보기 (11/8 명준: 지금 쓰는 글꼴·그리드·간격·부품만, 컬러·로고는 미정이라 뺌) ── */
+.dsmode .layout{grid-template-columns:minmax(0,1fr)}
+.dsmode .side{display:none}
+.dsv{display:flex;flex-direction:column;gap:30px;min-width:0}
+.dsv .dhead{display:flex;flex-direction:column;gap:4px}
+.dsv .dhead h2{margin:0;font-size:20px;font-weight:800}
+.dsv .dhead p{margin:0;font-size:13.5px;color:var(--ink-2)}
+.dsec{display:flex;flex-direction:column;gap:12px;min-width:0}
+.dsec + .dsec{padding-top:24px;border-top:1px solid var(--line)}
+.dsec > h3{margin:0;font-size:15px;font-weight:800;display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
+.dsec > h3 small{font-size:12.5px;font-weight:600;color:var(--ink-3)}
+.dgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,440px),1fr));gap:14px}
+.dgrid.w{grid-template-columns:repeat(auto-fill,minmax(min(100%,640px),1fr))}
+.dcard{background:var(--ui);border:1px solid var(--line);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.dcard.wide{grid-column:1/-1}
+.dcard > b{font-size:13.5px;font-weight:800}
+.dmeta{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:3px;font-size:12.5px;color:var(--ink-2)}
+.dmeta li{display:grid;grid-template-columns:72px minmax(0,1fr);gap:8px}
+.dmeta li > span:first-child{color:var(--ink-3);font-weight:700}
+.dbox{background:#2a2b2f;border-radius:10px;padding:8px;overflow:auto;min-width:0}
+.dsk{zoom:.5;background:var(--win);color:var(--txt);border-radius:16px;padding:32px;font-family:var(--font);position:relative;word-break:keep-all;display:flex;flex-wrap:wrap;gap:24px;align-items:center}
+.dsk.col{flex-direction:column;align-items:stretch}
+.dsk .rel{position:relative;flex:none}
+.dtab{width:100%;border-collapse:collapse;font-size:12.5px;color:var(--ink-2)}
+.dtab th{text-align:left;font-weight:800;color:var(--ink-3);padding:6px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+.dtab td{padding:7px 8px;border-bottom:1px solid var(--line);vertical-align:middle}
+.dtab td.smp{padding:4px 8px}
+.dtab code{font-size:12px;background:var(--chip);padding:1px 5px;border-radius:5px;white-space:nowrap}
+.dtw{overflow-x:auto;background:var(--ui);border:1px solid var(--line);border-radius:14px;padding:6px 8px}
+.tsmp{zoom:.5;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:1100px}
+.dsv svg.gd{width:100%;height:auto;display:block;background:#2a2b2f;border-radius:10px}
+.gd text{font:700 40px/1 var(--font);fill:#ffffffd6}
+.gd text.s{font-size:32px;fill:#ffffffa3}
+.gd .z{fill:#ffffff0d;stroke:#ffffff52;stroke-width:3}
+.gd .w{fill:#ffffff1f;stroke:#ffffffd6;stroke-width:4}
+.gd .dash{fill:none;stroke:#00a3ffaa;stroke-width:3;stroke-dasharray:14 10}
+.gd .dash2{fill:none;stroke:#ffffff80;stroke-width:3;stroke-dasharray:6 8}
+.sbar{height:24px;background:var(--txt);border-radius:4px}
+.rbox{width:160px;height:120px;border:3px solid var(--txt);background:var(--card)}
+.ebox{width:220px;height:140px;border-radius:32px;background:var(--card)}
+.dnote{margin:0;font-size:12.5px;color:var(--ink-3)}
+
+/* 주석(Pleos 컴포넌트 대응) */
+:where([data-anno]){position:relative}
+.anno [data-anno]{outline:2px solid #ff3d7f99;outline-offset:3px}
+.anno [data-anno]::after{content:attr(data-anno);position:absolute;left:10px;top:-16px;z-index:30;background:#ff3d7f;color:#fff;font:700 17px/22px var(--font);padding:2px 10px;border-radius:7px;white-space:nowrap;pointer-events:none}
+.hot .proto-on [data-go],.hot .proto-on [data-act]{outline:3px solid #00a3ffaa;outline-offset:2px}
+</style>
+
+<div class="top">
+  <h1>Design v2 <span>차곡 · 운전 노고 정산 · Connect-S 17″ 2560 × 1440 · 흑백 와이어프레임 v2.2 · 홈 Nogo(가칭) · 노고 정산 PRD v1.3</span></h1>
+  <div class="seg" id="view" role="group" aria-label="보기">
+    <button data-v="canvas" aria-pressed="true">캔버스</button>
+    <button data-v="proto" aria-pressed="false">프로토타입</button>
+    <button data-v="ds" aria-pressed="false">디자인 시스템</button>
+  </div>
+  <div class="seg" id="split" role="group" aria-label="창 분할">
+    <button data-v="both" aria-pressed="true">함께 보기</button>
+    <button data-v="land" aria-pressed="false">앱 1개 1700</button>
+    <button data-v="port" aria-pressed="false">앱 2개 840</button>
+  </div>
+  <div class="seg" id="mode" role="group" aria-label="주간 야간">
+    <button data-v="light" aria-pressed="true">주간</button>
+    <button data-v="dark" aria-pressed="false">야간</button>
+  </div>
+  <label class="chk"><input type="checkbox" id="annochk"> 주석</label>
+  <label class="chk"><input type="checkbox" id="hotchk"> 누를 곳 표시</label>
+  <label class="chk"><input type="checkbox" id="guidechk"> 여백 선</label>
+  <a href="https://claude.ai/artifact/UwvxSzmAL8BTYoXuA4sr8n" target="_blank" rel="noopener">화면 틀 가이드 ↗</a>
+</div>
+
+<div class="layout">
+  <main class="main">
+    <div id="canvas"></div>
+    <section class="dsv" id="ds" hidden></section>
+    <section class="proto" id="proto" hidden>
+      <div class="protobar">
+        <span class="now" id="protoNow"></span>
+        <button class="tb" id="pBack">← 뒤로</button>
+        <button class="tb" id="pReset">처음부터</button>
+        <button class="tb" id="pZoom">1:1 보기</button>
+      </div>
+      <div class="protobar" style="margin-top:8px">
+        <span class="lbl">차 신호(Virtual Console 대신)</span>
+        <button class="tb" data-sig="people">착석 4명 감지</button>
+        <button class="tb" data-sig="drive">주행 시작</button>
+        <button class="tb" data-sig="arriveA">도착 · 방식 A</button>
+        <button class="tb" data-sig="arriveB">도착 · 방식 B</button>
+                <button class="tb" data-sig="appStart">앱 시작</button>
+        <button class="tb" data-sig="offline">네트워크 없음(켜기/끄기)</button>
+        <button class="tb" data-sig="sensor">좌석 센서 오류</button>
+        <button class="tb" data-sig="pvfail">미리보기 실패</button>
+        <button class="tb" data-sig="nodata">도착 · 날씨·정체 못 받음</button>
+        <button class="tb" data-sig="demo">시연 모드(켜기/끄기)</button>
+        <button class="tb" data-sig="arriveSnow">도착 · 눈 오는 날</button>
+        <button class="tb" data-sig="arriveClear">도착 · 맑은 낮 1시간 · 2명</button>
+        <button class="tb" data-sig="arriveShort">도착 · 10분 · 2명(B 제안 없음)</button>
+        <button class="tb" data-sig="arriveSolo">도착 · 혼자</button>
+      </div>
+      <div class="frame" style="margin-top:10px"><div class="stage" id="pStage"><div class="fit" id="pFit"></div></div><p class="desc" id="pDesc"></p></div>
+    </section>
+  </main>
+
+  <aside class="side" aria-label="화면 목록과 기준">
+    <h2 id="sideTitle">출발 화면 · 인원 확인 알림</h2>
+    <details open>
+      <summary>화면 구조</summary>
+      <ul id="sideStruct"></ul>
+    </details>
+    <details>
+      <summary>Pleos 기준 체크리스트</summary>
+      <ul class="check" id="sideCheck"></ul>
+    </details>
+    <details>
+      <summary>화면 목록 <small id="cnt"></small></summary>
+      <ul class="nav" id="sideNav"></ul>
+    </details>
+    <details>
+      <summary>공통 Pleos 기준</summary>
+      <ul class="check">
+        <li><span class="ok">통과</span><span>정차 전용. 주행이 시작되면 시스템이 앱을 가리고, 주행 중 차곡 화면은 없음(PRD 8장)</span></li>
+        <li><span class="ok">통과</span><span>모든 화면이 스크롤 없이 한 화면, 핵심 행동은 오른손 쪽 큰 버튼</span></li>
+        <li><span class="ok">통과</span><span>버튼 L 100 / M 80 / S 64, 간격 12 이상, 아이콘에 글자 라벨</span></li>
+        <li><span class="ok">통과</span><span>목적지 입력: 즐겨찾기(집·회사) · 최근 목적지 먼저, 그다음 검색(음성 · 시스템 키보드, 서버 카카오 로컬 검색). 지도에서 찍기 없음</span></li>
+        <li><span class="ok">통과</span><span>휴게소 정차 = 도착 때 "중간에 쉰 시간" 한 번 묻기(기본). 11/7 명준: 짧은 하단 시트로 확정 — 계산 연출 뒤 영수증이 나오면 딤 없이 올라오고, 고르면 닫히며 영수증이 고쳐짐</span></li>
+        <li><span class="ok">통과</span><span>가장 작은 글자 20(Label S), 문장 3줄 이하</span></li>
+        <li><span class="ok">통과</span><span>세로 840 창은 한 단으로 줄이고 같은 기능 유지</span></li>
+        <li><span class="ok">통과</span><span>부품은 design assets 2.1.5 크기 기준: Basic·Icon Button, Toggle Button S, Stepper, Title, System Notification. 눌림·비활성 상태 포함</span></li>
+        <li><span class="ok">통과</span><span>흑백 로우 와이어프레임(11/7 기획 요청): 화이트·블랙과 그 사이 회색만. 포인트 색·그라데이션·일러스트 없음, 화면 틀 이미지도 흑백. 선택 상태 = 검은 테두리 3</span></li>
+        <li><span class="q">확인</span><span>아이콘은 에셋의 뒤로·+·−·화살표만 실제 모양. 검색·음성·기록·집·회사·회전 안내·차단은 점선 자리</span></li>
+        <li><span class="q">확인</span><span>야간의 버튼 눌림·비활성 색은 에셋에서 못 찾은 임시값</span></li>
+        <li><span class="ok">통과</span><span>"무게 감지" 표현 없음, "좌석 센서"로만</span></li>
+        <li><span class="ok">통과</span><span>톤: 평가가 아니라 "오늘 이만큼 운전했다". 명세 v0.5 AC-C-8 ①②③⑤(비교·평가·절약·동등 주장) 문구 없음(5-4, 8장)</span></li>
+        <li><span class="ok">통과</span><span>운송의 값으로 읽히는 낱말 없음 — 명세 v0.5 AC-C-8 ④, scripts/lint_copy.py로 검사(5-4)</span></li>
+        <li><span class="ok">통과</span><span>강제 없음: 방식 A 좋아요 · 닫기, 방식 B 항목 고르기 · 닫기. 결제·송금·재촉 없음. A와 B 사이를 넘어가는 버튼 없음(v1.3)</span></li>
+      </ul>
+    </details>
+  </aside>
+</div>
+
+<template id="tpl-screen">
+  <div class="screen">
+    <div class="bg"></div>
+    <div class="dv" aria-label="주행 보조 화면(도로·차량만)">
+      <div class="bird">
+        <div class="roadgrp">
+          <img class="lane-r" src="img/lane_right.svg" alt="">
+          <img class="lane-l" src="img/lane_left.svg" alt="">
+          <img class="road" src="img/road.png" alt="">
+        </div>
+        <img class="car" src="img/vehicles.png" alt="내 차">
+      </div>
+      <div class="mask m-top"></div><div class="mask m-bot"></div><div class="mask m-left"></div><div class="mask m-right"></div>
+    </div>
+    <div class="status"><span>11:29</span></div>
+    <div class="win w-land" style="left:840px;width:1700px"><div class="app a-land"></div><div class="guide"><b>1660 × 1144</b></div></div>
+    <div class="win w-p1" style="left:840px;width:840px"><div class="app a-p1"></div><div class="guide"><b>800 × 1144</b></div></div>
+    <div class="handle h-p1" style="left:1680px"><i></i></div>
+    <div class="win w-p2" style="left:1700px;width:840px"><div class="app a-p2"></div><div class="guide"><b>800 × 1144</b></div></div>
+    <div class="handle h-p2" style="left:2540px"><i></i></div>
+    <img class="gnb" src="img/gnb_light.png" alt="GNB(하단 메뉴)">
+  </div>
+</template>
+
+<script>
+/* ───────── 데이터 (운전 노고 정산 PRD v1.3) ─────────
+   계산 = PRD 6장 그대로. 가산율은 1차 기본값(연구값), 1분 단가 = 최저임금 178.33원, 나누기 = 운전자 포함 n분의 1.
+   대표 장면 = PRD 4장·5-2: 2시간 10분 · 평소보다 1.56배 · 4명 → 노고 약 3만 6천 원, 한 사람 약 9천 원 */
+const UNIT=178.33;
+const ITEMS=[{k:"커피",p:4700,u:"1인분",ex:""},{k:"밥",p:10731,u:"1인분",ex:""},{k:"공동 경비",p:69000,u:"1회",ex:"장보기 등"}];
+const RESTL=["없음","15분","30분","1시간 이상"],RESTQ=[0,15,30,60];
+const won=n=>{const r=Math.round(n/1000)*1000;if(r<=0)return"1천 원 미만";const m=Math.floor(r/10000),c=(r%10000)/1000;return(m?m+"만 ":"")+(c?c+"천 ":"")+"원"};
+const yak=n=>{const w=won(n);return w==="1천 원 미만"?w:"약 "+w};
+const hm=m=>{m=Math.round(m);const h=Math.floor(m/60),r=m%60;return((h?h+"시간":"")+(h&&r?" ":"")+(r?r+"분":""))||"0분"};
+const jong=w=>{const c=w.charCodeAt(w.length-1)-0xAC00;return c>=0&&c<11172&&c%28!==0};
+const yeyo=w=>jong(w)?"이에요":"예요", gwa=w=>jong(w)?"과":"와", eul=w=>jong(w)?"을":"를";
+/* 장면: el = 출발~도착 분, eta = 출발 때 ETA, C = 정체 구간 통과 분(경로 비율 cp), wx = 날씨, nE = 경과 중 밤 분, auto = 쉰 시간을 묻지 않는 짧은 장면. 기본은 도착 때 묻기(11/7 [2026-11-07-09]) */
+const TRIPS={
+  main: {place:"태안 꽃지해수욕장",km:104,el:130,eta:105,jk:38,cp:36,wx:"비",nE:50,auto:false},
+  rest: {place:"태안 꽃지해수욕장",km:104,el:160,eta:105,jk:38,cp:36,wx:"비",nE:62,auto:false},
+  nodata:{place:"태안 꽃지해수욕장",km:104,el:130,eta:105,jk:null,cp:null,wx:"?",nE:50,auto:false},
+  clear:{place:"가평 아침고요수목원",km:52,el:60,eta:60,jk:0,cp:0,wx:null,nE:0,auto:true},
+  snow: {place:"태안 꽃지해수욕장",km:104,el:130,eta:105,jk:38,cp:36,wx:"눈",nE:50,auto:false},
+  short:{place:"동네 마트",km:4,el:10,eta:10,jk:0,cp:0,wx:null,nE:0,auto:true}
+};
+function calc(s){
+  const t=TRIPS[s.trip];
+  if(!t.auto&&s.rest==null) return {pending:true,t};
+  const Q=t.auto?0:RESTQ[s.rest], T=t.el-Q;
+  const N=t.auto?t.nE:Math.round(t.nE*T/t.el);         /* 2순위: 경과 중 밤 × T/경과 */
+  const R=t.wx&&t.wx!=="?"?T:0, C=t.cp?t.cp/100*T:0;   /* 정체 분 ≈ 정체 비율 × 운전 시간(효성 결정, PRD 변경표) */
+  let D=T-t.eta; if(D<t.eta*0.1) D=0;                   /* ETA의 10% 미만이면 0 */
+  const split=!t.auto&&Q>=15;                            /* 2순위·15분 이상: 가운데 한 번 쉰 것으로 [T/2, T/2] */
+  const F=split?2*Math.max(0,T/2-120)*0.125:Math.max(0,T-120)*0.125;
+  const wr=t.wx==="눈"?0.49:0.40;
+  const terms=[
+    {k:"날씨",v:`${t.wx}, 주행 내내`,a:wr*R,why:`${t.wx} 오는 날은 운전 부담이 ${Math.round(wr*100)}% 늘어요 · 시뮬레이터 30명 연구(2026)`},
+    {k:"정체 구간",v:`${t.jk}km`,det:`출발 때 내비가 안내한 경로의 ${t.cp}%가 막혀 있었어요`,a:0.27*C,why:"차가 붐비는 길은 운전 부담이 27% 늘어요 · 교통 밀도 연구(LSU 2015)"},
+    {k:"예상보다 더",v:`+${D}분`,a:0.27*D,why:`출발 때 예상한 ${hm(t.eta)}보다 늘어난 시간이에요 · 정체와 같은 27%를 써요`},
+    {k:"밤길",v:`${N}분`,a:0.04*N,why:"밤 운전은 부담이 4% 늘어요 · 운전자 50명 시뮬레이터 연구(2025)"},
+    {k:"장시간",v:`2시간 넘긴 ${T-120}분`,a:F,why:"2시간 운전하면 15분 쉬게 한 법 기준이에요 · 화물자동차 운수사업법 시행규칙 제21조"}
+  ].filter(x=>x.a>0).map(x=>({...x,pc:Math.max(1,Math.round(x.a/T*100))}));   /* 값이 0인 줄 생략 */
+  if(t.cp===null) terms.unshift({k:"정체 구간",v:"정체 정보 없음",a:0,pc:0,na:true,why:"출발 때 내비에서 정체 정보를 받지 못해 이번에는 더하지 않았어요"});
+  if(t.wx==="?") terms.unshift({k:"날씨",v:"정보 없음",a:0,pc:0,na:true,why:"날씨를 불러오지 못해 이번에는 더하지 않았어요"});
+  const noko=T+terms.reduce((a,x)=>a+x.a,0), amt=noko*UNIT, n=Math.max(1,s.people);
+  const G=amt*(n-1)/n, def=G<2350?-1:G<7715.5?0:G<39865.5?1:2;                    /* 5-3 경계 */
+  return {t,T,noko,mult:noko/T,amt,per:amt/n,G,def,terms};
+}
+const multTxt=m=>m<1.005?"평소 같은 길":`평소보다 ${m.toFixed(2)}배 힘든 길`;
+const valTxt=i=>ITEMS[i].k+(i===2?"에서":"값에서");
+
+/* ───────── 부품 ───────── */
+/* o.ic = Pleos 에셋 아이콘(back·plus·minus·arrow), o.ico = 에셋에 없는 아이콘 자리(점선 상자), o.end = 아이콘을 글자 뒤에 */
+const B=(label,o={})=>{const i=o.ic?`<i class="ic ic-${o.ic}"></i>`:o.ico?`<i class="ico" title="아이콘 자리"></i>`:"";
+  return `<span class="btn ${o.cls||""}" ${o.go?`data-go="${o.go}"`:""} ${o.act?`data-act="${o.act}"`:""} ${o.anno?`data-anno="${o.anno}"`:""} ${o.aria?`aria-label="${o.aria}"`:""}>${o.end?"":i}${label}${o.end?i:""}</span>`};
+const HD=(title,o={})=>`<div class="hd" data-anno="${o.back?"Title · Depth 80":"Title · Main 80"}">${o.back?B("",{cls:"ib plain",act:"back",ic:"back",aria:"뒤로",anno:"Icon Button 80 · Plain · 뒤로"}):""}<span class="${o.back?"ttl":"name"}">${title}</span>${o.right||""}</div>`;
+const STEP=(v,act,anno="Stepper 420 × 100")=>`<div class="stepper" data-anno="${anno}">${B("",{cls:"ib s plain",act:act+"-",ic:"minus",aria:"줄이기"})}<i class="dv2"></i><span class="val">${v}</span><i class="dv2"></i>${B("",{cls:"ib s plain",act:act+"+",ic:"plus",aria:"늘리기"})}</div>`;
+
+/* ───────── 화면: 출발 (PRD 8장 · 9장 가져오는 것 두 가지) ───────── */
+/* 11/8 명준 코멘트: 인원 확인을 위 바(Title 80) 높이의 얇은 알림으로, 가운데 로고만 가리게. 문구는 PRD 8장 그대로 */
+function peopleAlert(p,s){
+  return `<div class="pbar" data-anno="인원 확인 · 위 바 높이 80에 맞춘 얇은 알림 · 로고만 가림 (앱 안, 저절로 안 사라짐)">
+    <div class="pt"><b>${s.toast==="S"?"몇 명이 함께 타나요?":s.detected+"명이 탔어요"}</b><small>${s.split===1?"혼자 운전하면 제안 없이 영수증만 보여 드려요":s.toast==="S"?"좌석 센서를 읽지 못했어요 · 나눠 낼 인원을 골라 주세요":"좌석 센서로 감지했어요 · 나눠 낼 인원을 맞춰 주세요"}</small></div>
+    <div class="pst" data-anno="Stepper">${B("",{cls:"ib plain",act:"split-",ic:"minus",aria:"줄이기"})}<span class="v">${s.split}명</span>${B("",{cls:"ib plain",act:"split+",ic:"plus",aria:"늘리기"})}</div>
+    <i class="pdv"></i><span class="tbtn pri" data-act="toastOk" data-anno="글자 버튼 · 진한 색 = 확인">확인</span><span class="tbtn" data-act="toastClose" data-anno="글자 버튼 · 옅은 색 = 닫기(감지 인원 그대로)">닫기</span>
+  </div>`;
+}
+const RECENT=[{nm:"양평 두물머리",ad:"경기 양평군 양서면",km:"36km"},{nm:"소양강 스카이워크",ad:"강원 춘천시 근화동",km:"104km"},{nm:"가평 아침고요수목원",ad:"경기 가평군 상면",km:"52km"}];
+const FAVS=["집","회사"];  /* 검색·옛 화면 호환용 */
+const RESULTS=[{nm:"소양강 스카이워크",ad:"강원 춘천시 근화동 · 관광지",km:"104km"},{nm:"소양강댐",ad:"강원 춘천시 신북읍 · 관광지",km:"111km"},{nm:"소양강 처녀상",ad:"강원 춘천시 근화동 · 조형물",km:"103km"}];
+/* 11/8 유저 플로우(planning/차곡_운전노고정산_PRD_v1.3_유저플로우.md) 기준: 홈 → [출발하기] → 출발 화면. 앱 이름은 디자인 가칭 Nogo */
+const RECS=[{d:"11월 7일",nm:"태안 꽃지해수욕장",t:"2시간 10분",m:"1.57배",n:"4명",r:"한 사람 약 9천 원 · 좋아요"},{d:"11월 2일",nm:"가평 아침고요수목원",t:"1시간",m:"평소 같은 길",n:"2명",r:"닫음"},{d:"10월 26일",nm:"양평 두물머리",t:"55분",m:"1.20배",n:"3명",r:"커피값에서 운전자 빼기"}];
+const CTA=(label,go,cls="")=>`<span class="cta ${cls}" ${go?`data-go="${go}"`:""} data-anno="Basic Button L 100 · 채움">${label}<i class="ar"><i class="ic ic-arrow"></i></i></span>`;
+const SKEL=(w=100)=>`<i class="skel" style="width:${w}%"></i>`;
+function homeScr(p,s){
+  const hs=s.hs||"normal";
+  const bar=`<div class="hbar" data-anno="Title · Main 80 · 가운데 앱 이름(가칭)">${B("",{cls:"ib",ico:1,go:"log",aria:"기록 전체",anno:"Icon Button 80 · 기록 전체"})}<span class="logo">Nogo</span><span class="hbar-r"></span></div>`;
+  const T={first:["처음 오셨네요","함께 타고 떠나면<br>운전한 만큼 세어 둘게요"],progress:["태안 꽃지해수욕장으로 가는 중이에요","도착하면<br>오늘 운전을 정리해 드려요"]}[hs]||["도착하면 운전한 만큼을 계산해 살짝 알려 드릴게요","오늘도 함께<br>달려 볼까요?"];
+  const act=hs==="progress"?`<span class="prog" data-act="progOpen" data-anno="진행 중인 출발 · 누르면 출발 정보"><i class="pdot"></i>진행 중 · 14:20 출발 · 함께 4명<i class="chev"></i></span>`:CTA("출발하기","depart");
+  const hero=`<div class="hero" data-anno="인사 · 내 차(공용 세단 1종)"><div class="ill" aria-hidden="true">${CAR_SVG()}</div><div class="tx"><span class="sub">${T[0]}</span><span class="h">${T[1]}</span>${act}</div></div>`;
+  let recs;
+  if(hs==="first") recs=`<div class="recempty" data-anno="빈 상태 · 최근 기록 없음"><b>아직 기록이 없어요</b><span>첫 출발을 마치면 여기에 차곡차곡 쌓여요</span></div>`;
+  else{
+    const list=hs==="after"?[{d:"방금",nm:s.lastNm||"태안 꽃지해수욕장",t:s.lastT||"2시간 10분",m:s.lastM||"1.57배",n:`${s.people}명`,r:s.lastRec||"한 사람 약 9천 원 · 좋아요",nw:1},RECS[1],RECS[2]]:RECS;
+    recs=`<div class="recs">${list.map((r,i)=>`<div class="rec${r.nw?" new":""}" style="--i:${i}" data-act="rec${i}" data-anno="${i===0?(r.nw?"방금 끝난 기록(맨 위) · 누르면 기록 상세":"최근 기록 · 누르면 기록 상세"):""}"><span class="tag">${r.d}</span><b>${r.nm}</b><span class="mt">${r.t} · ${r.m} · ${r.n}</span><span class="rr">${r.r}</span></div>`).join("")}</div>`;
+  }
+  const sheet=s.progOpen?`<div class="isheet" data-anno="진행 중 출발 정보 · 짧은 하단 시트(딤 없음)"><span class="grab"></span><b>태안 꽃지해수욕장으로 가는 중</b><span class="isub">14:20 출발 · 함께 4명 · 도착 예상 16:05</span><span class="inote">도착해서 Nogo를 열면 오늘 운전을 정리해 드려요</span><span class="tbtn" data-act="progClose">닫기</span></div>`:"";
+  return `<div class="home hm${p?" p":""}">${bar}${hero}<span class="hlabel">최근 기록</span>${recs}</div>${sheet}`;
+}
+const DCARDS=[{nm:"집",tag:"즐겨찾기",km:"12km",eta:"25분",cp:8},{nm:"회사",tag:"즐겨찾기",km:"8km",eta:"20분",cp:15},{nm:"태안 꽃지해수욕장",tag:"최근",km:"104km",eta:"1시간 45분",cp:36},{nm:"양평 두물머리",tag:"최근",km:"36km",eta:"42분",cp:12}];
+const RES2=[{nm:"태안 꽃지해수욕장",ad:"충남 태안군 안면읍 · 해수욕장",km:"104km"},{nm:"꽃지 해안공원",ad:"충남 태안군 안면읍 · 공원",km:"104km"},{nm:"꽃지 할미할아비바위",ad:"충남 태안군 안면읍 · 명소",km:"105km"}];
+const dinfo=nm=>DCARDS.find(d=>d.nm===nm)||{nm,km:"104km",eta:"1시간 45분",cp:36};
+function depart(p,s){
+  const ppl=s.toast==="S"?"인원 확인 필요":s.toast?"확인 중":s.people>1?`함께 ${s.people}명`:"혼자 운전";
+  const bar=`<div class="hbar" data-anno="Title · Depth 80">${B("",{cls:"ib plain",ic:"back",act:"back",aria:"뒤로",anno:"Icon Button 80 · 뒤로(홈)"})}<span class="logo t">어디로 갈까요?</span><span class="ppl" data-act="people" data-anno="나눠 낼 인원 · 누르면 인원 확인"><i class="ico"></i>${ppl}<i class="chev"></i></span></div>`;
+  const sm=s.search===true?"typing":s.search;
+  if(sm){
+    const q=sm==="empty"?"꽃지해수옥장":"꽃지";
+    const field=`<div class="hsearch on" data-anno="검색창 · 입력 중"><i class="ico"></i><span class="q">${q}</span>${B("지우기",{cls:"s",act:"clearq"})}</div>`;
+    let body;
+    if(sm==="loading") body=`<div class="card list" data-anno="로딩 · 검색 중"><span class="lh">찾는 중<i class="dots"><i></i><i></i><i></i></i></span>${[0,1,2].map(()=>`<div class="dst sk"><span class="tx">${SKEL(46)}${SKEL(28)}</span>${SKEL(8)}</div>`).join("")}</div>`;
+    else if(sm==="empty") body=`<div class="card notice" data-anno="빈 상태 · 검색 결과 없음"><b>‘${q}’ 결과가 없어요</b><span>검색어를 바꿔 보세요. 띄어쓰기나 받침을 확인해도 좋아요</span></div>`;
+    else if(sm==="fail") body=`<div class="card notice" data-anno="에러 · 검색이 안 됨(서버 오류·3초 초과) → 최근 목적지로 안내"><b>검색이 잠시 안 돼요</b><span>최근 목적지에서 골라 주세요</span></div><div class="card list">${DCARDS.slice(2).map((d,i)=>`<div class="dst" data-act="hc${i+2}"><span class="tx"><span class="nm">${d.nm}</span><span class="ad">${d.tag} · ${d.km}</span></span><span class="km">${d.eta}</span></div>`).join("")}</div>`;
+    else body=`<div class="card list" data-anno="${sm==="noloc"?"현재 위치 없이 검색 · 정확도순":"검색 결과 · 서버가 카카오 로컬 검색 대행"}">${sm==="noloc"?`<span class="lnote">현재 위치를 받지 못해 정확도순으로 보여 드려요</span>`:`<span class="lh">검색 결과</span>`}${RES2.map((d,i)=>`<div class="dst${s.dest===d.nm?" on":""}" data-act="res${i}"><span class="tx"><span class="nm">${d.nm}</span><span class="ad">${d.ad}</span></span><span class="km">${sm==="noloc"?"":d.km}</span></div>`).join("")}</div>`;
+    return `<div class="home dp${p?" p":""}">${bar}${field}${body}</div>${sm==="fail"?"":`<div class="kbd" data-anno="시스템 키보드(OS)">시스템 키보드</div>`}`;
+  }
+  const off=s.offline?`<div class="offl" data-anno="에러 · 네트워크 없음"><i class="ico"></i>인터넷이 연결되지 않았어요 · 검색 대신 아래 목적지에서 골라 주세요</div>`:"";
+  const search=`<div class="hsearch${s.offline?" dis":""}" ${s.offline?"":`data-act="search"`} data-anno="검색 한 줄(필드 100 · 음성)"><i class="ico"></i><span class="ph">목적지 검색</span><span class="mic" aria-label="음성"><i class="ico"></i></span></div>`;
+  const cards=s.noFav?`<div class="recempty dc" data-anno="빈 상태 · 즐겨찾기·최근 목적지 없음"><b>아직 고를 목적지가 없어요</b><span>위에서 검색하거나, 순정 내비에 집·회사를 등록하면 여기에 보여요</span></div>`:
+    `<div class="hcards">${DCARDS.map((c,i)=>`<div class="hcard${s.dest===c.nm?" on":""}" style="--i:${i}" data-act="hc${i}" data-anno="${i===0?"즐겨찾기 · 최근 목적지 · 누르면 미리보기":""}"><div class="in"><span class="tag"><i class="ico"></i>${c.tag}</span><span class="nm">${c.nm}</span><span class="mt">${c.km}</span></div></div>`).join("")}</div>`;
+  let pv;
+  if(!s.dest) pv=`<div class="pv empty" data-anno="미리보기 자리 · 목적지 고르기 전"><span>목적지를 고르면 도착 예상과 정체를 미리 보여 드려요</span></div>`;
+  else{
+    const d=dinfo(s.dest);
+    const stats=s.pv==="loading"?`<div class="pst3">${[0,1,2].map(()=>`<span class="st"><i class="k">${SKEL(60)}</i>${SKEL(80)}</span>`).join("")}</div>`:
+      s.pv==="fail"?`<div class="pvfail" data-anno="에러 · 미리보기(requestTrip) 실패"><span>도착 예상을 불러오지 못했어요</span><span class="tbtn pri" data-act="pvRetry">다시 시도</span></div>`:
+      `<div class="pst3"><span class="st"><i class="k">도착 예상</i>${d.eta}</span><span class="st"><i class="k">거리</i>${d.km}</span><span class="st"><i class="k">정체</i>경로의 ${d.cp}%</span></div>`;
+    const go=s.sending?`<span class="cta off" data-anno="출발 누른 뒤 · 내비로 넘기는 중">내비로 보내는 중<i class="dots"><i></i><i></i><i></i></i></span>`:`<span class="cta${s.pv==="loading"?" off":""}" data-act="goNavi" data-anno="Basic Button L 100 · 출발 → requestRoute">출발<i class="ar"><i class="ic ic-arrow"></i></i></span>`;
+    pv=`<div class="pv" data-anno="미리보기 · 순정 내비 requestTrip"><div class="pvl"><b>${d.nm}</b>${stats}${s.people>1&&s.pv!=="fail"?`<span class="pvn">도착하면 오늘 운전을 정리해 드려요</span>`:""}</div>${go}</div>`;
+  }
+  return `<div class="home dp${p?" p":""}">${bar}${off}${search}<span class="hlabel">즐겨찾기 · 최근</span>${cards}${pv}</div>`;
+}
+function logd(p,s){
+  const c=calc(s);
+  const hd=HD("11월 7일 · 태안 꽃지해수욕장",{back:true});
+  return `<div class="pg${p?" p":""}">${hd}<div class="arr">${receipt(p,{...s,ask:false,ro:true},c)}<div class="card offer" data-anno="기록 상세 · 고른 것(디자인 제안)"><span class="cap2">그날 고른 것</span><span class="head">한 사람 ${yak(c.per)}</span><span class="why">방식 A · 좋아요를 눌렀어요</span><span class="note">좌표 없이 이 차에만 남아요</span><span class="sp"></span><div class="bts">${B("닫기",{cls:"l",act:"back"})}</div></div></div></div>`;
+}
+function splash(p,s){
+  return `<div class="splash" data-anno="로딩 · 앱 시작"><div class="ill" aria-hidden="true">${CAR_SVG()}</div><span class="logo">Nogo</span><span class="ld">준비하고 있어요<i class="dots"><i></i><i></i><i></i></i></span></div>`;
+}
+
+/* ───────── 화면: 출발 뒤 · 주행 중 (차곡이 그리지 않는 화면은 흑백 와이어로만) ───────── */
+function naviWF(p){
+  const t=TRIPS.main;
+  return `<div class="navi-wf" data-anno="순정 내비(Pleos 기본 앱) · 차곡이 그리지 않음">
+    <span class="wm">순정 내비</span>
+    <svg viewBox="0 0 1000 600" preserveAspectRatio="xMidYMid meet" aria-hidden="true"><polyline points="80,540 220,470 300,360 470,330 560,210 760,170 920,60"/><circle cx="80" cy="540" r="20"/><rect x="900" y="40" width="40" height="40" rx="8"/></svg>
+    <div class="tbt"><i class="ico"></i><span><b>300m</b>우회전</span></div>
+    <div class="eta"><b>${t.place}</b><span>${hm(t.eta)} · ${t.km}km</span></div></div>`;
+}
+const navi=(p,s)=>naviWF(p);
+function driving(p,s){
+  return `<div class="block" data-anno="시스템 주행 차단 화면(OS) · 차곡이 그리지 않음"><i class="ico"></i><b>주행 중에는 쓸 수 없어요</b><span>차를 세우면 다시 보여요</span></div>`;
+}
+
+/* ───────── 화면: 도착 = 영수증 + 제안 (한 화면, 5-4 "근거가 보인다") ───────── */
+function restRow(s,c){ return ""; }  /* 1안(영수증 위 칩) 삭제 — 11/7 명준: 짧은 하단 시트로 확정 */
+function restSheet(s){
+  const hint=s.restPre==="auto"?"내비와 나란히 두어서 자동으로 쟀어요 · 맞으면 그대로 눌러 주세요":s.restPre==="open"?"휴게소에서 차곡을 열어서 쉰 것으로 골라 뒀어요":"고르면 운전 시간에서 빼고 영수증을 고쳐요";
+  return `<div class="rsheet${s.printFx?" late":""}" data-anno="쉰 시간 · 짧은 하단 시트(딤 없음) · 고르면 바로 닫힘"><span class="grab"></span><div class="h"><b>중간에 쉰 시간이 있었나요?</b><small>${hint}</small></div><div class="chips">${RESTL.map((l,i)=>`<span class="chip${s.rest===i?" on":""}" data-act="rest${i}">${l}</span>`).join("")}</div></div>`;
+}
+/* (보관) 조건별 영수증 제목 — 11/8 명준: 기본은 "오늘 주행 영수증"으로 고정, 이 함수는 지금 안 씀. 계산 연출 문구("비를 뚫고 달린 시간")와 같은 결 */
+function rcptTitle(c){
+  if(!c.terms.length) return "가뿐히 달린 영수증";
+  const top=c.terms.reduce((a,b)=>b.a>a.a?b:a);
+  return ({"날씨":c.t.wx==="눈"?"눈길 헤치고 온 영수증":"빗길 뚫고 온 영수증","정체 구간":"막힌 길 버텨 낸 영수증","예상보다 더":"예상보다 오래 달린 영수증","밤길":"밤길 지켜 온 영수증","장시간":"쉼 없이 달린 영수증"})[top.k]||"오늘의 노고 영수증";
+}
+function receipt(p,s,c){
+  const cP=s.prevRest!=null&&!c.pending?calc({...s,rest:s.prevRest}):null, pvm=cP?Object.fromEntries(cP.terms.map(x=>[x.k,x.v+x.pc])):null, chg=r=>!!pvm&&pvm[r.k]!==r.v+r.pc;
+  /* 영수증 = 프린터 슬롯에서 나온 종이(11/7 명준 레퍼런스). 쉰 시간은 소계 줄 + 짧은 하단 시트 */
+  const rq=restRow(s,c), slot=`<div class="prn" aria-hidden="true"><i></i></div>`;
+  if(c.pending) return `<div class="rcol" data-anno="오늘 운전 영수증 · 계산 전">${rq}${slot}<div class="paperwrap"><div class="paper wait"><span class="cap">${s.restUI==="sheet"?"오늘 운전을 정리하는 중이에요":"쉰 시간을 고르면 영수증이 나와요"}</span></div></div></div>`;
+  const rows=c.terms.map((r,i)=>`<div class="rrow${s.why===i?" unfold":""}${chg(r)?" chg":""}" data-act="why${i}"><span class="k">${r.k}</span><span class="v">${r.v}${r.sub?`<small>${r.sub}</small>`:""}</span><span class="pc">${r.na?"—":"+"+r.pc+"%"}</span><i class="chev"></i>${s.why===i?`<span class="wy" data-anno="% 드롭다운 펼침 · 내용 + 근거">${r.det?`<b>${r.det}</b>`:""}<span>${r.why}</span>${r.note?`<small>${r.note}</small>`:""}</span>`:""}</div>`).join("");
+  return `<div class="rcol" data-anno="오늘 운전 영수증 (5-1) · 출력 종이 형태 · 값이 0인 줄 생략">${rq}${slot}<div class="paperwrap"><div class="paper">
+    <div class="ph"><b>오늘 주행 영수증</b><span>${c.t.place} · 11월 7일</span></div>
+    <i class="rule2"></i>
+    <div class="rhd"><span>항목</span><span>더한 몫</span></div>
+    ${rows||`<span class="rnone">비·정체·밤길 없이 달렸어요</span>`}
+    <div class="rsum rs1${cP&&cP.T!==c.T?" chg":""}"><span>운전 시간</span><b>${hm(c.T)}</b></div>
+    ${c.t.auto?"":`<div class="rsum"><span>중간에 쉰 시간</span><span class="rr"><b>${RESTL[s.rest]}</b>${s.ro?"":B("바꾸기",{cls:"s ghost",act:"restEdit",anno:"쉰 시간 시트 다시 열기"})}</span></div>`}
+    <div class="rsum"><span>거리</span><b>${c.t.km}km</b></div>
+    <div class="rsum tot${cP&&cP.mult.toFixed(2)!==c.mult.toFixed(2)?" chg":""}"><span>합계</span><b>${multTxt(c.mult)}</b></div>
+    <div class="bc" aria-hidden="true"><i class="bars"></i><span>#2026 1107 ${String(c.t.km).padStart(3,"0")} ${String(Math.round(c.T)).padStart(3,"0")}</span></div>
+  </div></div></div>`;
+}
+/* 공동 경비 예시 회전(변경내역 [2026-11-07-10], 디자인 기본값): 약 2초마다 공동 경비 → 장 본 값 → 펜션비 → 바베큐장 이용료 → 입장료 → 물품 구매비 */
+const ROT=`<b class="rot" aria-label="공동 경비" data-anno="공동 경비 예시 회전 · 약 2초"><span class="rl">${["공동 경비","장 본 값","펜션비","바베큐장 이용료","입장료","물품 구매비","공동 경비"].map(x=>`<i>${x}</i>`).join("")}</span></b>`;
+function offer(p,s,c){
+  const close=(cls="l")=>B("닫기",{cls,go:"homeafter",anno:"Basic Button L · 닫기 → 홈(기록 1건)"});
+  const wrap=(anno,inner)=>`<div class="card offer" data-anno="${anno}">${inner}</div>`;
+  if(c.pending) return wrap("제안 자리 · 쉰 시간 답을 기다림",`<span class="cap2">오늘 운전</span><span class="head dim">${s.restUI==="sheet"?"잠깐만요":"쉰 시간을 고르면 바로 보여 드려요"}</span><span class="sp"></span><div class="bts">${close()}</div>`);
+  if(s.people<=1) return wrap("혼자 탄 주행 · 영수증만, 제안 없음 (8장 · 열린 결정 6)",`<span class="cap2">혼자 운전</span><span class="head">혼자 운전했어요</span><span class="note">나눌 사람이 없어 제안은 하지 않아요</span><span class="sp"></span><div class="bts">${close()}</div>`);
+  if(s.ab==="A"&&c.G<2350&&s.aShort==="none") return wrap("방식 A · 짧은 주행 · 제안 없음 안 (Q-2026-11-07-04)",`<span class="cap2">오늘 운전</span><span class="head">이번엔 기록만 남겨요</span><span class="note">짧은 운전은 따로 챙길 금액을 보여 드리지 않아요</span><span class="sp"></span><div class="bts">${close()}</div>`);
+  if(s.ab==="A"){
+    if(s.done) return wrap("방식 A · 좋아요 후 · 로컬 기록만 (5-4)",`<span class="cap2">오늘 운전을 챙긴다면</span><span class="head">좋아요, 오늘 기록에 남겼어요</span><span class="why">한 사람 ${yak(c.per)}</span><span class="note">더 할 일은 없어요</span><span class="sp"></span><div class="bts">${close("l fill")}</div>`);
+    const tot=yak(c.amt);
+    return wrap("방식 A · 돈으로 환산 (5-2 확정 문구)",`<span class="head">오늘 운전을 챙긴다면</span><span class="big" data-anno="큰 숫자 · 함께 탄 사람 1인 몫">한 사람 ${yak(c.per)}</span><span class="why" data-anno="근거 · 총액과 단가 출처">운전 노고 ${tot}${eul(tot)} 운전자 포함 ${s.people}명이 나눈 값<br>최저임금 1분 178원 기준</span><span class="sp"></span><div class="bts">${B("좋아요",{cls:"l fill",act:"accept",anno:"Basic Button L · 받아들이기"})}${close()}</div>`);
+  }
+  if(c.def<0) return wrap("방식 B · 제안 없음 (운전자 몫 < 커피 1인분의 절반)",`<span class="cap2">오늘 운전</span><span class="head">이번엔 기록만 남겨요</span><span class="note">운전자 몫이 커피 한 잔 값의 절반보다 작으면 제안하지 않아요</span><span class="sp"></span><div class="bts">${close()}</div>`);
+  if(s.done) return wrap("방식 B · 고른 뒤 · 로컬 기록만 (5-4)",`<span class="cap2">오늘은</span><span class="head">${valTxt(s.pick)} 운전자 빼기로 했어요</span><span class="why">오늘 기록에 남겼어요</span><span class="note">더 할 일은 없어요</span><span class="sp"></span><div class="bts">${close("l fill")}</div>`);
+  const d=ITEMS[c.def];
+  const opts=`<div class="opts" data-anno="항목 고르기 = 받아들이기 · 세 항목이 늘 보임, 기본값만 채움">${ITEMS.map((it,i)=>{const sub=i===2?"":it.ex;return `<span class="opt${i===c.def?" def":""}" data-act="pick${i}">${i===2?ROT:`<b>${it.k}</b>`}${sub?`<small>${sub}</small>`:""}</span>`}).join("")}</div>`;
+  return wrap("방식 B · 한 번 빼 주기 (5-3) · 금액 표시 안 함",`<span class="head">오늘은 ${valTxt(c.def)} 운전자 빼고 나누는 게 어때요</span><span class="note">기본은 ${d.k}${yeyo(d.k)}. 고른 항목을 나눌 때 운전자는 한 번 빠져요</span>${opts}<span class="sp"></span><div class="bts">${close()}</div>`);
+}
+function arrive(p,s){
+  const c=calc(s);
+  const hd=HD(`${c.t.place}에 도착했어요`,{right:`<span class="cap">${s.people<=1?"혼자 운전":"함께 탄 사람 "+s.people+"명"}</span>`});
+  return `<div class="pg${p?" p":""}">${hd}<div class="arr${s.printFx?" print":""}">${receipt(p,s,c)}${offer(p,s,c)}</div></div>${s.ask&&!c.t.auto?restSheet(s):""}`;
+}
+function log(p,s){
+  const L=[["11월 7일 · 태안 꽃지해수욕장","2시간 10분 · 평소보다 1.57배 · 4명 · 한 사람 약 9천 원 · 좋아요"],["11월 2일 · 가평 아침고요수목원","1시간 · 평소 같은 길 · 2명 · 닫음"],["10월 26일 · 양평 두물머리","55분 · 평소보다 1.20배 · 3명 · 좋아요"]];
+  return `<div class="pg${p?" p":""}">${HD("기록",{back:true})}<div class="card logl" data-anno="기록 자리 · 1차는 로컬 저장만, 누적 화면은 2차(10장)">${L.map(([a,b])=>`<div class="logr"><b>${a}</b><span>${b}</span></div>`).join("")}</div><span class="note">좌표 없이 수치와 고른 것만 이 차에 남아요</span></div>`;
+}
+const otherApp=()=>`<div class="pg" style="justify-content:center;align-items:center;color:var(--txt4);font:var(--title-s)">다른 앱</div>`;
+
+/* ───────── 화면: 도착 계산 연출 (영수증 전) ─────────
+   쉰 시간을 답한 뒤(또는 묻지 않는 짧은 장면이면 바로) 내 차가 6개 체크포인트를 들르며 계산하고, 끝나면 영수증 + 제안으로 넘어간다 */
+const CAR_SVG=()=>`<svg class="cg-car" viewBox="0 0 170 70" aria-hidden="true"><g transform="translate(170 0) scale(-1 1)"><path class="cb" d="M10 54 L10 42 Q12 31 28 29 L54 26 L74 10 Q80 6 92 6 L118 6 Q128 6 136 14 L151 28 Q163 30 165 42 L165 54 Z"/><path class="cw" d="M62 27 L78 13 Q82 11 90 11 L105 11 L105 27 Z M111 27 L111 11 L118 11 Q124 11 130 17 L140 27 Z"/><g class="wh"><circle cx="44" cy="55" r="14"/><circle class="hub" cx="44" cy="55" r="6"/><rect x="42.5" y="42" width="3" height="8"/></g><g class="wh"><circle cx="134" cy="55" r="14"/><circle class="hub" cx="134" cy="55" r="6"/><rect x="132.5" y="42" width="3" height="8"/></g></g></svg>`;
+const CLOUD=`<svg class="cloud" viewBox="0 0 170 80" aria-hidden="true"><path d="M38 74 C14 74 8 50 26 42 C24 20 50 10 66 22 C76 2 112 2 120 26 C142 22 160 38 152 56 C162 66 152 76 140 74 Z"/></svg>`;
+function calcItems(s){
+  const c=calc(s); if(c.pending) return null;
+  const by=k=>c.terms.find(x=>x.k===k);
+  const w0=by("날씨"),j0=by("정체 구간"),w=w0&&!w0.na?w0:null,j=j0&&!j0.na?j0:null,wna=!!(w0&&w0.na),jna=!!(j0&&j0.na),l=by("예상보다 더"),n=by("밤길"),h=by("장시간");
+  return {c,items:[
+    {k:"날씨",v:w?`${c.t.wx} +${w.pc}%`:(wna?"정보 없음":"맑음"),zero:!w,fx:w?(c.t.wx==="눈"?"snow":"rain"):(wna?"none":"leaves"),say:w?(c.t.wx==="눈"?"미끄러운 눈길을 조심조심 달린 시간 세는 중…":"쏟아지는 비를 뚫고 달린 시간 세는 중…"):(wna?"날씨는 이번엔 확인하지 못했어요":"맑은 하늘 확인 중… 오늘은 날씨가 도와줬네요")},
+    {k:"정체 구간",v:j?`${c.t.jk}km +${j.pc}%`:(jna?"정보 없음":"없음"),zero:!j,fx:j?"jam":(jna?"none":"zip"),say:j?"꽉 막힌 길에서 지루함을 꾹 참은 시간 세는 중…":"막힘 없이 달렸는지 확인 중…"},
+    {k:"예상보다 더",v:l?`${l.v.replace("+","")} +${l.pc}%`:"없음",zero:!l,fx:l?"late":"none",tag:l?l.v:"",say:l?"예상보다 길어진 운전을 버틴 시간 세는 중…":"예상한 시간 안에 왔는지 확인 중…"},
+    {k:"밤길",v:n?`${n.v} +${n.pc}%`:"없음",zero:!n,fx:n?"night":"sun",say:n?"어두운 밤길에 눈을 부릅뜬 시간 세는 중…":"밤길이 있었는지 확인 중…"},
+    {k:"장시간",v:h?`${c.T-120}분 +${h.pc}%`:"없음",zero:!h,fx:h?"long":"none",say:h?"쉬지 않고 2시간 넘게 핸들을 잡은 시간 세는 중…":"쉬지 않고 오래 달렸는지 확인 중…"},
+    {k:"거리",v:`${c.t.km}km`,zero:false,fx:"dist",say:s.people>1?"오늘 모두를 태우고 달린 거리 세는 중…":"오늘 달린 거리 세는 중…"}
+  ]};
+}
+function fxHTML(it,c,still){
+  const rng=(n,f)=>Array.from({length:n},(_,i)=>f(i)).join("");
+  const W=inner=>`<div class="fx fx-${it.fx}${still?" still":""}" aria-hidden="true"><div class="fxi">${inner}</div></div>`;
+  switch(it.fx){
+    case "rain": return W(CLOUD+rng(9,i=>`<i class="dr" style="left:${72+i*19}px;--d:${((i*0.37)%0.6).toFixed(2)}"></i>`));
+    case "snow": return W(CLOUD+rng(8,i=>`<i class="sf" style="left:${68+i*21}px;--d:${((i*0.53)%1.4).toFixed(2)}"></i>`));
+    case "leaves": return W(`<i class="sun"></i>`+rng(5,i=>`<i class="lf" style="left:${36+i*48}px;--d:${((i*0.41)%1.6).toFixed(2)}"></i>`));
+    case "jam": return W(rng(3,i=>`<div class="jc" style="left:${14+i*92}px;--d:${(i*0.07).toFixed(2)}">${CAR_SVG()}<b class="hk" style="--h:${(0.2+i*0.36).toFixed(2)}s">빵!</b></div>`));
+    case "zip": return W(`<div class="zc">${CAR_SVG()}</div><span class="tg">쌩</span>`);
+    case "late": return W(`<div class="clk"><i class="hand"></i></div><span class="tg">${it.tag}</span>`);
+    case "night": return W(`<i class="moon"></i>`+[[44,40],[226,30],[70,150],[236,136]].map(([x,y],i)=>`<i class="st" style="left:${x}px;top:${y}px;--d:${(i*0.23).toFixed(2)}"></i>`).join(""));
+    case "sun": return W(`<i class="sun"></i>`);
+    case "long": return W(`<svg class="hg" viewBox="0 0 80 124" aria-hidden="true"><path d="M8 4 H72 M8 120 H72 M14 4 C14 40 40 50 40 62 C40 74 14 84 14 120 M66 4 C66 40 40 50 40 62 C40 74 66 84 66 120"/><path class="sand" d="M22 112 Q40 92 58 112 Z"/></svg><span class="tg">+${c.T-120}분</span>`);
+    case "dist": return W(`<span class="cnt"><b>${still?c.t.km:0}</b><small>km</small></span><div class="road"></div><div class="dc">${CAR_SVG()}</div>`);
+    default: return W(`<span class="none">없음</span>`);
+  }
+}
+const CSTART="오늘 운전의 노고를 하나씩 세어 볼게요",CDONE="다 셌어요. 오늘 운전 정말 수고 많았어요";
+const SMOKE=()=>`<div class="smoke" aria-hidden="true"><div class="plume"><svg viewBox="0 0 80 44"><path d="M80 20 C76 12 68 10 62 13 C60 5 50 2 43 7 C38 1 26 1 22 9 C14 7 6 13 8 21 C1 23 1 33 8 35 C8 42 18 44 24 40 C29 45 40 45 45 40 C51 44 62 43 65 38 C71 40 77 38 80 36"/></svg></div></div>`;
+const TSMOKE=()=>`<div class="tsmoke" aria-hidden="true"><div class="plume"><svg viewBox="0 0 130 60"><path d="M127 58 L9 58 C2 58 0 49 6 45 C2 37 10 29 20 32 C20 19 36 13 46 21 C52 7 74 7 80 21 C90 15 104 21 104 33 C112 33 118 41 115 49 C121 51 125 55 127 58 Z"/></svg></div></div>`;
+function calcScr(p,s){
+  const r=calcItems(s); if(!r) return arrive(p,s);
+  const {c,items}=r, n=items.length, started=s.cstep!=null, k=s.cdone?n-1:started?s.cstep:0;
+  const nodes=items.map((it,i)=>{const filled=s.cdone||(started&&(i<k||(i===k&&s.cfx)));
+    return `<div class="cn${filled?(it.zero?" zero":" on"):""}" style="--i:${i}"><div class="slot">${started&&s.cfx&&i===k&&!s.cdone?fxHTML(it,c,true):""}</div><i class="dot"></i><span class="lb">${it.k}</span><span class="vl">${it.v}</span></div>`}).join("");
+  const prog=s.cload?"도착한 곳의 날씨를 확인하고 있어요<i class=\"dots\"><i></i><i></i><i></i></i>":s.cdone?CDONE:started?items[k].say:CSTART;
+  return `<div class="pg${p?" p":""}">${HD(`${c.t.place}에 도착했어요`,{right:B("건너뛰기",{cls:"s",act:"calcSkip",anno:"Basic Button S · 연출 건너뛰기"})})}<span class="cprog">${prog}</span></div>
+    <div class="calc${p?" p":""}${s.cdone?" done":""}" style="--n:${n}" data-anno="계산 연출 · 내 차가 체크포인트마다 멈추며 계산">
+      <div class="ctrack" style="--k:${k}"><i class="cfill"></i>${nodes}<div class="cc-car${!started&&!s.cdone?" start":""}" style="--k:${k}" data-anno="내 차 2D 에셋 자리(차종별 BX)"><span class="cc-o">${CAR_SVG()}</span></div></div>
+      <div class="ctot"><span class="t1">오늘 운전 ${hm(c.T)}</span><span class="t2">${multTxt(c.mult)}</span></div>
+    </div>`;
+}
+/* 프로토타입 재생: 차 이동 550ms → 원 채움 팝 + 항목 그래픽 1.75초(1.4초에 다음 이동 시작, 겹쳐서 흐름이 끊기지 않게) → 마지막에 합계 팝 → 1.7초 뒤 영수증 */
+function playCalc(){
+  const tok=P.ctok=(P.ctok||0)+1;
+  const win=pScr.querySelector('.win:not([hidden]) .app'), root=win&&win.querySelector('.calc'); if(!root)return;
+  const r=calcItems(P.s), items=r.items, n=items.length;
+  const track=root.querySelector('.ctrack'),car=root.querySelector('.cc-car'),nodes=[...root.querySelectorAll('.cn')],prog=win.querySelector('.cprog');
+  const ok=()=>tok===P.ctok&&P.screen==="calc";
+  const T=(ms,f)=>setTimeout(()=>{if(ok())f()},ms);
+  const finish=()=>{P.screen="arrive";P.s.cstep=null;P.s.cdone=false;P.s.printFx=true;renderProto()};
+  if(matchMedia("(prefers-reduced-motion: reduce)").matches){car.classList.remove("start");nodes.forEach((e,i)=>e.classList.add(items[i].zero?"zero":"on"));car.style.setProperty("--k",n-1);track.style.setProperty("--k",n-1);root.classList.add("done");prog.textContent=CDONE;T(1500,finish);return}
+  const land=!root.classList.contains("p"), gap=(land?track.clientWidth:track.clientHeight)/(n-1);
+  car.style.transition="none";car.classList.remove("start");car.style.translate=land?"-60px 0px":"0px 0px";void car.offsetWidth;car.style.transition="";
+  let i=0;
+  const step=()=>{
+    if(i>=n){root.classList.add("done");prog.textContent=CDONE;T(1900,finish);return}
+    prog.textContent=items[i].say;
+    const arriveAt=()=>{
+      car.classList.remove("moving");const it=items[i],nd=nodes[i],slot=nd.querySelector(".slot");
+      nd.classList.add(it.zero?"zero":"on");slot.innerHTML=fxHTML(it,r.c,false);
+      if(it.fx==="dist"){const b=slot.querySelector(".cnt b"),t0=performance.now(),to=r.c.t.km;const tick=t=>{if(!ok())return;const q=Math.min(1,(t-t0)/900);b.textContent=Math.round(to*(1-Math.pow(1-q,3)));if(q<1)requestAnimationFrame(tick)};requestAnimationFrame(tick)}
+      T(1780,()=>{slot.innerHTML=""});
+      T(1400,()=>{i++;step()});
+    };
+    /* 처음 한 번만: 웅크리며 바퀴가 헛돎(0.26초) → 그사이 배기구에서 연기가 나오고 → 튀어 나가는 동안 연기가 배기구에 붙어 따라오다 남아서 흩어짐 → 날씨 계산. 다음부터는 연기·웅크림 없이 바로 이동 */
+    if(i===0){car.classList.add("rev","moving");let sm=null;
+      T(100,()=>{track.insertAdjacentHTML("beforeend",SMOKE());sm=track.lastElementChild;T(1300,()=>sm.remove())});
+      T(260,()=>{car.classList.remove("rev");car.classList.add("launch");car.style.translate="0px 0px";
+        if(sm&&land){sm.classList.add("follow");sm.style.translate="60px 0px"}
+        T(480,()=>{car.classList.remove("launch");arriveAt()})});return}
+    car.classList.add("moving");car.style.translate=land?`${i*gap}px 0px`:`0px ${i*gap}px`;track.style.setProperty("--k",i);T(560,arriveAt);
+  };
+  T(500,step);
+}
+
+/* ───────── 화면 목록 (캔버스 정렬 순서 = 유저 플로우 순서, PRD v1.3 8장) ───────── */
+const R={home:homeScr,depart,navi,driving,arrive,calc:calcScr,log,logd,splash};
+const BASE={trip:"main",people:4,detected:4,split:4,toast:null,dest:null,search:false,ab:"A",why:null,rest:0,restOpen:false,restPre:null,restUI:"sheet",ask:false,done:false,pick:null,cstep:null,cfx:false,cdone:false,printFx:false,hs:"normal",progOpen:false,pv:null,sending:false,offline:false,noFav:false,sensorFail:false,pvFail:false,aShort:null,cload:false,prevRest:null,demo:false,ro:false,lastRec:null};
+const AT=["ok","가산율 = 연구값 + 2차 보정(열린 결정 7 닫힘, 11/7)"];
+const CG=["q","정체 구간 줄 표기 \"40분 (경로의 35%)\" / \"12km (경로의 35%)\" 중 효성 결정 대기(11장 9) → 자리만, 지금은 분"];
+const SCREENS=[
+  {g:"앱 시작 · 홈",id:"app-splash",r:"splash",tag:"앱 시작(로딩)",s:{},desc:"앱을 열면 잠깐 Nogo와 내 차가 보이고, 준비가 끝나면 홈으로 넘어간다(프로토타입 1.6초).",
+   st:["가운데: 원 안의 내 차(천천히 들썩) · Nogo · \"준비하고 있어요\" + 점 세 개"],ck:[["ok","[신규] 유저 플로우 1단계 앞 로딩"],["q","실제 로딩 시간은 앱 시작 속도에 따라 다름 — 1초 안이면 건너뜀 [가정]"]]},
+  {g:"앱 시작 · 홈",id:"home-first",r:"home",tag:"홈 · 첫 사용",s:{hs:"first"},desc:"기록이 하나도 없을 때의 홈. 출발하기 하나만 크게 두고, 기록 자리에는 무엇이 쌓이는지 알려 준다.",
+   st:["인사: \"처음 오셨네요\" / \"함께 타고 떠나면 운전한 만큼 세어 둘게요\"","[출발하기 →]","최근 기록 자리: 점선 \"아직 기록이 없어요 · 첫 출발을 마치면 여기에 차곡차곡 쌓여요\""],
+   ck:[["ok","[신규] 빈 상태 · 최근 기록 없음"],["ok","누를 곳 = 출발하기 하나"]]},
+  {g:"앱 시작 · 홈",id:"home",r:"home",tag:"홈 · 기본",s:{},desc:"유저 플로우 1단계. 인사와 [출발하기], 최근 기록 3건. 기록을 누르면 기록 상세로 간다.",
+   st:["위: 기록 전체(아이콘) · 가운데 Nogo(가칭)","인사: \"도착하면 운전한 만큼을 계산해 살짝 알려 드릴게요\" / \"오늘도 함께 달려 볼까요?\" + [출발하기 →](L 100, 화살표 원)","최근 기록 3건: 날짜 · 목적지 · 운전 시간 · 배수 · 인원 · 고른 것"],
+   ck:[["ok","11/8 유저 플로우: 홈 → [출발하기] → 출발 화면 (이전 홈의 검색·목적지 카드는 출발 화면으로 옮김)"],["ok","진행 중인 출발 없음 = 이 화면(따로 빈 표시 없음)"],["q","앱 이름 Nogo는 디자인 가칭"]]},
+  {g:"앱 시작 · 홈",id:"home-progress",r:"home",tag:"홈 · 진행 중 출발",s:{hs:"progress"},desc:"출발 기록이 있고 아직 도착하지 않았을 때(앱 재시작·다른 앱에서 돌아옴). [출발하기] 자리에 진행 중 상태가 보인다.",
+   st:["인사: \"태안 꽃지해수욕장으로 가는 중이에요\" / \"도착하면 오늘 운전을 정리해 드려요\"","진행 중 알약: 깜빡이는 점 · \"진행 중 · 14:20 출발 · 함께 4명\" ›"],
+   ck:[["ok","[신규] 분기 '앱 재시작·다른 앱에서 돌아옴'"],["q","진행 중일 때 새 출발·출발 취소를 허용할지 → 기획 질문 Q-2026-11-08-02"]]},
+  {g:"앱 시작 · 홈",id:"home-progress-open",r:"home",tag:"진행 중 카드 누름",s:{hs:"progress",progOpen:true},desc:"진행 중 알약을 누르면 출발 정보가 짧은 하단 시트로 뜬다. 닫기만 있다.",
+   st:["시트(딤 없음): \"태안 꽃지해수욕장으로 가는 중\" · \"14:20 출발 · 함께 4명 · 도착 예상 16:05\" · \"도착해서 Nogo를 열면 오늘 운전을 정리해 드려요\" · 닫기(글자 버튼)"],
+   ck:[["ok","[신규] 누른 뒤 · 진행 중 카드 탭"],["q","시트에 '출발 취소' 같은 동작이 필요한지 — Q-2026-11-08-02"]]},
+  {g:"앱 시작 · 홈",id:"home-after",r:"home",tag:"홈 · 방금 끝난 기록",s:{hs:"after"},desc:"제안을 고르거나 닫으면 홈으로 돌아오고, 방금 기록이 맨 위에 굵은 테두리로 올라온다(알림·재촉 없음).",
+   st:["최근 기록 맨 위: \"방금 · 태안 꽃지해수욕장 · 2시간 10분 · 1.57배 · 4명 · 한 사람 약 9천 원 · 좋아요\"(검은 테두리 3)","나머지 기록은 한 칸씩 밀림"],
+   ck:[["ok","[신규] 유저 플로우 9단계(기록 1건 남음)"],["ok","A 받아들이기·닫기 / B 고르기·닫기 뒤 모두 여기로"]]},
+  {g:"앱 시작 · 홈",id:"log-detail",r:"logd",tag:"기록 상세",s:{ro:true},desc:"최근 기록을 누르면 그날 영수증과 고른 것을 다시 본다. 바꾸기·근거 펼침은 보기만.",
+   st:["제목 \"11월 7일 · 태안 꽃지해수욕장\" + 뒤로","왼쪽: 그날 영수증(쉰 시간 바꾸기 없음)","오른쪽: \"그날 고른 것 · 한 사람 약 9천 원 · 방식 A · 좋아요를 눌렀어요\" · 닫기"],
+   ck:[["q","기록 상세가 필요한지(PRD는 로컬 기록만, 누적 화면은 2차) → Q-2026-11-08-01 · 디자인 제안"]]},
+  {g:"출발 화면",id:"depart-home",r:"depart",tag:"출발 화면 · 기본",s:{},desc:"홈의 [출발하기]로 들어온다. 검색 한 줄, 즐겨찾기·최근 목적지 카드, 아래 미리보기 자리.",
+   st:["위: 뒤로 · \"어디로 갈까요?\" · 함께 4명 알약","검색 한 줄 \"목적지 검색\" + 음성","즐겨찾기 · 최근: 집 · 회사 · 태안 꽃지해수욕장 · 양평 두물머리","미리보기 자리(점선): \"목적지를 고르면 도착 예상과 정체를 미리 보여 드려요\""],
+   ck:[["ok","유저 플로우 2단계 구성(검색 · 최근 · 즐겨찾기 · 미리보기 · 안내 한 줄)"],["ok","지도 없음"]]},
+  {g:"출발 화면",id:"depart-people",r:"depart",tag:"인원 확인 알림",s:{toast:"B",people:1},desc:"출발 화면에 들어오면 착석 2명 이상일 때 한 번 묻는다. 위 바 줄의 얇은 알림, 저절로 사라지지 않음.",
+   st:["\"4명이 탔어요\" · \"좌석 센서로 감지했어요 · 나눠 낼 인원을 맞춰 주세요\" · [−] 4명 [+] · 확인(진한 글자) · 닫기(옅은 글자)"],
+   ck:[["ok","PRD 8장 문구"],["q","Pleos 알림 부품을 한 줄로 줄인 변형(디자인 제안)"]]},
+  {g:"출발 화면",id:"depart-people-solo",r:"depart",tag:"인원 1명까지 내림",s:{toast:"B",people:1,split:1},desc:"−로 1명까지 내리면 설명 줄이 \"혼자 운전하면 제안 없이 영수증만 보여 드려요\"로 바뀐다.",
+   st:["[−] 1명 [+] · 설명 \"혼자 운전하면 제안 없이 영수증만 보여 드려요\"(세로 창은 설명 줄 숨김)"],ck:[["ok","[신규] 누른 뒤 · −로 1명"],["ok","분기 '혼자 탄 주행'을 출발 전에 미리 알려 줌"]]},
+  {g:"출발 화면",id:"depart-sensor",r:"depart",tag:"좌석 센서 못 읽음",s:{toast:"S",people:1,split:1,sensorFail:true},desc:"좌석 센서 값을 못 읽으면 감지 인원 없이 직접 고르게 묻는다.",
+   st:["\"몇 명이 함께 타나요?\" · \"좌석 센서를 읽지 못했어요 · 나눠 낼 인원을 골라 주세요\" · [−] 1명 [+]","인원 알약 \"인원 확인 필요\""],ck:[["ok","[신규] 에러 · 좌석 센서"],["q","닫기를 누르면 1명(혼자)으로 볼지 — 지금 시안은 고른 값 그대로"]]},
+  {g:"출발 화면",id:"depart-preview-loading",r:"depart",tag:"미리보기 불러오는 중",s:{dest:"태안 꽃지해수욕장",pv:"loading"},desc:"목적지를 고르면 카드에 테두리가 생기고, 미리보기 칸이 도착 예상·거리·정체를 불러오는 동안 회색 막대로 기다린다.",
+   st:["미리보기: 목적지 이름 + 회색 막대 3개(은은하게 깜빡) · 출발 꺼짐"],ck:[["ok","[신규] 로딩 · 미리보기(requestTrip)"]]},
+  {g:"출발 화면",id:"depart-preview",r:"depart",tag:"미리보기 · 출발 준비",s:{dest:"태안 꽃지해수욕장",pv:"ok"},desc:"미리보기가 오면 도착 예상 · 거리 · 정체 비율과 안내 한 줄이 보이고 출발이 켜진다.",
+   st:["\"태안 꽃지해수욕장\" · 도착 예상 1시간 45분 · 거리 104km · 정체 경로의 36%","\"도착하면 오늘 운전을 정리해 드려요\"","[출발 →](L 100) → requestRoute로 순정 내비"],ck:[["ok","유저 플로우 2단계 미리보기 · 출발 전 안내 한 줄"],["ok","시연 목적지 태안 꽃지해수욕장(#60)"]]},
+  {g:"출발 화면",id:"depart-preview-fail",r:"depart",tag:"미리보기 실패",s:{dest:"태안 꽃지해수욕장",pv:"fail"},desc:"미리보기를 못 받으면 다시 시도를 두고, 출발은 막지 않는다(디자인 제안).",
+   st:["\"도착 예상을 불러오지 못했어요\" · 다시 시도(진한 글자)","출발은 켜져 있음"],ck:[["ok","[신규] 에러 · 경로·미리보기 요청 실패"],["q","미리보기 실패 때 출발을 막을지 — 막지 않으면 정체 비율 없이 계산 → Q-2026-11-08-03"]]},
+  {g:"출발 화면",id:"depart-sending",r:"depart",tag:"출발 누른 뒤",s:{dest:"태안 꽃지해수욕장",pv:"ok",sending:true},desc:"출발을 누르면 순정 내비로 넘어가기 전 잠깐 \"내비로 보내는 중\"이 보인다(프로토타입 0.7초).",
+   st:["출발 버튼 → \"내비로 보내는 중\" + 점 세 개, 꺼짐"],ck:[["ok","[신규] 로딩 · 출발 → 내비 전"]]},
+  {g:"출발 화면",id:"depart-empty",r:"depart",tag:"목적지 카드 없음",s:{noFav:true},desc:"즐겨찾기·최근 목적지가 없으면 카드 자리에 이유와 방법을 한 줄로 알려 준다.",
+   st:["점선: \"아직 고를 목적지가 없어요\" · \"위에서 검색하거나, 순정 내비에 집·회사를 등록하면 여기에 보여요\""],ck:[["ok","[신규] 빈 상태 · 최근 목적지 없음 + 즐겨찾기 없음"]]},
+  {g:"출발 화면",id:"depart-offline",r:"depart",tag:"네트워크 없음",s:{offline:true},desc:"인터넷이 없으면 검색을 흐리게 막고, 즐겨찾기·최근 목적지로 고르게 안내한다.",
+   st:["알약 배너 \"인터넷이 연결되지 않았어요 · 검색 대신 아래 목적지에서 골라 주세요\"","검색 한 줄 흐림(누를 수 없음)"],ck:[["ok","[신규] 에러 · 네트워크 없음"],["q","미리보기(requestTrip)는 순정 내비라 인터넷 없이 될 수 있음 [미확인] · 날씨는 도착 때 '정보 없음'"]]},
+  {g:"출발 화면 · 목적지 검색",id:"search-typing",r:"depart",tag:"검색 결과",s:{search:"typing"},desc:"검색창을 누르면 시스템 키보드가 올라오고 결과가 목록으로 뜬다.",
+   st:["입력 \"꽃지\" + 지우기","결과 3개: 태안 꽃지해수욕장 · 꽃지 해안공원 · 꽃지 할미할아비바위","아래 시스템 키보드"],ck:[["ok","서버가 카카오 로컬 검색 대행(현재 위치 약 1km 반올림)"]]},
+  {g:"출발 화면 · 목적지 검색",id:"search-loading",r:"depart",tag:"검색 중",s:{search:"loading"},desc:"결과가 오기 전에는 회색 막대 3줄과 \"찾는 중\"이 보인다.",
+   st:["\"찾는 중\" + 점 세 개 · 회색 막대 3줄"],ck:[["ok","[신규] 로딩 · 목적지 검색 중"]]},
+  {g:"출발 화면 · 목적지 검색",id:"search-empty",r:"depart",tag:"검색 결과 없음",s:{search:"empty"},desc:"결과가 없으면 검색어를 바꿔 보라고 안내한다.",
+   st:["\"‘꽃지해수옥장’ 결과가 없어요\" · \"검색어를 바꿔 보세요. 띄어쓰기나 받침을 확인해도 좋아요\""],ck:[["ok","[신규] 빈 상태 · 검색 결과 없음(유저 플로우 3장)"]]},
+  {g:"출발 화면 · 목적지 검색",id:"search-fail",r:"depart",tag:"검색 안 됨",s:{search:"fail"},desc:"서버·카카오 오류거나 3초가 넘으면 키보드를 내리고 최근 목적지에서 바로 고르게 한다.",
+   st:["\"검색이 잠시 안 돼요\" · \"최근 목적지에서 골라 주세요\"","최근 목적지 2줄(누르면 바로 고름)"],ck:[["ok","[신규] 에러 · 검색 자체가 안 됨(유저 플로우 3장)"]]},
+  {g:"출발 화면 · 목적지 검색",id:"search-noloc",r:"depart",tag:"위치 못 받음",s:{search:"noloc"},desc:"현재 위치를 못 받으면 위치 없이 검색하고 정확도순이라고 한 줄로 알린다. 거리는 빼고 보여 준다.",
+   st:["목록 맨 위 \"현재 위치를 받지 못해 정확도순으로 보여 드려요\"","거리 칸 비움"],ck:[["ok","[신규] 에러 · 현재 위치 못 받음(유저 플로우 3장)"]]},
+  {g:"출발 뒤 · 주행 중",id:"navi",r:"navi",tag:"순정 내비 안내",s:{},desc:"출발을 누르면 순정 내비가 앞으로 와서 안내한다. 차곡은 내비 화면을 그리지 않는다.",
+   st:["순정 내비(흑백 와이어): 회전 안내 · 경로 선 · 목적지","도착까지 1시간 45분 · 104km(출발 때 ETA)","출발 기록: 시각 · ETA · 경로 거리 · 정체 구간 · 출발 날씨"],
+   ck:[["ok","내비 앱 기능을 만들지 않음(9장, 카테고리 반려 위험)"],["ok","에뮬레이터 캡처 대신 흑백 와이어(11/7 요청)"]]},
+  {g:"출발 뒤 · 주행 중",id:"driving",r:"driving",tag:"주행 중 · 차단",s:{},desc:"주행 중 차곡 창은 시스템이 가린다. 휴게소에서 쉰 시간은 도착 때 한 번 묻는다(기본).",
+   st:["차곡 창: 시스템 주행 차단 화면(OS)","앱 2개 배치: 오른쪽은 순정 내비","\"쉬는 중\" 버튼 없음"],
+   ck:[["ok","주행 중 금액·수치·알림 없음(8장)"],["ok","기본 배치에서는 [출발] 뒤 차곡이 멈춰 신호를 못 받음 → 도착 때 묻기가 기본(열린 결정 8 닫힘)"],["q","내비와 나란히 띄우면 휴게소 정차가 자동으로 남음(보조) → 도착 때 그 값이 기본 선택"],["q","차단 화면 문구는 시스템 것이라 [미확인]"]]},
+  {g:"도착 · 계산 연출 (영수증 전)",id:"arrive-loading",r:"calc",tag:"도착 처리 중",s:{cload:true},desc:"도착을 처리하고 도착 지점 날씨를 받는 동안 내 차가 출발 자리에 서 있고 \"도착한 곳의 날씨를 확인하고 있어요\"가 보인다(프로토타입 1.2초).",
+   st:["진행 줄 \"도착한 곳의 날씨를 확인하고 있어요\" + 점 세 개","체크포인트는 모두 빈 원 · 건너뛰기 있음"],ck:[["ok","[신규] 로딩 · 도착 처리·날씨 조회 중"],["ok","날씨를 못 받으면 날씨 줄 '정보 없음'으로 이어감(예외 묶음)"]]},
+  {g:"도착 · 계산 연출 (영수증 전)",id:"calc-start",r:"calc",tag:"출발점",s:{},desc:"도착해서 차곡을 열면 날씨 원 왼쪽에 선 내 차가 6개 체크포인트를 차례로 들르며 오늘 운전을 계산한다. ▶로 실제 움직임을 볼 수 있다.",
+   st:["머리: \"소양강 스카이워크에 도착했어요\" + 건너뛰기","진행 한 줄(운전자의 노고를 알아주는 말): \"쏟아지는 비를 뚫고 달린 시간 세는 중…\" → \"꽉 막힌 길에서 지루함을 꾹 참은 시간 세는 중…\" … → \"다 셌어요. 오늘 운전 정말 수고 많았어요\"","체크포인트 6개: 날씨 · 정체 구간 · 예상보다 더 · 밤길 · 장시간 · 거리(빈 원)","내 차(2D 옆모습, 오른쪽을 봄)가 날씨 원 왼쪽(레일 없음)에서 출발","시작할 때만: 출발 자리(날씨 원 앞보다 60px 뒤)에서 0.26초 웅크리며 바퀴가 헛돌고, 그사이 배기구에서 연기가 밀려 나옴 → 튀어 나갈 때 연기가 배기구에 붙어 따라오다 남아서 뒤로 흐르며 흩어짐(1.15초) → 날씨 원 앞에 서서 계산. 다음 체크포인트로는 연기·웅크림 없이 이동","움직임은 모두 transform·opacity(GPU 합성)로, 연기는 크기·이동·투명도를 각각 한 곡선으로 겹쳐 중간 멈칫 없음"],
+   ck:[["ok","정차 전용 화면이라 연출 가능(주행 중 아님)"],["ok","건너뛰기 늘 보임 · 움직임 줄이기 설정이면 바로 결과"],["q","전체 약 13초(항목당 약 1.95초 + 마무리 1.9초). 처음 한 번만 길게, 다음부터 짧게 할지 [가정]"],["q","새 화면은 디자인 제안 → 기획질문 Q-2026-11-07-06"]]},
+  {g:"도착 · 계산 연출 (영수증 전)",id:"calc-weather",r:"calc",tag:"날씨 · 비",s:{cstep:0,cfx:true},desc:"차가 첫 체크포인트에 서면 빈 원이 채워지며 튀고, 원 위에 구름과 빗줄기가 1.75초 나타났다 사라진다. 아래에 \"비 +40%\"가 올라온다.",
+   st:["차 이동 550ms(부드럽게 출발·정지) → 원 채움 팝 380ms(살짝 커졌다 돌아옴)","그래픽: 구름 + 빗줄기(눈이면 눈송이, 맑으면 해 + 낙엽)","값: 비 +40%"],
+   ck:[["ok","그래픽은 원 위 300 × 240 안에서만, 글자를 가리지 않음"],["ok","한 번에 움직이는 건 차 또는 그래픽 하나(겹침 300ms만)"]]},
+  {g:"도착 · 계산 연출 (영수증 전)",id:"calc-jam",r:"calc",tag:"정체 구간",s:{cstep:1,cfx:true},desc:"정체 구간에서는 작은 차 3대를 나란히 두고 덜덜거리며 조금씩 기어가고, \"빵!\" 말풍선이 차례로 튄다.",
+   st:["차 3대 나란히 · 위아래로 덜덜(0.16초) · 1.75초 동안 20px만 전진","\"빵!\" 말풍선 3개가 0.2 · 0.56 · 0.92초에 튐","값: 40분 +8%"],
+   ck:[["ok","정체가 없으면 차 한 대가 \"쌩\" 지나감"],["q","소리(경적)는 넣지 않음 — 차 안 스피커 소리는 운전자를 놀라게 할 수 있음 [가정]"]]},
+  {g:"도착 · 계산 연출 (영수증 전)",id:"calc-snow",r:"calc",tag:"날씨 · 눈",s:{trip:"snow",cstep:0,cfx:true},desc:"눈 오는 날은 구름 아래로 눈송이가 좌우로 흔들리며 내린다(가산 +49%).",
+   st:["눈송이 8개 · 1.4초 주기로 좌우 흔들림","값: 눈 +49%"],ck:[["ok","PRD 6장 눈 가산율 0.49"]]},
+  {g:"도착 · 계산 연출 (영수증 전)",id:"calc-clear",r:"calc",tag:"맑은 날 · 낙엽",s:{trip:"clear",people:2,cstep:0,cfx:true},desc:"맑은 날은 해 둘레가 돌고 낙엽이 흩날린다. 가산이 없는 항목은 원이 회색으로 채워지고 \"맑음\" · \"없음\"으로 남는다.",
+   st:["해 + 낙엽 5장(빙글 돌며 떨어짐)","가산 0 항목 = 회색 원 + \"없음\"(밤길 없음 = 해, 정체 없음 = \"쌩\")"],
+   ck:[["ok","연출에서는 6개를 모두 확인하고, 영수증에서는 0인 줄 생략(5-1)"]]},
+  {g:"도착 · 계산 연출 (영수증 전)",id:"calc-done",r:"calc",tag:"다 정리함",s:{cdone:true},desc:"마지막 거리까지 들르면 차가 두 번 통통 뛰고 합계가 튀어 올라온 뒤, 1.9초 뒤 영수증 + 제안 화면으로 넘어간다.",
+   st:["원 6개 모두 채움 · 진행 줄 끝까지","합계: \"오늘 운전 2시간 10분 · 평소보다 1.56배 힘든 길\"","→ 영수증 + 방식 A 금액(또는 방식 B 항목)"],
+   ck:[["ok","거리는 숫자가 0 → 104km로 올라감(0.9초)"],["ok","연출 값 = 영수증 값(같은 계산)"]]},
+  {g:"도착 · 쉰 시간 묻기 (짧은 하단 시트 · 11/7 확정)",id:"rest-sheet",r:"arrive",tag:"영수증 + 쉰 시간 시트",s:{ask:true},desc:"계산 연출이 끝나 영수증이 나오면, 제안 칸 위로 짧은 시트가 올라와 중간에 쉰 시간을 한 번 묻는다. 영수증은 가리지 않고, 고르면 시트가 닫히며 영수증 숫자가 바로 고쳐진다.",
+   st:["왼쪽: 크게 키운 영수증(글자 30 · 줄 간격 72) — 운전 시간 아래 \"중간에 쉰 시간 · 없음 · 바꾸기\" 줄","오른쪽 제안 칸 위: 시트 \"중간에 쉰 시간이 있었나요?\" + \"고르면 운전 시간에서 빼고 영수증을 고쳐요\" + 없음 · 15분 · 30분 · 1시간 이상(Toggle Button M 80, 2 × 2)","기본 선택 = 없음(채움 테두리)","딤 없음 · 닫기 없음(고르면 닫힘) · 영수증이 다 나온 뒤 1.3초에 올라옴"],
+   ck:[["ok","11/7 명준 결정: 쉰 시간은 짧은 하단 시트로(1안 칩 삭제)"],["ok","가로 창은 제안 칸만 덮어 영수증 전부 보임, 세로 창은 아래(제안 칸) 덮음"],["ok","고른 뒤 바꾸기로 다시 열 수 있음"],["q","시트를 고르기 전엔 제안 버튼이 시트 아래에 가려짐 — 쉰 시간을 먼저 고르게 하는 의도 [가정]"]]},
+  {g:"도착 · 쉰 시간 묻기 (짧은 하단 시트 · 11/7 확정)",id:"rest-changed",r:"arrive",tag:"고른 순간 값 바뀜",s:{ab:"A",rest:2,prevRest:0},desc:"시트에서 30분을 고르면 시트가 닫히고, 바뀐 줄(운전 시간 · 예상보다 더 · 장시간 · 밤길 · 합계)이 잠깐 회색 바탕으로 표시됐다 사라진다.",
+   st:["바뀐 값만 회색 바탕(프로토타입에서 1.8초 동안 옅어짐)","2시간 10분 → 1시간 40분, 1.57배 → 1.53배 등"],ck:[["ok","[신규] 누른 뒤 · 쉰 시간 선택 → 영수증 값이 바뀌는 순간"]]},
+  {g:"도착 · 방식 A 돈으로 환산",id:"arrive-a",r:"arrive",tag:"영수증 + 금액",s:{ab:"A"},desc:"쉰 시간을 고르고 나면 왼쪽에 오늘 운전 영수증, 오른쪽에 \"오늘 운전을 챙긴다면 · 한 사람 약 9천 원\"을 함께 보여 준다.",
+   st:["맨 위: 중간에 쉰 시간 · 없음 · 바꾸기","영수증 = 프린터 슬롯에서 나온 종이(레퍼런스): 제목 \"오늘 주행 영수증\"(11/8 명준: 기본 고정. 조건별 제목안은 보관) · 이중선 · 항목 | 더한 몫 · 소계(운전 시간 2시간 10분 · 거리 104km) · 합계 \"평소보다 1.56배 힘든 길\" · 바코드 · 지그재그 끝","계산 연출 뒤 종이가 슬롯에서 1.1초에 걸쳐 내려오고, 제안 카드는 0.9초 뒤 올라옴","줄: 날씨 비 +40% · 정체 구간 40분 +8%(경로 비율·기준은 % 드롭다운 안) · 예상보다 더 +25분 +5% · 밤길 50분 +2% · 장시간 2시간 넘긴 10분 +1% · 거리 104km(표시만)","제목 \"오늘 운전을 챙긴다면\" · 큰 숫자 \"한 사람 약 9천 원\"","근거 \"운전 노고 약 3만 6천 원을 운전자 포함 4명이 나눈 값 · 최저임금 1분 178원 기준\"","좋아요 · 닫기(같은 크기)"],
+   ck:[["ok","5-2 확정 문구 그대로"],["ok","데이터 → 수치 → 제안이 한 화면(5-4)"],["ok","방식 B로 넘어가는 버튼 없음(v1.3)"],["q","\"받아들이기\" 버튼 글자는 디자인이 정함 → \"좋아요\"로 제안"],AT,CG]},
+  {g:"도착 · 방식 A 돈으로 환산",id:"arrive-a-why",r:"arrive",tag:"근거 펼침",s:{ab:"A",why:0},desc:"영수증 줄을 누르면 그 조건의 근거(연구·법령 한 줄)가 펼쳐진다. 다시 누르면 접힌다.",
+   st:["날씨 줄 펼침: \"비 오는 날은 운전 부담이 40% 늘어요 · 시뮬레이터 30명 연구(2026)\"","줄마다 펼침 표시(꺾쇠)","거리 줄은 가산이 없어 펼치지 않음"],
+   ck:[["ok","계수의 출처가 보임(6장 납득 조건)"],["ok","\"○시간어치\" 같은 동등 주장 없음"]]},
+  {g:"도착 · 방식 A 돈으로 환산",id:"arrive-a-why-jam",r:"arrive",tag:"정체 구간 % 펼침",s:{ab:"A",why:1},desc:"정체 구간의 +8% 드롭다운을 누르면, 줄 아래에 있던 경로 비율과 기준이 펼친 칸 안에 함께 나온다.",
+   st:["줄은 \"정체 구간 · 40분 · +8% ⌄\"만 남김(경로 비율 줄 삭제)","펼친 칸 1(굵게): \"출발 때 내비가 안내한 경로의 35%가 막혀 있었어요\" — 경로 비율과 \"내비 안내 경로 기준\"을 한 문장으로","펼친 칸 2: \"차가 붐비는 길은 운전 부담이 27% 늘어요 · 교통 밀도 연구(LSU 2015)\"","펼치면 바코드는 접힘(가로), 세로 창은 다른 줄 간격을 줄임","다시 누르면 접힘(⌄ → ⌃)"],
+   ck:[["ok","11/7 명준 코멘트: 경로 비율을 % 드롭다운 안으로"],["q","PRD 5-1은 \"정체 구간 줄 아래에 '내비 안내 경로 기준'을 작게 표시\" → 이제 펼쳐야 보임. 기획 확인(Q-2026-11-07-07)"],["q","정체 줄 표기(분/km)는 효성 결정 대기(11장 9)"]]},
+  {g:"도착 · 방식 A 돈으로 환산",id:"arrive-a-done",r:"arrive",tag:"좋아요 후",s:{ab:"A",done:true},desc:"좋아요를 누르면 로컬 기록에만 남기고 더 요구하지 않는다.",
+   st:["\"좋아요, 오늘 기록에 남겼어요\" · 한 사람 약 9천 원","\"더 할 일은 없어요\" · 닫기"],
+   ck:[["ok","결제·송금·알림 재촉 없음(5-4)"],["ok","좌표 없이 수치와 선택만 기록(8장)"]]},
+  {g:"도착 · 방식 A 돈으로 환산",id:"arrive-a-short-min",r:"arrive",tag:"짧은 주행 · 1천 원 미만 안",s:{ab:"A",trip:"short",people:2},desc:"Q-2026-11-07-04 두 안 중 1: 짧은 주행에도 금액 화면을 보여 주되 \"한 사람 1천 원 미만\"으로 표시한다.",
+   st:["\"오늘 운전을 챙긴다면 · 한 사람 1천 원 미만\""],ck:[["q","Q-2026-11-07-04 답 대기(명준) — 두 안 준비"]]},
+  {g:"도착 · 방식 A 돈으로 환산",id:"arrive-a-short-none",r:"arrive",tag:"짧은 주행 · 제안 없음 안",s:{ab:"A",trip:"short",people:2,aShort:"none"},desc:"Q-2026-11-07-04 두 안 중 2: 방식 B처럼 운전자 몫 2천 350원 미만이면 제안 없이 기록만 남긴다.",
+   st:["\"이번엔 기록만 남겨요\" · \"짧은 운전은 따로 챙길 금액을 보여 드리지 않아요\" · 닫기"],ck:[["q","Q-2026-11-07-04 답 대기(명준)"]]},
+  {g:"도착 · 방식 B 한 번 빼 주기",id:"arrive-b",r:"arrive",tag:"영수증 + 항목",s:{ab:"B"},desc:"같은 영수증 옆에, 운전자 몫과 가장 가까운 항목(밥)을 기본값으로 올리고 세 항목 중 하나에서 운전자를 한 번 빼자고 제안한다.",
+   st:["영수증은 방식 A와 같음","\"오늘은 밥값에서 운전자 빼고 나누는 게 어때요\"","\"기본은 밥이에요. 고른 항목을 나눌 때 운전자는 한 번 빠져요\"","커피 · 밥(기본, 채움) · 공동 경비(약 2초마다 예시 회전: 장 본 값 → 펜션비 → 바베큐장 이용료 → 입장료 → 물품 구매비)","닫기"],
+   ck:[["ok","항목을 누르면 바로 받아들이기, 확인 단계 없음"],["ok","세 항목이 늘 보임(5-3)"],["ok","금액 표시 안 함(열린 결정 10 닫힘, 11/7)"],["ok","공동 경비 예 \"장보기 등\"(당일 여행 기준, 숙박 뺌)"],["ok","방식 A로 넘어가는 버튼 없음(v1.3)"],AT]},
+  {g:"도착 · 방식 B 한 번 빼 주기",id:"arrive-b-done",r:"arrive",tag:"고른 뒤",s:{ab:"B",done:true,pick:1},desc:"고른 항목을 로컬 기록에 남기고 끝낸다.",
+   st:["\"밥값에서 운전자 빼기로 했어요\" · 오늘 기록에 남겼어요","\"더 할 일은 없어요\" · 닫기"],
+   ck:[["ok","다음 요구 없음(5-4)"]]},
+  {g:"도착 · 방식 B 한 번 빼 주기",id:"arrive-b-none",r:"arrive",tag:"제안 없음",s:{ab:"B",trip:"short",people:2},desc:"운전자 몫이 커피 1인분의 절반(2천 350원)보다 작으면 제안 없이 영수증만 보여 준다.",
+   st:["10분 · 4km · 2명 → 운전자 몫 약 900원","영수증: 가산 줄이 없어 \"비·정체·밤길 없이 달렸어요\" + 거리","\"이번엔 기록만 남겨요\" + 기준 한 줄 + 닫기"],
+   ck:[["ok","5-3 '제안 없음' 규칙"],["q","방식 A에는 제안 없음 기준이 없음 → 기획 질문 Q-2026-11-07-04"],["q","10분 주행에도 쉰 시간을 물을지 → 시안은 짧은 주행이라 묻지 않음 [가정]"]]},
+  {g:"도착 · 예외 상태",id:"arrive-clear",r:"arrive",tag:"0인 줄 생략",s:{trip:"clear",people:2},desc:"맑은 낮 1시간이면 가산 줄이 모두 0이라 생략하고, 머리줄은 \"평소 같은 길\"로 보여 준다.",
+   st:["오늘 운전 1시간 · 평소 같은 길","\"비·정체·밤길 없이 달렸어요\" + 거리 52km","방식 A: 한 사람 약 5천 원 · 운전 노고 약 1만 1천 원을 운전자 포함 2명이 나눈 값"],
+   ck:[["ok","값이 0인 줄 생략(5-1)"],["ok","5-2 크기 확인 표(맑은 낮 1시간 · 2명 = 약 5천 원)와 같음"],["q","배수 1.00일 때 \"평소 같은 길\"은 디자인 문구"],["q","1시간 주행이라 쉰 시간을 묻지 않은 상태로 그림 [가정]"]]},
+  {g:"도착 · 예외 상태",id:"arrive-solo",r:"arrive",tag:"혼자 탄 주행",s:{people:1},desc:"나눠 낼 인원이 1이면 영수증만 보여 주고 제안은 하지 않는다.",
+   st:["영수증 그대로(쉰 시간 · 없음)","\"혼자 운전했어요 · 나눌 사람이 없어 제안은 하지 않아요\" · 닫기"],
+   ck:[["q","열린 결정 6: 기본값(영수증만)으로 그림"]]},
+  {g:"도착 · 예외 상태",id:"arrive-nodata",r:"arrive",tag:"날씨·정체 정보 없음",s:{ab:"A",trip:"nodata"},desc:"날씨 조회와 출발 때 정체 정보가 실패하면 그 줄을 \"정보 없음\"으로 두고 더하지 않는다. 도착을 막지 않는다.",
+   st:["날씨 · 정보 없음 · —","정체 구간 · 정체 정보 없음 · —","펼치면 \"날씨를 불러오지 못해 이번에는 더하지 않았어요\""],ck:[["ok","[신규] 에러 · 날씨 조회 실패 / 정체 정보 없음(유저 플로우 3장)"],["q","정체 정보 없음은 '줄 생략'도 가능 — 시안은 표시"]]},
+  {g:"도착 · 예외 상태",id:"arrive-demo",r:"arrive",tag:"시연 모드",s:{ab:"A",demo:true},desc:"데모 고정 모드에서는 화면 오른쪽 아래 구석에 \"시연용 값\"을 작게 둔다(R1: 꽃지해수욕장 · 1.57배 · 한 사람 약 9천 원).",
+   st:["오른쪽 아래 점선 알약 \"시연용 값\"(Label S)"],ck:[["ok","[신규] 시연 모드 표시(유저 플로우 2장 끝)"]]},
+  {g:"기록 (자리)",id:"log",r:"log",tag:"오늘 주행 기록",s:{},desc:"출발 화면의 기록에서 연다. 주행마다 수치와 고른 것만 남는다. 누적 화면은 2차라 자리만 둔다.",
+   st:["날짜 · 목적지","운전 시간 · 배수 · 인원 · 고른 것"],
+   ck:[["ok","좌표 없음(8장)"],["q","기록 누적 화면은 2차(10장) → 자리만"]]}
+];
+const byId=Object.fromEntries(SCREENS.map(x=>[x.id,x]));
+
+/* ───────── 렌더 ───────── */
+const ui={view:"canvas",split:"both",mode:"light",anno:false,hot:false,guide:false,sel:"depart-people"};
+try{Object.assign(ui,JSON.parse(localStorage.getItem("chagokDesignV2_2")||"{}"))}catch(e){}
+const $=id=>document.getElementById(id);
+function appHTML(rname,p,s){
+  let h=R[rname](p,s);
+  if(s.toast) h+=peopleAlert(p,s);
+  if(s.demo) h+=`<span class="demotag" data-anno="시연(데모 고정) 모드 표시">시연용 값</span>`;
+  return h;
+}
+function paint(scr,rname,s,mode){
+  const land=(mode||ui.split)!=="port",q=c=>scr.querySelector(c);
+  q(".w-land").hidden=!land;[".w-p1",".h-p1",".w-p2",".h-p2"].forEach(c=>q(c).hidden=land);
+  q(".a-land").innerHTML=land?appHTML(rname,false,s):"";
+  q(".a-p1").innerHTML=land?"":appHTML(rname,true,s);
+  q(".a-p2").innerHTML=land?"":(rname==="driving"?naviWF(true):otherApp());
+  scr.classList.toggle("dark",ui.mode==="dark");scr.classList.toggle("no-guide",!ui.guide);scr.classList.toggle("anno",ui.anno);
+  q(".gnb").src="img/gnb_"+(ui.mode==="dark"?"dark":"light")+".png";
+}
+function fitScale(stage,fit,scr,actual,crop){
+  if(actual){stage.classList.add("actual");scr.style.transform="none";return}
+  stage.classList.remove("actual");
+  if(crop){const k=fit.clientWidth/840;scr.style.transform="scale("+k+") translate(-840px,-96px)";fit.style.height=(1184*k)+"px";return}
+  const k=fit.clientWidth/2560;scr.style.transform="scale("+k+")";fit.style.height=(1440*k)+"px";
+}
+const frames=[];
+/* 11/8 명준 코멘트: 섹션마다 아래 빈 곳에 분할 화면(앱 2개 · 840) 버전을 함께 둔다. 분할 줄은 차곡 창(840 × 1184)만 잘라 크게 보여 줌 */
+function mountCanvas(){
+  const root=$("canvas");root.innerHTML="";const tpl=$("tpl-screen");let grp=null,grid=null,pgrid=null,psub=null;
+  const mk=(x,crop,into)=>{
+    const f=document.createElement("div");f.className="frame";f.id=(crop?"fp-":"f-")+x.id;
+    f.innerHTML=`<span class="tag"><b>${x.g.split(" · ")[0]}</b> · ${x.tag}${crop?" · 분할":""}<button class="open" data-open="${x.id}" data-mode="${crop?"port":"land"}" aria-label="여기서 눌러 보기" title="여기서 눌러 보기">▶</button></span><div class="stage"><div class="fit"></div></div><p class="desc">${x.desc}</p>`;
+    const scr=tpl.content.firstElementChild.cloneNode(true);f.querySelector(".fit").appendChild(scr);into.appendChild(f);
+    const rec={x,f,scr,crop,stage:f.querySelector(".stage"),fit:f.querySelector(".fit")};frames.push(rec);
+    new ResizeObserver(()=>fitScale(rec.stage,rec.fit,rec.scr,false,rec.crop&&!f.hidden)).observe(rec.stage);
+    f.addEventListener("click",e=>{const o=e.target.closest("[data-open]");if(o){startProto(o.dataset.open,o.dataset.mode);return}select(x.id)});
+  };
+  SCREENS.forEach(x=>{
+    if(x.g!==grp){grp=x.g;const g=document.createElement("section");g.className="group";g.innerHTML=`<h2>${grp}</h2><div class="grid"></div><h3 class="psub">분할 화면 · 앱 2개 840 <small>차곡 창 840 × 1184만 잘라 보기 · 오른쪽 창은 다른 앱</small></h3><div class="grid pgrid"></div>`;root.appendChild(g);grid=g.querySelector(".grid");pgrid=g.querySelector(".pgrid")}
+    mk(x,false,grid);mk(x,true,pgrid);
+  });
+  $("cnt").textContent=SCREENS.length+"개";
+}
+function paintCanvas(){
+  document.querySelectorAll("#canvas .psub").forEach(h=>h.hidden=ui.split!=="both");
+  frames.forEach(r=>{const show=!r.crop||ui.split==="both";r.f.hidden=!show;if(r.crop)r.f.parentElement.hidden=!show;if(!show)return;
+    paint(r.scr,r.x.r,{...BASE,...r.x.s},r.crop?"port":(ui.split==="port"?"port":"land"));fitScale(r.stage,r.fit,r.scr,false,r.crop);r.f.classList.toggle("sel",r.x.id===ui.sel)})}
+function select(id){ui.sel=id;save();side();frames.forEach(r=>r.f.classList.toggle("sel",r.x.id===id))}
+function side(){
+  const x=byId[ui.sel]||SCREENS[0];
+  $("sideTitle").textContent=x.g+" · "+x.tag;
+  $("sideStruct").innerHTML=x.st.map(t=>`<li>${t}</li>`).join("");
+  $("sideCheck").innerHTML=x.ck.map(([k,t])=>`<li><span class="${k}">${k==="ok"?"통과":"확인"}</span><span>${t}</span></li>`).join("");
+  let g=null;$("sideNav").innerHTML=SCREENS.map(s=>{let h="";if(s.g!==g){g=s.g;h+=`<li class="g">${g}</li>`}return h+`<li><button data-nav="${s.id}" class="${s.id===ui.sel?"on":""}">${s.tag}</button></li>`}).join("");
+}
+
+/* ───────── 프로토타입 ───────── */
+let P=null;const pScr=$("tpl-screen").content.firstElementChild.cloneNode(true);$("pFit").appendChild(pScr);let pActual=false;
+const protoMode=()=>ui.split==="both"?((P&&P.mode)||"land"):ui.split;
+function startProto(id,mode){
+  const x=byId[id]||SCREENS[0];P={mode:mode||(P&&P.mode)||"land",screen:x.r,id:x.id,s:{...BASE,...x.s,themes:[...(x.s.themes||[])]},hist:[],ctok:(P&&P.ctok||0)+1};if(x.r==="calc")Object.assign(P.s,{cstep:null,cfx:false,cdone:false});
+  ui.view="proto";ui.sel=x.id;save();applyUI();window.scrollTo({top:0,behavior:"smooth"});
+}
+function go(r){P.ctok=(P.ctok||0)+1;const from=P.screen,s=P.s;P.hist.push({screen:P.screen,s:JSON.parse(JSON.stringify(P.s))});
+  s.toast=null;s.why=null;s.search=false;s.progOpen=false;
+  if(r==="homeafter"){const lc=calc(s);if(!lc.pending){s.lastT=hm(lc.T);s.lastM=lc.mult<1.005?"평소 같은 길":lc.mult.toFixed(2)+"배";s.lastNm=lc.t.place}s.lastRec=s.people<=1?"혼자 운전 · 제안 없음":s.done?(s.ab==="A"?`한 사람 ${yak(calc(s).per)} · 좋아요`:valTxt(s.pick)+" 운전자 빼기"):"닫음";s.hs="after";r="home";P.hist=[]}
+  if(r==="depart"&&from==="home"){Object.assign(s,{dest:null,pv:null,sending:false,detected:4,split:s.sensorFail?1:4,toast:s.sensorFail?"S":"B"})}
+  P.screen=r;renderProto()}
+function pvLoad(){const s=P.s,nm=s.dest;s.pv="loading";setTimeout(()=>{if(P.screen==="depart"&&P.s.dest===nm&&P.s.pv==="loading"){P.s.pv=P.s.pvFail?"fail":"ok";renderProto()}},700)}
+function back(){P.ctok=(P.ctok||0)+1;const h=P.hist.pop();if(!h){P.screen="home";}else{P.screen=h.screen;P.s=h.s}renderProto()}
+const NAMES={home:"홈",logd:"기록 상세",splash:"앱 시작",depart:"출발 화면",navi:"순정 내비 안내",driving:"주행 중",arrive:"도착 · 오늘 운전",calc:"도착 · 계산 연출",log:"기록(자리)"};
+const DESC={home:"[출발하기] → 출발 화면. 최근 기록을 누르면 기록 상세, 진행 중 알약을 누르면 출발 정보 시트.",logd:"뒤로 → 홈.",splash:"잠시 뒤 홈으로 넘어간다.",depart:"목적지 카드나 검색 결과를 누르면 미리보기를 불러오고, 출발로 순정 내비에 넘긴다. 차 신호로 네트워크 없음·좌석 센서 오류·미리보기 실패를 볼 수 있다.",navi:"차 신호 \"주행 시작\" → 주행 중, \"도착 · …\" → 도착 화면.",driving:"차 신호 \"도착 · …\"로 도착 화면을 본다.",arrive:"계산 연출 뒤 영수증이 나오면 짧은 시트로 중간에 쉰 시간을 묻는다. 고르면 영수증이 바로 고쳐진다. 영수증 줄을 누르면 근거가 펼쳐진다. 방식 A: 좋아요 · 닫기. 방식 B: 항목 고르기 · 닫기.",calc:"내 차가 체크포인트를 차례로 들르며 계산한다(약 13초). 끝나면 영수증으로 넘어간다. 건너뛰기로 바로 볼 수 있다.",log:"뒤로 → 출발 화면."};
+function renderProto(){
+  paint(pScr,P.screen,P.s,protoMode());pScr.classList.add("proto-on");
+  $("protoNow").textContent="지금 화면: "+NAMES[P.screen]+(P.screen==="arrive"&&P.s.people>1?" · 방식 "+P.s.ab:"")+(P.screen==="arrive"&&P.s.ask&&!TRIPS[P.s.trip].auto?" + 쉰 시간 시트":"")+(P.s.toast?" + 인원 확인 알림":"")+(P.s.search?" + 검색":"");
+  $("pDesc").textContent=DESC[P.screen];
+  fitScale($("pStage"),$("pFit"),pScr,pActual);
+  if(P.screen==="calc"&&P.s.cload){const tk=P.ctok;setTimeout(()=>{if(P.ctok===tk&&P.screen==="calc"&&P.s.cload){P.s.cload=false;renderProto()}},1200)}
+  else if(P.screen==="calc"&&P.s.cstep==null&&!P.s.cdone)playCalc();
+  if(P.screen==="splash"){const tk=P.ctok;setTimeout(()=>{if(P.ctok===tk&&P.screen==="splash"){P.screen="home";renderProto()}},1600)}
+  if((P.screen==="depart"||P.screen==="home")&&P.prev!==P.screen){const h=pScr.querySelector(".win:not([hidden]) .home");if(h)h.classList.add("enter")}
+  P.prev=P.screen;
+  if(P.screen==="arrive"&&P.s.printFx)P.s.printFx=false;  /* 종이 출력은 처음 한 번만 */
+}
+function act(a){
+  const s=P.s;let m;
+  if(!/^rest\d$/.test(a))s.prevRest=null;
+  if(a==="back")return back();
+  if(a==="toastOk"){s.people=s.split;s.toast=null}
+  else if(a==="toastClose"){s.people=s.toast==="S"?s.split:s.detected;s.toast=null}
+  else if(a==="split-")s.split=Math.max(1,s.split-1);
+  else if(a==="split+")s.split=Math.min(8,s.split+1);
+  else if(a==="people"){s.split=s.people;s.toast=s.sensorFail?"S":"B"}
+  else if(a==="search")s.search=true;
+  else if(a==="clearq")s.search=false;
+  else if(a==="accept")s.done=true;
+  else if(a==="progOpen")s.progOpen=true;
+  else if(a==="progClose")s.progOpen=false;
+  else if(a==="pvRetry"){s.pvFail=false;pvLoad()}
+  else if(a==="goNavi"){s.sending=true;setTimeout(()=>{if(P.screen==="depart"&&P.s.sending){P.s.sending=false;go("navi")}},700)}
+  else if(a==="restEdit")s.ask=true;
+  else if(a==="calcSkip"){P.ctok=(P.ctok||0)+1;P.screen="arrive";s.cstep=null;s.cdone=false;s.printFx=true}
+  else if((m=a.match(/^(dest|res|fav|hc|rec|why|rest|pick)(\d)$/))){const i=+m[2];
+    if(m[1]==="dest"){s.dest=RECENT[i].nm;s.search=false}
+    else if(m[1]==="res"){s.dest=RES2[i].nm;s.search=false;pvLoad()}
+    else if(m[1]==="rec"){go("logd");return}
+    else if(m[1]==="fav"){s.dest=FAVS[i]}
+    else if(m[1]==="hc"){s.search=false;if(s.dest===DCARDS[i].nm){s.dest=null;s.pv=null}else{s.dest=DCARDS[i].nm;pvLoad()}}
+    else if(m[1]==="why")s.why=s.why===i?null:i;
+    else if(m[1]==="rest"){s.prevRest=s.rest;s.rest=i;s.why=null;s.restPre=null;s.ask=false}
+    else{s.pick=i;s.done=true}}
+  renderProto();
+}
+function arriveWith(o){P.hist.push({screen:P.screen,s:JSON.parse(JSON.stringify(P.s))});P.screen="arrive";Object.assign(P.s,{toast:null,search:false,why:null,done:false,pick:null,rest:0,restOpen:false,restPre:null,restUI:"sheet",trip:"main",cstep:null,cfx:false,cdone:false,cload:true,aShort:null,prevRest:null},o);P.s.ask=!TRIPS[P.s.trip].auto;P.screen="calc";renderProto()}
+function signal(sig){
+  if(sig==="appStart"){startProto("app-splash");return}
+  if(!P)startProto("home");const s=P.s;
+  if(sig==="offline"){s.offline=!s.offline;if(P.screen!=="depart")go("depart");else renderProto();return}
+  if(sig==="sensor"){s.sensorFail=true;if(P.screen!=="depart")go("depart");s.toast="S";s.split=1;renderProto();return}
+  if(sig==="pvfail"){s.pvFail=true;renderProto();return}
+  if(sig==="demo"){s.demo=!s.demo;renderProto();return}
+  if(sig==="people"){if(P.screen!=="depart")go("depart");s.detected=4;s.split=4;s.toast="B";renderProto();return}
+  if(sig==="drive"){go("driving");return}
+  const crew=s.people>1?s.people:4;
+  const o={arriveA:{ab:"A",people:crew},arriveB:{ab:"B",people:crew},nodata:{trip:"nodata",people:crew},arriveSnow:{trip:"snow",rest:0,people:crew},arriveClear:{trip:"clear",people:2},arriveShort:{ab:"B",trip:"short",people:2},arriveSolo:{people:1}}[sig];
+  if(o)arriveWith(o);
+}
+$("pStage").addEventListener("click",e=>{
+  const a=e.target.closest("[data-act]"),g=e.target.closest("[data-go]");
+  if(a&&(!g||g.contains(a))){act(a.dataset.act);return}
+  if(g){const r=g.dataset.go;go(r)}
+});
+$("pBack").onclick=()=>back();
+$("pReset").onclick=()=>startProto("app-splash");
+$("pZoom").onclick=()=>{pActual=!pActual;$("pZoom").textContent=pActual?"맞춰 보기":"1:1 보기";renderProto()};
+document.querySelectorAll("[data-sig]").forEach(b=>b.onclick=()=>signal(b.dataset.sig));
+new ResizeObserver(()=>{if(P)fitScale($("pStage"),$("pFit"),pScr,pActual)}).observe($("pStage"));
+
+
+/* ───────── 디자인 시스템 보기 ─────────
+   지금 시안이 실제로 쓰는 값만 모음(부품은 화면과 같은 코드로 그려 50%로 보여 줌). 컬러·로고는 미정이라 뺌(11/8 명준) */
+const DS_TOK=["--bg","--win","--card","--txt","--txt2","--txt3","--txt4","--div","--div2","--div3","--handle","--btn-fill","--btn-fill-txt","--btn-basic","--ph","--ph2","--dim","--btn-fill-p","--btn-basic-p","--btn-off","--toggle-on","--toast","--toast-txt","--sh1","--sh2","--sh3","--r-win","--pad","--headline-l","--headline-m","--headline-s","--title-l","--title-m","--title-s","--body-l","--body-m","--body-m-b","--body-s","--label-m","--label-s"];
+function dsTokens(){const t=document.createElement("div");t.className="screen"+(ui.mode==="dark"?" dark":"");t.style.visibility="hidden";document.body.appendChild(t);const cs=getComputedStyle(t);const v=DS_TOK.map(n=>n+":"+cs.getPropertyValue(n)).join(";");t.remove();return v}
+const DM=rows=>`<ul class="dmeta">${rows.map(([k,v])=>`<li><span>${k}</span><span>${v}</span></li>`).join("")}</ul>`;
+const DC=(title,inner,meta,cls="",cc="")=>`<div class="dcard ${cc}"><b>${title}</b><div class="dbox"><div class="dsk ${cls}">${inner}</div></div>${DM(meta)}</div>`;
+function renderDS(){
+  const root=$("ds");root.style.cssText=dsTokens();
+  const S={...BASE,ab:"A",rest:0},c=calc(S);
+  const TYPE=[["headline-l","800 60/80","홈 인사 큰 글자 · 제안 큰 숫자(한 사람 약 9천 원)"],["headline-m","800 56/72","(에셋에 있음 · 거의 안 씀)"],["headline-s","800 48/64","제안 제목 · 내비 회전 거리"],["title-l","700 40/52","위 바 제목 · 목적지 카드 이름 · 미리보기 목적지"],["title-m","700 36/44","쉰 시간 시트 제목 · 세로 창 위 바 제목 · 인원 숫자"],["title-s","700 32/40","L 버튼 · 검색 한 줄 · 홈 출발하기 · 빈 상태 제목"],["body-l","700 30/38","M 버튼 · 칩 · 영수증 % · 목록 이름(가장 많이 씀)"],["body-m-b","700 28/36","세로 창 목록 이름 · 값 강조"],["body-m","400 28/36","설명 · 인사 위 줄 · 근거 문장"],["body-s","700 26/34","S 버튼 · 카드 꼬리표"],["label-m","400 24/28","보조 설명 · 주석 · 기록 결과 줄"],["label-s","400 20/24","가장 작은 글자(Pleos 최소) · 인원 알림 설명"]];
+  const typeRows=TYPE.map(([k,w,u])=>`<tr><td><code>--${k}</code></td><td style="white-space:nowrap">${w}</td><td class="smp"><div class="tsmp" style="font:var(--${k})">오늘 운전을 챙긴다면 2시간 10분</div></td><td>${u}</td></tr>`).join("");
+  const SP=[[4,"글자 줄 사이(이름 ↔ 설명)"],[8,"작은 묶음 안"],[12,"칩 사이 · 목록 안쪽"],[16,"버튼 사이 · 세로 창 덩어리 사이"],[24,"덩어리 사이(기본) · 카드 사이"],[28,"카드 안쪽 여백"],[32,"큰 카드 안쪽"],[40,"앱 창 안쪽 여백 · 시트 가장자리"],[64,"홈 인사 ↔ 내 차 그림"]];
+  const RD=[[12,"점선 아이콘 자리"],[16,"S 버튼 64 · 작은 아이콘 버튼"],[20,"아이콘 버튼 80"],[24,"M 버튼 80 · 칩 · 검색칸 · 스테퍼"],[32,"L 버튼 100 · 카드 · 제안 카드 · 시트"],[40,"앱 창 · 목적지 카드 바깥 · 미리보기"],[48,"시스템 알림(에셋 700 × 276)"],[999,"알약(출발하기 · 인원 · 진행 중 · 검색 한 줄 50)"]];
+  const EL=[["--sh1","Level 1","카드 · 검색 한 줄 · 스테퍼 · 프린터 슬롯"],["--sh2","Level 2","인원 확인 알림 바"],["--sh3","Level 3","하단 시트 · 시스템 알림"]];
+  const MO=[["누름","배경 0.12초 · 카드 scale .985","버튼 · 칩 · 카드"],["나타남(시트)","0.38초 cubic-bezier(.2,.7,.2,1)","쉰 시간 · 진행 중 시트"],["나타남(홈 카드)","0.7초 cubic-bezier(.32,.72,0,1) · 0.06초씩 차례","홈 · 출발 화면 들어올 때"],["내려옴","0.42초 cubic-bezier(.32,.72,0,1)","인원 확인 알림 바"],["팝","0.38 · 0.5초 cubic-bezier(.175,.885,.32,1.275)","계산 연출 원 채움 · 합계"],["이동","0.55초 cubic-bezier(.45,0,.25,1)","계산 연출 내 차"],["출력","1.1초 cubic-bezier(.25,.8,.3,1) → 제안 카드 0.9초 뒤 0.45초","영수증 종이"],["바뀐 값","1.8초 동안 회색 바탕이 옅어짐","쉰 시간 고른 뒤 영수증"],["기다림","회색 막대 1.1초 깜빡 · 점 세 개 1초","로딩 전부"],["원칙","transform · opacity만 움직임 · 움직임 줄이기 설정이면 끔 · 주행 중 화면에는 없음",""]];
+  const ST=[["선택","검은 테두리 3(면 색 없음)","칩 · 목적지 카드 · 검색 결과 · 방금 기록"],["눌림","옅은 회색 면(--btn-basic-p)","버튼 · 칩 · 글자 버튼"],["비활성","옅은 글자(--txt4) + 회색 선","출발(미리보기 기다림) · 내비로 보내는 중"],["강조 / 보조","진한 글자 굵게 / 옅은 글자 64%","글자 버튼 확인 · 닫기"],["기다림","회색 막대(스켈레톤) · 점 세 개","미리보기 · 검색 · 앱 시작"],["빈 상태","점선 3 칸 + 제목 + 이유 한 줄","기록 없음 · 목적지 없음 · 미리보기 자리"],["정보 없음","값 자리에 \"정보 없음\" · % 자리 —","날씨 · 정체 못 받음"]];
+  const tbl=(head,rows)=>`<div class="dtw"><table class="dtab"><thead><tr>${head.map(h=>`<th>${h}</th>`).join("")}</tr></thead><tbody>${rows.map(r=>`<tr>${r.map(x=>`<td>${x}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`;
+  const G1=`<svg class="gd" viewBox="0 0 2560 1440" role="img" aria-label="앱 1개 배치"><rect class="z" x="0" y="0" width="840" height="1280"/><text x="60" y="640">주행 보조 화면 840</text><rect class="z" x="840" y="0" width="1720" height="96"/><text class="s" x="880" y="62">상태 표시줄 96</text><rect class="w" x="840" y="96" width="1700" height="1184" rx="40"/><rect class="dash" x="860" y="116" width="1660" height="1144" rx="20"/><rect class="dash2" x="880" y="136" width="1620" height="1104" rx="8"/><rect class="z" x="880" y="136" width="1620" height="80"/><text x="920" y="192">위 바(Title) 80</text><text x="1300" y="660">앱 창 1700 × 1184 · 모서리 40</text><text class="s" x="1300" y="720">파란 점선 = 안전 여백 20 → 1660 × 1144</text><text class="s" x="1300" y="770">흰 점선 = 앱 안 여백 40 · 덩어리 사이 24</text><rect class="z" x="0" y="1280" width="2560" height="160"/><text class="s" x="60" y="1372">하단 메뉴(GNB) 160</text></svg>`;
+  const G2=`<svg class="gd" viewBox="0 0 2560 1440" role="img" aria-label="앱 2개 배치"><rect class="z" x="0" y="0" width="840" height="1280"/><text x="60" y="640">주행 보조 화면 840</text><rect class="z" x="840" y="0" width="1720" height="96"/><text class="s" x="880" y="62">상태 표시줄 96</text><rect class="w" x="840" y="96" width="840" height="1184" rx="40"/><rect class="dash" x="860" y="116" width="800" height="1144" rx="20"/><text x="900" y="640">차곡 840 × 1184</text><text class="s" x="900" y="700">안전 여백 안 800 × 1144</text><text class="s" x="900" y="750">앱 안 여백 40 · 덩어리 사이 16</text><rect class="z" x="1680" y="96" width="20" height="1184"/><rect class="z" x="1700" y="96" width="840" height="1184" rx="40"/><text x="1760" y="640">다른 앱(내비 등) 840</text><text class="s" x="1700" y="1250">손잡이 20</text><rect class="z" x="0" y="1280" width="2560" height="160"/><text class="s" x="60" y="1372">하단 메뉴(GNB) 160</text></svg>`;
+  const recCard=`<div class="rec" style="width:520px;height:240px"><span class="tag">11월 7일</span><b>태안 꽃지해수욕장</b><span class="mt">2시간 10분 · 1.57배 · 4명</span><span class="rr">한 사람 약 9천 원 · 좋아요</span></div>`;
+  const hc=(on)=>`<div class="hcard${on?" on":""}" style="width:380px;height:320px"><div class="in"><span class="tag"><i class="ico"></i>${on?"최근":"즐겨찾기"}</span><span class="nm">${on?"태안 꽃지해수욕장":"집"}</span><span class="mt">${on?"104km":"12km"}</span></div></div>`;
+  const comps=[
+    DC("Basic Button · M 80",B("다시 시도")+B("좋아요",{cls:"fill"})+B("출발",{cls:"off"}),[["Pleos","ivi_basic_button"],["크기","높이 80 · 모서리 24 · 좌우 30 · 최소 120"],["글자","Body L 30/38"],["상태","기본(회색 면) · 채움 · 눌림 · 비활성"]]),
+    DC("Basic Button · L 100 / S 64",B("좋아요",{cls:"l fill"})+B("닫기",{cls:"l"})+B("바꾸기",{cls:"s"})+B("건너뛰기",{cls:"s ghost"}),[["Pleos","ivi_basic_button L · S"],["L","높이 100 · 모서리 32 · Title S 32/40 → 제안 카드 좋아요·닫기(같은 크기)"],["S","높이 64 · 모서리 16 · Body S 26/34 → 바꾸기 · 건너뛰기"]]),
+    DC("Icon Button · 80 / 64",B("",{cls:"ib plain",ic:"back",aria:"뒤로"})+B("",{cls:"ib",ico:1,aria:"기록"})+B("",{cls:"ib s plain",ic:"plus",aria:"늘리기"})+B("",{cls:"ib s plain",ic:"minus",aria:"줄이기"}),[["Pleos","ivi_icon_button"],["크기","80 · 모서리 20 · 아이콘 56 / 64 · 모서리 16 · 아이콘 44"],["종류","면 있음 · 면 없음(plain)"],["아이콘","에셋 SVG(뒤로 · + · − · 화살표), 에셋에 없는 건 점선 자리"]]),
+    DC("출발 버튼(알약 + 화살표 원)",CTA("출발하기")+`<span class="cta off">내비로 보내는 중<i class="dots"><i></i><i></i><i></i></i></span>`,[["대응","Basic Button L 100 채움의 변형(디자인 제안)"],["크기","높이 100 · 알약 · 화살표 원 76"],["글자","Title S 32/40"],["쓰는 곳","홈 출발하기 · 미리보기 출발 · 누른 뒤 꺼짐 상태"]]),
+    DC("글자 버튼(확인 · 닫기)",`<span class="tbtn pri">확인</span><span class="tbtn">닫기</span><span class="tbtn pri">다시 시도</span>`,[["대응","디자인 제안(면 없는 버튼, 11/7 명준)"],["크기","높이 72 · 좌우 22"],["위계","진한 글자 굵게 = 확인 · 옅은 글자 = 닫기 · 누를 때만 회색 면"]]),
+    DC("Toggle Button(칩)",`<div class="chips">${RESTL.map((l,i)=>`<span class="chip${i===0?" on":""}">${l}</span>`).join("")}</div>`,[["Pleos","ivi_toggle_button M 80"],["크기","높이 80 · 모서리 24 · 시트 안에서는 2 × 2"],["상태","켜짐 = 흰 바탕 + 검은 테두리 3(흑백안)"]]),
+    DC("Stepper",STEP("4명","x"),[["Pleos","ivi_stepper 420 × 100"],["크기","420 × 100 · 모서리 24 · 버튼 64 · 숫자 700 36/44"],["쓰는 곳","인원 확인(알림 바 안에서는 높이 80 알약형)"]]),
+    DC("위 바(Title) · Main / Depth",`<div style="width:1000px;display:flex;flex-direction:column;gap:24px">${HD("기록",{back:true})}<div class="hbar">${B("",{cls:"ib",ico:1,aria:"기록"})}<span style="font:var(--title-l)">(가운데 앱 이름 자리)</span><span class="hbar-r"></span></div></div>`,[["Pleos","Title(Page Navigation) Main · Depth 80"],["크기","높이 80 · 뒤로 아이콘 56 · 제목 Title L 40/52(세로 창 Title M)"],["메모","가운데 로고·앱 이름은 미정이라 자리만"]],"col","wide"),
+    DC("인원 알약 · 진행 중 알약",`<span class="ppl"><i class="ico"></i>함께 4명<i class="chev"></i></span><span class="prog"><i class="pdot"></i>진행 중 · 14:20 출발 · 함께 4명<i class="chev"></i></span>`,[["대응","디자인 제안"],["크기","인원 64 · 진행 중 80 · 알약"],["동작","누르면 인원 확인 / 출발 정보 시트"]]),
+    DC("검색 한 줄",`<div class="hsearch" style="width:1000px"><i class="ico"></i><span class="ph">목적지 검색</span><span class="mic"><i class="ico"></i></span></div><div class="hsearch on" style="width:1000px;margin-top:0"><i class="ico"></i><span class="q">꽃지</span>${B("지우기",{cls:"s"})}</div>`,[["Pleos","Text Field 100의 알약 변형"],["크기","높이 100 · 모서리 50 · 음성 버튼 64"],["상태","기본 · 입력 중(검은 테두리 3) · 흐림(인터넷 없음)"]],"col"),
+    DC("목적지 카드",hc(false)+hc(true),[["대응","디자인 제안(Card)"],["크기","가로 창 4열 · 높이 320 · 바깥 40 / 안 32 · 사이 24 · 세로 창 2열 200 · 사이 16"],["글자","이름 Title L · 거리 Body M · 꼬리표 Body S"],["상태","기본 · 선택(검은 바깥 테두리)"]]),
+    DC("기록 카드",recCard,[["대응","디자인 제안(Card)"],["크기","가로 창 3열 240 · 세로 창 1열, 남는 높이를 3장이 나눔"],["글자","날짜 Body S · 목적지 Title M · 수치 Body M · 고른 것 Label M"],["상태","기본 · 방금 끝남(검은 테두리 3)"]]),
+    DC("미리보기 칸",`<div class="pv" style="width:1200px;flex:none;margin:0"><div class="pvl"><b>태안 꽃지해수욕장</b><div class="pst3"><span class="st"><i class="k">도착 예상</i>1시간 45분</span><span class="st"><i class="k">거리</i>104km</span><span class="st"><i class="k">정체</i>경로의 36%</span></div><span class="pvn">도착하면 오늘 운전을 정리해 드려요</span></div>${CTA("출발")}</div>`,[["대응","디자인 제안(Card)"],["크기","모서리 40 · 왼쪽 44 · 남은 높이 채움"],["상태","빈 자리(점선) · 불러오는 중(회색 막대) · 실패(다시 시도) · 준비"]],"","wide"),
+    DC("인원 확인 알림 바",`<div class="rel" style="width:1240px;height:200px">${peopleAlert(false,{...BASE,toast:"B",split:4,detected:4})}</div>`,[["Pleos","System Notification(700 × 276)을 한 줄로 줄인 변형"],["크기","1120 × 120 · 알약 · 그림자 Level 2 · 세로 창 104"],["위치","위 바 줄에 겹침 · 가운데 로고만 가림 · 저절로 안 사라짐"]],"","wide"),
+    DC("짧은 하단 시트",`<div class="rel" style="width:760px;height:460px">${restSheet({...BASE,rest:0})}</div>`,[["Pleos","Bottom Sheet(끌기 없음 · 딤 없음)"],["크기","가로 창 640 · 오른쪽 · 아래 40 · 모서리 32 · 세로 창 좌우 40"],["쓰는 곳","쉰 시간 묻기 · 진행 중 출발 정보"]]),
+    DC("영수증(출력 종이)",`<div style="width:900px;height:1080px;display:flex">${receipt(false,{...S,ro:true},c)}</div>`,[["대응","디자인 제안(11/7 명준 레퍼런스)"],["구성","프린터 슬롯 60 · 종이(지그재그 끝) · 제목 · 이중선 · 항목 줄 100 · 소계 · 합계 · 바코드(장식)"],["줄","항목 | 값 | +% | 꺾쇠, 누르면 근거 펼침 · 0인 줄 생략"]]),
+    DC("제안 카드",`<div style="width:640px;height:760px;display:flex">${offer(false,S,c)}</div>`,[["대응","Card + Basic Button L 두 개"],["크기","가로 창 640 고정 · 안쪽 40 · 모서리 32"],["글자","제목 Headline S · 큰 숫자 Headline L · 근거 Body M"]]),
+    DC("기다림 · 빈 상태 · 안내",`<div style="width:520px;display:flex;flex-direction:column;gap:16px">${SKEL(70)}${SKEL(45)}<span style="font:var(--body-l)">찾는 중<i class="dots"><i></i><i></i><i></i></i></span></div><div class="recempty" style="width:600px;height:220px"><b>아직 기록이 없어요</b><span>첫 출발을 마치면 여기에 차곡차곡 쌓여요</span></div><div class="offl" style="margin:0"><i class="ico"></i>인터넷이 연결되지 않았어요</div><div class="card notice" style="width:700px;margin:0"><b>검색이 잠시 안 돼요</b><span>최근 목적지에서 골라 주세요</span></div>`,[["기다림","회색 막대 22 · 모서리 11 · 깜빡 1.1초 / 점 세 개 8"],["빈 상태","점선 3 · 모서리 32 · 제목 Title S + 이유 Body M"],["안내","알약 64(인터넷 없음) · 안내 카드(제목 Title M + 설명 Body M)"]])
+  ].join("");
+  root.innerHTML=`
+  <div class="dhead"><h2>디자인 시스템</h2><p>Design v2 흑백 와이어가 지금 실제로 쓰는 값만 모았어요. 부품은 화면과 같은 코드로 그려 50%로 보여 줘요. <b>컬러 · 로고는 아직 안 정해져서 뺐어요</b>(지금 화면은 검정 · 흰색 · 회색 투명도만 씀). 위의 주간 · 야간 토글이 여기에도 적용돼요.</p></div>
+  <section class="dsec"><h3>기준 <small>Connect-S 17″ · Pleos display guide · design assets 2.1.5</small></h3>
+    ${tbl(["항목","값","메모"],[["화면","2560 × 1440 · 1dp = 1px","시안 숫자 = 실제 픽셀"],["앱 창","가로 1700 × 1184 / 분할 840 × 1184","에뮬레이터 기준 같음"],["최소 글자","20px(Label S)","Pleos 최소 크기"],["누르는 곳","최소 64 × 64(S), 기본 80","차 안 장갑·흔들림 고려"],["주행 중","차곡 창은 시스템이 가림 → 주행 중 화면 없음","정차 전용 화면만 그림"]])}</section>
+  <section class="dsec"><h3>그리드 · 레이아웃 <small>앱 1개(1700) · 앱 2개(840)</small></h3>
+    <div class="dgrid w"><div class="dcard"><b>앱 1개 · 1700 × 1184</b>${G1}</div><div class="dcard"><b>앱 2개 · 840 × 1184</b>${G2}</div></div>
+    ${tbl(["자리","가로 창(1700)","분할 창(840)"],[["앱 안 여백","40","40"],["덩어리 사이","24","16"],["위 바","80","80(제목 Title M)"],["홈","인사(내 차 300 원 + 글자) · 최근 기록 3열 240","인사 · 기록 1열(남는 높이 나눔)"],["출발 화면","검색 1040 가운데 · 목적지 카드 4열 320 · 미리보기 남은 높이","검색 꽉 참 · 카드 2열 200 · 미리보기 세로 쌓기"],["도착","영수증(남은 폭) | 제안 카드 640 고정 · 사이 24","영수증 위 · 제안 카드 아래(남은 높이)"],["계산 연출","레일 가로 · 체크포인트 6개 같은 간격","레일 세로 · 창 가운데 정렬"],["시트","오른쪽 · 아래 40 · 폭 640","좌우 40 · 아래 40"]])}</section>
+  <section class="dsec"><h3>글꼴 <small>시안용 Asta Sans(라틴 · 숫자) + Noto Sans KR(한글) · 크기 · 굵기는 Pleos 타입 스케일 그대로</small></h3>
+    <div class="dtw"><table class="dtab"><thead><tr><th>토큰</th><th>굵기 크기/줄</th><th>보기(50%)</th><th>쓰는 곳</th></tr></thead><tbody>${typeRows}</tbody></table></div>
+    <p class="dnote">따로 쓰는 값: 인원 알림 제목 800 36/44 · 스테퍼 숫자 700 36/44 · 상태 표시줄 시각 700 34/44. 줄 바꿈은 낱말 단위(keep-all), 한 줄 자리는 줄임표(…).</p></section>
+  <section class="dsec"><h3>간격 · 모서리 · 그림자</h3>
+    <div class="dgrid">
+      <div class="dcard"><b>간격(px)</b><div class="dbox"><div class="dsk col">${SP.map(([v,u])=>`<div style="display:flex;align-items:center;gap:24px"><span style="font:var(--body-m-b);width:80px">${v}</span><i class="sbar" style="width:${v*4}px"></i><span style="font:var(--label-m);color:var(--txt3)">${u}</span></div>`).join("")}</div></div><p class="dnote">막대 길이 = 값 × 4(보기 쉽게). 4의 배수만 씀.</p></div>
+      <div class="dcard"><b>모서리(px)</b><div class="dbox"><div class="dsk">${RD.map(([v,u])=>`<div style="display:flex;flex-direction:column;gap:10px;width:200px"><i class="rbox" style="border-radius:${Math.min(v,60)}px"></i><span style="font:var(--body-m-b)">${v===999?"알약":v}</span><span style="font:var(--label-s);color:var(--txt3)">${u}</span></div>`).join("")}</div></div></div>
+      <div class="dcard"><b>그림자(높이)</b><div class="dbox"><div class="dsk">${EL.map(([k,n,u])=>`<div style="display:flex;flex-direction:column;gap:12px;width:260px"><i class="ebox" style="box-shadow:var(${k})"></i><span style="font:var(--body-m-b)">${n}</span><span style="font:var(--label-s);color:var(--txt3)">${u}</span></div>`).join("")}</div></div><p class="dnote">Pleos Level 1 · 2 · 3 값 그대로(검정 투명도). 와이어에서는 선(테두리 2)을 함께 씀.</p></div>
+      <div class="dcard"><b>아이콘</b><div class="dbox"><div class="dsk">${["back","plus","minus","arrow"].map(n=>`<div style="display:flex;flex-direction:column;align-items:center;gap:10px;width:120px"><i class="ic ic-${n}" style="width:56px;height:56px"></i><span style="font:var(--label-m)">${n}</span></div>`).join("")}<div style="display:flex;flex-direction:column;align-items:center;gap:10px;width:160px"><i class="ico" style="width:56px;height:56px"></i><span style="font:var(--label-m)">에셋에 없음</span></div></div></div>${DM([["출처","design assets 2.1.5 SVG(뒤로 56 · + 56 · − 44 · 화살표 40)"],["크기","버튼 L 52 · M 40 · S 32 · 아이콘 버튼 56 / 44"],["없는 것","점선 자리로 둠(기록 · 검색 · 음성 · 꼬리표 등) → BX 아이콘 세트 대기"]])}</div>
+    </div></section>
+  <section class="dsec"><h3>컴포넌트 <small>${comps.split('class="dcard').length-1}종 · 화면과 같은 코드</small></h3><div class="dgrid">${comps}</div></section>
+  <section class="dsec"><h3>상태 표현 <small>흑백 규칙 — 색 없이 선 · 굵기 · 투명도로 구분</small></h3>${tbl(["상태","표현","쓰는 곳"],ST)}</section>
+  <section class="dsec"><h3>모션</h3>${tbl(["종류","시간 · 곡선","쓰는 곳"],MO)}</section>
+  <section class="dsec"><h3>아직 안 정한 것</h3>${tbl(["항목","지금","다음"],[["컬러(포인트 · 상태 색)","흑백만 씀","BX와 정한 뒤 추가"],["로고 · 앱 이름","Nogo(가칭) 글자만","BX와 정한 뒤 추가"],["아이콘 세트","에셋 4종 + 점선 자리","BX 아이콘"],["내 차 2D 그림","공용 세단 1종(차종별은 BX)","BX"],["화면 문구","임시 문구 다수","hD-design/임시문구.md에서 확정"]])}</section>`;
+}
+
+/* ───────── 공통 조작 ───────── */
+function applyUI(){
+  $("canvas").hidden=ui.view!=="canvas";$("proto").hidden=ui.view!=="proto";$("ds").hidden=ui.view!=="ds";document.body.classList.toggle("dsmode",ui.view==="ds");
+  document.body.classList.toggle("hot",ui.hot);
+  $("annochk").checked=ui.anno;$("guidechk").checked=ui.guide;$("hotchk").checked=ui.hot;
+  document.querySelectorAll(".top .seg").forEach(g=>g.querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.v===ui[g.id]))));
+  if(ui.view==="canvas")paintCanvas();else if(ui.view==="ds")renderDS();else{if(!P)startProto(ui.sel);else renderProto()}
+  side();
+}
+function save(){try{localStorage.setItem("chagokDesignV2_2",JSON.stringify(ui))}catch(e){}}
+document.querySelectorAll(".top .seg").forEach(g=>g.querySelectorAll("button").forEach(b=>b.addEventListener("click",()=>{ui[g.id]=b.dataset.v;save();applyUI()})));
+$("annochk").onchange=e=>{ui.anno=e.target.checked;save();applyUI()};
+$("guidechk").onchange=e=>{ui.guide=e.target.checked;save();applyUI()};
+$("hotchk").onchange=e=>{ui.hot=e.target.checked;save();applyUI()};
+$("sideNav").addEventListener("click",e=>{const b=e.target.closest("[data-nav]");if(!b)return;const id=b.dataset.nav;
+  if(ui.view==="proto"){startProto(id)}else{select(id);$("f-"+id).scrollIntoView({behavior:"smooth",block:"center"})}});
+mountCanvas();applyUI();
+</script>

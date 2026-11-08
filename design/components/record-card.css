@@ -1,0 +1,10 @@
+/* Design v2(운전 노고 정산) — 아티팩트 시안에서 옮김. 값은 tokens.css의 --cg-* 변수, 크기는 Connect-S 실제 픽셀(1dp = 1px). */
+.cg-recs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px;height:240px;flex:none}
+.cg-rec{border-radius:32px;background:var(--cg-surface-card);border:2px solid var(--cg-line);box-shadow:var(--cg-shadow-1);padding:26px 30px;display:flex;flex-direction:column;gap:4px;cursor:pointer;min-width:0}
+.cg-rec .cg-tag{font:var(--cg-body-s);color:var(--cg-text-tertiary)}
+.cg-rec b{font:var(--cg-title-m);margin-top:auto;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cg-rec .cg-mt{font:var(--cg-body-m);color:var(--cg-text-secondary);white-space:nowrap}
+.cg-rec .cg-rr{font:var(--cg-label-m);color:var(--cg-text-tertiary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cg-rec.cg-new{border:3px solid var(--cg-text-primary)}
+.cg-rec.cg-new .cg-tag{color:var(--cg-text-primary);font-weight:800}
+.cg-play .cg-rec.cg-new{animation:cg-up .7s cubic-bezier(.32,.72,0,1) both}

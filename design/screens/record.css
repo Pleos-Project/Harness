@@ -1,0 +1,15 @@
+/* Design v2(운전 노고 정산) — 아티팩트 시안에서 옮김. 값은 tokens.css의 --cg-* 변수, 크기는 Connect-S 실제 픽셀(1dp = 1px). */
+/* 기록(자리) */
+.cg-logl{display:flex;flex-direction:column;padding:8px 0;flex:none}
+.cg-logr{display:flex;flex-direction:column;gap:4px;padding:24px 36px}
+.cg-logr + .cg-logr{border-top:1px solid var(--cg-line)}
+.cg-logr b{font:var(--cg-body-l)}
+.cg-logr span{font:var(--cg-body-m);color:var(--cg-text-secondary)}
+.cg-p .cg-logr{padding:18px 24px}
+.cg-p .cg-logr b{font:var(--cg-body-m-b)}
+.cg-p .cg-logr span{font:var(--cg-label-m)}
+/* 기록(자리): 목록을 아래까지 */
+.cg-pg.cg-p .cg-logl{flex:1;min-height:0;display:flex;flex-direction:column}
+.cg-pg.cg-p .cg-logr{flex:1;display:flex;flex-direction:column;justify-content:center;gap:6px}
+.cg-pg.cg-p .cg-logr b{font:var(--cg-title-s)}
+.cg-pg.cg-p .cg-logr span{font:var(--cg-body-m)}
