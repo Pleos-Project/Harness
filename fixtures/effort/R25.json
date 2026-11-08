@@ -1,0 +1,91 @@
+{
+  "id": "R25",
+  "title": "시간대별 경계: 조각 가운데 = 경과 가운데. 16:00→17:00 한 조각, 출발 지점 비·도착 지점 맑음, ETA 60분, 2명",
+  "note": "조각 [16,17) 가운데 16:30 = 경과 가운데 16:30 → 출발 지점(앞 절반에 넣는 규칙) → 비 60분 = 주행 내내 → '비, 주행 내내' +40%. 도착 지점을 쓰는 규칙이었다면 0",
+  "input": {
+    "departed_at": "2026-11-17T16:00:00+09:00",
+    "arrived_at": "2026-11-17T17:00:00+09:00",
+    "rest_answer_min": 0,
+    "eta_s": 3600,
+    "congestion_ratio": 0.0,
+    "congestion_m": 0.0,
+    "congestion_s": null,
+    "weather_dep": "rain",
+    "weather_arr": "none",
+    "sunrise": "07:13",
+    "sunset": "17:20",
+    "n": 2,
+    "distance_km": null,
+    "weather_trip": {
+      "status": "ok",
+      "dep": [
+        {
+          "hour": "2026-11-17T16:00:00+09:00",
+          "precip": "rain"
+        }
+      ],
+      "arr": [
+        {
+          "hour": "2026-11-17T16:00:00+09:00",
+          "precip": "none"
+        }
+      ]
+    }
+  },
+  "expected": {
+    "status": "ok",
+    "status_text": null,
+    "elapsed_limit_min": 120.0,
+    "elapsed_min": 60.0,
+    "drive_min": 60.0,
+    "rest_min": 0.0,
+    "fatigue_segments_min": [
+      60.0
+    ],
+    "congestion_min": 0.0,
+    "delay_min": 0.0,
+    "night_min": 0.0,
+    "rain_min": 60.0,
+    "snow_min": 0.0,
+    "fatigue_excess_min": 0.0,
+    "effort_min": 84.0,
+    "multiplier": 1.4,
+    "lines": [
+      {
+        "key": "rain",
+        "label": "날씨",
+        "add_min": 24.0,
+        "pct": 40,
+        "pct_text": "+40%",
+        "detail_text": "비, 주행 내내",
+        "basis_text": "비 오는 날은 맑은 날보다 운전 부담이 40% 커요 · 시뮬레이터 30명 연구(Frontiers in Neuroscience 2026)"
+      }
+    ],
+    "notes": [],
+    "footnote_text": null,
+    "drive_text": "1시간",
+    "multiplier_text": "평소보다 1.40배 힘든 길",
+    "headline_text": "오늘 운전 1시간 · 평소보다 1.40배 힘든 길",
+    "distance_text": null,
+    "proposal": {
+      "amount_krw": 14980.0,
+      "amount_approx": 15000,
+      "amount_text": "약 1만 5천 원",
+      "per_person_krw": 7490.0,
+      "per_person_approx": 7000,
+      "per_person_text": "약 7천 원",
+      "driver_share_krw": 7490.0,
+      "a": {
+        "title_text": "오늘 운전을 챙긴다면",
+        "main_text": "한 사람 약 7천 원",
+        "basis_text": "운전 노고 약 1만 5천 원을 운전자 포함 2명이 나눈 값",
+        "wage_text": "최저임금 1분 178원 기준"
+      },
+      "b": {
+        "item": "coffee",
+        "text": "오늘은 커피값에서 운전자 빼고 나누는 게 어때요",
+        "item_examples": []
+      }
+    }
+  }
+}

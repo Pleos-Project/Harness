@@ -106,6 +106,19 @@ def effort_constants(const: dict) -> EffortConstants:
 
 # ---------------------------------------------------------------- 입력·출력
 @dataclass(frozen=True)
+class HourPrecip:
+    hour: str      # 조각 시작 정시(ISO 8601 + 오프셋). 조각은 [hour, hour + 1시간)
+    precip: str    # none | rain | snow | unknown
+
+
+@dataclass(frozen=True)
+class WeatherTrip:
+    """GET /v1/weather/trip 응답의 dep·arr(#63). 같은 조각을 같은 순서로 담는다. 앱은 응답을 그대로 넘기면 된다(status는 안 씀)."""
+    dep: tuple[HourPrecip, ...]
+    arr: tuple[HourPrecip, ...]
+
+
+@dataclass(frozen=True)
 class EffortInput:
     departed_at: str                     # ISO 8601 + 오프셋
     arrived_at: str
@@ -122,6 +135,8 @@ class EffortInput:
     congestion_m: float | None = None       # 정체 km(비율 × 경로 거리, 표시만)
     congestion_s: float | None = None       # 보조: 구간 목록 Σ distance ÷ avrSpeed(나란히 배치)
     distance_km: float | None = None        # 표시만(누적 주행거리 Δ, 못 읽으면 route_m ÷ 1000)
+    # 시간대별 강수(#63, GET /v1/weather/trip). 없거나 겹친 조각이 모두 unknown이면 weather_dep·weather_arr 절반씩
+    weather_trip: WeatherTrip | None = None
 
 
 @dataclass
@@ -203,7 +218,15 @@ def input_from_json(d: dict) -> EffortInput:
         sunrise_min=parse_hhmm(d["sunrise"]), sunset_min=parse_hhmm(d["sunset"]), n=int(d["n"]),
         rest_answer_min=int(d.get("rest_answer_min") or 0), congestion_ratio=d.get("congestion_ratio"),
         congestion_m=d.get("congestion_m"), congestion_s=d.get("congestion_s"), distance_km=d.get("distance_km"),
+        weather_trip=weather_trip_from_json(d.get("weather_trip")),
     )
+
+
+def weather_trip_from_json(wt: dict | None) -> WeatherTrip | None:
+    if wt is None:
+        return None
+    return WeatherTrip(tuple(HourPrecip(h["hour"], h["precip"]) for h in wt["dep"]),
+                       tuple(HourPrecip(h["hour"], h["precip"]) for h in wt["arr"]))
 
 
 # ---------------------------------------------------------------- 시각
@@ -298,13 +321,43 @@ def departure_preview(eta_s: float, route_m: float, congestion_ratio: float | No
     )
 
 
-def weather_detail(key: str, weather_dep: str, weather_arr: str, c: EffortConstants) -> str | None:
-    """날씨 줄 값: 출발·도착이 같으면 "비, 주행 내내", 한쪽만이면 "비"(임시 문구, 디자인 확정 대기)."""
-    dep, arr = weather_dep == key, weather_arr == key
-    if not dep and not arr:
-        return None
-    t = c.copy.line_detail["weather_all_text" if dep and arr else "weather_part_text"]
+def weather_detail(key: str, whole: bool, c: EffortConstants) -> str:
+    """날씨 줄 값: 주행 내내면 "비, 주행 내내", 일부면 "비"(임시 문구, 디자인 확정 대기)."""
+    t = c.copy.line_detail["weather_all_text" if whole else "weather_part_text"]
     return fill(t, precip=c.copy.precip_words[key])
+
+
+@dataclass
+class HourlyPrecip:
+    rain_wall_s: float        # 출발~도착과 비 조각이 겹친 벽시계 초
+    snow_wall_s: float
+    known: bool               # 겹친 조각 가운데 판정된(none·rain·snow) 조각이 있음
+    unknown: bool             # 겹친 조각 가운데 unknown 조각이 있음
+
+
+def hourly_precip(dep: float, arr: float, wt: WeatherTrip) -> HourlyPrecip:
+    """1시간 조각 [H, H+1)마다 조각 가운데가 주행 경과의 앞 절반이면 출발 지점, 뒤 절반이면 도착 지점 관측을 쓴다(#63).
+    조각 가운데가 경과 가운데와 같으면 출발 지점(앞 절반에 넣음). 출발~도착과 겹치지 않는 조각은 안 쓴다."""
+    mid = dep + (arr - dep) / 2
+    rain = 0.0
+    snow = 0.0
+    known = False
+    unknown = False
+    for i in range(min(len(wt.dep), len(wt.arr))):
+        h0 = float(epoch_s(wt.dep[i].hour))
+        ov = overlap(dep, arr, h0, h0 + 3600)
+        if ov <= 0:
+            continue
+        p = wt.dep[i].precip if h0 + 1800 <= mid else wt.arr[i].precip
+        if p not in KNOWN_PRECIP:
+            unknown = True
+            continue
+        known = True
+        if p == "rain":
+            rain += ov
+        elif p == "snow":
+            snow += ov
+    return HourlyPrecip(rain, snow, known, unknown)
 
 
 def time_detail(template_key: str, minutes_s: float, c: EffortConstants) -> str:
@@ -381,9 +434,23 @@ def effort(inp: EffortInput, c: EffortConstants) -> Receipt:
     delay = max(0.0, drive - eta) if eta > 0 else 0.0
     if delay * 100 < c.delay_threshold_pct * eta:
         delay = 0.0
-    half = drive / 2
-    rain = (half if inp.weather_dep == "rain" else 0.0) + (half if inp.weather_arr == "rain" else 0.0)
-    snow = (half if inp.weather_dep == "snow" else 0.0) + (half if inp.weather_arr == "snow" else 0.0)
+    hp = hourly_precip(dep, arr, inp.weather_trip) if inp.weather_trip is not None else None
+    if hp is not None and hp.known:
+        # 시간대별(#63): 강수 분 = 벽시계 겹침 × T/경과(밤길과 같은 방식). unknown 조각은 가산 0
+        rain = hp.rain_wall_s * drive / elapsed
+        snow = hp.snow_wall_s * drive / elapsed
+        rain_whole = hp.rain_wall_s >= elapsed
+        snow_whole = hp.snow_wall_s >= elapsed
+        weather_note = c.copy.text["weather_partial_text"] if hp.unknown else None
+    else:
+        # 시간대별 입력이 없거나 겹친 조각이 모두 unknown이면 출발·도착 1회 관측, 앞·뒤 절반씩
+        half = drive / 2
+        rain = (half if inp.weather_dep == "rain" else 0.0) + (half if inp.weather_arr == "rain" else 0.0)
+        snow = (half if inp.weather_dep == "snow" else 0.0) + (half if inp.weather_arr == "snow" else 0.0)
+        rain_whole = inp.weather_dep == "rain" and inp.weather_arr == "rain"
+        snow_whole = inp.weather_dep == "snow" and inp.weather_arr == "snow"
+        weather_note = (c.copy.text["weather_unknown_text"]
+                        if inp.weather_dep not in KNOWN_PRECIP or inp.weather_arr not in KNOWN_PRECIP else None)
     limit_s = c.fatigue_limit_min * 60
     excess = 0.0
     for g in groups:
@@ -405,7 +472,7 @@ def effort(inp: EffortInput, c: EffortConstants) -> Receipt:
         if adds[k] > 0:
             pct = round_half_up(adds[k] / drive)
             if k == "rain" or k == "snow":
-                detail = weather_detail(k, inp.weather_dep, inp.weather_arr, c)
+                detail = weather_detail(k, rain_whole if k == "rain" else snow_whole, c)
             elif k == "congestion":
                 detail = congestion_text(inp.congestion_m, inp.congestion_ratio, c)
             elif k == "delay":
@@ -418,8 +485,8 @@ def effort(inp: EffortInput, c: EffortConstants) -> Receipt:
     m100 = round_half_up(total / drive) if drive > 0 else 100
 
     notes = []
-    if inp.weather_dep not in KNOWN_PRECIP or inp.weather_arr not in KNOWN_PRECIP:
-        notes.append(c.copy.text["weather_unknown_text"])
+    if weather_note is not None:
+        notes.append(weather_note)
     if inp.congestion_s is None and inp.congestion_ratio is None:
         notes.append(c.copy.text["congestion_unknown_text"])
 
