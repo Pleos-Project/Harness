@@ -57,6 +57,9 @@
     }
   },
   "expected": {
+    "status": "ok",
+    "status_text": null,
+    "elapsed_limit_min": 420.0,
     "elapsed_min": 240.0,
     "drive_min": 210.0,
     "rest_min": 30.0,

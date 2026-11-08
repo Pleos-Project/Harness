@@ -307,7 +307,8 @@ def test_weather_halves():
 
 
 @pytest.mark.parametrize("fid,key,override,want", [
-    ("R7", "delay", {"arrived_at": "2026-11-17T12:05:00+09:00"}, "+1시간 5분"),   # 60분 이상은 ○시간 ○분
+    # 60분 이상은 ○시간 ○분. ETA 65 → 도착 상한 max(130, 125) = 130분 안(#68)
+    ("R7", "delay", {"arrived_at": "2026-11-17T12:10:00+09:00", "eta_s": 3900}, "+1시간 5분"),
     ("R10", "night", {}, "1시간 48분"),          # 답 + 밤길 비례 108.3분 → 반올림
     ("R12", "night", {}, "4시간"),
     ("R13", "fatigue", {}, "2시간 넘긴 1시간"),   # 구간 150 + 150 → 넘긴 30 + 30을 합침
@@ -327,6 +328,46 @@ def test_sun_matches_kasi_within_one_minute():
         for k in ("sunrise", "sunset"):
             got, kasi = EF.parse_hhmm(c["expected"][k]), EF.parse_hhmm(c["kasi"][k])
             assert abs(got - kasi) <= 1, f"{c['date']} {k}: 엔진 {c['expected'][k]} vs 천문연 {c['kasi'][k]}"
+
+
+# ---------------------------------------------------------------- 1부: 도착 상한 (#68)
+@pytest.mark.parametrize("fid,status,elapsed,limit", [
+    ("R16", "ok", 210, 210), ("R17", "unsettled", 211, 210),     # ETA 105: max(210, 165)
+    ("R18", "ok", 70, 70), ("R19", "unsettled", 71, 70),         # ETA 10: max(20, 70)
+    ("R20", "ok", 720, 720), ("R21", "unsettled", 721, 720),     # ETA 400: max(800, 460)보다 12시간이 먼저
+])
+def test_arrival_cap_boundaries(fid, status, elapsed, limit):
+    """경과가 상한과 같으면 영수증, 넘으면 정리하지 못함(#68 효성 결정)."""
+    r = run(fid)
+    assert (r.status, r.elapsed_min, r.elapsed_limit_min) == (status, elapsed, limit)
+    assert (r.status_text is None) == (status == "ok")
+
+
+def test_unsettled_skips_receipt():
+    """정리하지 못함이면 금액·줄을 계산하지 않고, headline_text에도 안내 문구(effort.copy 임시)를 넣는다."""
+    r = run("R17")
+    assert r.status_text == r.headline_text == C.copy.text["unsettled_text"] == "이번 주행은 정리하지 못했어요"
+    assert (r.lines, r.notes, r.proposal, r.footnote_text, r.distance_text) == ([], [], None, None, None)
+    assert (r.drive_min, r.effort_min, r.multiplier, r.drive_text, r.multiplier_text) == (0, 0, 0, "", "")
+
+
+@pytest.mark.parametrize("eta_min,limit_min", [(105, 210), (10, 70), (60, 120), (30, 90), (400, 720), (360, 720),
+                                               (0, 720)])
+def test_elapsed_limit(eta_min, limit_min):
+    """상한 = min(max(ETA × 2, ETA + 60), 720). ETA를 모르면(0) 12시간만."""
+    assert EF.elapsed_limit_s(eta_min * 60, C) == limit_min * 60
+
+
+def test_arrival_cap_counts_rest_too():
+    """경과는 도착 − 출발 그대로(쉰 시간을 빼지 않음). 1시간 쉬었다고 답해도 211분이면 정리하지 못함."""
+    assert run("R17", rest_answer_min=60).status == "unsettled"
+    assert run("R16", rest_answer_min=60).status == "ok"
+
+
+def test_arrival_cap_without_eta():
+    """ETA를 모르면(0) 12시간만 본다."""
+    assert simple(700, eta_s=0).status == "ok"
+    assert run("R21", eta_s=0).status == "unsettled"
 
 
 # ---------------------------------------------------------------- 1부: 시간대별 강수 (#63, GET /v1/weather/trip)
@@ -467,6 +508,8 @@ def receipts():
 
 
 def texts(r):
+    if r.status_text:
+        yield r.status_text
     yield r.drive_text
     yield r.multiplier_text
     yield r.headline_text
@@ -488,6 +531,13 @@ def texts(r):
 
 def test_copy_rules_hold_everywhere():
     for r in receipts():
+        assert r.status in ("ok", "unsettled")
+        if r.status == "unsettled":     # 정리하지 못함: 영수증 값 없이 안내 문구만
+            assert r.headline_text == r.status_text and r.lines == [] and r.proposal is None
+            for rx, msg in lint_copy.FORBIDDEN + lint_copy.COPY_RULES:
+                assert not rx.search(r.status_text), f"{msg}: {r.status_text}"
+            continue
+        assert r.status_text is None
         assert DRIVE.match(r.drive_text), r.drive_text
         assert MULT.match(r.multiplier_text), r.multiplier_text
         assert r.headline_text == f"오늘 운전 {r.drive_text} · {r.multiplier_text}"

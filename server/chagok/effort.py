@@ -46,6 +46,9 @@ class EffortConstants:
     fatigue_limit_min: float             # 장시간: 이 분을 넘은 만큼
     fatigue_rate_pct: float              # 넘은 분 × 이 %
     fatigue_reset_rest_min: float        # 이 분 이상 쉬면 연속 운전 구간을 나눈다
+    arrival_eta_times: float             # 도착 상한(#68): 경과 > max(ETA × 이 값, ETA + 아래 분) 이면 정리하지 못함
+    arrival_eta_plus_min: float
+    arrival_max_min: float               # 경과 > 이 분(12시간)이면 정리하지 못함
     wage_per_hour: float                 # 1분 단가 = 시급 ÷ 60
     wage_label: str                      # 단가 출처 표기("최저임금")
     items: tuple[Item, ...]              # 방식 B 항목, 1인분 가격 오름차순
@@ -91,6 +94,9 @@ def effort_constants(const: dict) -> EffortConstants:
         fatigue_limit_min=float(f["limit_min"]),
         fatigue_rate_pct=float(f["rate_pct"]),
         fatigue_reset_rest_min=float(f["reset_rest_min"]),
+        arrival_eta_times=float(e["arrival_cap"]["eta_times"]),
+        arrival_eta_plus_min=float(e["arrival_cap"]["eta_plus_min"]),
+        arrival_max_min=float(e["arrival_cap"]["max_min"]),
         wage_per_hour=float(e["wage_per_hour"]),
         wage_label=e["wage_label"],
         items=tuple(items),
@@ -176,6 +182,9 @@ class Proposal:
 
 @dataclass
 class Receipt:
+    status: str                      # ok = 영수증 | unsettled = 정리하지 못함(#68, 도착이 너무 늦게 잡힘)
+    status_text: str | None          # unsettled일 때 안내 문구(effort.copy.unsettled_text), ok면 None
+    elapsed_limit_min: float         # 적용한 경과 상한(분) = min(max(ETA × 2, ETA + 60), 720)
     elapsed_min: float               # E
     drive_min: float                 # T
     rest_min: float                  # E − T
@@ -372,11 +381,37 @@ def approx_text(krw: float) -> tuple[int, str]:
     return v, (text if under else f"약 {text}")
 
 
+# ---------------------------------------------------------------- F22 도착 상한 (#68)
+def elapsed_limit_s(eta_s: float, c: EffortConstants) -> float:
+    """경과 상한(초). 기본 배치에서는 도착 시각이 '앱을 다시 연 시각'이라 늦게 잡힐 수 있다(#68).
+    경과가 max(ETA × 2, ETA + 60분)를 넘거나 12시간을 넘으면 정리하지 못함. ETA를 모르면(0 이하) 12시간만."""
+    cap = c.arrival_max_min * 60
+    if eta_s > 0:
+        cap = min(max(eta_s * c.arrival_eta_times, eta_s + c.arrival_eta_plus_min * 60), cap)
+    return cap
+
+
+def unsettled(elapsed: float, limit: float, c: EffortConstants) -> Receipt:
+    """정리하지 못함: 금액·줄은 계산하지 않는다. headline_text에도 안내 문구를 넣어,
+    status를 보기 전의 화면이 이 값을 그대로 보여도 잘못된 영수증이 뜨지 않게 한다."""
+    t = c.copy.text["unsettled_text"]
+    return Receipt(
+        status="unsettled", status_text=t, elapsed_limit_min=limit / 60,
+        elapsed_min=elapsed / 60, drive_min=0.0, rest_min=0.0, fatigue_segments_min=[],
+        congestion_min=0.0, delay_min=0.0, night_min=0.0, rain_min=0.0, snow_min=0.0, fatigue_excess_min=0.0,
+        effort_min=0.0, multiplier=0.0, lines=[], notes=[], footnote_text=None,
+        drive_text="", multiplier_text="", headline_text=t, distance_text=None, proposal=None,
+    )
+
+
 # ---------------------------------------------------------------- F23 노고 · F24 금액 · F25 방식 B
 def effort(inp: EffortInput, c: EffortConstants) -> Receipt:
     dep = float(epoch_s(inp.departed_at))
     arr = max(dep, float(epoch_s(inp.arrived_at)))
     elapsed = arr - dep
+    limit = elapsed_limit_s(float(inp.eta_s), c)
+    if elapsed > limit:
+        return unsettled(elapsed, limit, c)
     nights = night_intervals(inp.departed_at, arr, inp.sunrise_min, inp.sunset_min)
 
     # 정차는 도착 때 답한 쉰 시간 Q만 안다(#62). 언제 쉬었는지 모르니 Q ≥ 15분이면 "중간쯤 한 번 쉬었다"고 보고
@@ -458,6 +493,7 @@ def effort(inp: EffortInput, c: EffortConstants) -> Receipt:
     dt = drive_text(drive)
     mt = multiplier_text(m100, c)
     return Receipt(
+        status="ok", status_text=None, elapsed_limit_min=limit / 60,
         elapsed_min=elapsed / 60, drive_min=drive / 60, rest_min=(elapsed - drive) / 60,
         fatigue_segments_min=[g / 60 for g in groups],
         congestion_min=congestion / 60, delay_min=delay / 60, night_min=night / 60,

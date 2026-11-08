@@ -57,6 +57,9 @@ data class EffortConstants(
     val fatigueLimitMin: Double,            // 장시간: 이 분을 넘은 만큼
     val fatigueRatePct: Double,             // 넘은 분 × 이 %
     val fatigueResetRestMin: Double,        // 이 분 이상 쉬면 연속 운전 구간을 나눈다
+    val arrivalEtaTimes: Double,            // 도착 상한(#68): 경과 > max(ETA × 이 값, ETA + 아래 분) 이면 정리하지 못함
+    val arrivalEtaPlusMin: Double,
+    val arrivalMaxMin: Double,              // 경과 > 이 분(12시간)이면 정리하지 못함
     val wagePerHour: Double,                // 1분 단가 = 시급 ÷ 60
     val wageLabel: String,                  // 단가 출처 표기
     val items: List<EffortItem>,            // 방식 B 항목, 1인분 가격 오름차순
@@ -107,6 +110,9 @@ fun parseEffortConstants(text: String): EffortConstants {
         fatigueLimitMin = f.dbl("limit_min"),
         fatigueRatePct = f.dbl("rate_pct"),
         fatigueResetRestMin = f.dbl("reset_rest_min"),
+        arrivalEtaTimes = e.getValue("arrival_cap").jsonObject.dbl("eta_times"),
+        arrivalEtaPlusMin = e.getValue("arrival_cap").jsonObject.dbl("eta_plus_min"),
+        arrivalMaxMin = e.getValue("arrival_cap").jsonObject.dbl("max_min"),
         wagePerHour = e.dbl("wage_per_hour"),
         wageLabel = e.str("wage_label"),
         items = e.getValue("items").jsonArray.map {
@@ -182,6 +188,9 @@ data class EffortProposal(
 )
 
 data class EffortReceipt(
+    val status: String,                 // ok = 영수증 | unsettled = 정리하지 못함(#68, 도착이 너무 늦게 잡힘)
+    val statusText: String?,            // unsettled일 때 안내 문구(effort.copy.unsettled_text), ok면 null
+    val elapsedLimitMin: Double,        // 적용한 경과 상한(분) = min(max(ETA × 2, ETA + 60), 720)
     val elapsedMin: Double,
     val driveMin: Double,
     val restMin: Double,
@@ -344,11 +353,35 @@ fun approxText(krw: Double): Pair<Int, String> {
     return a.value to (if (a.under) a.text else "약 " + a.text)
 }
 
+// ------------------------------------------------------------ F22 도착 상한 (#68)
+/** 경과 상한(초). 기본 배치에서는 도착 시각이 '앱을 다시 연 시각'이라 늦게 잡힐 수 있다(#68).
+ *  경과가 max(ETA × 2, ETA + 60분)를 넘거나 12시간을 넘으면 정리하지 못함. ETA를 모르면(0 이하) 12시간만. */
+fun elapsedLimitS(etaS: Double, c: EffortConstants): Double {
+    var cap = c.arrivalMaxMin * 60
+    if (etaS > 0) cap = min(max(etaS * c.arrivalEtaTimes, etaS + c.arrivalEtaPlusMin * 60), cap)
+    return cap
+}
+
+/** 정리하지 못함: 금액·줄은 계산하지 않는다. headlineText에도 안내 문구를 넣어,
+ *  status를 보기 전의 화면이 이 값을 그대로 보여도 잘못된 영수증이 뜨지 않게 한다. */
+fun unsettled(elapsed: Double, limit: Double, c: EffortConstants): EffortReceipt {
+    val t = c.copy.text.getValue("unsettled_text")
+    return EffortReceipt(
+        status = "unsettled", statusText = t, elapsedLimitMin = limit / 60,
+        elapsedMin = elapsed / 60, driveMin = 0.0, restMin = 0.0, fatigueSegmentsMin = emptyList(),
+        congestionMin = 0.0, delayMin = 0.0, nightMin = 0.0, rainMin = 0.0, snowMin = 0.0, fatigueExcessMin = 0.0,
+        effortMin = 0.0, multiplier = 0.0, lines = emptyList(), notes = emptyList(), footnoteText = null,
+        driveText = "", multiplierText = "", headlineText = t, distanceText = null, proposal = null,
+    )
+}
+
 // ------------------------------------------------------------ F23 노고 · F24 금액 · F25 방식 B
 fun effort(inp: EffortInput, c: EffortConstants): EffortReceipt {
     val dep = epochS(inp.departedAt).toDouble()
     val arr = max(dep, epochS(inp.arrivedAt).toDouble())
     val elapsed = arr - dep
+    val limit = elapsedLimitS(inp.etaS, c)
+    if (elapsed > limit) return unsettled(elapsed, limit, c)
     val nights = nightIntervals(inp.departedAt, arr, inp.sunriseMin, inp.sunsetMin)
 
     // 정차는 도착 때 답한 쉰 시간 Q만 안다(#62). 언제 쉬었는지 모르니 Q ≥ 15분이면 "중간쯤 한 번 쉬었다"고 보고
@@ -433,6 +466,7 @@ fun effort(inp: EffortInput, c: EffortConstants): EffortReceipt {
     val dt = driveText(drive)
     val mt = multiplierText(m100, c)
     return EffortReceipt(
+        status = "ok", statusText = null, elapsedLimitMin = limit / 60,
         elapsedMin = elapsed / 60, driveMin = drive / 60, restMin = (elapsed - drive) / 60,
         fatigueSegmentsMin = groups.map { it / 60 },
         congestionMin = congestion / 60, delayMin = delay / 60, nightMin = night / 60,
@@ -572,6 +606,7 @@ fun EffortProposal.toJson(): JsonObject = obj(
 )
 
 fun EffortReceipt.toJson(): JsonObject = obj(
+    "status" to status, "status_text" to statusText, "elapsed_limit_min" to elapsedLimitMin,
     "elapsed_min" to elapsedMin, "drive_min" to driveMin, "rest_min" to restMin,
     "fatigue_segments_min" to fatigueSegmentsMin,
     "congestion_min" to congestionMin, "delay_min" to delayMin, "night_min" to nightMin,
