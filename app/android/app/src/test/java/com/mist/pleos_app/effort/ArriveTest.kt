@@ -99,6 +99,18 @@ class ArriveTest {
     }
 
     @Test
+    fun noAutoArrivalOnResumeWithoutEta() {
+        // 오프라인 등으로 출발 때 ETA를 못 받았으면 내비 경로도 실패했을 수 있다 → 다시 열 때 자동 도착하지 않음(에뮬 11/8)
+        val noEta = OpenTrip("t1", "2026-11-17T16:00:00+09:00", "서울식물원", 1, 0.0)
+        assertFalse(autoArrivalAllowed(noEta, ArrivalCue.RESUME))
+        assertFalse(autoArrivalAllowed(noEta, ArrivalCue.DOOR_ON_SHOW))
+        assertTrue(autoArrivalAllowed(noEta, ArrivalCue.DOOR))                     // 보이는 동안 문이 열리는 순간은 도착
+        val withEta = noEta.copy(etaS = 2000.0)
+        ArrivalCue.entries.forEach { assertTrue(autoArrivalAllowed(withEta, it)) }  // ETA가 있으면 지금처럼
+        ArrivalCue.entries.forEach { assertTrue(autoArrivalAllowed(noEta.copy(demo = true), it)) }
+    }
+
+    @Test
     fun lateArrivalIsUnsettledWithoutProposal() {
         // #68·#71: ETA 105분인데 211분 뒤에 도착이 잡히면(앱을 늦게 다시 엶) 영수증 대신 정리하지 못함
         val t = OpenTrip(
