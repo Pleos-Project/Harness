@@ -99,9 +99,7 @@ fun EffortApp(
     LaunchedEffect(parked, doorOpen, shown) { vm.onCar(parked, doorOpen) }
     // 인원 확인 알림(PR #34·#40 재사용): 출발 화면에서 2명 이상 + 지난번 확인값과 다르면(노고 PRD v1.3 8장)
     val askPayers = remember(seats, payer, screen) { screen == EffortScreen.DEPART && vm.shouldAskPayers(seats) }
-    EffortFrame(demoValues = ui.demo, driving = driving, toast = {
-        if (askPayers) PayerToast(seats, onConfirm = { vm.confirmPayers(seats, it) }, onDismiss = { vm.dismissPayers(seats) })
-    }) {
+    EffortFrame(demoValues = ui.demo, driving = driving) {
         when (screen) {
             EffortScreen.HOME -> EffortHome(
                 ui,
@@ -114,11 +112,16 @@ fun EffortApp(
                 onArrive = vm::arriveNow,
             )
             EffortScreen.DEPART -> {
+                // Design v2 출발 화면(#75): 시연이면 정해 둔 목적지 하나를 고른 상태로
                 val demo = (vm.source as? DemoEffortSource)?.scene
-                if (demo != null) DemoDepart(demo, onGo = { vm.depart() })
-                else EffortDepart(
-                    depart, payers = vm.payersFor(seats), demoMissing = settings.demoFixed && !ui.demoAvailable,
-                    onQuery = vm::setQuery, onSearch = vm::search, onSelect = vm::select, onGo = { vm.depart(seats) },
+                EffortDepartScreen(
+                    depart, demo = demo, demoPreview = if (demo != null) vm.demoPreview else null,
+                    demoMissing = settings.demoFixed && !ui.demoAvailable,
+                    seats = seats, payers = vm.payersFor(seats), askPayers = askPayers,
+                    onBack = { vm.back() }, onQuery = vm::setQuery, onSearch = vm::search, onClearSearch = vm::clearSearch,
+                    onSelect = vm::select, onUnselect = vm::unselect,
+                    onGo = { if (demo != null) vm.depart() else vm.depart(seats) },
+                    onConfirmPayers = { vm.confirmPayers(seats, it) }, onDismissPayers = { vm.dismissPayers(seats) },
                 )
             }
             EffortScreen.SETTINGS -> EffortSettings(settings, onChange = vm::updateSettings, onReset = vm::resetRecords)
@@ -209,120 +212,7 @@ private fun RecordCard(r: EffortRecord) {
 private fun dayText(date: String): String =
     runCatching { LocalDate.parse(date).let { "${it.monthValue}월 ${it.dayOfMonth}일" } }.getOrDefault(date)
 
-// ------------------------------------------------------------ 출발(F20): 목적지(검색·즐겨찾기·최근) → requestTrip 미리보기 → [출발]
-/** 시연(데모 고정 + demo.json): 목적지·인원이 정해져 있다(명세 v0.5 12절). */
-@Composable
-private fun DemoDepart(demo: DemoScene, onGo: () -> Unit) {
-    val gap = Arrangement.spacedBy(24.gpx)
-    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()), verticalArrangement = gap) {
-        CgTitle(stringResource(R.string.effort_depart_title))
-        CgCard(Modifier.fillMaxWidth()) {
-            CgTitle(demo.destName)
-            CgBody(stringResource(R.string.effort_depart_people, demo.n), secondary = true)
-        }
-        CgButton(stringResource(R.string.effort_depart_go), onGo, Modifier.fillMaxWidth())
-    }
-}
-
-/**
- * 실제 출발 화면. 숫자(ETA·거리·정체)는 엔진 departurePreview가 만든 문구만 보여 준다(화면에서 계산하지 않음).
- * 검색은 키보드 [검색]이나 버튼을 눌렀을 때만(자동 완성 없음).
- */
-@Composable
-private fun EffortDepart(
-    ui: DepartUi,
-    payers: Int,
-    demoMissing: Boolean,
-    onQuery: (String) -> Unit,
-    onSearch: () -> Unit,
-    onSelect: (DestOption) -> Unit,
-    onGo: () -> Unit,
-) {
-    val gap = Arrangement.spacedBy(24.gpx)
-    val c = Chagok.colors
-    // 검색하면 키보드를 닫는다(차량 키보드는 Back을 먼저 받지 않아 열린 채로 Back을 누르면 화면이 닫힘, 에뮬 11/7)
-    val keyboard = LocalSoftwareKeyboardController.current
-    val focus = LocalFocusManager.current
-    val search = { keyboard?.hide(); focus.clearFocus(); onSearch() }
-    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()), verticalArrangement = gap) {
-        CgTitle(stringResource(R.string.effort_depart_title))
-        if (demoMissing) CgNotice(stringResource(R.string.effort_depart_no_demo))
-
-        // 고른 목적지 + [출발]
-        ui.selected?.let { sel ->
-            CgCard(Modifier.fillMaxWidth()) {
-                CgCaption(stringResource(R.string.effort_selected))
-                CgTitle(sel.dest.name)
-                sel.dest.address?.takeIf { it.isNotBlank() }?.let { CgBody(it, secondary = true) }
-                CgBody(stringResource(R.string.effort_depart_people, payers), secondary = true)
-                if (ui.previewing) CgCaption(stringResource(R.string.effort_checking_route))
-                // 미리보기 문구는 엔진(departurePreview)이 만든 그대로(명세 v0.5 F20·12절 시연 순서 2)
-                ui.previewText?.let { p ->
-                    CgBody(stringResource(R.string.effort_preview_route, p.etaText, p.routeText))
-                    p.congestionText?.let { CgBody(stringResource(R.string.effort_preview_congestion, it), secondary = true) }
-                }
-                CgButton(stringResource(R.string.effort_depart_go), onGo, Modifier.fillMaxWidth(), enabled = ui.canDepart)
-            }
-        }
-
-        // 검색(서버 카카오 로컬, #57)
-        Row(horizontalArrangement = gap, verticalAlignment = Alignment.CenterVertically) {
-            Box(
-                Modifier
-                    .weight(1f)
-                    .background(c.btnBasic, RoundedCornerShape(16.gpx))
-                    .border(1.gpx, c.line, RoundedCornerShape(16.gpx))
-                    .padding(horizontal = 24.gpx, vertical = 20.gpx),
-            ) {
-                val hint = stringResource(R.string.effort_search_hint)
-                if (ui.query.isEmpty()) Text(hint, style = Chagok.type.bodyM, color = c.textTertiary)
-                BasicTextField(
-                    value = ui.query,
-                    onValueChange = { onQuery(it.take(100)) },
-                    singleLine = true,
-                    textStyle = Chagok.type.bodyM.copy(color = c.textPrimary),
-                    cursorBrush = SolidColor(c.active),
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                    keyboardActions = KeyboardActions(onSearch = { search() }),
-                    modifier = Modifier.fillMaxWidth().semantics { contentDescription = hint },
-                )
-            }
-            CgButton(stringResource(R.string.effort_search), { search() }, enabled = ui.query.isNotBlank() && !ui.searching)
-        }
-        when {
-            ui.searching -> CgCaption(stringResource(R.string.effort_searching))
-            ui.searchStatus == PlacesStatus.EMPTY -> CgNotice(stringResource(R.string.effort_search_empty))
-            ui.searchStatus == PlacesStatus.UNAVAILABLE -> CgNotice(stringResource(R.string.effort_search_unavailable))
-        }
-        ui.searchResults.forEach { DestRow(it, selected = ui.selected == it, onClick = { onSelect(it) }) }
-
-        // 즐겨찾기·최근 목적지(내비)
-        CgCaption(stringResource(R.string.effort_navi_places))
-        when {
-            ui.naviLoading -> CgBody(stringResource(R.string.effort_navi_loading), secondary = true)
-            ui.naviOptions.isEmpty() -> CgBody(stringResource(R.string.effort_navi_empty), secondary = true)
-            else -> ui.naviOptions.forEach { DestRow(it, selected = ui.selected == it, onClick = { onSelect(it) }) }
-        }
-    }
-}
-
-@Composable
-private fun DestRow(o: DestOption, selected: Boolean, onClick: () -> Unit) {
-    CgCard(Modifier.fillMaxWidth(), onClick = onClick) {
-        val tag = when (o.kind) {
-            DestOption.Kind.HOME -> stringResource(R.string.effort_kind_home)
-            DestOption.Kind.OFFICE -> stringResource(R.string.effort_kind_office)
-            DestOption.Kind.BOOKMARK -> stringResource(R.string.effort_kind_bookmark)
-            DestOption.Kind.RECENT -> stringResource(R.string.effort_kind_recent)
-            DestOption.Kind.SEARCH -> o.category
-        }
-        Row(horizontalArrangement = Arrangement.spacedBy(16.gpx), verticalAlignment = Alignment.CenterVertically) {
-            Text(o.dest.name, Modifier.weight(1f), style = Chagok.type.titleS, color = if (selected) Chagok.colors.active else Chagok.colors.textPrimary)
-            tag?.let { CgCaption(it) }
-        }
-        o.dest.address?.takeIf { it.isNotBlank() }?.let { CgBody(it, secondary = true) }
-    }
-}
+// ------------------------------------------------------------ 출발(F20): Design v2 → EffortDepartV2.kt
 
 // ------------------------------------------------------------ 도착: 영수증(F23) + 쉰 시간(F21) + 제안(F24·F25) 한 화면 → EffortArrive.kt
 

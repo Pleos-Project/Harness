@@ -195,6 +195,16 @@ class EffortViewModel(app: Application, private val saved: SavedStateHandle) : A
 
     fun setQuery(q: String) { departFlow.update { it.copy(query = q) } }
 
+    /** 검색 지우기: 결과·상태를 비우고 목적지 카드로 돌아간다. */
+    fun clearSearch() { searchJob?.cancel(); departFlow.update { it.copy(query = "", searching = false, searchStatus = null, searchResults = emptyList()) } }
+
+    /** 고른 목적지를 다시 누르면 선택을 푼다(Design v2 depart: 미리보기 빈 자리). */
+    fun unselect() { departFlow.update { it.copy(selected = null, preview = null, previewText = null, previewing = false) } }
+
+    /** 시연 출발 화면의 미리보기(엔진 departurePreview, demo.json 값). */
+    val demoPreview: com.mist.pleos_app.engine.DeparturePreview?
+        get() = demoScene?.let { s -> effortConstants?.let { c -> departurePreview(s.etaS, s.routeM, s.congestionRatio, s.congestionM, c) } }
+
     /** 키보드 [검색]·검색 버튼을 눌렀을 때만 1번(자동 완성 없음, #57 June). 3초 안에 못 받으면 unavailable. */
     fun search() {
         val q = departFlow.value.query.trim()
