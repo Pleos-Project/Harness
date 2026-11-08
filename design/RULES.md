@@ -24,7 +24,7 @@
 | `screens/drive.html` | 그리지 않음(순정 내비 · 시스템 차단 `DrivingCover`) | 참고용 |
 | `screens/calc.html` | 새 화면 `EffortCalcScreen`(가칭) | 도착 → 계산 연출(약 13초, 건너뛰기) → 영수증. 움직임은 `HANDOFF_v2.md` 3절 |
 | `screens/arrive.html` | `ui/EffortApp.kt` `EffortReceiptScreen` + `EffortProposalScreen` → **한 화면으로 합침** | 왼쪽 영수증 · 오른쪽 제안 카드(가로) / 위·아래(분할). 쉰 시간은 짧은 하단 시트 |
-| `screens/record.html` | `ui/RecordScreen.kt` · 기록 상세(새로, 디자인 제안) | 기록 상세 · 목록(자리) |
+| `screens/record.html` | 새 화면(가칭 `EffortRecordScreen`, 디자인 제안). `ui/RecordScreen.kt`는 피봇 전 장부 화면이라 대응 안 함 | 기록 상세 · 목록(자리) |
 | `components/<부품>.html` | `ui/components/Components.kt` `Cg*` | 버튼·칩·카드·시트 등. 화면마다 따로 만들지 않는다 |
 | 모든 시안의 화면 문구 | `res/values/strings.xml` | 문구는 여기서만 고친다. 임시 문구는 디자인이 확정 전(PR 본문에 목록) |
 - 피봇 전 시안 대응(`home`·`card`·`range` 등 옛 이름)은 쓰지 않는다. `components/badge`·`card-front`는 피봇 전 부품으로 이력만 남긴다.
