@@ -160,7 +160,8 @@ internal fun EffortDepartScreen(
                                 p.congestionText?.let { stringResource(R.string.effort_preview_jam) to it },
                             )
                         }.orEmpty(),
-                        note = stringResource(R.string.effort_preview_note, people),
+                        // Q-08-03(명준 11/8): 미리보기를 못 받아도 출발은 막지 않고, 무엇 없이 정리하는지 한 줄로 알린다
+                        note = stringResource(if (state == CgPreviewState.Failed) R.string.effort_preview_fail_note else R.string.effort_preview_note, people),
                         emptyText = stringResource(R.string.effort_preview_empty),
                         failText = stringResource(R.string.effort_preview_failed),
                         retryLabel = stringResource(R.string.effort_route_retry),
@@ -180,9 +181,14 @@ internal fun EffortDepartScreen(
         // 인원 확인 알림 바(위 바 줄에 겹침)
         if (demo == null && (askPayers || peopleOpen) && seats >= 1) {
             var n by rememberSaveable(seats) { mutableIntStateOf((if (peopleOpen) payers else seats).coerceIn(PayerFlow.MIN, PayerFlow.MAX)) }
+            // v39(명준 11/8): 감지 인원과 다르게 바꾸면 "N명이 낼게요" + "감지는 S명 · N명으로 나눠요", 되돌리면 원래 문구
             CgPeopleAlert(
-                stringResource(R.string.payer_bar_title, seats),
-                stringResource(if (n <= 1) R.string.payer_bar_solo else R.string.payer_bar_hint),
+                if (n == seats) stringResource(R.string.payer_bar_title, seats) else stringResource(R.string.payer_bar_title_manual, n),
+                when {
+                    n <= 1 -> stringResource(R.string.payer_bar_solo)
+                    n != seats -> stringResource(R.string.payer_bar_hint_manual, seats, n)
+                    else -> stringResource(R.string.payer_bar_hint)
+                },
                 Modifier.align(Alignment.TopCenter), compact = narrow,
             ) {
                 CgStepper(
