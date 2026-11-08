@@ -46,8 +46,8 @@ interface DepartNavi {
     fun guide(done: (GuideState?) -> Unit)
 }
 
-/** 노고 흐름 화면(명세 v0.5 3절). 제안(A/B)은 5단계에서 붙인다. */
-enum class EffortScreen { HOME, DEPART, SETTINGS, RECEIPT }
+/** 노고 흐름 화면(명세 v0.5 3절). */
+enum class EffortScreen { HOME, DEPART, SETTINGS, RECEIPT, PROPOSAL }
 
 /** 홈·출발·영수증 화면이 보는 상태. */
 data class EffortUi(
@@ -60,6 +60,7 @@ data class EffortUi(
     val weatherPending: Boolean = false,                // 도착 날씨를 받는 중
     val restQuestion: String? = null,                   // effort.copy rest_question_text("중간에 쉰 시간")
     val restAnswers: List<Pair<Int, String>> = emptyList(),   // (분, 문구): 없음·15분·30분·1시간 이상
+    val proposal: ProposalView? = null,                 // 설정 방식(A/B)의 제안 화면. null이면 영수증만(F25 '제안 없음'·혼자 탄 주행)
 )
 
 /**
@@ -105,16 +106,18 @@ class EffortViewModel(app: Application, private val saved: SavedStateHandle) : A
 
     private fun uiOf(): EffortUi {
         val trip = flow.state.openTrip
+        val receipt = receiptOf(trip, effortConstants)
         return EffortUi(
             phase = flow.phase,
             openTrip = trip,
             recent = flow.recent(),
             demo = source.demo || trip?.demo == true,
             demoAvailable = demoSource != null,
-            receipt = receiptOf(trip, effortConstants),
+            receipt = receipt,
             weatherPending = trip?.arrived == true && trip.weatherArr == null,
             restQuestion = effortConstants?.copy?.text?.get("rest_question_text"),
             restAnswers = effortConstants?.copy?.restAnswers.orEmpty(),
+            proposal = proposalViewOf(receipt, settingsFlow.value.proposalMethod, effortConstants?.items.orEmpty()),
         )
     }
 
@@ -305,6 +308,24 @@ class EffortViewModel(app: Application, private val saved: SavedStateHandle) : A
 
     /** 영수증 화면의 쉰 시간 답(F21). 고르면 바로 다시 계산한다(#55). */
     fun answerRest(min: Int) { flow.answerRest(min); refresh(); ChagokLog.event("effort_rest", "min" to min) }
+
+    // ------------------------------------------------------------ 제안(F24·F25) → 선택·기록(F26)
+    /** 영수증 아래 버튼. 제안이 있으면 제안 화면으로, 없으면 영수증만 보고 닫은 것으로 기록하고 홈으로. */
+    fun afterReceipt() {
+        if (ui.value.proposal != null) open(EffortScreen.PROPOSAL) else choose(CHOICE_CLOSE)
+    }
+
+    /**
+     * 선택(F26): A [받아들이기]·[닫기], B 항목·[닫기]. 무엇을 골라도 기록 1건을 남기고 홈으로 간다.
+     * 그 뒤로는 아무것도 요구하지 않는다(알림·재촉·전송 없음, AC-F26-1).
+     */
+    fun choose(choice: String) {
+        val trip = flow.state.openTrip ?: return
+        val r = receiptOf(trip, effortConstants) ?: return
+        val method = settingsFlow.value.proposalMethod
+        flow.finish(recordOf(trip, r, ui.value.proposal, method, choice))
+        refresh(); home()
+    }
 
     // ------------------------------------------------------------ 나눠 낼 인원(인원 확인 알림, PR #34·#40 재사용)
     private val payers = PayerFlow(PrefsPayerStore(app))

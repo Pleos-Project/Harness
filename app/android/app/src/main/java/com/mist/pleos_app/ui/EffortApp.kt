@@ -49,7 +49,13 @@ import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.mist.pleos_app.R
 import com.mist.pleos_app.app.Settings
+import com.mist.pleos_app.effort.CHOICE_ACCEPT
+import com.mist.pleos_app.effort.CHOICE_CLOSE
 import com.mist.pleos_app.effort.EffortPhase
+import com.mist.pleos_app.effort.ProposalView
+import com.mist.pleos_app.effort.bTextAt
+import androidx.compose.runtime.mutableIntStateOf
+import kotlinx.coroutines.delay
 import com.mist.pleos_app.effort.EffortRecord
 import com.mist.pleos_app.effort.EffortScreen
 import com.mist.pleos_app.effort.EffortUi
@@ -74,7 +80,6 @@ import java.time.LocalDate
 
 /**
  * 노고 정산 앱 뼈대(명세 v0.5 3절): 홈 → 출발 → (내비 안내) → 도착 → 영수증 → 제안 → 홈.
- * 지금은 홈·출발·설정만 있고, 영수증·제안 화면과 실제 출발·도착은 다음 단계에서 붙인다.
  * 화면 코드에는 금액·배수·시간 계산을 두지 않는다(engine 패키지·constants effort.copy만).
  */
 @Composable
@@ -122,7 +127,8 @@ fun EffortApp(
                 )
             }
             EffortScreen.SETTINGS -> EffortSettings(settings, onChange = vm::updateSettings, onReset = vm::resetRecords)
-            EffortScreen.RECEIPT -> EffortReceiptScreen(ui, onRest = vm::answerRest, onHome = { vm.back() })
+            EffortScreen.RECEIPT -> EffortReceiptScreen(ui, onRest = vm::answerRest, onNext = vm::afterReceipt, onHome = { vm.back() })
+            EffortScreen.PROPOSAL -> EffortProposalScreen(ui.proposal, onChoose = vm::choose)
         }
     }
 }
@@ -327,7 +333,7 @@ private fun DestRow(o: DestOption, selected: Boolean, onClick: () -> Unit) {
  * 줄을 탭하면 근거 한 줄(AC-F23-4). 주행 중에는 프레임이 가린다(X1).
  */
 @Composable
-private fun EffortReceiptScreen(ui: EffortUi, onRest: (Int) -> Unit, onHome: () -> Unit) {
+private fun EffortReceiptScreen(ui: EffortUi, onRest: (Int) -> Unit, onNext: () -> Unit, onHome: () -> Unit) {
     val gap = Arrangement.spacedBy(24.gpx)
     val r = ui.receipt
     var open by rememberSaveable { mutableStateOf<String?>(null) }
@@ -371,9 +377,52 @@ private fun EffortReceiptScreen(ui: EffortUi, onRest: (Int) -> Unit, onHome: () 
         }
         if (ui.weatherPending) CgCaption(stringResource(R.string.effort_weather_pending))
         r.notes.forEach { CgNotice(it) }
-        CgButton(stringResource(R.string.effort_home), onHome, Modifier.fillMaxWidth(), kind = CgButtonKind.Basic)
+        // 제안이 있으면 [다음] → 제안(F24·F25). 없으면 영수증만 보고 [홈으로] = 닫은 것으로 기록(F26)
+        CgButton(stringResource(if (ui.proposal != null) R.string.effort_next else R.string.effort_home), onNext, Modifier.fillMaxWidth())
     }
 }
+
+// ------------------------------------------------------------ 제안(F24 방식 A · F25 방식 B) → 선택(F26)
+/**
+ * 설정에서 고른 방식 하나만 보여 준다. A와 B는 서로 넘어가는 버튼이 없다(AC-F24-4, PRD v1.3 5-2·5-3).
+ * 글자는 엔진(effortProposal)이 만든 그대로. 모양·버튼 글자는 임시(디자인 #60 대기).
+ */
+@Composable
+private fun EffortProposalScreen(p: ProposalView?, onChoose: (String) -> Unit) {
+    val gap = Arrangement.spacedBy(24.gpx)
+    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()), verticalArrangement = gap) {
+        when (p) {
+            is ProposalView.A -> {
+                CgTitle(p.screen.titleText)
+                Text(p.screen.mainText, style = Chagok.type.headlineS, color = Chagok.colors.textPrimary)
+                CgBody(p.screen.basisText, secondary = true)
+                CgCaption(p.screen.wageText)
+                Row(horizontalArrangement = gap, modifier = Modifier.fillMaxWidth()) {
+                    CgButton(stringResource(R.string.effort_accept), { onChoose(CHOICE_ACCEPT) }, Modifier.weight(1f))
+                    CgButton(stringResource(R.string.close), { onChoose(CHOICE_CLOSE) }, Modifier.weight(1f), kind = CgButtonKind.Basic)
+                }
+            }
+            is ProposalView.B -> {
+                // 공동 경비면 그 자리 말이 예시로 차례로 바뀐다(디자인 기본값, 명세 F25). 화면이 보일 때만 돈다
+                var i by remember(p.screen) { mutableIntStateOf(0) }
+                if (p.screen.itemExamples.size > 1) LaunchedEffect(p.screen) { while (true) { delay(EXAMPLE_MS); i++ } }
+                CgTitle(bTextAt(p.screen, i))
+                Row(horizontalArrangement = gap, modifier = Modifier.fillMaxWidth()) {
+                    p.items.forEach { item ->
+                        CgButton(
+                            item.label, { onChoose(item.key) }, Modifier.weight(1f),
+                            kind = if (item.key == p.screen.item) CgButtonKind.Filled else CgButtonKind.Basic,   // 기본값만 올림
+                        )
+                    }
+                }
+                CgButton(stringResource(R.string.close), { onChoose(CHOICE_CLOSE) }, Modifier.fillMaxWidth(), kind = CgButtonKind.Basic)
+            }
+            null -> CgButton(stringResource(R.string.effort_home), { onChoose(CHOICE_CLOSE) }, Modifier.fillMaxWidth())
+        }
+    }
+}
+
+private const val EXAMPLE_MS = 1_800L
 
 // ------------------------------------------------------------ 설정(S20): 제안 방식 A/B · 데모 고정 모드 · 기록 초기화
 @Composable

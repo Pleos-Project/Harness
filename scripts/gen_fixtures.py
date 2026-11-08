@@ -15,6 +15,7 @@ fixture 종류
 계약 샘플(contract/samples)
 - D1·D2           /v1/cards (D1·D2 fixture에서 그대로)
 - weather.*       GET /v1/weather 응답. 기상청 초단기실황 모양의 고정 응답을 chagok.weather로 해석한 값
+- weather.trip.*  GET /v1/weather/trip 응답(#63). 같은 모양의 고정 응답을 chagok.weather.trip으로 모은 값
 - places.*        GET /v1/places 응답. 카카오 로컬 키워드 검색 모양의 고정 응답을 chagok.places로 해석한 값
 """
 
@@ -24,6 +25,7 @@ import copy
 import dataclasses
 import json
 import sys
+from datetime import datetime
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -310,10 +312,10 @@ def effort_fixtures() -> None:
         "lat": KASI_SEOUL["lat"], "lng": KASI_SEOUL["lng"], "tz_offset_min": 540, "cases": sun})
 
 
-def kma_ncst(lat: float, lng: float, pty: str, base_date: str, base_time: str) -> str:
+def kma_ncst(lat: float, lng: float, pty: str, base_date: str, base_time: str, rn1: str = "1.5") -> str:
     """기상청 getUltraSrtNcst 응답과 같은 모양(8개 항목, obsrValue는 문자열). 계약 샘플을 만들 때만 쓴다."""
     nx, ny = W.to_grid(lat, lng)
-    vals = {"PTY": pty, "REH": "88", "RN1": "1.5", "T1H": "9.4", "UUU": "-1.2", "VEC": "310", "VVV": "1.4", "WSD": "1.9"}
+    vals = {"PTY": pty, "REH": "88", "RN1": rn1, "T1H": "9.4", "UUU": "-1.2", "VEC": "310", "VVV": "1.4", "WSD": "1.9"}
     items = [{"baseDate": base_date, "baseTime": base_time, "category": c, "nx": nx, "ny": ny, "obsrValue": v}
              for c, v in vals.items()]
     return json.dumps({"response": {"header": {"resultCode": "00", "resultMsg": "NORMAL_SERVICE"},
@@ -503,6 +505,30 @@ def main() -> None:
     precip, observed_at = W.parse_ncst(kma_ncst(ORIGIN["lat"], ORIGIN["lng"], "1", "20261107", "1600"))
     write(ROOT / "contract/samples/weather.rain.response.json", W.Result(precip, observed_at).public())
     write(ROOT / "contract/samples/weather.unknown.response.json", W.unknown("timeout").public())
+    # GET /v1/weather/trip (#63). 데모 출발지 → 두물머리, 14:20~16:45 출발, 16:50에 조회(최근 발표분 16:00)
+    # ok: 출발 때 오던 비가 15시 전에 그침(15:00 실황 PTY 0·RN1 2.0 → 14시 조각 비). 도착 지점은 내내 맑음
+    # partial: 도착 지점 16:00분이 3초를 넘김 → 15·16시 조각 unknown(16시 조각은 발표 전이라 16:00분을 같이 씀)
+    # unavailable: 서버 키 없음 등 → 전부 unknown
+    trip_dep = (ORIGIN["lat"], ORIGIN["lng"])
+    trip_arr = (float(KAKAO_DUMUL_DOCS[0]["y"]), float(KAKAO_DUMUL_DOCS[0]["x"]))
+    trip_at = {"now": datetime(2026, 11, 7, 16, 50, tzinfo=W.KST)}
+    trip_span = (datetime(2026, 11, 7, 14, 20, tzinfo=W.KST), datetime(2026, 11, 7, 16, 45, tzinfo=W.KST))
+    by_grid = {W.to_grid(*trip_dep): trip_dep, W.to_grid(*trip_arr): trip_arr}
+
+    def trip_fetch(fail_arr_bt: str | None = None):
+        def fetch(nx: int, ny: int, bd: str, bt: str) -> str:
+            pt = by_grid[(nx, ny)]
+            if pt == trip_arr and bt == fail_arr_bt:
+                raise W.WeatherError("timeout")
+            rn1 = "2.0" if pt == trip_dep and bt == "1500" else "0"
+            return kma_ncst(*pt, "0", bd, bt, rn1=rn1)
+        return fetch
+
+    for name, key, fetch in (("ok", "k", trip_fetch()), ("partial", "k", trip_fetch("1600")),
+                             ("unavailable", None, trip_fetch())):
+        res = W.trip(trip_dep, trip_arr, *trip_span, key, fetch=fetch, **trip_at)
+        assert res.status == name, (name, res.status)
+        write(ROOT / f"contract/samples/weather.trip.{name}.response.json", res.public())
     # GET /v1/places (노고 PRD v1.3 8장, #56). 결과 있음 / 결과 없음 / 실패(카카오 오류·3초 초과)
     found = PL.parse_keyword(kakao_keyword(KAKAO_DUMUL_DOCS))
     write(ROOT / "contract/samples/places.ok.response.json", PL.Result("ok", tuple(found)).public())
