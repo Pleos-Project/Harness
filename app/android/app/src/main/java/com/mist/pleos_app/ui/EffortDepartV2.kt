@@ -268,7 +268,8 @@ private fun ResultRow(o: DestOption, onPick: (DestOption) -> Unit) {
     ) {
         Column(Modifier.weight(1f)) {
             Text(o.dest.name, style = Chagok.type.bodyL, color = c.textPrimary, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            val sub = listOfNotNull(o.dest.address?.takeIf { it.isNotBlank() }, o.category).joinToString(" · ")
+            // 내비 최근 목적지는 주소가 이름과 같을 때가 많아 그때는 빼요(검색 안 됨 → 최근 목적지 줄)
+            val sub = listOfNotNull(o.dest.address?.takeIf { it.isNotBlank() && it != o.dest.name }, o.category).joinToString(" · ")
             if (sub.isNotEmpty()) Text(sub, style = Chagok.type.labelM, color = c.textTertiary, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
         o.distanceText?.let { Text(it, style = Chagok.type.bodyM, color = c.textSecondary) }
