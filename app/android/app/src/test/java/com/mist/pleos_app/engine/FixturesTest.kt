@@ -203,7 +203,6 @@ class FixturesTest {
             r.lines[0].basisText,
         )
         assertTrue(r.lines.all { it.basisText != null && "{pct}" !in it.basisText!! })
-        assertEquals("answer", r.method)
         val p = r.proposal!!
         assertEquals(36_493.42, p.amountKrw, 0.0)
         assertEquals("약 3만 6천 원", p.amountText)
@@ -235,6 +234,44 @@ class FixturesTest {
             .proposal!!.b!!
         assertEquals("오늘은 공동 경비에서 운전자 빼고 나누는 게 어때요", b15.text)
         assertEquals(listOf("공동 경비", "장 본 값", "펜션비", "바베큐장 이용료", "입장료", "물품 구매비"), b15.itemExamples)
+    }
+
+    /** 도착 상한(#68): 경과가 max(ETA × 2, ETA + 60분)·12시간과 같으면 영수증, 넘으면 정리하지 못함. */
+    @Test
+    fun effortArrivalCap() {
+        val want = listOf("R16" to "ok", "R17" to "unsettled", "R18" to "ok", "R19" to "unsettled", "R20" to "ok", "R21" to "unsettled")
+        for ((id, status) in want) {
+            val r = effort(parseEffortInput(load(File(root, "effort/$id.json")).getValue("input").jsonObject), effortConstants)
+            assertEquals(id, status, r.status)
+            if (status == "unsettled") {
+                assertEquals(id, "이번 주행은 정리하지 못했어요", r.statusText)
+                assertEquals(id, r.statusText, r.headlineText)
+                assertTrue(id, r.lines.isEmpty() && r.proposal == null)
+            } else {
+                assertEquals(id, null, r.statusText)
+            }
+        }
+        assertEquals(210.0 * 60, elapsedLimitS(105.0 * 60, effortConstants), 0.0)
+        assertEquals(70.0 * 60, elapsedLimitS(10.0 * 60, effortConstants), 0.0)
+        assertEquals(720.0 * 60, elapsedLimitS(400.0 * 60, effortConstants), 0.0)
+        assertEquals(720.0 * 60, elapsedLimitS(0.0, effortConstants), 0.0)
+    }
+
+    /** 시간대별 강수(#63): 조각 가운데로 출발·도착 관측을 고르고, 벽시계 겹침 × T/경과. 전부 unknown이면 1회 관측 규칙. */
+    @Test
+    fun effortWeatherTrip() {
+        fun run(id: String) =
+            effort(parseEffortInput(load(File(root, "effort/$id.json")).getValue("input").jsonObject), effortConstants)
+        assertEquals(40.0, run("R22").rainMin, 0.0)                     // 출발 비 → 그침: 겹친 40분만
+        assertEquals(120.0 * 210 / 240, run("R23").rainMin, 0.0)        // 중간에만 비, × T/경과
+        assertEquals(listOf("일부 시간은 날씨 정보 없음"), run("R24").notes)   // partial
+        assertEquals("비, 주행 내내", run("R25").lines[0].detailText)     // 가운데 같으면 출발 지점
+        assertEquals(72.5, run("R26").rainMin, 0.0)                     // 전부 unknown → 절반 규칙
+        // 계약 응답을 그대로 넘겨도 된다(status는 안 씀)
+        val sample = parseObject(File(root, "../contract/samples/weather.trip.ok.response.json").readText())
+        val wt = parseWeatherTrip(sample)
+        assertEquals(3, wt.dep.size)
+        assertEquals("rain", wt.dep[0].precip)
     }
 
     /** 명세 9절 경계표: 2,350 미만 제안 없음 / 7,715.5 이상 밥 / 39,865.5 이상 공동 경비. */

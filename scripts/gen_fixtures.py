@@ -8,12 +8,14 @@ fixture 종류
 - cards/D*.json   app_local(앱 로컬 E1 기대값) → request(앱이 보낼 요청) → expected(서버·오프라인 데모 응답)
 - settle/T*.json  E4 정산 경계 케이스
 - ledger/L*.json  F8·F10·F17 로컬 장부(출발·도착·다시 열기·핀·월 합계) 이벤트 순서
-- effort/R*.json  운전 노고(명세 v0.5 F23~F25) input → expected(영수증·제안). R1~R8 = 명세 12절 표, R9 = AC-F21-1, R10~ = 하네스 추가
+- effort/R*.json  운전 노고(명세 v0.5 F23~F25) input → expected(영수증·제안). R1~R8 = 명세 12절 표(R2·R4는 #62에서 지움),
+                  R9 = AC-F21-1, R10~ = 하네스 추가
 - effort/sun.json 일출·일몰 계산값(엔진 두 벌 대조) + 한국천문연구원 출몰시각(참고, pytest가 ±1분 대조)
 
 계약 샘플(contract/samples)
 - D1·D2           /v1/cards (D1·D2 fixture에서 그대로)
 - weather.*       GET /v1/weather 응답. 기상청 초단기실황 모양의 고정 응답을 chagok.weather로 해석한 값
+- weather.trip.*  GET /v1/weather/trip 응답(#63). 같은 모양의 고정 응답을 chagok.weather.trip으로 모은 값
 - places.*        GET /v1/places 응답. 카카오 로컬 키워드 검색 모양의 고정 응답을 chagok.places로 해석한 값
 """
 
@@ -23,6 +25,7 @@ import copy
 import dataclasses
 import json
 import sys
+from datetime import datetime
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -161,24 +164,33 @@ def at(hm: str, day: str = DAY) -> str:
     return f"{day}T{hm}:00+09:00"
 
 
-def effort_input(dep: str, arr: str, *, eta_min: float, n: int, answer: int | None = None,
-                 stops: list[tuple[str, str]] | None = None, ratio: float | None = 0.0,
+def effort_input(dep: str, arr: str, *, eta_min: float, n: int, answer: int = 0, ratio: float | None = 0.0,
                  congestion_m: float | None = 0.0, segments_min: float | None = None, wdep: str = "none",
-                 warr: str = "none", distance_km: float | None = None, arr_day: str = DAY) -> dict:
-    """정차: answer = 기본(도착 때 답한 쉰 시간, 분), stops = 보조(자동으로 잰 정차 목록, 빈 목록이면 정차 없음). 둘 중 하나만.
+                 warr: str = "none", distance_km: float | None = None, arr_day: str = DAY,
+                 trip: dict | None = None) -> dict:
+    """정차: answer = 도착 때 답한 쉰 시간(분, #62: 답 하나로만).
     정체: ratio·congestion_m = 기본(출발 전 requestTrip 비율·정체 거리 m = 비율 × 경로 거리, 없으면 None),
-    segments_min = 보조(구간 목록 통과 시간)."""
-    assert (stops is None) != (answer is None)
+    segments_min = 보조(구간 목록 통과 시간).
+    trip = 시간대별 강수(GET /v1/weather/trip 응답, #63). 넘긴 경우에만 입력에 넣는다(기존 R* 입력은 그대로)."""
     return {
         "departed_at": at(dep), "arrived_at": at(arr, arr_day),
         "rest_answer_min": answer,
-        "stops": [{"start": s, "end": e} for s, e in stops] if stops is not None else None,
         "eta_s": eta_min * 60,
         "congestion_ratio": ratio,
         "congestion_m": congestion_m,
         "congestion_s": segments_min * 60 if segments_min is not None else None,
         "weather_dep": wdep, "weather_arr": warr, **SUN, "n": n, "distance_km": distance_km,
-    }
+    } | ({"weather_trip": trip} if trip is not None else {})
+
+
+def trip_hours(first_hour: int, dep: list[str], arr: list[str], day: str = DAY) -> dict:
+    """GET /v1/weather/trip 응답 모양(#63): 조각 [h, h+1) KST 정시, dep·arr 같은 순서. status는 엔진이 쓰지 않지만
+    앱이 응답을 그대로 넘기는 경우를 보려고 계약대로 채운다."""
+    every = dep + arr
+    status = "unavailable" if all(x == "unknown" for x in every) else "partial" if "unknown" in every else "ok"
+    return {"status": status,
+            "dep": [{"hour": at(f"{first_hour + i:02d}:00", day), "precip": x} for i, x in enumerate(dep)],
+            "arr": [{"hour": at(f"{first_hour + i:02d}:00", day), "precip": x} for i, x in enumerate(arr)]}
 
 
 def effort_fixture(fid: str, title: str, note: str, inp: dict) -> dict:
@@ -232,17 +244,10 @@ def effort_fixtures() -> None:
          "+ 예상보다 더 6.75(25분) + 밤길 2(50분) + 장시간 1.25(10분) = 204.636 → 1.57배, 정체 줄 +10%. "
          "금액 204.636 × 10,700 ÷ 60 = 36,493.42 → 약 3만 6천, 한 사람 9,123.36 → 약 9천, 운전자 몫 27,370.07 → 밥. "
          "정체 값은 효성 결정(11/7): 35%·12km는 거리 104km와 맞지 않고 4% 단위가 아니어서 36%·38km", r1),
-        ("R2", "보조(나란히 배치): 10:00 출발, 12:00~12:20 정차, 13:20 도착, ETA 170분, 맑음·낮, 2명",
-         "AC-F21-2. 자동으로 잰 정차 20분(15분 이상)에서 장시간 구간이 120분 + 60분으로 나뉘어 장시간 0. "
-         "예상보다 더 10분 < ETA의 10%(17분) → 0. 180 → 평소와 같은 길",
-         effort_input("10:00", "13:20", stops=[(at("12:00"), at("12:20"))], eta_min=170, n=2)),
-        ("R3", "R2와 같은 거리를 쉬지 않고 180분(쉰 시간 없음, ETA 170분, 맑음·낮, 2명)",
-         "장시간 (180 − 120) × 0.125 = 7.5 → 187.5 → 1.04배. R2와 비교하면 쉰 효과가 보인다",
+        # R2·R4(자동으로 잰 정차 목록)는 #62에서 지웠다. 번호는 명세·AC·앱 테스트 참조가 안 바뀌게 비워 둔다
+        ("R3", "180분 쉬지 않음(쉰 시간 없음, ETA 170분, 맑음·낮, 2명)",
+         "장시간 (180 − 120) × 0.125 = 7.5 → 187.5 → 1.04배. 예상보다 더 10분 < ETA의 10%(17분) → 0",
          effort_input("10:00", "13:00", answer=0, eta_min=170, n=2)),
-        ("R4", "보조(나란히 배치): 10:00→12:40, 11:30~11:40 정차(10분), ETA 150분, 2명",
-         "AC-F21-3. 10분 정차는 시간만 빠지고 장시간 구간은 이어진다(90 + 60 = 150) → 3.75. "
-         "153.75 ÷ 150 = 1.025 → 1.03(반올림 경계)",
-         effort_input("10:00", "12:40", stops=[(at("11:30"), at("11:40"))], eta_min=150, n=2)),
         ("R5", "60분, 출발 맑음·도착 눈, 쉰 시간 없음, ETA 60분, 낮, 3명",
          "눈은 T의 뒤 절반 30분 × 0.49 = 14.7 → 74.7. 74.7 ÷ 60 = 1.245 → 1.25(반올림 경계, Decimal과 같게)",
          effort_input("10:00", "11:00", answer=0, eta_min=60, warr="snow", n=3)),
@@ -268,21 +273,67 @@ def effort_fixtures() -> None:
         ("R11", "새벽 출발: 05:30→08:00, 쉰 시간 없음, 일출 07:13, ETA 150분, 맑음, 2명",
          "전날 일몰 ~ 그날 일출 구간과 겹친 05:30~07:13 = 103분이 밤길 → 4.12. 장시간 30 × 0.125 = 3.75",
          effort_input("05:30", "08:00", answer=0, eta_min=150, n=2)),
-        ("R12", "보조 + 자정 넘김 + 정확히 15분 정차: 22:00 출발, 00:00~00:15 정차, 02:15 도착, ETA 240분, 2명",
-         "15분 '이상'이면 나눈다 → 120 + 120, 장시간 0. 날짜를 넘겨도 밤길 240분 전부 → 9.6",
-         effort_input("22:00", "02:15", stops=[(at("00:00", NEXT_DAY), at("00:15", NEXT_DAY))], eta_min=240, n=2,
-                      arr_day=NEXT_DAY)),
+        ("R12", "자정 넘김 + 쉰 시간 답 15분: 22:00 출발, 02:15 도착, ETA 240분, 2명",
+         "T = 255 − 15 = 240. 답이 15분 '이상'이면 가운데에서 나눈다 → 120 + 120, 장시간 0. "
+         "날짜를 넘겨도 밤 = 255분 × (240 ÷ 255) = 240 → 9.6",
+         effort_input("22:00", "02:15", answer=15, eta_min=240, n=2, arr_day=NEXT_DAY)),
         ("R13", "답 '1시간 이상'(60분): 09:00→15:00, ETA 300분, 맑음·낮, 2명",
          "#47 표 '5시간 + 점심 1시간'. 언제 쉬었는지 모르니 T 300을 150 + 150으로 나눔 → 장시간 2 × 30 × 0.125 = 7.5. "
          "307.5 ÷ 300 = 1.025 → 1.03(반올림 경계)", r13),
-        ("R14", "보조(나란히 배치)로 구간 목록을 받은 R1: 정체 통과 시간 합 40분, 비율 36%·38km도 있음, 4명",
+        ("R14", "나란히 배치로 정체 구간 목록을 받은 R1: 정체 통과 시간 합 40분, 비율 36%·38km도 있음, 4명",
          "구간 목록이 있으면 비율 × T(46.8분) 대신 통과 시간 40분을 쓴다(명세 7절). 노고 202.8 → 1.56배, 정체 +8%, "
          "금액 36,166 → 약 3만 6천, 한 사람 약 9천, 운전자 몫 27,124.5 → 밥. 정체 줄 문구는 그대로 '38km (경로의 36%)'",
-         dict(r1, rest_answer_min=None, stops=[], congestion_s=2400)),
+         dict(r1, congestion_s=2400)),
         ("R15", "공동 경비: R13과 같은 주행(09:00→15:00, 답 60분, ETA 300분, 맑음·낮), 4명",
          "금액 54,837.5 → 운전자 몫 54,837.5 × 3 ÷ 4 = 41,128.1 ≥ 39,865.5 → 공동 경비. "
          "B 문장은 '공동 경비에서'('값' 없음, 명준 결정), item_examples = 그 자리에 차례로 보일 예시(constants effort.items)",
          dict(r13, n=4)),
+        # ---- 도착 상한(#68): 경과(쉰 시간 빼지 않음)가 max(ETA × 2, ETA + 60분) 또는 12시간을 "넘으면" 정리하지 못함
+        ("R16", "도착 상한 경계(같음 → 영수증): R1에서 도착만 19:30(경과 210분 = ETA 105 × 2)",
+         "상한 = max(105 × 2, 105 + 60) = 210분. 경과가 상한과 같으면 영수증(status ok)",
+         dict(r1, arrived_at=at("19:30"))),
+        ("R17", "도착 상한 경계(넘음 → 정리하지 못함): R1에서 도착만 19:31(경과 211분)",
+         "211 > 210 → status unsettled. 금액·줄은 계산하지 않고 headline_text에 안내 문구(effort.copy.unsettled_text)",
+         dict(r1, arrived_at=at("19:31"))),
+        ("R18", "도착 상한 경계(같음 → 영수증): ETA 10분, 10:00→11:10(경과 70분), 맑음·낮, 2명",
+         "상한 = max(10 × 2, 10 + 60) = 70분(짧은 길은 +60분 쪽이 큼). 경과 70 = 상한 → 영수증",
+         effort_input("10:00", "11:10", eta_min=10, n=2)),
+        ("R19", "도착 상한 경계(넘음 → 정리하지 못함): ETA 10분, 10:00→11:11(경과 71분)",
+         "71 > 70 → status unsettled",
+         effort_input("10:00", "11:11", eta_min=10, n=2)),
+        ("R20", "도착 상한 경계(12시간, 같음 → 영수증): ETA 400분, 08:00→20:00(경과 720분), 맑음, 2명",
+         "max(400 × 2, 400 + 60) = 800분보다 12시간(720분)이 먼저 걸림 → 상한 720. 경과 720 = 상한 → 영수증",
+         effort_input("08:00", "20:00", eta_min=400, n=2)),
+        ("R21", "도착 상한 경계(12시간 넘음 → 정리하지 못함): ETA 400분, 08:00→20:01(경과 721분)",
+         "721 > 720 → status unsettled",
+         effort_input("08:00", "20:01", eta_min=400, n=2)),
+        # ---- 시간대별 강수(#63, GET /v1/weather/trip). R16~R21은 #71(도착 상한) 몫
+        ("R22", "시간대별: 출발 비 → 중간에 그침. 14:20→16:45, ETA 140분, 출발 1회 관측 비·도착 맑음, 2명",
+         "조각 [14,15)는 가운데 14:30이 경과 가운데 15:32:30보다 앞 → 출발 지점 '비', 출발~도착과 겹친 40분. "
+         "[15,16) 출발 지점 맑음, [16,17) 도착 지점 맑음 → 비 40분 → 0.40 × 40 = 16 → +11%. "
+         "1회 관측 절반 규칙이면 비 72.5분(+20%)이었음",
+         effort_input("14:20", "16:45", eta_min=140, wdep="rain", n=2,
+                      trip=trip_hours(14, ["rain", "none", "none"], ["none", "none", "none"]))),
+        ("R23", "시간대별: 출발·도착 맑음, 중간에만 비 + 쉰 시간 30분. 13:00→17:00, ETA 210분, 2명",
+         "경과 가운데 15:00. [13,14)·[14,15)는 출발 지점(맑음·비), [15,16)·[16,17)는 도착 지점(비·맑음) → 비 벽시계 120분. "
+         "강수 분 = 120 × T 210 ÷ 경과 240 = 105(밤길과 같은 방식) → 42 → +20%. 1회 관측으로는 0",
+         effort_input("13:00", "17:00", answer=30, eta_min=210, n=2,
+                      trip=trip_hours(13, ["none", "rain", "none", "none"], ["none", "none", "rain", "none"]))),
+        ("R24", "시간대별 partial(unknown 섞임): 출발 눈 → 그침, 도착 지점 일부 정보 없음. 14:20→16:45, ETA 140분, 2명",
+         "[14,15) 출발 지점 눈 40분, [15,16) 출발 지점 맑음, [16,17) 도착 지점 unknown(45분, 가산 0) → 눈 40분 → "
+         "0.49 × 40 = 19.6 → +14%. 겹친 조각에 unknown이 있어 '일부 시간은 날씨 정보 없음'(effort.copy 임시)",
+         effort_input("14:20", "16:45", eta_min=140, wdep="snow", n=2,
+                      trip=trip_hours(14, ["snow", "none", "none"], ["none", "unknown", "unknown"]))),
+        ("R25", "시간대별 경계: 조각 가운데 = 경과 가운데. 16:00→17:00 한 조각, 출발 지점 비·도착 지점 맑음, ETA 60분, 2명",
+         "조각 [16,17) 가운데 16:30 = 경과 가운데 16:30 → 출발 지점(앞 절반에 넣는 규칙) → 비 60분 = 주행 내내 → "
+         "'비, 주행 내내' +40%. 도착 지점을 쓰는 규칙이었다면 0",
+         effort_input("16:00", "17:00", eta_min=60, wdep="rain", n=2,
+                      trip=trip_hours(16, ["rain"], ["none"]))),
+        ("R26", "시간대별 전부 unknown(unavailable) → 1회 관측 규칙으로: R22와 같은 주행",
+         "겹친 조각이 모두 unknown이면 엔진도 weather_dep·weather_arr 절반씩으로 돌아간다(계약의 unavailable 대체와 같음) → "
+         "비 72.5분 → 29 → +20%",
+         effort_input("14:20", "16:45", eta_min=140, wdep="rain", n=2,
+                      trip=trip_hours(14, ["unknown"] * 3, ["unknown"] * 3))),
     ]
     for fid, title, note, inp in cases:
         write(ROOT / "fixtures/effort" / f"{fid}.json", effort_fixture(fid, title, note, inp))
@@ -300,10 +351,10 @@ def effort_fixtures() -> None:
         "lat": KASI_SEOUL["lat"], "lng": KASI_SEOUL["lng"], "tz_offset_min": 540, "cases": sun})
 
 
-def kma_ncst(lat: float, lng: float, pty: str, base_date: str, base_time: str) -> str:
+def kma_ncst(lat: float, lng: float, pty: str, base_date: str, base_time: str, rn1: str = "1.5") -> str:
     """기상청 getUltraSrtNcst 응답과 같은 모양(8개 항목, obsrValue는 문자열). 계약 샘플을 만들 때만 쓴다."""
     nx, ny = W.to_grid(lat, lng)
-    vals = {"PTY": pty, "REH": "88", "RN1": "1.5", "T1H": "9.4", "UUU": "-1.2", "VEC": "310", "VVV": "1.4", "WSD": "1.9"}
+    vals = {"PTY": pty, "REH": "88", "RN1": rn1, "T1H": "9.4", "UUU": "-1.2", "VEC": "310", "VVV": "1.4", "WSD": "1.9"}
     items = [{"baseDate": base_date, "baseTime": base_time, "category": c, "nx": nx, "ny": ny, "obsrValue": v}
              for c, v in vals.items()]
     return json.dumps({"response": {"header": {"resultCode": "00", "resultMsg": "NORMAL_SERVICE"},
@@ -493,6 +544,30 @@ def main() -> None:
     precip, observed_at = W.parse_ncst(kma_ncst(ORIGIN["lat"], ORIGIN["lng"], "1", "20261107", "1600"))
     write(ROOT / "contract/samples/weather.rain.response.json", W.Result(precip, observed_at).public())
     write(ROOT / "contract/samples/weather.unknown.response.json", W.unknown("timeout").public())
+    # GET /v1/weather/trip (#63). 데모 출발지 → 두물머리, 14:20~16:45 출발, 16:50에 조회(최근 발표분 16:00)
+    # ok: 출발 때 오던 비가 15시 전에 그침(15:00 실황 PTY 0·RN1 2.0 → 14시 조각 비). 도착 지점은 내내 맑음
+    # partial: 도착 지점 16:00분이 3초를 넘김 → 15·16시 조각 unknown(16시 조각은 발표 전이라 16:00분을 같이 씀)
+    # unavailable: 서버 키 없음 등 → 전부 unknown
+    trip_dep = (ORIGIN["lat"], ORIGIN["lng"])
+    trip_arr = (float(KAKAO_DUMUL_DOCS[0]["y"]), float(KAKAO_DUMUL_DOCS[0]["x"]))
+    trip_at = {"now": datetime(2026, 11, 7, 16, 50, tzinfo=W.KST)}
+    trip_span = (datetime(2026, 11, 7, 14, 20, tzinfo=W.KST), datetime(2026, 11, 7, 16, 45, tzinfo=W.KST))
+    by_grid = {W.to_grid(*trip_dep): trip_dep, W.to_grid(*trip_arr): trip_arr}
+
+    def trip_fetch(fail_arr_bt: str | None = None):
+        def fetch(nx: int, ny: int, bd: str, bt: str) -> str:
+            pt = by_grid[(nx, ny)]
+            if pt == trip_arr and bt == fail_arr_bt:
+                raise W.WeatherError("timeout")
+            rn1 = "2.0" if pt == trip_dep and bt == "1500" else "0"
+            return kma_ncst(*pt, "0", bd, bt, rn1=rn1)
+        return fetch
+
+    for name, key, fetch in (("ok", "k", trip_fetch()), ("partial", "k", trip_fetch("1600")),
+                             ("unavailable", None, trip_fetch())):
+        res = W.trip(trip_dep, trip_arr, *trip_span, key, fetch=fetch, **trip_at)
+        assert res.status == name, (name, res.status)
+        write(ROOT / f"contract/samples/weather.trip.{name}.response.json", res.public())
     # GET /v1/places (노고 PRD v1.3 8장, #56). 결과 있음 / 결과 없음 / 실패(카카오 오류·3초 초과)
     found = PL.parse_keyword(kakao_keyword(KAKAO_DUMUL_DOCS))
     write(ROOT / "contract/samples/places.ok.response.json", PL.Result("ok", tuple(found)).public())

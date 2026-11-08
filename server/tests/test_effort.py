@@ -42,7 +42,7 @@ def simple(minutes, n=2, **kw):
     """10:00 출발, 쉰 시간 없음(답 0), 정체 비율 0, ETA = 운전 시간, 맑음·낮."""
     h, m = divmod(600 + minutes, 60)
     inp = {"departed_at": "2026-11-17T10:00:00+09:00", "arrived_at": f"2026-11-17T{h:02d}:{m:02d}:00+09:00",
-           "rest_answer_min": 0, "stops": None, "eta_s": minutes * 60,
+           "rest_answer_min": 0, "eta_s": minutes * 60,
            "congestion_ratio": 0, "congestion_m": 0, "congestion_s": None,
            "weather_dep": "none", "weather_arr": "none", "sunrise": "07:13", "sunset": "17:20", "n": n,
            "distance_km": None}
@@ -54,9 +54,7 @@ def simple(minutes, n=2, **kw):
 # (T, 노고, 배수, 금액, 금액 문구, 한 사람 문구, B)
 SPEC_R = {
     "R1": (130, 204.636, 1.57, 36_493.42, "약 3만 6천 원", "약 9천 원", "meal"),
-    "R2": (180, 180.0, 1.00, 32_100, "약 3만 2천 원", "약 1만 6천 원", "meal"),
     "R3": (180, 187.5, 1.04, 33_437.5, "약 3만 3천 원", "약 1만 7천 원", "meal"),
-    "R4": (150, 153.75, 1.03, 27_418.75, "약 2만 7천 원", "약 1만 4천 원", "meal"),
     "R5": (60, 74.7, 1.25, 13_321.5, "약 1만 3천 원", "약 4천 원", "meal"),
     "R6": (10, 10.0, 1.00, 1_783.3, "약 2천 원", "약 1천 원", None),
     "R7": (66, 67.62, 1.02, 12_058.9, "약 1만 2천 원", "약 6천 원", "coffee"),
@@ -91,7 +89,7 @@ def test_ac_f23_1_r1_headline_and_lines():
     assert [l.detail_text for l in r.lines] == [
         "비, 주행 내내", "38km (경로의 36%)", "+25분", "50분", "2시간 넘긴 10분"]
     assert r.footnote_text == "정체 구간은 내비 안내 경로 기준"
-    assert run("R2").footnote_text is None                 # 정체 줄이 없으면 주석도 없음
+    assert run("R3").footnote_text is None                 # 정체 줄이 없으면 주석도 없음
     assert (r.congestion_min, r.delay_min, r.night_min, r.rain_min, r.fatigue_excess_min) == (46.8, 25, 50, 130, 10)
     assert r.distance_text == "104km"
 
@@ -242,45 +240,28 @@ def test_f25_b_boundaries(share, want):
     assert (item.key if item else None) == want
 
 
-# ---------------------------------------------------------------- 1부: F21 정차(기본 답·보조 정차 목록) · 지연 문턱
+# ---------------------------------------------------------------- 1부: F21 정차(도착 때 답 하나, #62) · 지연 문턱
 def test_ac_f21_1_answer_splits_in_half():
-    """기본: 답 30분 → 경과 160 − 30 = T 130, 장시간 65 + 65(R9)."""
+    """답 30분 → 경과 160 − 30 = T 130, 장시간 65 + 65(R9)."""
     r = run("R9")
-    assert (r.method, r.elapsed_min, r.drive_min, r.fatigue_segments_min, r.fatigue_excess_min) == (
-        "answer", 160, 130, [65, 65], 0)
+    assert (r.elapsed_min, r.drive_min, r.rest_min, r.fatigue_segments_min, r.fatigue_excess_min) == (
+        160, 130, 30, [65, 65], 0)
     assert run("R9", rest_answer_min=0).fatigue_excess_min == 40      # 쉬지 않았으면 160분 한 구간
 
 
-def test_ac_f21_2_long_stop_splits_fatigue():
-    r = run("R2")
-    assert (r.drive_min, r.rest_min, r.fatigue_segments_min, r.fatigue_excess_min) == (180, 20, [120, 60], 0)
-    assert r.multiplier_text == "평소와 같은 길" and r.lines == []
-
-
-def test_ac_f21_3_short_stop_keeps_segment():
-    r = run("R4")
-    assert (r.drive_min, r.rest_min, r.fatigue_segments_min) == (150, 10, [150])
-    assert r.fatigue_excess_min == 30 and r.effort_min == 153.75
-
-
 def test_reset_boundary_is_inclusive():
-    """15분 '이상'이면 나눈다(R12), 14분이면 이어진다."""
+    """답이 15분 '이상'이면 가운데에서 나눈다(R12), 없음(0)이면 한 구간."""
     assert run("R12").fatigue_segments_min == [120, 120]
-    r = run("R12", stops=[{"start": "2026-11-18T00:00:00+09:00", "end": "2026-11-18T00:14:00+09:00"}])
-    assert r.fatigue_segments_min == [241]
+    assert run("R12", rest_answer_min=0).fatigue_segments_min == [255]
 
 
-def test_stops_are_clipped_and_merged():
-    base = "2026-11-17T"
-    # 출발 전부터 이어진 정차·겹치는 정차·맞닿는 정차(10 + 10 = 20분 → 나눔)·도착 뒤 정차
-    stops = [(f"{base}09:50:00+09:00", f"{base}10:05:00+09:00"),
-             (f"{base}12:00:00+09:00", f"{base}12:10:00+09:00"),
-             (f"{base}12:10:00+09:00", f"{base}12:20:00+09:00"),
-             (f"{base}12:05:00+09:00", f"{base}12:08:00+09:00"),
-             (f"{base}13:30:00+09:00", f"{base}14:00:00+09:00")]
-    r = run("R2", stops=[{"start": s, "end": e} for s, e in stops])
-    # [10:05, 12:00] 115분 + [12:20, 13:20] 60분
-    assert (r.drive_min, r.rest_min, r.fatigue_segments_min) == (175, 25, [115, 60])
+def test_engine_takes_answer_only():
+    """#62: 엔진 입력은 쉰 시간 답 하나. 자동으로 잰 정차 목록(stops)은 받지 않고, JSON에 남아 있어도 무시한다."""
+    assert "stops" not in {f.name for f in dataclasses.fields(EF.EffortInput)}
+    assert "method" not in dataclasses.asdict(run("R9"))
+    stale = dict(fx("R9")["input"], stops=[{"start": "2026-11-17T11:00:00+09:00", "end": "2026-11-17T11:30:00+09:00"}])
+    assert EF.effort(EF.input_from_json(stale), C) == run("R9")
+    assert EF.input_from_json(dict(fx("R9")["input"], rest_answer_min=None)).rest_answer_min == 0
 
 
 def test_answer_q_splits_in_half_only_from_15():
@@ -289,12 +270,6 @@ def test_answer_q_splits_in_half_only_from_15():
     assert (r0.drive_min, r0.fatigue_segments_min, r0.fatigue_excess_min) == (360, [360], 240)
     r15 = run("R13", rest_answer_min=15)
     assert r15.fatigue_segments_min == [172.5, 172.5]
-
-
-def test_stops_win_when_both_given():
-    """앱은 둘 중 하나만 채운다. 둘 다 오면 쉰 지점을 아는 정차 목록으로 계산한다."""
-    r = run("R2", rest_answer_min=60)
-    assert (r.method, r.drive_min, r.fatigue_segments_min) == ("stops", 180, [120, 60])
 
 
 def test_answer_night_is_prorated():
@@ -332,7 +307,8 @@ def test_weather_halves():
 
 
 @pytest.mark.parametrize("fid,key,override,want", [
-    ("R7", "delay", {"arrived_at": "2026-11-17T12:05:00+09:00"}, "+1시간 5분"),   # 60분 이상은 ○시간 ○분
+    # 60분 이상은 ○시간 ○분. ETA 65 → 도착 상한 max(130, 125) = 130분 안(#68)
+    ("R7", "delay", {"arrived_at": "2026-11-17T12:10:00+09:00", "eta_s": 3900}, "+1시간 5분"),
     ("R10", "night", {}, "1시간 48분"),          # 답 + 밤길 비례 108.3분 → 반올림
     ("R12", "night", {}, "4시간"),
     ("R13", "fatigue", {}, "2시간 넘긴 1시간"),   # 구간 150 + 150 → 넘긴 30 + 30을 합침
@@ -352,6 +328,95 @@ def test_sun_matches_kasi_within_one_minute():
         for k in ("sunrise", "sunset"):
             got, kasi = EF.parse_hhmm(c["expected"][k]), EF.parse_hhmm(c["kasi"][k])
             assert abs(got - kasi) <= 1, f"{c['date']} {k}: 엔진 {c['expected'][k]} vs 천문연 {c['kasi'][k]}"
+
+
+# ---------------------------------------------------------------- 1부: 도착 상한 (#68)
+@pytest.mark.parametrize("fid,status,elapsed,limit", [
+    ("R16", "ok", 210, 210), ("R17", "unsettled", 211, 210),     # ETA 105: max(210, 165)
+    ("R18", "ok", 70, 70), ("R19", "unsettled", 71, 70),         # ETA 10: max(20, 70)
+    ("R20", "ok", 720, 720), ("R21", "unsettled", 721, 720),     # ETA 400: max(800, 460)보다 12시간이 먼저
+])
+def test_arrival_cap_boundaries(fid, status, elapsed, limit):
+    """경과가 상한과 같으면 영수증, 넘으면 정리하지 못함(#68 효성 결정)."""
+    r = run(fid)
+    assert (r.status, r.elapsed_min, r.elapsed_limit_min) == (status, elapsed, limit)
+    assert (r.status_text is None) == (status == "ok")
+
+
+def test_unsettled_skips_receipt():
+    """정리하지 못함이면 금액·줄을 계산하지 않고, headline_text에도 안내 문구(effort.copy 임시)를 넣는다."""
+    r = run("R17")
+    assert r.status_text == r.headline_text == C.copy.text["unsettled_text"] == "이번 주행은 정리하지 못했어요"
+    assert (r.lines, r.notes, r.proposal, r.footnote_text, r.distance_text) == ([], [], None, None, None)
+    assert (r.drive_min, r.effort_min, r.multiplier, r.drive_text, r.multiplier_text) == (0, 0, 0, "", "")
+
+
+@pytest.mark.parametrize("eta_min,limit_min", [(105, 210), (10, 70), (60, 120), (30, 90), (400, 720), (360, 720),
+                                               (0, 720)])
+def test_elapsed_limit(eta_min, limit_min):
+    """상한 = min(max(ETA × 2, ETA + 60), 720). ETA를 모르면(0) 12시간만."""
+    assert EF.elapsed_limit_s(eta_min * 60, C) == limit_min * 60
+
+
+def test_arrival_cap_counts_rest_too():
+    """경과는 도착 − 출발 그대로(쉰 시간을 빼지 않음). 1시간 쉬었다고 답해도 211분이면 정리하지 못함."""
+    assert run("R17", rest_answer_min=60).status == "unsettled"
+    assert run("R16", rest_answer_min=60).status == "ok"
+
+
+def test_arrival_cap_without_eta():
+    """ETA를 모르면(0) 12시간만 본다."""
+    assert simple(700, eta_s=0).status == "ok"
+    assert run("R21", eta_s=0).status == "unsettled"
+
+
+# ---------------------------------------------------------------- 1부: 시간대별 강수 (#63, GET /v1/weather/trip)
+def test_hourly_rain_stopped_midway():
+    """출발 때 오다 그친 비: 시간대별이면 실제 겹친 40분만, 1회 관측 절반 규칙이면 72.5분(R22)."""
+    assert run("R22").rain_min == 40
+    assert run("R22", weather_trip=None).rain_min == 72.5
+
+
+def test_hourly_rain_only_in_middle_scaled_by_rest():
+    """출발·도착 맑음, 중간에만 비: 벽시계 120분 × T/경과(210/240) = 105분(R23). 1회 관측으로는 0."""
+    r = run("R23")
+    assert r.rain_min == 120 * 210 / 240 and r.lines[0].detail_text == "비"
+    assert run("R23", weather_trip=None).rain_min == 0
+
+
+def test_hourly_partial_unknown():
+    """unknown 조각은 가산 0이고, 겹친 조각에 unknown이 있으면 임시 안내(effort.copy.weather_partial_text)."""
+    r = run("R24")
+    assert (r.rain_min, r.snow_min) == (0, 40)
+    assert r.notes == [C.copy.text["weather_partial_text"]]
+
+
+def test_hourly_middle_tie_goes_to_departure():
+    """조각 가운데 = 경과 가운데면 출발 지점(R25). 출발을 1분 당기면 가운데가 앞으로 와서 도착 지점(맑음)."""
+    r = run("R25")
+    assert r.rain_min == 60 and r.lines[0].detail_text == "비, 주행 내내"
+    early = run("R25", departed_at="2026-11-17T15:59:00+09:00")
+    assert early.rain_min == 0 and early.lines == [] and early.notes == []
+
+
+def test_hourly_all_unknown_falls_back():
+    """겹친 조각이 모두 unknown이면 1회 관측 절반 규칙(R26 = R22에서 시간대별 입력을 뺀 것과 같음)."""
+    assert run("R26") == run("R22", weather_trip=None)
+    assert run("R26").notes == []          # 1회 관측은 출발 비·도착 맑음으로 판정됨
+
+
+def test_weather_trip_input_matches_contract_response():
+    """앱은 GET /v1/weather/trip 응답을 그대로 넘겨도 된다(status는 엔진이 쓰지 않음). 없으면 지금 규칙."""
+    sample = load(ROOT / "contract/samples/weather.trip.ok.response.json")
+    wt = EF.weather_trip_from_json(sample)
+    assert [h.precip for h in wt.dep] == [h["precip"] for h in sample["dep"]] and len(wt.dep) == len(wt.arr)
+    no_status = dict(fx("R22")["input"]["weather_trip"])
+    no_status.pop("status")
+    assert run("R22", weather_trip=no_status) == run("R22")
+    assert "weather_trip" not in fx("R1")["input"] and "weather_trip" not in DEMO_INPUT_KEYS
+
+
+DEMO_INPUT_KEYS = set(load(ROOT / "fixtures/effort/demo.json")["input"])
 
 
 # ---------------------------------------------------------------- 1부: 시연 데이터 (명세 v0.5 12절)
@@ -393,9 +458,13 @@ def test_departure_preview(eta_s, route_m, ratio, cm, want):
 
 
 # ---------------------------------------------------------------- 2부: fixture 전수
-def test_effort_fixtures_are_contiguous():
-    assert [p.stem for p in EFFORT] == [f"R{i}" for i in range(1, len(EFFORT) + 1)]
-    assert len(EFFORT) >= 8
+def test_effort_fixture_ids():
+    """R2·R4(자동으로 잰 정차 목록)는 #62에서 지웠다. 번호는 명세·AC·앱 테스트 참조가 안 바뀌게 비워 둔다.
+    R16~R21은 도착 상한(#71), R22~는 시간대별 강수(#63) — 브랜치가 따로라 한쪽만 있어도 통과한다."""
+    ids = {int(p.stem[1:]) for p in EFFORT}
+    assert not ids & {2, 4}
+    assert {1, 3} | set(range(5, 16)) <= ids
+    assert set(range(22, 27)) <= ids
 
 
 @pytest.mark.parametrize("p", EFFORT, ids=lambda p: p.stem)
@@ -439,6 +508,8 @@ def receipts():
 
 
 def texts(r):
+    if r.status_text:
+        yield r.status_text
     yield r.drive_text
     yield r.multiplier_text
     yield r.headline_text
@@ -460,6 +531,13 @@ def texts(r):
 
 def test_copy_rules_hold_everywhere():
     for r in receipts():
+        assert r.status in ("ok", "unsettled")
+        if r.status == "unsettled":     # 정리하지 못함: 영수증 값 없이 안내 문구만
+            assert r.headline_text == r.status_text and r.lines == [] and r.proposal is None
+            for rx, msg in lint_copy.FORBIDDEN + lint_copy.COPY_RULES:
+                assert not rx.search(r.status_text), f"{msg}: {r.status_text}"
+            continue
+        assert r.status_text is None
         assert DRIVE.match(r.drive_text), r.drive_text
         assert MULT.match(r.multiplier_text), r.multiplier_text
         assert r.headline_text == f"오늘 운전 {r.drive_text} · {r.multiplier_text}"

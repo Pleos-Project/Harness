@@ -2,6 +2,27 @@ package com.mist.pleos_app.ui
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.semantics.Role
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.Text
+import androidx.compose.runtime.remember
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.input.ImeAction
+import com.mist.pleos_app.effort.DepartUi
+import com.mist.pleos_app.effort.DestOption
+import com.mist.pleos_app.navi.DepartState
+import com.mist.pleos_app.navi.Destination
+import com.mist.pleos_app.net.PlacesStatus
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -28,6 +49,8 @@ import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.mist.pleos_app.R
 import com.mist.pleos_app.app.Settings
+import com.mist.pleos_app.effort.WageSource
+import com.mist.pleos_app.effort.wageSourceOf
 import com.mist.pleos_app.effort.EffortPhase
 import com.mist.pleos_app.effort.EffortRecord
 import com.mist.pleos_app.effort.EffortScreen
@@ -52,111 +75,90 @@ import com.mist.pleos_app.ui.theme.gpx
 import java.time.LocalDate
 
 /**
- * 노고 정산 앱 뼈대(명세 v0.5 3절): 홈 → 출발 → (내비 안내) → 도착 → 영수증 → 제안 → 홈.
- * 지금은 홈·출발·설정만 있고, 영수증·제안 화면과 실제 출발·도착은 다음 단계에서 붙인다.
+ * 노고 정산 앱 뼈대(명세 v0.5 3절): 홈 → 출발 → (내비 안내) → 도착(영수증 + 제안 한 화면, Design v2 #75) → 홈.
  * 화면 코드에는 금액·배수·시간 계산을 두지 않는다(engine 패키지·constants effort.copy만).
  */
 @Composable
-fun EffortApp(vm: EffortViewModel, driving: Boolean, onExit: () -> Unit) {
+fun EffortApp(
+    vm: EffortViewModel,
+    driving: Boolean,
+    parked: Boolean,
+    doorOpen: Boolean?,
+    seats: Int,
+    route: DepartState,
+    onExit: () -> Unit,
+) {
     val stack by vm.stack.collectAsStateWithLifecycle()
     val screen = stack.last()
     val ui by vm.state.collectAsStateWithLifecycle()
     val settings by vm.settings.collectAsStateWithLifecycle()
+    val depart by vm.departUi.collectAsStateWithLifecycle()
+    val payer by vm.payerState.collectAsStateWithLifecycle()
     // CCP Back: 최상단(홈)에서는 finish 하지 않고 숨긴다. 주행 중 Back은 받아서 무시(가림 화면 유지)
-    BackHandler { if (!driving && !vm.back()) onExit() }
+    BackHandler { if (driving) return@BackHandler; if (screen == EffortScreen.CALC) vm.calcDone() else if (!vm.back()) onExit() }
+    // F22 도착: 기어·운전석 문이 바뀔 때, 그리고 화면이 다시 보일 때(이벤트, 폴링 없음). 기어 P + 문 열림이면 도착인지 본다
+    val shown by vm.shown.collectAsStateWithLifecycle()
+    LaunchedEffect(parked, doorOpen, shown) { vm.onCar(parked, doorOpen) }
+    // 인원 확인 알림(PR #34·#40 재사용): 출발 화면에서 2명 이상 + 지난번 확인값과 다르면(노고 PRD v1.3 8장)
+    val askPayers = remember(seats, payer, screen) { screen == EffortScreen.DEPART && vm.shouldAskPayers(seats) }
+    // 앱 시작 화면(Design v2 home app-splash, 1.6초) — 처음 켤 때 한 번
+    var splash by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(true) }
     EffortFrame(demoValues = ui.demo, driving = driving) {
         when (screen) {
-            EffortScreen.HOME -> EffortHome(
+            EffortScreen.HOME -> if (splash) EffortSplash { splash = false } else EffortHomeScreen(
                 ui,
-                onDepart = { vm.open(EffortScreen.DEPART) },
+                routeFailed = route == DepartState.FAILED && vm.canRetryRoute,
+                onDepart = vm::openDepart,
                 onDiscard = vm::discardTrip,
+                onRetry = { vm.retryRoute() },
                 onSettings = { vm.open(EffortScreen.SETTINGS) },
+                onReceipt = { vm.open(EffortScreen.RECEIPT) },
+                onArrive = vm::arriveNow,
             )
-            EffortScreen.DEPART -> EffortDepart(ui, (vm.source as? DemoEffortSource)?.scene, onGo = { vm.depart() })
-            EffortScreen.SETTINGS -> EffortSettings(settings, onChange = vm::updateSettings, onReset = vm::resetRecords)
+            EffortScreen.DEPART -> {
+                // Design v2 출발 화면(#75): 시연이면 정해 둔 목적지 하나를 고른 상태로
+                val demo = (vm.source as? DemoEffortSource)?.scene
+                EffortDepartScreen(
+                    depart, demo = demo, demoPreview = if (demo != null) vm.demoPreview else null,
+                    demoMissing = settings.demoFixed && !ui.demoAvailable,
+                    seats = seats, payers = vm.payersFor(seats), askPayers = askPayers,
+                    onBack = { vm.back() }, onQuery = vm::setQuery, onSearch = vm::search, onClearSearch = vm::clearSearch,
+                    onSelect = vm::select, onUnselect = vm::unselect,
+                    onGo = { if (demo != null) vm.depart() else vm.depart(seats) },
+                    onConfirmPayers = { vm.confirmPayers(seats, it) }, onDismissPayers = { vm.dismissPayers(seats) },
+                )
+            }
+            EffortScreen.SETTINGS -> EffortSettings(settings, ui.constants?.let(::wageSourceOf), onChange = vm::updateSettings, onReset = vm::resetRecords)
+            EffortScreen.CALC -> if (ui.calcItems.isEmpty()) LaunchedEffect(Unit) { vm.calcDone() } else EffortCalcScreen(ui, ui.calcItems, onDone = vm::calcDone)
+            EffortScreen.RECEIPT -> EffortArriveScreen(ui, onRest = vm::answerRest, onPick = vm::pick, onClose = vm::closeArrive)
         }
     }
 }
 
-/** 창 폭(AC-C-9)·주행 중 가림(X1, AC-C-1)·"시연용 값"(AC-C-7). 화면 스택은 그대로라 정차하면 같은 화면으로 돌아온다. */
+/** 창 폭(AC-C-9)·주행 중 가림(X1, AC-C-1)·"시연용 값"(AC-C-7)·위쪽 알림. 화면 스택은 그대로라 정차하면 같은 화면으로 돌아온다. */
 @Composable
-private fun EffortFrame(demoValues: Boolean, driving: Boolean, content: @Composable () -> Unit) {
+private fun EffortFrame(demoValues: Boolean, driving: Boolean, toast: @Composable () -> Unit = {}, content: @Composable () -> Unit) {
     BoxWithConstraints(Modifier.fillMaxSize().background(Chagok.colors.bgPrimary)) {
         val narrow = with(LocalDensity.current) { maxWidth.toPx() } <= NARROW_MAX_PX
         CompositionLocalProvider(LocalNarrow provides narrow) {
             if (driving) DrivingCover() else Box(Modifier.fillMaxSize().padding(horizontal = 40.gpx, vertical = 32.gpx)) {
                 content()
+                Box(Modifier.align(Alignment.TopCenter)) { toast() }
                 if (demoValues) DemoMark(stringResource(R.string.demo_values), Modifier.align(Alignment.BottomEnd))
             }
         }
     }
 }
 
-// ------------------------------------------------------------ 홈: [동승 출발] · 진행 중 · 최근 기록 3건
-@Composable
-private fun EffortHome(ui: EffortUi, onDepart: () -> Unit, onDiscard: () -> Unit, onSettings: () -> Unit) {
-    val gap = Arrangement.spacedBy(24.gpx)
-    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()), verticalArrangement = gap) {
-        val trip = ui.openTrip
-        when (ui.phase) {
-            EffortPhase.IDLE -> CgButton(stringResource(R.string.effort_depart_start), onDepart, Modifier.fillMaxWidth())
-            EffortPhase.DRIVING -> trip?.let { TripCard(it, arrived = false, onDiscard = onDiscard) }
-            EffortPhase.ARRIVED -> trip?.let { TripCard(it, arrived = true, onDiscard = onDiscard) }
-        }
-        CgCaption(stringResource(R.string.effort_recent))
-        if (ui.recent.isEmpty()) {
-            CgBody(stringResource(R.string.effort_recent_empty), secondary = true)
-        } else {
-            ui.recent.forEach { RecordCard(it) }
-        }
-        CgButton(stringResource(R.string.screen_settings), onSettings, Modifier.fillMaxWidth(), kind = CgButtonKind.Basic)
-    }
-}
+// ------------------------------------------------------------ 홈: Design v2 → EffortHomeV2.kt
 
-/** 진행 중인 출발(X2 '재시작 중 열린 출발 기록'). 목적지 이름만 보여 준다(좌표 없음). */
-@Composable
-private fun TripCard(trip: OpenTrip, arrived: Boolean, onDiscard: () -> Unit) {
-    CgCard(Modifier.fillMaxWidth()) {
-        CgTitle(stringResource(if (arrived) R.string.effort_arrived else R.string.effort_driving, trip.destName))
-        if (!arrived) CgBody(stringResource(R.string.effort_driving_hint), secondary = true)
-        CgButton(stringResource(R.string.effort_discard), onDiscard, kind = CgButtonKind.Basic)
-    }
-}
+// ------------------------------------------------------------ 출발(F20): Design v2 → EffortDepartV2.kt
 
-@Composable
-private fun RecordCard(r: EffortRecord) {
-    CgCard(Modifier.fillMaxWidth()) {
-        CgCaption(stringResource(R.string.effort_record_line, dayText(r.date), r.destName))
-        CgBody(r.headlineText)
-    }
-}
+// ------------------------------------------------------------ 도착: 영수증(F23) + 쉰 시간(F21) + 제안(F24·F25) 한 화면 → EffortArrive.kt
 
-/** "2026-11-17" → "11월 17일". 날짜 표기만(계산 없음). */
-private fun dayText(date: String): String =
-    runCatching { LocalDate.parse(date).let { "${it.monthValue}월 ${it.dayOfMonth}일" } }.getOrDefault(date)
-
-// ------------------------------------------------------------ 출발(F20). 지금은 시연 데이터로만 출발한다(2단계에서 목적지·인원·requestTrip)
+// ------------------------------------------------------------ 설정(S20): 제안 방식 A/B · 데모 고정 모드 · 단가 출처 · 기록 초기화
 @Composable
-private fun EffortDepart(ui: EffortUi, demo: DemoScene?, onGo: () -> Unit) {
-    val gap = Arrangement.spacedBy(24.gpx)
-    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()), verticalArrangement = gap) {
-        CgTitle(stringResource(R.string.effort_depart_title))
-        if (ui.demo && demo != null) {
-            CgCard(Modifier.fillMaxWidth()) {
-                CgTitle(demo.destName)
-                CgBody(stringResource(R.string.effort_depart_people, demo.n), secondary = true)
-            }
-            CgButton(stringResource(R.string.effort_depart_go), onGo, Modifier.fillMaxWidth())
-        } else {
-            CgNotice(stringResource(R.string.effort_depart_live_pending))
-            if (!ui.demoAvailable) CgNotice(stringResource(R.string.effort_depart_no_demo))
-        }
-    }
-}
-
-// ------------------------------------------------------------ 설정(S20): 제안 방식 A/B · 데모 고정 모드 · 기록 초기화
-@Composable
-private fun EffortSettings(s: Settings, onChange: (Settings) -> Unit, onReset: () -> Unit) {
+private fun EffortSettings(s: Settings, wage: WageSource?, onChange: (Settings) -> Unit, onReset: () -> Unit) {
     val gap = Arrangement.spacedBy(24.gpx)
     var confirmReset by rememberSaveable { mutableStateOf(false) }
     var resetDone by rememberSaveable { mutableStateOf(false) }
@@ -178,6 +180,31 @@ private fun EffortSettings(s: Settings, onChange: (Settings) -> Unit, onReset: (
             }
             CgCaption(stringResource(R.string.effort_settings_demo_hint))
         }
+        // 단가 출처(S20, 노고 PRD 5-2): A 화면 근거 줄과 같은 문구 + 시급·1분 단가 + B 항목 가격·출처. 상수를 못 읽으면 칸을 숨김
+        if (wage != null) {
+            CgCaption(stringResource(R.string.effort_settings_wage))
+            CgCard(Modifier.fillMaxWidth()) {
+                CgBody(wage.wageText)
+                CgCaption(stringResource(R.string.effort_settings_wage_how, wage.wageLabel, wage.hourlyText, wage.perMinText))
+                CgCaption(stringResource(R.string.effort_settings_wage_use))
+            }
+            if (wage.items.isNotEmpty()) {
+                CgCaption(stringResource(R.string.effort_settings_items))
+                CgCard(Modifier.fillMaxWidth()) {
+                    Column(verticalArrangement = Arrangement.spacedBy(20.gpx)) {
+                        wage.items.forEach { i ->
+                            Column {
+                                Row(horizontalArrangement = gap, verticalAlignment = Alignment.CenterVertically) {
+                                    CgBody(i.label, Modifier.weight(1f))
+                                    CgBody(i.priceText)
+                                }
+                                if (i.source.isNotBlank()) CgCaption(i.source)
+                            }
+                        }
+                    }
+                }
+            }
+        }
         CgCaption(stringResource(R.string.settings_records))
         CgButton(stringResource(R.string.settings_reset), { confirmReset = true }, Modifier.fillMaxWidth(), kind = CgButtonKind.Basic)
         if (resetDone) CgBody(stringResource(R.string.settings_reset_done), secondary = true)
@@ -192,31 +219,6 @@ private fun EffortSettings(s: Settings, onChange: (Settings) -> Unit, onReset: (
                     CgButton(stringResource(R.string.settings_reset_confirm), { onReset(); confirmReset = false; resetDone = true }, Modifier.weight(1f))
                 }
             }
-        }
-    }
-}
-
-// ------------------------------------------------------------ 미리보기: 가로·세로(1:1 분할)
-private val previewTrip = OpenTrip("t1", "2026-11-17T16:00:00+09:00", "태안 꽃지해수욕장", 4, 6300.0, demo = true)
-private val previewRecord = EffortRecord("t0", "2026-11-10", "양평 두물머리", 60.0, 1.0, 60.0, "A", "약 5천 원", "accept", "오늘 운전 1시간 · 평소와 같은 길")
-
-@Preview(name = "홈·진행 중", widthDp = 1280, heightDp = 720)
-@Preview(name = "홈·세로", widthDp = 640, heightDp = 720)
-@Composable
-private fun EffortHomePreview() {
-    ChagokTheme(dark = true) {
-        EffortFrame(demoValues = true, driving = false) {
-            EffortHome(EffortUi(EffortPhase.DRIVING, previewTrip, listOf(previewRecord), demo = true, demoAvailable = true), {}, {}, {})
-        }
-    }
-}
-
-@Preview(name = "홈·처음", widthDp = 640, heightDp = 720)
-@Composable
-private fun EffortHomeEmptyPreview() {
-    ChagokTheme(dark = false) {
-        EffortFrame(demoValues = false, driving = false) {
-            EffortHome(EffortUi(EffortPhase.IDLE, null, emptyList(), demo = false, demoAvailable = false), {}, {}, {})
         }
     }
 }

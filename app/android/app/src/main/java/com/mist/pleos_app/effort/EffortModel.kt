@@ -35,14 +35,16 @@ data class OpenTrip(
     val sunset: String? = null,
     val arrivedAt: String? = null,          // F22에서 채움
     val weatherArr: String? = null,
-    val restAnswerMin: Int? = null,         // F21 기본: 도착 때 답한 쉰 시간(0·15·30·60)
-    val stops: List<RestStop>? = null,      // F21 보조: 나란히 배치에서 자동으로 잰 정차 목록
+    val restAnswerMin: Int? = null,         // F21: 도착 때 답한 쉰 시간(0·15·30·60). 자동 측정은 없음(#62)
     val demo: Boolean = false,              // 데모 고정 모드에서 만든 기록이면 "시연용 값" 표시(AC-C-7)
+    // #63 시간대별 날씨(효성 11/8 선택지 2): 출발 지점 좌표를 소수 둘째 자리(약 1km)로 반올림해 도착 조회 전까지만 기기에 둔다.
+    // 도착 때 GET /v1/weather/trip 호출이 끝나면 성공·실패와 상관없이 지운다(AC-N-4 개정 예정).
+    val depLat: Double? = null,
+    val depLng: Double? = null,
+    val weatherTrip: com.mist.pleos_app.engine.WeatherTrip? = null,   // 도착 때 받은 조각별 강수(hour·precip만, 좌표 없음)
 ) {
     val arrived: Boolean get() = arrivedAt != null
 }
-
-data class RestStop(val start: String, val end: String)
 
 /** 선택 기록(명세 v0.5 F26). 좌표 없음. 홈 최근 기록에 쓰려고 엔진 머리줄 문구를 같이 남긴다. */
 data class EffortRecord(
@@ -56,6 +58,7 @@ data class EffortRecord(
     val suggestion: String?,                // A: 1인 몫 문구, B: 기본으로 올린 항목 key. 제안 없음이면 null
     val choice: String,                     // accept | close | coffee·meal·shared …
     val headlineText: String,               // 엔진 headline_text("오늘 운전 2시간 10분 · 평소보다 1.57배 힘든 길")
+    val n: Int? = null,                     // 나눠 낼 인원(홈 기록 카드 "· 4명", Design v2 #75). 예전 기록은 없음
 )
 
 /** 노고 흐름 저장 상태: 열린 출발 기록 1건 + 선택 기록(최근이 앞). */
@@ -74,8 +77,15 @@ fun OpenTrip.toJson(): JsonObject = obj(
     "weather_dep" to weatherDep, "sunrise" to sunrise, "sunset" to sunset,
     "arrived_at" to arrivedAt, "weather_arr" to weatherArr,
     "rest_answer_min" to restAnswerMin,
-    "stops" to stops?.let { s -> JsonArray(s.map { obj("start" to it.start, "end" to it.end) }) },
     "demo" to demo,
+    "dep_lat" to depLat, "dep_lng" to depLng,
+    "weather_trip" to weatherTrip?.toJson(),
+)
+
+/** 조각별 강수 저장 모양 = 계약 응답 WeatherTrip의 dep·arr 그대로(status 없음). */
+fun com.mist.pleos_app.engine.WeatherTrip.toJson(): JsonObject = obj(
+    "dep" to JsonArray(dep.map { obj("hour" to it.hour, "precip" to it.precip) }),
+    "arr" to JsonArray(arr.map { obj("hour" to it.hour, "precip" to it.precip) }),
 )
 
 fun parseOpenTrip(o: JsonObject): OpenTrip = OpenTrip(
@@ -94,17 +104,16 @@ fun parseOpenTrip(o: JsonObject): OpenTrip = OpenTrip(
     arrivedAt = o.strOrNull("arrived_at"),
     weatherArr = o.strOrNull("weather_arr"),
     restAnswerMin = o.integerOrNull("rest_answer_min"),
-    stops = o["stops"]?.takeIf { it !is JsonNull }?.jsonArray?.map {
-        val s = it.jsonObject
-        RestStop(s.str("start"), s.str("end"))
-    },
     demo = o["demo"]?.jsonPrimitive?.booleanOrNull == true,
+    depLat = o.dblOrNull("dep_lat"),
+    depLng = o.dblOrNull("dep_lng"),
+    weatherTrip = o["weather_trip"]?.takeIf { it !is JsonNull }?.let { runCatching { com.mist.pleos_app.engine.parseWeatherTrip(it.jsonObject) }.getOrNull() },
 )
 
 fun EffortRecord.toJson(): JsonObject = obj(
     "trip_id" to tripId, "date" to date, "dest_name" to destName,
     "T" to driveMin, "multiplier" to multiplier, "effort_min" to effortMin,
-    "method" to method, "suggestion" to suggestion, "choice" to choice, "headline_text" to headlineText,
+    "method" to method, "suggestion" to suggestion, "choice" to choice, "headline_text" to headlineText, "n" to n,
 )
 
 fun parseEffortRecord(o: JsonObject): EffortRecord = EffortRecord(
@@ -118,6 +127,7 @@ fun parseEffortRecord(o: JsonObject): EffortRecord = EffortRecord(
     suggestion = o.strOrNull("suggestion"),
     choice = o.str("choice"),
     headlineText = o.strOrNull("headline_text").orEmpty(),
+    n = o.integerOrNull("n"),
 )
 
 fun EffortState.toJson(): JsonObject = obj(

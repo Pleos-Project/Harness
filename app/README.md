@@ -117,6 +117,15 @@ adb install -r -g app/build/outputs/apk/debug/app-debug.apk        # -g: 권한 
 - 콘솔: 문 `PUT /vehicle/body?door_fl=true|false`, 주행거리 올리기 `PUT /vehicle/odometer?traveled_distance_km=<지금+132>`(줄일 수 없음)
 - 에뮬 앱은 사용자 10으로 돈다 → 데이터 비우기는 `adb uninstall` 뒤 `install -g`(그냥 `pm clear`는 안 지워짐). 앱 안 기록 초기화는 설정(S1, P7)
 
+## 4-4. 시연 리플레이 (`scripts/demo_replay.py`)
+노고 시연 순서(명세 v0.5 12절을 지금 앱에 맞춘 것, DECISIONS 11/8 '시연 순서')를 콘솔 REST + adb로 한 바퀴 돈다. 표준 라이브러리만 쓴다.
+- 리허설: `python -I scripts/demo_replay.py` — 콘솔 신호는 스크립트가 넣고, 앱은 발표자가 누른다(단계마다 엔터).
+- 점검: `python -I scripts/demo_replay.py --auto --reset` — 앱도 adb로 누르고 화면 글자를 확인한다. 실패하면 종료 코드 1.
+- 순서: 준비(기어 P·문 닫힘·4석, 데모 고정) → 출발(미리보기 104km·정체 38km) → 기어 D(1초 안에 가림, AC-C-1) → 기어 P → 운전석 문 열기(도착) → 계산 연출 → 영수증(2시간 10분·1.57배) → 쉰 시간 '없음' → [좋아요]/항목 → [닫기] → 홈 최근 기록.
+- 콘솔 연결: 페이지가 1초마다 보내는 `POST /browser/session`을 스크립트도 보낸다. 브라우저 창이 숨거나 내비가 뜨면 페이지 타이머가 느려져 `emulator_inactive`(503)로 떨어지기 때문이다(11/8 실측). 그래도 처음 한 번은 콘솔 페이지가 열려 있어야 한다.
+- 시연 흐름은 서버를 부르지 않는다(날씨는 `fixtures/effort/demo.json`). 그래서 서버·네트워크 없이도 그대로 재현된다(AC-C-3). 에뮬 네트워크를 끄면 콘솔도 끊기니 끄지 않는다.
+- 옛 `scripts/replay.sh`는 피봇 전 흐름(D1~D9·pt)용이라 정리 PR에서 지운다.
+
 ## 5. 앱을 지을 때 지킬 것
 - 차량 값은 리스너로 받는다. 타이머 반복 읽기 금지, 화면이 가려지면 내비·규제 리스너까지 해제(AC-C-2). H_Mate의 2초 폴링은 가져오지 않는다.
 - 권한을 바꾸면 `contract/permissions.md`도 같은 PR에서(CI `check_permissions.py`).
