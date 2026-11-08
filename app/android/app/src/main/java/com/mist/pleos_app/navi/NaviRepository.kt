@@ -5,6 +5,11 @@ import ai.pleos.playground.navi.constants.NaviErrorCode
 import ai.pleos.playground.navi.constants.NaviMode
 import ai.pleos.playground.navi.data.DestinationInfo
 import ai.pleos.playground.navi.data.RouteStateInfo
+import com.mist.pleos_app.effort.CongestionList
+import com.mist.pleos_app.effort.CongestionSection
+import com.mist.pleos_app.effort.CongestionStep
+import com.mist.pleos_app.effort.congestionSignature
+import com.mist.pleos_app.effort.congestionStep
 import com.mist.pleos_app.effort.GuideState
 import ai.pleos.playground.navi.constants.RoutePointType
 import ai.pleos.playground.navi.constants.TrafficCongestionType
@@ -67,7 +72,12 @@ class NaviRepository(context: Context) : DefaultLifecycleObserver {
         const val TIMEOUT_MS = 2_000L
         const val TRIP_TIMEOUT_MS = 3_000L      // requestTrip 응답은 곳당 0.3~0.8초(app/README 4절)
         const val GUIDE_TIMEOUT_MS = 1_500L     // 도착 판정은 1초 안에 영수증(AC-F22-1)이라 짧게
+        const val CONGESTION_TRIES = 3          // getRouteStateInfo 첫 호출 + 재조회 최대 2회(AC-F20-2: 3회 이하)
+        const val CONGESTION_RETRY_MS = 3_000L  // 첫 응답은 직전 경로 목록이라(11/8 실측, 약 2초 뒤 바뀜) 3초 뒤 다시. 폴링이 아니라 많아야 2번
     }
+
+    /** F20 ② 정체 구간 목록을 받으면(나란히 배치) 부른다. MainActivity가 뷰모델에 잇는다. */
+    var onCongestion: ((CongestionList) -> Unit)? = null
 
     private val app = context.applicationContext
     private val flow = MutableStateFlow(DepartState.IDLE)
@@ -87,6 +97,8 @@ class NaviRepository(context: Context) : DefaultLifecycleObserver {
         override fun onRouteStarted(routeStartInfo: RouteStartInfo) {
             flow.value = DepartState.STARTED
             ChagokLog.event("navi_route_started")
+            // 기본 배치에서는 이 콜백 전에 앱이 멈춰 여기 오지 않는다. 여기 왔다면 앱이 보이는 것(나란히 배치) → 정체 목록을 묻는다
+            startCongestion()
         }
 
         override fun onRecentDestinationInfo(recentDestinationInfoList: List<RecentDestinationInfo>) {
@@ -115,7 +127,10 @@ class NaviRepository(context: Context) : DefaultLifecycleObserver {
         override fun onDestinationInfo(destinationInfo: DestinationInfo) = gotRemain(destinationInfo.remainDistance)
 
         // isRouting은 안내 중에도 false로 와서 쓰지 않는다(명세 v0.5 F22, June 실측)
-        override fun onRouteStateInfo(routeStateInfo: RouteStateInfo) = gotMode(routeStateInfo.naviMode == NaviMode.ROUTE_GUIDING)
+        override fun onRouteStateInfo(routeStateInfo: RouteStateInfo) {
+            gotMode(routeStateInfo.naviMode == NaviMode.ROUTE_GUIDING)
+            gotCongestion(routeStateInfo)
+        }
 
         override fun onTripInfo(tripInfo: TripInfo) {
             // 동시에 보낸 요청의 응답이 섞여 올 수 있다 → 목적지 이름으로 맞춘다(app/README 4절)
@@ -140,6 +155,7 @@ class NaviRepository(context: Context) : DefaultLifecycleObserver {
     @Synchronized
     fun depart(d: Destination) {
         flow.value = DepartState.REQUESTING
+        congestionDone = false            // 새 경로: 정체 목록을 다시 받을 수 있다
         ChagokLog.event("navi_depart")   // 장소·좌표는 로그에 남기지 않는다(AC-C-10)
         val n = navi
         if (n != null && connected) {
@@ -378,6 +394,64 @@ class NaviRepository(context: Context) : DefaultLifecycleObserver {
         main.post { w(p) }
     }
 
+    // ------------------------------------------------------------ F20 ② 정체 구간 목록(나란히 배치)
+    private var congestionWanted = false
+    private var congestionDone = false
+    private var congestionTries = 0
+    private var congestionBaseline = ""      // 첫 응답의 목록 지문(직전 경로 값일 수 있음)
+    private val congestionRetry = Runnable { askCongestion() }
+
+    /** onRouteStarted 뒤 한 번. 같은 콜백이 두 번 와도(June 실측) 한 경로에 한 번만. */
+    @Synchronized
+    private fun startCongestion() {
+        if (onCongestion == null || congestionWanted || congestionDone) return
+        congestionWanted = true; congestionTries = 0
+        askCongestion()
+    }
+
+    @Synchronized
+    private fun askCongestion() {
+        val n = navi
+        if (!congestionWanted || n == null || !connected) return
+        congestionTries++
+        try { n.getRouteStateInfo() } catch (e: Exception) { endCongestion("err") }
+    }
+
+    /**
+     * 안내 중(ROUTE_GUIDING) 응답의 목록만 본다(안내 전·취소 뒤 목록은 믿을 수 없음, #51). 첫 응답은 기준으로만 두고,
+     * 그 뒤 비어 있지 않고 기준과 다른 목록이 오면 쓴다([congestionStep]). 끝내 못 받으면 requestTrip 비율을 그대로 둔다(F20 예외).
+     */
+    @Synchronized
+    private fun gotCongestion(info: RouteStateInfo) {
+        if (!congestionWanted) return
+        val raw = if (info.naviMode == NaviMode.ROUTE_GUIDING) info.trafficStatus?.congestionItemList.orEmpty() else emptyList()
+        val items = raw.map {
+            CongestionSection(
+                distanceM = it.distance, avrSpeedKmh = it.avrSpeed, timeS = it.trafficCongestionTime,
+                jam = it.trafficCongestionType == TrafficCongestionType.SLOW || it.trafficCongestionType == TrafficCongestionType.HEAVY,
+            )
+        }
+        if (congestionTries == 1) congestionBaseline = congestionSignature(items)
+        main.removeCallbacks(congestionRetry)
+        when (val step = congestionStep(congestionTries, CONGESTION_TRIES, items, congestionBaseline)) {
+            is CongestionStep.Take -> {
+                endCongestion("ok", step.list.sections)
+                congestionDone = true
+                onCongestion?.let { cb -> main.post { cb(step.list) } }
+            }
+            CongestionStep.Retry -> main.postDelayed(congestionRetry, CONGESTION_RETRY_MS)
+            CongestionStep.GiveUp -> endCongestion(if (items.isEmpty()) "empty" else "same")
+        }
+    }
+
+    @Synchronized
+    private fun endCongestion(result: String, sections: Int = 0) {
+        if (!congestionWanted) return
+        congestionWanted = false
+        main.removeCallbacks(congestionRetry)
+        ChagokLog.event("navi_congestion", "result" to result, "tries" to congestionTries, "sections" to sections)
+    }
+
     @Synchronized
     private fun onConnected() {
         val n = navi ?: return
@@ -420,6 +494,7 @@ class NaviRepository(context: Context) : DefaultLifecycleObserver {
         deliverBookmarks(emptyList())
         deliverTrip(null, null, force = true)
         failGuide()
+        endCongestion("stopped")          // 화면이 가려지면 재조회도 멈춘다(AC-C-2)
         if (flow.value == DepartState.REQUESTING) flow.value = DepartState.IDLE
     }
 }

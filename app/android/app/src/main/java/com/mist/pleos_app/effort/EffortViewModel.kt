@@ -282,6 +282,11 @@ class EffortViewModel(app: Application, private val saved: SavedStateHandle) : A
     private val shownFlow = MutableStateFlow(0)
     val shown: StateFlow<Int> = shownFlow.asStateFlow()
 
+    /** F20 ② 나란히 배치에서 받은 정체 구간 목록(NaviRepository.onCongestion). 진행 중 실제 출발에만 붙는다. */
+    fun onCongestionList(c: CongestionList) {
+        if (flow.setCongestionList(c)) refresh()
+    }
+
     /** MainActivity onStart. 시연 모드는 문 열기로만 도착한다(12절 시연 순서). */
     fun onShown() { resumeCheck = true; lastDoorOpen = null; shownFlow.value += 1 }
 

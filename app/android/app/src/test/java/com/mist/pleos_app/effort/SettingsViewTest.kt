@@ -23,6 +23,18 @@ class SettingsViewTest {
     }
 
     @Test
+    fun wageConstantMovesAmountAndSourceTogether() {
+        // AC-F24-2: 단가 상수를 바꾸면 화면 금액과 출처 표기가 같이 바뀐다(설정 › 단가 출처도 같이)
+        val c2 = c.copy(wagePerHour = 12000.0, wageLabel = "다른 기준")
+        val p1 = effortProposal(3600.0 * 100, 2, c)
+        val p2 = effortProposal(3600.0 * 100, 2, c2)
+        assertEquals(10700.0, p1.amountKrw, 1e-9)                                    // 60분 × 100% × 10,700원/시
+        assertEquals(12000.0, p2.amountKrw, 1e-9)
+        assertEquals("다른 기준 1분 200원 기준", p2.a.wageText)
+        assertEquals(p2.a.wageText, wageSourceOf(c2).wageText)
+    }
+
+    @Test
     fun itemsWithPriceAndSource() {
         val items = wageSourceOf(c).items
         assertEquals(listOf("커피", "밥", "공동 경비"), items.map { it.label })   // 가격 오름차순
