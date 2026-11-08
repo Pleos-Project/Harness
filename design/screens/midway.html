@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><title>차곡 시안 · 가는 중 · 잠깐 멈춤 · 중간 정산</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../tokens.css">
+<link rel="stylesheet" href="common.css">
+<link rel="stylesheet" href="../components/button.css">
+<link rel="stylesheet" href="../components/cta.css">
+<link rel="stylesheet" href="../components/text-button.css">
+<link rel="stylesheet" href="../components/chip.css">
+<link rel="stylesheet" href="../components/stepper.css">
+<link rel="stylesheet" href="../components/title-bar.css">
+<link rel="stylesheet" href="../components/pill.css">
+<link rel="stylesheet" href="../components/search-field.css">
+<link rel="stylesheet" href="../components/dest-card.css">
+<link rel="stylesheet" href="../components/record-card.css">
+<link rel="stylesheet" href="../components/preview-panel.css">
+<link rel="stylesheet" href="../components/people-alert.css">
+<link rel="stylesheet" href="../components/bottom-sheet.css">
+<link rel="stylesheet" href="../components/receipt.css">
+<link rel="stylesheet" href="../components/offer-card.css">
+<link rel="stylesheet" href="../components/loading.css">
+<link rel="stylesheet" href="../components/empty.css">
+<link rel="stylesheet" href="../components/notice.css">
+<link rel="stylesheet" href="../components/mid-button.css">
+<link rel="stylesheet" href="../components/switch.css">
+<link rel="stylesheet" href="../components/segmented.css">
+<link rel="stylesheet" href="home.css">
+<link rel="stylesheet" href="depart.css">
+<link rel="stylesheet" href="search.css">
+<link rel="stylesheet" href="drive.css">
+<link rel="stylesheet" href="midway.css">
+<link rel="stylesheet" href="calc.css">
+<link rel="stylesheet" href="arrive.css">
+<link rel="stylesheet" href="record.css">
+<link rel="stylesheet" href="settings.css">
+<link rel="stylesheet" href="after.css">
+</head>
+<body class="cg-sheet">
+<header><h1>가는 중 · 잠깐 멈춤 · 중간 정산</h1><p>Design v2(운전 노고 정산 PRD v1.3) · 상태마다 앱 1개(1700)와 분할(840)을 함께 둠 · 50%로 보임. 눌러 보는 흐름과 움직임은 ../prototype/index.html, 옮기는 법은 ../HANDOFF_v2.md.</p></header>
+<section class="cg-state" data-state="휴게소에서 다시 연 홈" data-id="home-progress">
+<h2>휴게소에서 다시 연 홈<small>home-progress</small></h2>
+<p>가는 길에 휴게소 등에서 차를 세우고 Nogo를 다시 열면 홈이 &#x27;가는 중&#x27;으로 바뀐다. 가운데 내 차 그림이 중간 정산 버튼(지금까지의 노고 보기)이 되고, 옆에 [도착했어요] · [그만두기]를 둔다(11/8 명준).</p>
+<ul><li>인사: &quot;태안 꽃지해수욕장으로 가는 중 · 14:20 출발 · 함께 4명&quot; / &quot;잠깐 멈췄네요 · 여기까지 운전을 세어 볼까요?&quot;</li><li>내 차 그림(원) = 버튼 · 점선 테두리가 천천히 돎 · 아래 알약 &quot;지금까지의 노고 보기 ›&quot; → 중간 정산</li><li>[도착했어요](L 채움) → 계산 연출 → 영수증 · [그만두기](L 기본) → 확인 시트</li><li>주행 중에는 시스템이 가리므로 이 화면은 정차 때만 보임</li></ul>
+<div class="cg-frames">
+<div><div class="cg-frame-cap">앱 1개 · 1700 × 1184</div><div class="cg-win cg-win--land"><div class="cg-app cg-a-land"><div class="cg-home cg-hm"><div class="cg-hbar" data-anno="Title · Main 80 · 가운데 앱 이름(가칭)"><span class="cg-btn cg-ib" data-go="log" data-anno="Icon Button 80 · 기록 전체" aria-label="기록 전체"><i class="cg-ico" title="아이콘 자리"></i></span><span class="cg-logo">Nogo</span><span class="cg-btn cg-ib" data-go="settings" data-anno="Icon Button 80 · 설정(제안 방식 · 시연 고정 · 단가 출처 · 기록 초기화)" aria-label="설정"><i class="cg-ico" title="아이콘 자리"></i></span></div><div class="cg-hero cg-prg" data-anno="인사 · 내 차(공용 세단 1종)"><div class="cg-midb" data-act="mid" role="button" data-anno="중간 정산 버튼 · 내 차 그림 = 지금까지의 노고 보기"><div class="cg-ill" aria-hidden="true"><svg class="cg-car" viewBox="0 0 170 70" aria-hidden="true"><g transform="translate(170 0) scale(-1 1)"><path class="cg-cb" d="M10 54 L10 42 Q12 31 28 29 L54 26 L74 10 Q80 6 92 6 L118 6 Q128 6 136 14 L151 28 Q163 30 165 42 L165 54 Z"></path><path class="cg-cw" d="M62 27 L78 13 Q82 11 90 11 L105 11 L105 27 Z M111 27 L111 11 L118 11 Q124 11 130 17 L140 27 Z"></path><g class="cg-wh"><circle cx="44" cy="55" r="14"></circle><circle class="cg-hub" cx="44" cy="55" r="6"></circle><rect x="42.5" y="42" width="3" height="8"></rect></g><g class="cg-wh"><circle cx="134" cy="55" r="14"></circle><circle class="cg-hub" cx="134" cy="55" r="6"></circle><rect x="132.5" y="42" width="3" height="8"></rect></g></g></svg></div><span class="cg-mlbl">지금까지의 노고 보기<i class="cg-chev"></i></span></div><div class="cg-tx"><span class="cg-sub">태안 꽃지해수욕장으로 가는 중 · 14:20 출발 · 함께 4명</span><span class="cg-h">잠깐 멈췄네요<br>여기까지 운전을 세어 볼까요?</span><div class="cg-pacts" data-anno="가는 중 · 도착 · 그만두기"><span class="cg-btn cg-l cg-fill" data-act="arrNow" data-anno="Basic Button L · 도착했어요 → 계산 연출">도착했어요</span><span class="cg-btn cg-l" data-act="quit" data-anno="Basic Button L · 이번 출발 그만두기(기록 안 남김)">그만두기</span></div></div></div><span class="cg-hlabel">최근 기록</span><div class="cg-recs"><div class="cg-rec" style="--i:0" data-act="rec0" data-anno="최근 기록 · 누르면 기록 상세"><span class="cg-tag">11월 7일</span><b>태안 꽃지해수욕장</b><span class="cg-mt">2시간 10분 · 1.57배 · 4명</span><span class="cg-rr">한 사람 약 9천 원 · 좋아요</span></div><div class="cg-rec" style="--i:1" data-act="rec1" data-anno=""><span class="cg-tag">11월 2일</span><b>가평 아침고요수목원</b><span class="cg-mt">1시간 · 평소 같은 길 · 2명</span><span class="cg-rr">닫음</span></div><div class="cg-rec" style="--i:2" data-act="rec2" data-anno=""><span class="cg-tag">10월 26일</span><b>양평 두물머리</b><span class="cg-mt">55분 · 1.14배 · 3명</span><span class="cg-rr">커피값에서 운전자 빼기</span></div></div></div></div></div></div>
+<div><div class="cg-frame-cap">분할 · 840 × 1184</div><div class="cg-win cg-win--port"><div class="cg-app cg-a-p1"><div class="cg-home cg-hm cg-p"><div class="cg-hbar" data-anno="Title · Main 80 · 가운데 앱 이름(가칭)"><span class="cg-btn cg-ib" data-go="log" data-anno="Icon Button 80 · 기록 전체" aria-label="기록 전체"><i class="cg-ico" title="아이콘 자리"></i></span><span class="cg-logo">Nogo</span><span class="cg-btn cg-ib" data-go="settings" data-anno="Icon Button 80 · 설정(제안 방식 · 시연 고정 · 단가 출처 · 기록 초기화)" aria-label="설정"><i class="cg-ico" title="아이콘 자리"></i></span></div><div class="cg-hero cg-prg" data-anno="인사 · 내 차(공용 세단 1종)"><div class="cg-midb" data-act="mid" role="button" data-anno="중간 정산 버튼 · 내 차 그림 = 지금까지의 노고 보기"><div class="cg-ill" aria-hidden="true"><svg class="cg-car" viewBox="0 0 170 70" aria-hidden="true"><g transform="translate(170 0) scale(-1 1)"><path class="cg-cb" d="M10 54 L10 42 Q12 31 28 29 L54 26 L74 10 Q80 6 92 6 L118 6 Q128 6 136 14 L151 28 Q163 30 165 42 L165 54 Z"></path><path class="cg-cw" d="M62 27 L78 13 Q82 11 90 11 L105 11 L105 27 Z M111 27 L111 11 L118 11 Q124 11 130 17 L140 27 Z"></path><g class="cg-wh"><circle cx="44" cy="55" r="14"></circle><circle class="cg-hub" cx="44" cy="55" r="6"></circle><rect x="42.5" y="42" width="3" height="8"></rect></g><g class="cg-wh"><circle cx="134" cy="55" r="14"></circle><circle class="cg-hub" cx="134" cy="55" r="6"></circle><rect x="132.5" y="42" width="3" height="8"></rect></g></g></svg></div><span class="cg-mlbl">지금까지의 노고 보기<i class="cg-chev"></i></span></div><div class="cg-tx"><span class="cg-sub">태안 꽃지해수욕장으로 가는 중 · 14:20 출발 · 함께 4명</span><span class="cg-h">잠깐 멈췄네요<br>여기까지 운전을 세어 볼까요?</span><div class="cg-pacts" data-anno="가는 중 · 도착 · 그만두기"><span class="cg-btn cg-l cg-fill" data-act="arrNow" data-anno="Basic Button L · 도착했어요 → 계산 연출">도착했어요</span><span class="cg-btn cg-l" data-act="quit" data-anno="Basic Button L · 이번 출발 그만두기(기록 안 남김)">그만두기</span></div></div></div><span class="cg-hlabel">최근 기록</span><div class="cg-recs"><div class="cg-rec" style="--i:0" data-act="rec0" data-anno="최근 기록 · 누르면 기록 상세"><span class="cg-tag">11월 7일</span><b>태안 꽃지해수욕장</b><span class="cg-mt">2시간 10분 · 1.57배 · 4명</span><span class="cg-rr">한 사람 약 9천 원 · 좋아요</span></div><div class="cg-rec" style="--i:1" data-act="rec1" data-anno=""><span class="cg-tag">11월 2일</span><b>가평 아침고요수목원</b><span class="cg-mt">1시간 · 평소 같은 길 · 2명</span><span class="cg-rr">닫음</span></div><div class="cg-rec" style="--i:2" data-act="rec2" data-anno=""><span class="cg-tag">10월 26일</span><b>양평 두물머리</b><span class="cg-mt">55분 · 1.14배 · 3명</span><span class="cg-rr">커피값에서 운전자 빼기</span></div></div></div></div></div></div>
+</div>
+</section><section class="cg-state" data-state="그만두기 확인" data-id="home-progress-quit">
+<h2>그만두기 확인<small>home-progress-quit</small></h2>
+<p>[그만두기]를 누르면 짧은 하단 시트로 한 번 묻는다. 그만두면 기록 없이 출발이 닫히고 홈 기본으로 돌아간다.</p>
+<ul><li>시트(딤 없음): &quot;이번 출발을 그만둘까요?&quot; · &quot;지금까지 운전은 기록에 남지 않아요&quot;</li><li>[계속 가기](기본) · [그만두기](채움)</li></ul>
+<div class="cg-frames">
+<div><div class="cg-frame-cap">앱 1개 · 1700 × 1184</div><div class="cg-win cg-win--land"><div class="cg-app cg-a-land"><div class="cg-home cg-hm"><div class="cg-hbar" data-anno="Title · Main 80 · 가운데 앱 이름(가칭)"><span class="cg-btn cg-ib" data-go="log" data-anno="Icon Button 80 · 기록 전체" aria-label="기록 전체"><i class="cg-ico" title="아이콘 자리"></i></span><span class="cg-logo">Nogo</span><span class="cg-btn cg-ib" data-go="settings" data-anno="Icon Button 80 · 설정(제안 방식 · 시연 고정 · 단가 출처 · 기록 초기화)" aria-label="설정"><i class="cg-ico" title="아이콘 자리"></i></span></div><div class="cg-hero cg-prg" data-anno="인사 · 내 차(공용 세단 1종)"><div class="cg-midb" data-act="mid" role="button" data-anno="중간 정산 버튼 · 내 차 그림 = 지금까지의 노고 보기"><div class="cg-ill" aria-hidden="true"><svg class="cg-car" viewBox="0 0 170 70" aria-hidden="true"><g transform="translate(170 0) scale(-1 1)"><path class="cg-cb" d="M10 54 L10 42 Q12 31 28 29 L54 26 L74 10 Q80 6 92 6 L118 6 Q128 6 136 14 L151 28 Q163 30 165 42 L165 54 Z"></path><path class="cg-cw" d="M62 27 L78 13 Q82 11 90 11 L105 11 L105 27 Z M111 27 L111 11 L118 11 Q124 11 130 17 L140 27 Z"></path><g class="cg-wh"><circle cx="44" cy="55" r="14"></circle><circle class="cg-hub" cx="44" cy="55" r="6"></circle><rect x="42.5" y="42" width="3" height="8"></rect></g><g class="cg-wh"><circle cx="134" cy="55" r="14"></circle><circle class="cg-hub" cx="134" cy="55" r="6"></circle><rect x="132.5" y="42" width="3" height="8"></rect></g></g></svg></div><span class="cg-mlbl">지금까지의 노고 보기<i class="cg-chev"></i></span></div><div class="cg-tx"><span class="cg-sub">태안 꽃지해수욕장으로 가는 중 · 14:20 출발 · 함께 4명</span><span class="cg-h">잠깐 멈췄네요<br>여기까지 운전을 세어 볼까요?</span><div class="cg-pacts" data-anno="가는 중 · 도착 · 그만두기"><span class="cg-btn cg-l cg-fill" data-act="arrNow" data-anno="Basic Button L · 도착했어요 → 계산 연출">도착했어요</span><span class="cg-btn cg-l" data-act="quit" data-anno="Basic Button L · 이번 출발 그만두기(기록 안 남김)">그만두기</span></div></div></div><span class="cg-hlabel">최근 기록</span><div class="cg-recs"><div class="cg-rec" style="--i:0" data-act="rec0" data-anno="최근 기록 · 누르면 기록 상세"><span class="cg-tag">11월 7일</span><b>태안 꽃지해수욕장</b><span class="cg-mt">2시간 10분 · 1.57배 · 4명</span><span class="cg-rr">한 사람 약 9천 원 · 좋아요</span></div><div class="cg-rec" style="--i:1" data-act="rec1" data-anno=""><span class="cg-tag">11월 2일</span><b>가평 아침고요수목원</b><span class="cg-mt">1시간 · 평소 같은 길 · 2명</span><span class="cg-rr">닫음</span></div><div class="cg-rec" style="--i:2" data-act="rec2" data-anno=""><span class="cg-tag">10월 26일</span><b>양평 두물머리</b><span class="cg-mt">55분 · 1.14배 · 3명</span><span class="cg-rr">커피값에서 운전자 빼기</span></div></div></div><div class="cg-isheet cg-q" data-anno="그만두기 확인 · 짧은 하단 시트(딤 없음)"><span class="cg-grab"></span><b>이번 출발을 그만둘까요?</b><span class="cg-isub">지금까지 운전은 기록에 남지 않아요</span><div class="cg-ibts"><span class="cg-btn" data-act="quitNo">계속 가기</span><span class="cg-btn cg-fill" data-act="quitYes">그만두기</span></div></div></div></div></div>
+<div><div class="cg-frame-cap">분할 · 840 × 1184</div><div class="cg-win cg-win--port"><div class="cg-app cg-a-p1"><div class="cg-home cg-hm cg-p"><div class="cg-hbar" data-anno="Title · Main 80 · 가운데 앱 이름(가칭)"><span class="cg-btn cg-ib" data-go="log" data-anno="Icon Button 80 · 기록 전체" aria-label="기록 전체"><i class="cg-ico" title="아이콘 자리"></i></span><span class="cg-logo">Nogo</span><span class="cg-btn cg-ib" data-go="settings" data-anno="Icon Button 80 · 설정(제안 방식 · 시연 고정 · 단가 출처 · 기록 초기화)" aria-label="설정"><i class="cg-ico" title="아이콘 자리"></i></span></div><div class="cg-hero cg-prg" data-anno="인사 · 내 차(공용 세단 1종)"><div class="cg-midb" data-act="mid" role="button" data-anno="중간 정산 버튼 · 내 차 그림 = 지금까지의 노고 보기"><div class="cg-ill" aria-hidden="true"><svg class="cg-car" viewBox="0 0 170 70" aria-hidden="true"><g transform="translate(170 0) scale(-1 1)"><path class="cg-cb" d="M10 54 L10 42 Q12 31 28 29 L54 26 L74 10 Q80 6 92 6 L118 6 Q128 6 136 14 L151 28 Q163 30 165 42 L165 54 Z"></path><path class="cg-cw" d="M62 27 L78 13 Q82 11 90 11 L105 11 L105 27 Z M111 27 L111 11 L118 11 Q124 11 130 17 L140 27 Z"></path><g class="cg-wh"><circle cx="44" cy="55" r="14"></circle><circle class="cg-hub" cx="44" cy="55" r="6"></circle><rect x="42.5" y="42" width="3" height="8"></rect></g><g class="cg-wh"><circle cx="134" cy="55" r="14"></circle><circle class="cg-hub" cx="134" cy="55" r="6"></circle><rect x="132.5" y="42" width="3" height="8"></rect></g></g></svg></div><span class="cg-mlbl">지금까지의 노고 보기<i class="cg-chev"></i></span></div><div class="cg-tx"><span class="cg-sub">태안 꽃지해수욕장으로 가는 중 · 14:20 출발 · 함께 4명</span><span class="cg-h">잠깐 멈췄네요<br>여기까지 운전을 세어 볼까요?</span><div class="cg-pacts" data-anno="가는 중 · 도착 · 그만두기"><span class="cg-btn cg-l cg-fill" data-act="arrNow" data-anno="Basic Button L · 도착했어요 → 계산 연출">도착했어요</span><span class="cg-btn cg-l" data-act="quit" data-anno="Basic Button L · 이번 출발 그만두기(기록 안 남김)">그만두기</span></div></div></div><span class="cg-hlabel">최근 기록</span><div class="cg-recs"><div class="cg-rec" style="--i:0" data-act="rec0" data-anno="최근 기록 · 누르면 기록 상세"><span class="cg-tag">11월 7일</span><b>태안 꽃지해수욕장</b><span class="cg-mt">2시간 10분 · 1.57배 · 4명</span><span class="cg-rr">한 사람 약 9천 원 · 좋아요</span></div><div class="cg-rec" style="--i:1" data-act="rec1" data-anno=""><span class="cg-tag">11월 2일</span><b>가평 아침고요수목원</b><span class="cg-mt">1시간 · 평소 같은 길 · 2명</span><span class="cg-rr">닫음</span></div><div class="cg-rec" style="--i:2" data-act="rec2" data-anno=""><span class="cg-tag">10월 26일</span><b>양평 두물머리</b><span class="cg-mt">55분 · 1.14배 · 3명</span><span class="cg-rr">커피값에서 운전자 빼기</span></div></div></div><div class="cg-isheet cg-q" data-anno="그만두기 확인 · 짧은 하단 시트(딤 없음)"><span class="cg-grab"></span><b>이번 출발을 그만둘까요?</b><span class="cg-isub">지금까지 운전은 기록에 남지 않아요</span><div class="cg-ibts"><span class="cg-btn" data-act="quitNo">계속 가기</span><span class="cg-btn cg-fill" data-act="quitYes">그만두기</span></div></div></div></div></div>
+</div>
+</section><section class="cg-state" data-state="지금까지의 노고 · 방식 A" data-id="mid-a">
+<h2>지금까지의 노고 · 방식 A<small>mid-a</small></h2>
+<p>내 차 그림을 누르면 출발부터 지금까지를 도착과 같은 6개 항목(날씨 · 정체 · 예상보다 더 · 밤길 · 장시간 · 거리)으로 세어 영수증으로 보여 준다. 운전자 교대나 계획 없이 들른 휴게소에서도 같은 식이다(11/8 명준).</p>
+<ul><li>영수증 &quot;지금까지 영수증 · 14:20 출발 · 아직 가는 중&quot; · 날씨 비, 지금까지 내내 +40% · 정체 구간 19km +10% · 예상보다 더 +13분 +5% · 운전 1시간 5분 · 52km · 평소보다 1.55배</li><li>값이 0인 밤길 · 장시간 줄은 생략(도착과 같음)</li><li>예상보다 더 = 지금까지 걸린 시간 − 출발 때 ETA × 지금까지 거리 비율</li><li>오른쪽: &quot;지금까지를 챙긴다면 · 한 사람 약 4천 원&quot; + 5-2 근거 · [좋아요](채움) · [계속 가기]</li></ul>
+<div class="cg-frames">
+<div><div class="cg-frame-cap">앱 1개 · 1700 × 1184</div><div class="cg-win cg-win--land"><div class="cg-app cg-a-land"><div class="cg-pg"><div class="cg-hd" data-anno="Title · Depth 80"><span class="cg-btn cg-ib cg-plain" data-act="back" data-anno="Icon Button 80 · Plain · 뒤로" aria-label="뒤로"><i class="cg-ic cg-ic-back"></i></span><span class="cg-ttl">지금까지의 노고</span><span class="cg-cap">가는 중 · 함께 4명</span></div><div class="cg-arr"><div class="cg-rcol" data-anno="오늘 운전 영수증 (5-1) · 출력 종이 형태 · 값이 0인 줄 생략"><div class="cg-prn" aria-hidden="true"><i></i></div><div class="cg-paperwrap"><div class="cg-paper">
+    <div class="cg-ph"><b>지금까지 영수증</b><span>14:20 출발 · 아직 가는 중</span></div>
+    <i class="cg-rule2"></i>
+    <div class="cg-rhd"><span>항목</span><span>더한 몫</span></div>
+    <div class="cg-rrow" data-act="why0"><span class="cg-k">날씨</span><span class="cg-v">비, 지금까지 내내</span><span class="cg-pc">+40%</span><i class="cg-chev"></i></div><div class="cg-rrow" data-act="why1"><span class="cg-k">정체 구간</span><span class="cg-v">19km</span><span class="cg-pc">+10%</span><i class="cg-chev"></i></div><div class="cg-rrow" data-act="why2"><span class="cg-k">예상보다 더</span><span class="cg-v">+13분</span><span class="cg-pc">+5%</span><i class="cg-chev"></i></div>
+    <div class="cg-rsum cg-rs1"><span>운전 시간</span><b>1시간 5분</b></div>
+    
+    <div class="cg-rsum"><span>거리</span><b>52km</b></div>
+    <div class="cg-rsum cg-tot"><span>합계</span><b>평소보다 1.55배 힘든 길</b></div>
+    
+    <div class="cg-bc" aria-hidden="true"><i class="cg-bars"></i><span>#2026 1107 052 065</span></div>
+  </div></div></div><div class="cg-card cg-offer" data-anno="중간 정산 · 도착과 같은 6개 항목 · 정산하면 최종에서 뺌(11/8 명준)"><span class="cg-cap2">14:20 출발 · 지금까지</span><span class="cg-head">지금까지를 챙긴다면</span><span class="cg-big" data-anno="큰 숫자 · 지금까지 1인 몫">한 사람 약 4천 원</span><span class="cg-why">운전 노고 약 1만 8천 원을 운전자 포함 4명이 나눈 값<br>최저임금 1분 178원 기준</span><span class="cg-note">좋아요를 누르면 여기까지 기록해 두고, 도착하면 이 몫은 빼고 알려 드려요</span><span class="cg-sp"></span><div class="cg-bts"><span class="cg-btn cg-l cg-fill" data-act="accept" data-anno="Basic Button L · 중간 정산 받아들이기">좋아요</span><span class="cg-btn cg-l" data-act="back" data-anno="Basic Button L · 계속 가기 → 홈(가는 중)">계속 가기</span></div></div></div></div></div></div></div>
+<div><div class="cg-frame-cap">분할 · 840 × 1184</div><div class="cg-win cg-win--port"><div class="cg-app cg-a-p1"><div class="cg-pg cg-p"><div class="cg-hd" data-anno="Title · Depth 80"><span class="cg-btn cg-ib cg-plain" data-act="back" data-anno="Icon Button 80 · Plain · 뒤로" aria-label="뒤로"><i class="cg-ic cg-ic-back"></i></span><span class="cg-ttl">지금까지의 노고</span><span class="cg-cap">가는 중 · 함께 4명</span></div><div class="cg-arr"><div class="cg-rcol" data-anno="오늘 운전 영수증 (5-1) · 출력 종이 형태 · 값이 0인 줄 생략"><div class="cg-prn" aria-hidden="true"><i></i></div><div class="cg-paperwrap"><div class="cg-paper">
+    <div class="cg-ph"><b>지금까지 영수증</b><span>14:20 출발 · 아직 가는 중</span></div>
+    <i class="cg-rule2"></i>
+    <div class="cg-rhd"><span>항목</span><span>더한 몫</span></div>
+    <div class="cg-rrow" data-act="why0"><span class="cg-k">날씨</span><span class="cg-v">비, 지금까지 내내</span><span class="cg-pc">+40%</span><i class="cg-chev"></i></div><div class="cg-rrow" data-act="why1"><span class="cg-k">정체 구간</span><span class="cg-v">19km</span><span class="cg-pc">+10%</span><i class="cg-chev"></i></div><div class="cg-rrow" data-act="why2"><span class="cg-k">예상보다 더</span><span class="cg-v">+13분</span><span class="cg-pc">+5%</span><i class="cg-chev"></i></div>
+    <div class="cg-rsum cg-rs1"><span>운전 시간</span><b>1시간 5분</b></div>
+    
+    <div class="cg-rsum"><span>거리</span><b>52km</b></div>
+    <div class="cg-rsum cg-tot"><span>합계</span><b>평소보다 1.55배 힘든 길</b></div>
+    
+    <div class="cg-bc" aria-hidden="true"><i class="cg-bars"></i><span>#2026 1107 052 065</span></div>
+  </div></div></div><div class="cg-card cg-offer" data-anno="중간 정산 · 도착과 같은 6개 항목 · 정산하면 최종에서 뺌(11/8 명준)"><span class="cg-cap2">14:20 출발 · 지금까지</span><span class="cg-head">지금까지를 챙긴다면</span><span class="cg-big" data-anno="큰 숫자 · 지금까지 1인 몫">한 사람 약 4천 원</span><span class="cg-why">운전 노고 약 1만 8천 원을 운전자 포함 4명이 나눈 값<br>최저임금 1분 178원 기준</span><span class="cg-note">좋아요를 누르면 여기까지 기록해 두고, 도착하면 이 몫은 빼고 알려 드려요</span><span class="cg-sp"></span><div class="cg-bts"><span class="cg-btn cg-l cg-fill" data-act="accept" data-anno="Basic Button L · 중간 정산 받아들이기">좋아요</span><span class="cg-btn cg-l" data-act="back" data-anno="Basic Button L · 계속 가기 → 홈(가는 중)">계속 가기</span></div></div></div></div></div></div></div>
+</div>
+</section><section class="cg-state" data-state="중간 정산 · 좋아요 후" data-id="mid-a-done">
+<h2>중간 정산 · 좋아요 후<small>mid-a-done</small></h2>
+<p>좋아요를 누르면 여기까지를 기록해 두고, 도착하면 이 몫을 빼고 제안한다. 홈 위 줄에 &quot;15:25까지 정산함&quot;이 붙는다.</p>
+<ul><li>&quot;좋아요, 여기까지 기록해 뒀어요&quot; · &quot;한 사람 약 4천 원&quot; · &quot;도착하면 전체를 다시 세고, 이 몫은 빼고 알려 드려요&quot; · [계속 가기]</li></ul>
+<div class="cg-frames">
+<div><div class="cg-frame-cap">앱 1개 · 1700 × 1184</div><div class="cg-win cg-win--land"><div class="cg-app cg-a-land"><div class="cg-pg"><div class="cg-hd" data-anno="Title · Depth 80"><span class="cg-btn cg-ib cg-plain" data-act="back" data-anno="Icon Button 80 · Plain · 뒤로" aria-label="뒤로"><i class="cg-ic cg-ic-back"></i></span><span class="cg-ttl">지금까지의 노고</span><span class="cg-cap">가는 중 · 함께 4명</span></div><div class="cg-arr"><div class="cg-rcol" data-anno="오늘 운전 영수증 (5-1) · 출력 종이 형태 · 값이 0인 줄 생략"><div class="cg-prn" aria-hidden="true"><i></i></div><div class="cg-paperwrap"><div class="cg-paper">
+    <div class="cg-ph"><b>지금까지 영수증</b><span>14:20 출발 · 아직 가는 중</span></div>
+    <i class="cg-rule2"></i>
+    <div class="cg-rhd"><span>항목</span><span>더한 몫</span></div>
+    <div class="cg-rrow" data-act="why0"><span class="cg-k">날씨</span><span class="cg-v">비, 지금까지 내내</span><span class="cg-pc">+40%</span><i class="cg-chev"></i></div><div class="cg-rrow" data-act="why1"><span class="cg-k">정체 구간</span><span class="cg-v">19km</span><span class="cg-pc">+10%</span><i class="cg-chev"></i></div><div class="cg-rrow" data-act="why2"><span class="cg-k">예상보다 더</span><span class="cg-v">+13분</span><span class="cg-pc">+5%</span><i class="cg-chev"></i></div>
+    <div class="cg-rsum cg-rs1"><span>운전 시간</span><b>1시간 5분</b></div>
+    
+    <div class="cg-rsum"><span>거리</span><b>52km</b></div>
+    <div class="cg-rsum cg-tot"><span>합계</span><b>평소보다 1.55배 힘든 길</b></div>
+    
+    <div class="cg-bc" aria-hidden="true"><i class="cg-bars"></i><span>#2026 1107 052 065</span></div>
+  </div></div></div><div class="cg-card cg-offer" data-anno="중간 정산 · 도착과 같은 6개 항목 · 정산하면 최종에서 뺌(11/8 명준)"><span class="cg-cap2">14:20 출발 · 지금까지</span><span class="cg-head">좋아요, 여기까지 기록해 뒀어요</span><span class="cg-why">한 사람 약 4천 원</span><span class="cg-note">도착하면 전체를 다시 세고, 이 몫은 빼고 알려 드려요</span><span class="cg-sp"></span><div class="cg-bts"><span class="cg-btn cg-l cg-fill" data-act="back" data-anno="Basic Button L · 계속 가기 → 홈(가는 중)">계속 가기</span></div></div></div></div></div></div></div>
+<div><div class="cg-frame-cap">분할 · 840 × 1184</div><div class="cg-win cg-win--port"><div class="cg-app cg-a-p1"><div class="cg-pg cg-p"><div class="cg-hd" data-anno="Title · Depth 80"><span class="cg-btn cg-ib cg-plain" data-act="back" data-anno="Icon Button 80 · Plain · 뒤로" aria-label="뒤로"><i class="cg-ic cg-ic-back"></i></span><span class="cg-ttl">지금까지의 노고</span><span class="cg-cap">가는 중 · 함께 4명</span></div><div class="cg-arr"><div class="cg-rcol" data-anno="오늘 운전 영수증 (5-1) · 출력 종이 형태 · 값이 0인 줄 생략"><div class="cg-prn" aria-hidden="true"><i></i></div><div class="cg-paperwrap"><div class="cg-paper">
+    <div class="cg-ph"><b>지금까지 영수증</b><span>14:20 출발 · 아직 가는 중</span></div>
+    <i class="cg-rule2"></i>
+    <div class="cg-rhd"><span>항목</span><span>더한 몫</span></div>
+    <div class="cg-rrow" data-act="why0"><span class="cg-k">날씨</span><span class="cg-v">비, 지금까지 내내</span><span class="cg-pc">+40%</span><i class="cg-chev"></i></div><div class="cg-rrow" data-act="why1"><span class="cg-k">정체 구간</span><span class="cg-v">19km</span><span class="cg-pc">+10%</span><i class="cg-chev"></i></div><div class="cg-rrow" data-act="why2"><span class="cg-k">예상보다 더</span><span class="cg-v">+13분</span><span class="cg-pc">+5%</span><i class="cg-chev"></i></div>
+    <div class="cg-rsum cg-rs1"><span>운전 시간</span><b>1시간 5분</b></div>
+    
+    <div class="cg-rsum"><span>거리</span><b>52km</b></div>
+    <div class="cg-rsum cg-tot"><span>합계</span><b>평소보다 1.55배 힘든 길</b></div>
+    
+    <div class="cg-bc" aria-hidden="true"><i class="cg-bars"></i><span>#2026 1107 052 065</span></div>
+  </div></div></div><div class="cg-card cg-offer" data-anno="중간 정산 · 도착과 같은 6개 항목 · 정산하면 최종에서 뺌(11/8 명준)"><span class="cg-cap2">14:20 출발 · 지금까지</span><span class="cg-head">좋아요, 여기까지 기록해 뒀어요</span><span class="cg-why">한 사람 약 4천 원</span><span class="cg-note">도착하면 전체를 다시 세고, 이 몫은 빼고 알려 드려요</span><span class="cg-sp"></span><div class="cg-bts"><span class="cg-btn cg-l cg-fill" data-act="back" data-anno="Basic Button L · 계속 가기 → 홈(가는 중)">계속 가기</span></div></div></div></div></div></div></div>
+</div>
+</section><section class="cg-state" data-state="지금까지의 노고 · 방식 B" data-id="mid-b">
+<h2>지금까지의 노고 · 방식 B<small>mid-b</small></h2>
+<p>방식 B도 도착과 같이 운전자 몫에 가까운 항목을 기본값으로 올려 한 번 빼 주기를 제안한다. 고르면 여기까지 기록하고 도착 때 뺀다.</p>
+<ul><li>&quot;여기까지는 밥값에서 운전자 빼고 나누는 게 어때요&quot;</li><li>커피 · 밥(기본) · 공동 경비 · [계속 가기]</li></ul>
+<div class="cg-frames">
+<div><div class="cg-frame-cap">앱 1개 · 1700 × 1184</div><div class="cg-win cg-win--land"><div class="cg-app cg-a-land"><div class="cg-pg"><div class="cg-hd" data-anno="Title · Depth 80"><span class="cg-btn cg-ib cg-plain" data-act="back" data-anno="Icon Button 80 · Plain · 뒤로" aria-label="뒤로"><i class="cg-ic cg-ic-back"></i></span><span class="cg-ttl">지금까지의 노고</span><span class="cg-cap">가는 중 · 함께 4명</span></div><div class="cg-arr"><div class="cg-rcol" data-anno="오늘 운전 영수증 (5-1) · 출력 종이 형태 · 값이 0인 줄 생략"><div class="cg-prn" aria-hidden="true"><i></i></div><div class="cg-paperwrap"><div class="cg-paper">
+    <div class="cg-ph"><b>지금까지 영수증</b><span>14:20 출발 · 아직 가는 중</span></div>
+    <i class="cg-rule2"></i>
+    <div class="cg-rhd"><span>항목</span><span>더한 몫</span></div>
+    <div class="cg-rrow" data-act="why0"><span class="cg-k">날씨</span><span class="cg-v">비, 지금까지 내내</span><span class="cg-pc">+40%</span><i class="cg-chev"></i></div><div class="cg-rrow" data-act="why1"><span class="cg-k">정체 구간</span><span class="cg-v">19km</span><span class="cg-pc">+10%</span><i class="cg-chev"></i></div><div class="cg-rrow" data-act="why2"><span class="cg-k">예상보다 더</span><span class="cg-v">+13분</span><span class="cg-pc">+5%</span><i class="cg-chev"></i></div>
+    <div class="cg-rsum cg-rs1"><span>운전 시간</span><b>1시간 5분</b></div>
+    
+    <div class="cg-rsum"><span>거리</span><b>52km</b></div>
+    <div class="cg-rsum cg-tot"><span>합계</span><b>평소보다 1.55배 힘든 길</b></div>
+    
+    <div class="cg-bc" aria-hidden="true"><i class="cg-bars"></i><span>#2026 1107 052 065</span></div>
+  </div></div></div><div class="cg-card cg-offer" data-anno="중간 정산 · 도착과 같은 6개 항목 · 정산하면 최종에서 뺌(11/8 명준)"><span class="cg-head">여기까지는 밥값에서 운전자 빼고 나누는 게 어때요</span><span class="cg-note">기본은 밥이에요. 고르면 여기까지 기록해 두고, 도착하면 이 몫은 빼고 알려 드려요</span><div class="cg-opts"><span class="cg-opt" data-act="pick0"><b>커피</b></span><span class="cg-opt cg-def" data-act="pick1"><b>밥</b></span><span class="cg-opt" data-act="pick2"><b class="cg-rot" aria-label="공동 경비" data-anno="공동 경비 예시 회전 · 약 2초"><span class="cg-rl"><i>공동 경비</i><i>장 본 값</i><i>펜션비</i><i>바베큐장 이용료</i><i>입장료</i><i>물품 구매비</i><i>공동 경비</i></span></b></span></div><span class="cg-sp"></span><div class="cg-bts"><span class="cg-btn cg-l" data-act="back" data-anno="Basic Button L · 계속 가기 → 홈(가는 중)">계속 가기</span></div></div></div></div></div></div></div>
+<div><div class="cg-frame-cap">분할 · 840 × 1184</div><div class="cg-win cg-win--port"><div class="cg-app cg-a-p1"><div class="cg-pg cg-p"><div class="cg-hd" data-anno="Title · Depth 80"><span class="cg-btn cg-ib cg-plain" data-act="back" data-anno="Icon Button 80 · Plain · 뒤로" aria-label="뒤로"><i class="cg-ic cg-ic-back"></i></span><span class="cg-ttl">지금까지의 노고</span><span class="cg-cap">가는 중 · 함께 4명</span></div><div class="cg-arr"><div class="cg-rcol" data-anno="오늘 운전 영수증 (5-1) · 출력 종이 형태 · 값이 0인 줄 생략"><div class="cg-prn" aria-hidden="true"><i></i></div><div class="cg-paperwrap"><div class="cg-paper">
+    <div class="cg-ph"><b>지금까지 영수증</b><span>14:20 출발 · 아직 가는 중</span></div>
+    <i class="cg-rule2"></i>
+    <div class="cg-rhd"><span>항목</span><span>더한 몫</span></div>
+    <div class="cg-rrow" data-act="why0"><span class="cg-k">날씨</span><span class="cg-v">비, 지금까지 내내</span><span class="cg-pc">+40%</span><i class="cg-chev"></i></div><div class="cg-rrow" data-act="why1"><span class="cg-k">정체 구간</span><span class="cg-v">19km</span><span class="cg-pc">+10%</span><i class="cg-chev"></i></div><div class="cg-rrow" data-act="why2"><span class="cg-k">예상보다 더</span><span class="cg-v">+13분</span><span class="cg-pc">+5%</span><i class="cg-chev"></i></div>
+    <div class="cg-rsum cg-rs1"><span>운전 시간</span><b>1시간 5분</b></div>
+    
+    <div class="cg-rsum"><span>거리</span><b>52km</b></div>
+    <div class="cg-rsum cg-tot"><span>합계</span><b>평소보다 1.55배 힘든 길</b></div>
+    
+    <div class="cg-bc" aria-hidden="true"><i class="cg-bars"></i><span>#2026 1107 052 065</span></div>
+  </div></div></div><div class="cg-card cg-offer" data-anno="중간 정산 · 도착과 같은 6개 항목 · 정산하면 최종에서 뺌(11/8 명준)"><span class="cg-head">여기까지는 밥값에서 운전자 빼고 나누는 게 어때요</span><span class="cg-note">기본은 밥이에요. 고르면 여기까지 기록해 두고, 도착하면 이 몫은 빼고 알려 드려요</span><div class="cg-opts"><span class="cg-opt" data-act="pick0"><b>커피</b></span><span class="cg-opt cg-def" data-act="pick1"><b>밥</b></span><span class="cg-opt" data-act="pick2"><b class="cg-rot" aria-label="공동 경비" data-anno="공동 경비 예시 회전 · 약 2초"><span class="cg-rl"><i>공동 경비</i><i>장 본 값</i><i>펜션비</i><i>바베큐장 이용료</i><i>입장료</i><i>물품 구매비</i><i>공동 경비</i></span></b></span></div><span class="cg-sp"></span><div class="cg-bts"><span class="cg-btn cg-l" data-act="back" data-anno="Basic Button L · 계속 가기 → 홈(가는 중)">계속 가기</span></div></div></div></div></div></div></div>
+</div>
+</section><section class="cg-state" data-state="중간 정산 · 항목 고른 뒤" data-id="mid-b-done">
+<h2>중간 정산 · 항목 고른 뒤<small>mid-b-done</small></h2>
+<p>고른 항목을 기록해 두고 계속 간다.</p>
+<ul><li>&quot;여기까지는 밥값에서 운전자 빼기로 했어요&quot; · [계속 가기]</li></ul>
+<div class="cg-frames">
+<div><div class="cg-frame-cap">앱 1개 · 1700 × 1184</div><div class="cg-win cg-win--land"><div class="cg-app cg-a-land"><div class="cg-pg"><div class="cg-hd" data-anno="Title · Depth 80"><span class="cg-btn cg-ib cg-plain" data-act="back" data-anno="Icon Button 80 · Plain · 뒤로" aria-label="뒤로"><i class="cg-ic cg-ic-back"></i></span><span class="cg-ttl">지금까지의 노고</span><span class="cg-cap">가는 중 · 함께 4명</span></div><div class="cg-arr"><div class="cg-rcol" data-anno="오늘 운전 영수증 (5-1) · 출력 종이 형태 · 값이 0인 줄 생략"><div class="cg-prn" aria-hidden="true"><i></i></div><div class="cg-paperwrap"><div class="cg-paper">
+    <div class="cg-ph"><b>지금까지 영수증</b><span>14:20 출발 · 아직 가는 중</span></div>
+    <i class="cg-rule2"></i>
+    <div class="cg-rhd"><span>항목</span><span>더한 몫</span></div>
+    <div class="cg-rrow" data-act="why0"><span class="cg-k">날씨</span><span class="cg-v">비, 지금까지 내내</span><span class="cg-pc">+40%</span><i class="cg-chev"></i></div><div class="cg-rrow" data-act="why1"><span class="cg-k">정체 구간</span><span class="cg-v">19km</span><span class="cg-pc">+10%</span><i class="cg-chev"></i></div><div class="cg-rrow" data-act="why2"><span class="cg-k">예상보다 더</span><span class="cg-v">+13분</span><span class="cg-pc">+5%</span><i class="cg-chev"></i></div>
+    <div class="cg-rsum cg-rs1"><span>운전 시간</span><b>1시간 5분</b></div>
+    
+    <div class="cg-rsum"><span>거리</span><b>52km</b></div>
+    <div class="cg-rsum cg-tot"><span>합계</span><b>평소보다 1.55배 힘든 길</b></div>
+    
+    <div class="cg-bc" aria-hidden="true"><i class="cg-bars"></i><span>#2026 1107 052 065</span></div>
+  </div></div></div><div class="cg-card cg-offer" data-anno="중간 정산 · 도착과 같은 6개 항목 · 정산하면 최종에서 뺌(11/8 명준)"><span class="cg-cap2">14:20 출발 · 지금까지</span><span class="cg-head">여기까지는 밥값에서 운전자 빼기로 했어요</span><span class="cg-note">도착하면 전체를 다시 세고, 이 몫은 빼고 알려 드려요</span><span class="cg-sp"></span><div class="cg-bts"><span class="cg-btn cg-l cg-fill" data-act="back" data-anno="Basic Button L · 계속 가기 → 홈(가는 중)">계속 가기</span></div></div></div></div></div></div></div>
+<div><div class="cg-frame-cap">분할 · 840 × 1184</div><div class="cg-win cg-win--port"><div class="cg-app cg-a-p1"><div class="cg-pg cg-p"><div class="cg-hd" data-anno="Title · Depth 80"><span class="cg-btn cg-ib cg-plain" data-act="back" data-anno="Icon Button 80 · Plain · 뒤로" aria-label="뒤로"><i class="cg-ic cg-ic-back"></i></span><span class="cg-ttl">지금까지의 노고</span><span class="cg-cap">가는 중 · 함께 4명</span></div><div class="cg-arr"><div class="cg-rcol" data-anno="오늘 운전 영수증 (5-1) · 출력 종이 형태 · 값이 0인 줄 생략"><div class="cg-prn" aria-hidden="true"><i></i></div><div class="cg-paperwrap"><div class="cg-paper">
+    <div class="cg-ph"><b>지금까지 영수증</b><span>14:20 출발 · 아직 가는 중</span></div>
+    <i class="cg-rule2"></i>
+    <div class="cg-rhd"><span>항목</span><span>더한 몫</span></div>
+    <div class="cg-rrow" data-act="why0"><span class="cg-k">날씨</span><span class="cg-v">비, 지금까지 내내</span><span class="cg-pc">+40%</span><i class="cg-chev"></i></div><div class="cg-rrow" data-act="why1"><span class="cg-k">정체 구간</span><span class="cg-v">19km</span><span class="cg-pc">+10%</span><i class="cg-chev"></i></div><div class="cg-rrow" data-act="why2"><span class="cg-k">예상보다 더</span><span class="cg-v">+13분</span><span class="cg-pc">+5%</span><i class="cg-chev"></i></div>
+    <div class="cg-rsum cg-rs1"><span>운전 시간</span><b>1시간 5분</b></div>
+    
+    <div class="cg-rsum"><span>거리</span><b>52km</b></div>
+    <div class="cg-rsum cg-tot"><span>합계</span><b>평소보다 1.55배 힘든 길</b></div>
+    
+    <div class="cg-bc" aria-hidden="true"><i class="cg-bars"></i><span>#2026 1107 052 065</span></div>
+  </div></div></div><div class="cg-card cg-offer" data-anno="중간 정산 · 도착과 같은 6개 항목 · 정산하면 최종에서 뺌(11/8 명준)"><span class="cg-cap2">14:20 출발 · 지금까지</span><span class="cg-head">여기까지는 밥값에서 운전자 빼기로 했어요</span><span class="cg-note">도착하면 전체를 다시 세고, 이 몫은 빼고 알려 드려요</span><span class="cg-sp"></span><div class="cg-bts"><span class="cg-btn cg-l cg-fill" data-act="back" data-anno="Basic Button L · 계속 가기 → 홈(가는 중)">계속 가기</span></div></div></div></div></div></div></div>
+</div>
+</section>
+</body></html>

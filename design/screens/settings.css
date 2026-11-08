@@ -1,0 +1,28 @@
+/* Design v2(운전 노고 정산) — 아티팩트 시안에서 옮김. 값은 tokens.css의 --cg-* 변수, 크기는 Connect-S 실제 픽셀(1dp = 1px). */
+.cg-srow{display:flex;align-items:center;gap:16px;min-height:112px}
+.cg-srow + .cg-srow{border-top:1px solid var(--cg-line)}
+.cg-srow .cg-k{font:var(--cg-body-m);color:var(--cg-text-secondary);width:170px;flex:none}
+.cg-srow .cg-v{font:var(--cg-body-l);margin-right:auto;min-width:0;white-space:nowrap}
+.cg-srow .cg-v.cg-empty{color:var(--cg-text-quaternary)}
+.cg-p .cg-srow{min-height:84px}
+.cg-p .cg-srow .cg-k{width:150px;font:var(--cg-label-m)}
+.cg-p .cg-srow .cg-v{font:var(--cg-body-m-b)}
+/* 설정(S20) */
+.cg-set .cg-slist{display:flex;flex-direction:column;flex:none}
+.cg-srow{display:flex;align-items:center;gap:32px;min-height:136px;padding:20px 40px}
+.cg-srow + .cg-srow,.cg-swy + .cg-srow{border-top:1px solid var(--cg-line)}
+.cg-srow .cg-sk{flex:1;display:flex;flex-direction:column;gap:6px;min-width:0}
+.cg-srow .cg-sk b{font:var(--cg-title-s)}
+.cg-srow .cg-sk small{font:var(--cg-body-m);color:var(--cg-text-tertiary)}
+.cg-schev{width:80px;height:80px;border-radius:24px;display:grid;place-items:center;cursor:pointer;flex:none}
+.cg-schev:active{background:var(--cg-btn-basic-pressed)}
+.cg-schev .cg-chev{width:16px;height:16px;border-right:4px solid var(--cg-text-tertiary);border-bottom:4px solid var(--cg-text-tertiary);transform:rotate(45deg);margin-top:-8px;transition:transform .26s cubic-bezier(.32,.72,0,1)}
+.cg-schev.cg-on .cg-chev{transform:rotate(-135deg);margin-top:8px}
+.cg-swy{margin:0 40px 24px;padding:16px 22px;border-radius:16px;background:var(--cg-placeholder);font:var(--cg-body-m);color:var(--cg-text-secondary)}
+.cg-play .cg-swy{animation:cg-up .28s cubic-bezier(.2,.7,.2,1) both}
+.cg-pg.cg-p .cg-srow{gap:16px;min-height:112px;padding:16px 24px}
+.cg-pg.cg-p .cg-srow.cg-wrap{flex-wrap:wrap}
+.cg-pg.cg-p .cg-srow.cg-wrap .cg-seg{flex:1 0 100%}
+.cg-pg.cg-p .cg-srow .cg-sk b{font:var(--cg-body-l)}
+.cg-pg.cg-p .cg-srow .cg-sk small{font:var(--cg-label-m)}
+.cg-pg.cg-p .cg-swy{margin:0 24px 16px;font:var(--cg-label-m)}

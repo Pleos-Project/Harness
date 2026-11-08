@@ -7,5 +7,29 @@
 .cg-arr.cg-print .cg-offer{animation:cg-offer .45s cubic-bezier(.2,.7,.2,1) .9s both}
 .cg-arr .cg-offer{flex:0 0 640px}
 .cg-p .cg-arr .cg-offer{flex:1 1 auto}
+/* 도착 · 정리하지 못함 */
+.cg-uns{flex:1;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:32px}
+.cg-vpaper{width:960px;max-width:100%;background:var(--cg-surface-card);border:2px solid var(--cg-line-strong);border-radius:32px;box-shadow:var(--cg-shadow-2);padding:52px 64px 40px;display:flex;flex-direction:column;align-items:stretch;gap:0}
+.cg-vpaper .cg-ph{display:flex;flex-direction:column;align-items:center;gap:4px;text-align:center}
+.cg-vpaper .cg-ph b{font:var(--cg-title-l);color:var(--cg-text-quaternary)}
+.cg-vpaper .cg-ph span{font:var(--cg-label-m);color:var(--cg-text-quaternary)}
+.cg-vpaper .cg-rule2{display:block;height:8px;border-top:2px solid var(--cg-line-strong);border-bottom:2px solid var(--cg-line-strong);margin:22px 0 34px}
+.cg-vmsg{display:flex;flex-direction:column;align-items:center;gap:14px;text-align:center}
+.cg-vmsg b{font:var(--cg-headline-s)}
+.cg-vmsg span{font:var(--cg-body-l);color:var(--cg-text-secondary)}
+.cg-vlines{display:flex;flex-direction:column;align-items:center;gap:16px;margin:40px 0 32px}
+.cg-vlines i{display:block;height:16px;border-radius:8px;background:var(--cg-placeholder)}
+.cg-vnote{font:var(--cg-label-m);color:var(--cg-text-tertiary);text-align:center}
+.cg-uns .cg-bts{display:flex;gap:16px}
+.cg-pg.cg-p .cg-uns{justify-content:flex-start;gap:20px}
+.cg-pg.cg-p .cg-vpaper{padding:30px 26px 24px}
+.cg-pg.cg-p .cg-vpaper .cg-ph b{font:var(--cg-body-l)}
+.cg-pg.cg-p .cg-vpaper .cg-rule2{margin:12px 0 20px}
+.cg-pg.cg-p .cg-vmsg b{font:var(--cg-title-m)}
+.cg-pg.cg-p .cg-vmsg span{font:var(--cg-label-m)}
+.cg-pg.cg-p .cg-vlines{margin:24px 0 20px;gap:12px}
+.cg-pg.cg-p .cg-vlines i{height:12px}
+.cg-pg.cg-p .cg-uns .cg-bts{align-self:stretch}
+.cg-pg.cg-p .cg-uns .cg-bts .cg-btn{flex:1}
 .cg-chg{background:var(--cg-placeholder-strong);box-shadow:-12px 0 0 var(--cg-placeholder-strong),12px 0 0 var(--cg-placeholder-strong);border-radius:8px}
 .cg-play .cg-chg{animation:cg-chg 1.8s ease-out forwards}

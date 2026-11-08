@@ -27,6 +27,12 @@
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .cg-cta .cg-ar{background:#13141726}}
 :root[data-theme="dark"] .cg-cta .cg-ar{background:#13141726}
 @media (prefers-reduced-motion:reduce){
+  .cg-play .cg-hero .cg-ill.cg-arrv .cg-pin,.cg-play .cg-swy,.cg-sw i,.cg-sg{animation:none;transition:none}
+}
+@media (prefers-reduced-motion:reduce){
+  .cg-midb .cg-ill::before{animation:none}
+}
+@media (prefers-reduced-motion:reduce){
   .cg-skel,.cg-dots i,.cg-prog .cg-pdot,.cg-play .cg-chg,.cg-play .cg-rec.cg-new,.cg-play .cg-isheet{animation:none}
 }
 @media (prefers-reduced-motion:reduce){

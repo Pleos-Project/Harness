@@ -17,11 +17,6 @@
 .cg-dst .cg-km{font:var(--cg-body-m);color:var(--cg-text-secondary);white-space:nowrap}
 .cg-acts{width:540px;flex:none}
 .cg-sum{padding:8px 28px}
-.cg-srow{display:flex;align-items:center;gap:16px;min-height:112px}
-.cg-srow + .cg-srow{border-top:1px solid var(--cg-line)}
-.cg-srow .cg-k{font:var(--cg-body-m);color:var(--cg-text-secondary);width:170px;flex:none}
-.cg-srow .cg-v{font:var(--cg-body-l);margin-right:auto;min-width:0;white-space:nowrap}
-.cg-srow .cg-v.cg-empty{color:var(--cg-text-quaternary)}
 .cg-kbd{position:absolute;left:0;right:0;bottom:0;height:400px;z-index:5;background:var(--cg-bg-primary);border-top:3px dashed var(--cg-line-strong);display:grid;place-items:center;font:var(--cg-title-s);color:var(--cg-text-tertiary)}
 .cg-p .cg-field{height:88px;font:var(--cg-body-l)}
 .cg-p .cg-list{padding:8px}
@@ -33,9 +28,6 @@
 .cg-favs{display:flex;gap:12px;padding:4px 12px 12px;border-bottom:1px solid var(--cg-line);margin-bottom:4px}
 .cg-favs .cg-btn.cg-sel{background:var(--cg-surface-card);box-shadow:inset 0 0 0 3px var(--cg-text-primary)}
 .cg-p .cg-favs{padding:0 8px 8px}
-.cg-p .cg-srow{min-height:84px}
-.cg-p .cg-srow .cg-k{width:150px;font:var(--cg-label-m)}
-.cg-p .cg-srow .cg-v{font:var(--cg-body-m-b)}
 .cg-home > .cg-card.cg-list{margin-top:24px;align-self:center;width:1040px;max-width:100%}
 /* 출발 화면 */
 .cg-home.cg-dp > .cg-hsearch{margin-top:28px}

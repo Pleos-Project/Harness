@@ -18,13 +18,15 @@
 ### 시안 ↔ 앱 파일 대응표 (반영 PR이 고칠 곳) — Design v2(운전 노고 정산, 11/8)
 | 시안 | 앱(Compose) | 비고 |
 |---|---|---|
-| `screens/home.html` | `ui/EffortApp.kt` `EffortHome`·`RecordCard` | 시작 화면(새로) · 첫 사용 · 기본 · 진행 중(+시트) · 방금 끝난 기록 |
+| `screens/home.html` | `ui/EffortApp.kt` `EffortHome`·`RecordCard` | 시작 화면(새로) · 첫 사용 · 기본 · 방금 끝난 기록 · 고르기 전에 나간 도착(v41). 위 바 오른쪽 = 설정 아이콘 |
+| `screens/midway.html` | `ui/EffortApp.kt` `EffortHome` 진행 중 상태 + 새 화면 `EffortMidScreen`(가칭, 중간 정산) | v32~v33: 휴게소에서 다시 연 홈(내 차 그림 = 중간 정산 버튼 · [도착했어요] · [그만두기]) · 그만두기 확인 · 지금까지의 노고 A/B · 정산 뒤 |
 | `screens/depart.html` | `ui/EffortApp.kt` `EffortDepart`·`DestRow`·`DemoDepart`, `ui/PayerToast.kt` | 목록형 → 목적지 카드 4장 + 미리보기 칸. 인원 확인은 위 바 줄 알림 바 |
 | `screens/search.html` | `ui/EffortApp.kt` `EffortDepart` 검색 상태 | 결과 · 검색 중 · 결과 없음 · 안 됨 · 위치 못 받음 |
 | `screens/drive.html` | 그리지 않음(순정 내비 · 시스템 차단 `DrivingCover`) | 참고용 |
 | `screens/calc.html` | 새 화면 `EffortCalcScreen`(가칭) | 도착 → 계산 연출(약 13초, 건너뛰기) → 영수증. 움직임은 `HANDOFF_v2.md` 3절 |
 | `screens/arrive.html` | `ui/EffortApp.kt` `EffortReceiptScreen` + `EffortProposalScreen` → **한 화면으로 합침** | 왼쪽 영수증 · 오른쪽 제안 카드(가로) / 위·아래(분할). 쉰 시간은 짧은 하단 시트 |
-| `screens/record.html` | 새 화면(가칭 `EffortRecordScreen`, 디자인 제안). `ui/RecordScreen.kt`는 피봇 전 장부 화면이라 대응 안 함 | 기록 상세 · 목록(자리) |
+| `screens/record.html` | 새 화면(가칭 `EffortRecordScreen`). `ui/RecordScreen.kt`는 피봇 전 장부 화면이라 대응 안 함 | 주행 기록 목록 → 기록 상세(A · B) |
+| `screens/settings.html` | `app/Settings.kt` + 새 설정 화면(가칭 `EffortSettingsScreen`) `[June 확인]` | 제안 방식 A/B · 시연 고정 · 단가 출처 · 기록 초기화(S20) |
 | `components/<부품>.html` | `ui/components/Components.kt` `Cg*` | 버튼·칩·카드·시트 등. 화면마다 따로 만들지 않는다 |
 | 모든 시안의 화면 문구 | `res/values/strings.xml` | 문구는 여기서만 고친다. 임시 문구는 디자인이 확정 전(PR 본문에 목록) |
 - 피봇 전 시안 대응(`home`·`card`·`range` 등 옛 이름)은 쓰지 않는다. `components/badge`·`card-front`는 피봇 전 부품으로 이력만 남긴다.

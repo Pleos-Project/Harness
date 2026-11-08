@@ -21,13 +21,18 @@
 <link rel="stylesheet" href="components/loading.css">
 <link rel="stylesheet" href="components/empty.css">
 <link rel="stylesheet" href="components/notice.css">
+<link rel="stylesheet" href="components/mid-button.css">
+<link rel="stylesheet" href="components/switch.css">
+<link rel="stylesheet" href="components/segmented.css">
 <link rel="stylesheet" href="screens/home.css">
 <link rel="stylesheet" href="screens/depart.css">
 <link rel="stylesheet" href="screens/search.css">
 <link rel="stylesheet" href="screens/drive.css">
 <link rel="stylesheet" href="screens/calc.css">
 <link rel="stylesheet" href="screens/arrive.css">
+<link rel="stylesheet" href="screens/midway.css">
 <link rel="stylesheet" href="screens/record.css">
+<link rel="stylesheet" href="screens/settings.css">
 <link rel="stylesheet" href="screens/after.css">
 <style>
   /* 미리보기 틀(앱 아님). 크기는 Connect-S 실제 픽셀, 화면에는 50%로 보임 */
@@ -60,20 +65,22 @@
 </div>
 <h2>화면</h2>
 <div class="scr">
-  <a href="screens/home.html">홈 · 앱 시작<small>시작 화면 · 첫 사용 · 기본 · 진행 중 · 방금 끝난 기록</small></a>
-  <a href="screens/depart.html">출발 화면 · 인원 확인<small>기본 · 인원 알림 · 센서 오류 · 미리보기(중·준비·실패) · 누른 뒤 · 빈 상태 · 인터넷 없음</small></a>
+  <a href="screens/home.html">홈 · 앱 시작<small>시작 화면 · 첫 사용 · 기본 · 방금 끝난 기록 · 고르기 전에 나간 도착</small></a>
+  <a href="screens/depart.html">출발 화면 · 인원 확인<small>기본 · 인원 알림(감지 그대로 · 직접 바꿈 · 1명) · 센서 오류 · 미리보기(중·준비·실패·지원 안 하는 지역) · 누른 뒤 · 경로 요청 실패 · 빈 상태 · 인터넷 없음</small></a>
   <a href="screens/search.html">목적지 검색<small>결과 · 검색 중 · 결과 없음 · 안 됨 · 위치 못 받음</small></a>
   <a href="screens/drive.html">출발 뒤 · 주행 중<small>순정 내비(와이어) · 시스템 주행 차단</small></a>
+  <a href="screens/midway.html">가는 중 · 잠깐 멈춤 · 중간 정산<small>휴게소에서 다시 연 홈 · 그만두기 확인 · 지금까지의 노고 A/B · 정산 뒤</small></a>
   <a href="screens/calc.html">도착 · 계산 연출<small>도착 처리 중 · 출발점 · 날씨 비/눈/맑음 · 정체 · 다 정리함</small></a>
-  <a href="screens/arrive.html">도착 · 영수증 + 쉰 시간 + 제안<small>쉰 시간 시트 · 방식 A · 방식 B · 예외(0인 줄 · 혼자 · 정보 없음 · 시연)</small></a>
-  <a href="screens/record.html">기록<small>기록 상세 · 기록 목록(자리)</small></a>
+  <a href="screens/arrive.html">도착 · 영수증 + 쉰 시간 + 제안<small>쉰 시간 시트 · 방식 A · 방식 B · 제안 없음 · 중간 정산을 한 주행(아코디언) · 예외(0인 줄 · 혼자 · 정보 없음 · 시연 · 정리하지 못함)</small></a>
+  <a href="screens/record.html">기록<small>주행 기록 목록 · 기록 상세(방식 A · B)</small></a>
+  <a href="screens/settings.html">설정<small>제안 방식 · 시연 고정 · 단가 출처 · 기록 초기화</small></a>
 </div>
 <h2>부품 · 앱 1개(1700)와 분할(840) 폭</h2>
 <div id="comps"></div>
 <script>
   // components/*.html 조각을 두 폭에 넣는다. file:// 에서 fetch가 막히면 design/ 에서 python -m http.server 로 연다.
-  const parts = [["button","Basic Button"],["icon-button","Icon Button"],["cta","출발 버튼"],["text-button","글자 버튼"],["chip","Toggle Button(칩)"],["stepper","Stepper"],["title-bar","위 바(Title)"],["pill","인원 · 진행 중 알약"],["search-field","검색 한 줄"],["dest-card","목적지 카드"],["record-card","기록 카드"],["preview-panel","미리보기 칸"],["people-alert","인원 확인 알림 바"],["bottom-sheet","짧은 하단 시트"],["receipt","영수증"],["offer-card","제안 카드"],["loading","기다림"],["empty","빈 상태"],["notice","안내"]];
-  const tall = new Set(["people-alert","bottom-sheet","receipt","offer-card"]);
+  const parts = [["button","Basic Button"],["icon-button","Icon Button"],["cta","출발 버튼"],["text-button","글자 버튼"],["chip","Toggle Button(칩)"],["stepper","Stepper"],["title-bar","위 바(Title)"],["pill","인원 · 진행 중 알약"],["search-field","검색 한 줄"],["dest-card","목적지 카드"],["record-card","기록 카드"],["preview-panel","미리보기 칸"],["people-alert","인원 확인 알림 바"],["bottom-sheet","짧은 하단 시트"],["receipt","영수증"],["offer-card","제안 카드"],["loading","기다림"],["empty","빈 상태"],["notice","안내"],["mid-button","중간 정산 버튼"],["switch","스위치"],["segmented","둘로 나뉜 알약"]];
+  const tall = new Set(["people-alert","bottom-sheet","receipt","offer-card","mid-button"]);
   Promise.all(parts.map(([p]) => fetch('components/' + p + '.html').then(r => r.text()))).then(htmls => {
     document.getElementById('comps').innerHTML = parts.map(([p, name], i) => {
       const note = (htmls[i].match(/<!--([\s\S]*?)-->/) || ['', ''])[1].trim().split('\n')[0];

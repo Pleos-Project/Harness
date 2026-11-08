@@ -1,7 +1,11 @@
-<!-- 인원 확인 알림 바 1120 × 120(System Notification 한 줄 변형). 위 바 줄에 겹치고 저절로 안 사라짐.
+<!-- 인원 확인 알림 바 1040 × 96(분할 758 × 88) — 폭은 목적지 검색 창과 같음, 검색 창에 걸치지 않음(v37~v38). 감지 인원 그대로면 "N명이 탔어요", −/+로 바꾸면 "N명이 낼게요"(cg-man, v39). 처음 뜰 때만 내려옴(cg-still = 다시 그릴 때 움직임 없음). 예시 = 감지 그대로 · 직접 바꿈.
      문구는 샘플. 실제 값: 금액·시간·배수·% = 엔진 결과(data-derived), 목적지·ETA·정체 = 순정 내비 requestTrip, 고정 문구 = strings.xml(임시 문구는 hD-design/임시문구.md 확정 전). -->
-<div class="cg-pbar" data-anno="인원 확인 · 위 바 높이 80에 맞춘 얇은 알림 · 로고만 가림 (앱 안, 저절로 안 사라짐)">
+<div class="cg-pbar" data-anno="인원 확인 알림 · 높이 96(분할 88) · 폭은 목적지 검색 줄과 같음(1040, 분할 758) · 검색 줄에 걸치지 않음 · 앱 안, 저절로 안 사라짐">
     <div class="cg-pt"><b>4명이 탔어요</b><small>좌석 센서로 감지했어요 · 나눠 낼 인원을 맞춰 주세요</small></div>
     <div class="cg-pst" data-anno="Stepper"><span class="cg-btn cg-ib cg-plain"  data-act="split-"  aria-label="줄이기"><i class="cg-ic cg-ic-minus"></i></span><span class="cg-v">4명</span><span class="cg-btn cg-ib cg-plain"  data-act="split+"  aria-label="늘리기"><i class="cg-ic cg-ic-plus"></i></span></div>
+    <i class="cg-pdv"></i><span class="cg-tbtn cg-pri" data-act="toastOk" data-anno="글자 버튼 · 진한 색 = 확인">확인</span><span class="cg-tbtn" data-act="toastClose" data-anno="글자 버튼 · 옅은 색 = 닫기(감지 인원 그대로)">닫기</span>
+  </div><div class="cg-pbar cg-man" data-anno="인원 확인 알림 · 높이 96(분할 88) · 폭은 목적지 검색 줄과 같음(1040, 분할 758) · 검색 줄에 걸치지 않음 · 앱 안, 저절로 안 사라짐">
+    <div class="cg-pt"><b>3명이 낼게요</b><small>감지는 4명 · 3명으로 나눠요</small></div>
+    <div class="cg-pst" data-anno="Stepper"><span class="cg-btn cg-ib cg-plain"  data-act="split-"  aria-label="줄이기"><i class="cg-ic cg-ic-minus"></i></span><span class="cg-v">3명</span><span class="cg-btn cg-ib cg-plain"  data-act="split+"  aria-label="늘리기"><i class="cg-ic cg-ic-plus"></i></span></div>
     <i class="cg-pdv"></i><span class="cg-tbtn cg-pri" data-act="toastOk" data-anno="글자 버튼 · 진한 색 = 확인">확인</span><span class="cg-tbtn" data-act="toastClose" data-anno="글자 버튼 · 옅은 색 = 닫기(감지 인원 그대로)">닫기</span>
   </div>

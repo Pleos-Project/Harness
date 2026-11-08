@@ -18,6 +18,12 @@
 .cg-home.cg-p .cg-hero .cg-h{font:var(--cg-headline-s)}
 .cg-home.cg-p .cg-hlabel{margin:28px 8px 10px}
 .cg-home.cg-hm .cg-hero .cg-tx{gap:16px}
+.cg-home.cg-p .cg-hero.cg-prg{flex:0 0 336px}
+.cg-home.cg-p .cg-hero.cg-prg .cg-tx{gap:8px}
+/* 홈 · 도착 대기(고르기 전에 나감): 내 차 그림에 "도착" 깃발 */
+.cg-hero .cg-ill.cg-arrv .cg-pin{position:absolute;right:34px;top:44px;height:48px;padding:0 18px;border-radius:24px;background:var(--cg-text-primary);color:var(--cg-surface-card);font:var(--cg-body-s);font-weight:700;display:grid;place-items:center;box-shadow:var(--cg-shadow-1)}
+.cg-play .cg-hero .cg-ill.cg-arrv .cg-pin{animation:cg-up .5s cubic-bezier(.32,.72,0,1) .2s both}
+.cg-home.cg-p .cg-hero .cg-ill.cg-arrv .cg-pin{right:14px;top:20px;height:36px;padding:0 12px;font:var(--cg-label-s);font-weight:700}
 /* 스플래시 */
 .cg-splash{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px}
 .cg-splash .cg-ill{width:240px;height:240px;border-radius:50%;background:var(--cg-placeholder);position:relative}

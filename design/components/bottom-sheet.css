@@ -19,6 +19,8 @@
 .cg-rsheet .cg-chips{flex-wrap:wrap}
 .cg-rsheet .cg-chip{flex:1 1 40%}
 .cg-a-p1 .cg-rsheet{left:40px;right:40px;width:auto}
+.cg-isheet .cg-ibts{display:flex;gap:12px;justify-content:flex-end;margin-top:8px}
+.cg-a-p1 .cg-isheet .cg-ibts .cg-btn{height:64px;font:var(--cg-body-m)}
 .cg-isheet{position:absolute;z-index:9;left:50%;bottom:40px;width:760px;margin-left:-380px;background:var(--cg-surface-card);border:2px solid var(--cg-line-strong);border-radius:40px;box-shadow:var(--cg-shadow-3);padding:16px 40px 24px;display:flex;flex-direction:column;gap:8px}
 .cg-isheet .cg-grab{align-self:center;width:80px;height:6px;border-radius:999px;background:var(--cg-line-strong);margin-bottom:8px}
 .cg-isheet b{font:var(--cg-title-m)}

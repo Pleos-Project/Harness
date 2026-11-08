@@ -25,6 +25,7 @@
 .cg-p .cg-opt{flex:1;min-width:0;flex-direction:column;justify-content:center;align-items:flex-start;gap:2px;min-height:96px;padding:8px 20px;border-radius:24px}
 .cg-p .cg-opt b{font:var(--cg-body-l);margin:0}
 .cg-p .cg-opt small{font:var(--cg-label-s);white-space:normal}
+.cg-odiv{display:block;height:2px;background:var(--cg-line);margin:14px 0;flex:none}
 .cg-opt b.cg-rot{display:block;height:1.25em;line-height:1.25em;overflow:hidden;margin-right:auto}
 .cg-opt b.cg-rot .cg-rl{display:flex;flex-direction:column;animation:cg-rot 12s cubic-bezier(.65,0,.35,1) infinite}
 .cg-opt b.cg-rot i{font-style:normal;display:block;height:1.25em;white-space:nowrap}

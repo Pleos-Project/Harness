@@ -1,0 +1,11 @@
+/* Design v2(운전 노고 정산) — 아티팩트 시안에서 옮김. 값은 tokens.css의 --cg-* 변수, 크기는 Connect-S 실제 픽셀(1dp = 1px). */
+/* 가는 중 홈(11/8 명준): 내 차 그림 = 중간 정산 버튼 · [도착했어요] · [그만두기] */
+.cg-midb{display:flex;flex-direction:column;align-items:center;gap:22px;cursor:pointer;flex:none}
+.cg-midb .cg-ill{position:relative;transition:transform .16s cubic-bezier(.2,.7,.2,1)}
+.cg-midb .cg-ill::before{content:"";position:absolute;inset:-14px;border-radius:50%;border:3px dashed var(--cg-line-strong);animation:cg-spin 24s linear infinite}
+.cg-midb:active .cg-ill{transform:scale(.97)}
+.cg-mlbl{display:inline-flex;align-items:center;gap:14px;height:72px;padding:0 24px 0 30px;border-radius:999px;background:var(--cg-surface-card);border:2px solid var(--cg-text-primary);font:var(--cg-body-l);white-space:nowrap}
+.cg-mlbl .cg-chev,.cg-logr .cg-chev{width:12px;height:12px;border-right:3px solid var(--cg-text-tertiary);border-bottom:3px solid var(--cg-text-tertiary);transform:rotate(-45deg);flex:none}
+.cg-home.cg-p .cg-midb{gap:12px}
+.cg-home.cg-p .cg-midb .cg-ill::before{inset:-8px}
+.cg-home.cg-p .cg-mlbl{height:56px;gap:10px;padding:0 16px 0 20px;font:var(--cg-label-m)}
