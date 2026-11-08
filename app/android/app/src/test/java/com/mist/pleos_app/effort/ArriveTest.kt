@@ -111,6 +111,20 @@ class ArriveTest {
     }
 
     @Test
+    fun noAutoArrivalOnResumeRightAfterDeparture() {
+        // 출발 직후 다시 열면 내비 안내 시작 전이라 "안내 안 함"으로 답한다 → 1분 안에는 다시 보임으로 도착하지 않음(에뮬 11/9)
+        val t = OpenTrip("t1", "2026-11-17T16:00:00+09:00", "서울식물원", 1, 2000.0)
+        val early = "2026-11-17T16:00:05+09:00"
+        assertFalse(autoArrivalAllowed(t, ArrivalCue.RESUME, early))
+        assertFalse(autoArrivalAllowed(t, ArrivalCue.DOOR_ON_SHOW, early))
+        assertTrue(autoArrivalAllowed(t, ArrivalCue.DOOR, early))                       // 보이는 동안 문이 열리는 순간은 도착
+        assertTrue(autoArrivalAllowed(t.copy(demo = true), ArrivalCue.RESUME, early))   // 시연은 그대로
+        assertFalse(autoArrivalAllowed(t, ArrivalCue.RESUME, "2026-11-17T16:00:59+09:00"))
+        assertTrue(autoArrivalAllowed(t, ArrivalCue.RESUME, "2026-11-17T16:01:00+09:00"))
+        assertTrue(autoArrivalAllowed(t, ArrivalCue.RESUME, "2026-11-17T16:40:00+09:00"))
+    }
+
+    @Test
     fun lateArrivalIsUnsettledWithoutProposal() {
         // #68·#71: ETA 105분인데 211분 뒤에 도착이 잡히면(앱을 늦게 다시 엶) 영수증 대신 정리하지 못함
         val t = OpenTrip(
