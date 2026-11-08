@@ -99,9 +99,11 @@ fun EffortApp(
     LaunchedEffect(parked, doorOpen, shown) { vm.onCar(parked, doorOpen) }
     // 인원 확인 알림(PR #34·#40 재사용): 출발 화면에서 2명 이상 + 지난번 확인값과 다르면(노고 PRD v1.3 8장)
     val askPayers = remember(seats, payer, screen) { screen == EffortScreen.DEPART && vm.shouldAskPayers(seats) }
+    // 앱 시작 화면(Design v2 home app-splash, 1.6초) — 처음 켤 때 한 번
+    var splash by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(true) }
     EffortFrame(demoValues = ui.demo, driving = driving) {
         when (screen) {
-            EffortScreen.HOME -> EffortHome(
+            EffortScreen.HOME -> if (splash) EffortSplash { splash = false } else EffortHomeScreen(
                 ui,
                 routeFailed = route == DepartState.FAILED && vm.canRetryRoute,
                 onDepart = vm::openDepart,
@@ -146,71 +148,7 @@ private fun EffortFrame(demoValues: Boolean, driving: Boolean, toast: @Composabl
     }
 }
 
-// ------------------------------------------------------------ 홈: [동승 출발] · 진행 중 · 최근 기록 3건
-@Composable
-private fun EffortHome(
-    ui: EffortUi,
-    routeFailed: Boolean,
-    onDepart: () -> Unit,
-    onDiscard: () -> Unit,
-    onRetry: () -> Unit,
-    onSettings: () -> Unit,
-    onReceipt: () -> Unit = {},
-    onArrive: () -> Unit = {},
-) {
-    val gap = Arrangement.spacedBy(24.gpx)
-    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()), verticalArrangement = gap) {
-        val trip = ui.openTrip
-        when (ui.phase) {
-            EffortPhase.IDLE -> CgButton(stringResource(R.string.effort_depart_start), onDepart, Modifier.fillMaxWidth())
-            EffortPhase.DRIVING -> trip?.let { TripCard(it, arrived = false, routeFailed = routeFailed, onDiscard = onDiscard, onRetry = onRetry, onArrive = onArrive) }
-            EffortPhase.ARRIVED -> trip?.let { TripCard(it, arrived = true, routeFailed = false, onDiscard = onDiscard, onRetry = onRetry, onReceipt = onReceipt) }
-        }
-        CgCaption(stringResource(R.string.effort_recent))
-        if (ui.recent.isEmpty()) {
-            CgBody(stringResource(R.string.effort_recent_empty), secondary = true)
-        } else {
-            ui.recent.forEach { RecordCard(it) }
-        }
-        CgButton(stringResource(R.string.screen_settings), onSettings, Modifier.fillMaxWidth(), kind = CgButtonKind.Basic)
-    }
-}
-
-/** 진행 중인 출발(X2 '재시작 중 열린 출발 기록'). 목적지 이름만 보여 준다(좌표 없음). */
-@Composable
-private fun TripCard(
-    trip: OpenTrip,
-    arrived: Boolean,
-    routeFailed: Boolean,
-    onDiscard: () -> Unit,
-    onRetry: () -> Unit,
-    onReceipt: () -> Unit = {},
-    onArrive: () -> Unit = {},
-) {
-    CgCard(Modifier.fillMaxWidth()) {
-        CgTitle(stringResource(if (arrived) R.string.effort_arrived else R.string.effort_driving, trip.destName))
-        if (routeFailed) CgNotice(stringResource(R.string.effort_route_failed))
-        else if (!arrived) CgBody(stringResource(R.string.effort_driving_hint), secondary = true)
-        Row(horizontalArrangement = Arrangement.spacedBy(24.gpx)) {
-            if (arrived) CgButton(stringResource(R.string.effort_receipt_open), onReceipt)
-            else CgButton(stringResource(R.string.effort_arrive_now), onArrive)   // 내비가 안내를 끝내지 않아도 직접 도착(#68)
-            if (routeFailed) CgButton(stringResource(R.string.effort_route_retry), onRetry)
-            CgButton(stringResource(R.string.effort_discard), onDiscard, kind = CgButtonKind.Basic)
-        }
-    }
-}
-
-@Composable
-private fun RecordCard(r: EffortRecord) {
-    CgCard(Modifier.fillMaxWidth()) {
-        CgCaption(stringResource(R.string.effort_record_line, dayText(r.date), r.destName))
-        CgBody(r.headlineText)
-    }
-}
-
-/** "2026-11-17" → "11월 17일". 날짜 표기만(계산 없음). */
-private fun dayText(date: String): String =
-    runCatching { LocalDate.parse(date).let { "${it.monthValue}월 ${it.dayOfMonth}일" } }.getOrDefault(date)
+// ------------------------------------------------------------ 홈: Design v2 → EffortHomeV2.kt
 
 // ------------------------------------------------------------ 출발(F20): Design v2 → EffortDepartV2.kt
 
@@ -254,31 +192,6 @@ private fun EffortSettings(s: Settings, onChange: (Settings) -> Unit, onReset: (
                     CgButton(stringResource(R.string.settings_reset_confirm), { onReset(); confirmReset = false; resetDone = true }, Modifier.weight(1f))
                 }
             }
-        }
-    }
-}
-
-// ------------------------------------------------------------ 미리보기: 가로·세로(1:1 분할)
-private val previewTrip = OpenTrip("t1", "2026-11-17T16:00:00+09:00", "태안 꽃지해수욕장", 4, 6300.0, demo = true)
-private val previewRecord = EffortRecord("t0", "2026-11-10", "양평 두물머리", 60.0, 1.0, 60.0, "A", "약 5천 원", "accept", "오늘 운전 1시간 · 평소와 같은 길")
-
-@Preview(name = "홈·진행 중", widthDp = 1280, heightDp = 720)
-@Preview(name = "홈·세로", widthDp = 640, heightDp = 720)
-@Composable
-private fun EffortHomePreview() {
-    ChagokTheme(dark = true) {
-        EffortFrame(demoValues = true, driving = false) {
-            EffortHome(EffortUi(EffortPhase.DRIVING, previewTrip, listOf(previewRecord), demo = true, demoAvailable = true), routeFailed = true, {}, {}, {}, {})
-        }
-    }
-}
-
-@Preview(name = "홈·처음", widthDp = 640, heightDp = 720)
-@Composable
-private fun EffortHomeEmptyPreview() {
-    ChagokTheme(dark = false) {
-        EffortFrame(demoValues = false, driving = false) {
-            EffortHome(EffortUi(EffortPhase.IDLE, null, emptyList(), demo = false, demoAvailable = false), routeFailed = false, {}, {}, {}, {})
         }
     }
 }

@@ -61,4 +61,5 @@ fun recordOf(trip: OpenTrip, r: EffortReceipt, view: ProposalView?, method: Stri
         },
         choice = choice,
         headlineText = r.headlineText,
+        n = trip.n,
     )
