@@ -166,10 +166,12 @@ def at(hm: str, day: str = DAY) -> str:
 
 def effort_input(dep: str, arr: str, *, eta_min: float, n: int, answer: int = 0, ratio: float | None = 0.0,
                  congestion_m: float | None = 0.0, segments_min: float | None = None, wdep: str = "none",
-                 warr: str = "none", distance_km: float | None = None, arr_day: str = DAY) -> dict:
+                 warr: str = "none", distance_km: float | None = None, arr_day: str = DAY,
+                 trip: dict | None = None) -> dict:
     """정차: answer = 도착 때 답한 쉰 시간(분, #62: 답 하나로만).
     정체: ratio·congestion_m = 기본(출발 전 requestTrip 비율·정체 거리 m = 비율 × 경로 거리, 없으면 None),
-    segments_min = 보조(구간 목록 통과 시간)."""
+    segments_min = 보조(구간 목록 통과 시간).
+    trip = 시간대별 강수(GET /v1/weather/trip 응답, #63). 넘긴 경우에만 입력에 넣는다(기존 R* 입력은 그대로)."""
     return {
         "departed_at": at(dep), "arrived_at": at(arr, arr_day),
         "rest_answer_min": answer,
@@ -178,7 +180,17 @@ def effort_input(dep: str, arr: str, *, eta_min: float, n: int, answer: int = 0,
         "congestion_m": congestion_m,
         "congestion_s": segments_min * 60 if segments_min is not None else None,
         "weather_dep": wdep, "weather_arr": warr, **SUN, "n": n, "distance_km": distance_km,
-    }
+    } | ({"weather_trip": trip} if trip is not None else {})
+
+
+def trip_hours(first_hour: int, dep: list[str], arr: list[str], day: str = DAY) -> dict:
+    """GET /v1/weather/trip 응답 모양(#63): 조각 [h, h+1) KST 정시, dep·arr 같은 순서. status는 엔진이 쓰지 않지만
+    앱이 응답을 그대로 넘기는 경우를 보려고 계약대로 채운다."""
+    every = dep + arr
+    status = "unavailable" if all(x == "unknown" for x in every) else "partial" if "unknown" in every else "ok"
+    return {"status": status,
+            "dep": [{"hour": at(f"{first_hour + i:02d}:00", day), "precip": x} for i, x in enumerate(dep)],
+            "arr": [{"hour": at(f"{first_hour + i:02d}:00", day), "precip": x} for i, x in enumerate(arr)]}
 
 
 def effort_fixture(fid: str, title: str, note: str, inp: dict) -> dict:
@@ -276,6 +288,33 @@ def effort_fixtures() -> None:
          "금액 54,837.5 → 운전자 몫 54,837.5 × 3 ÷ 4 = 41,128.1 ≥ 39,865.5 → 공동 경비. "
          "B 문장은 '공동 경비에서'('값' 없음, 명준 결정), item_examples = 그 자리에 차례로 보일 예시(constants effort.items)",
          dict(r13, n=4)),
+        # ---- 시간대별 강수(#63, GET /v1/weather/trip). R16~R21은 #71(도착 상한) 몫
+        ("R22", "시간대별: 출발 비 → 중간에 그침. 14:20→16:45, ETA 140분, 출발 1회 관측 비·도착 맑음, 2명",
+         "조각 [14,15)는 가운데 14:30이 경과 가운데 15:32:30보다 앞 → 출발 지점 '비', 출발~도착과 겹친 40분. "
+         "[15,16) 출발 지점 맑음, [16,17) 도착 지점 맑음 → 비 40분 → 0.40 × 40 = 16 → +11%. "
+         "1회 관측 절반 규칙이면 비 72.5분(+20%)이었음",
+         effort_input("14:20", "16:45", eta_min=140, wdep="rain", n=2,
+                      trip=trip_hours(14, ["rain", "none", "none"], ["none", "none", "none"]))),
+        ("R23", "시간대별: 출발·도착 맑음, 중간에만 비 + 쉰 시간 30분. 13:00→17:00, ETA 210분, 2명",
+         "경과 가운데 15:00. [13,14)·[14,15)는 출발 지점(맑음·비), [15,16)·[16,17)는 도착 지점(비·맑음) → 비 벽시계 120분. "
+         "강수 분 = 120 × T 210 ÷ 경과 240 = 105(밤길과 같은 방식) → 42 → +20%. 1회 관측으로는 0",
+         effort_input("13:00", "17:00", answer=30, eta_min=210, n=2,
+                      trip=trip_hours(13, ["none", "rain", "none", "none"], ["none", "none", "rain", "none"]))),
+        ("R24", "시간대별 partial(unknown 섞임): 출발 눈 → 그침, 도착 지점 일부 정보 없음. 14:20→16:45, ETA 140분, 2명",
+         "[14,15) 출발 지점 눈 40분, [15,16) 출발 지점 맑음, [16,17) 도착 지점 unknown(45분, 가산 0) → 눈 40분 → "
+         "0.49 × 40 = 19.6 → +14%. 겹친 조각에 unknown이 있어 '일부 시간은 날씨 정보 없음'(effort.copy 임시)",
+         effort_input("14:20", "16:45", eta_min=140, wdep="snow", n=2,
+                      trip=trip_hours(14, ["snow", "none", "none"], ["none", "unknown", "unknown"]))),
+        ("R25", "시간대별 경계: 조각 가운데 = 경과 가운데. 16:00→17:00 한 조각, 출발 지점 비·도착 지점 맑음, ETA 60분, 2명",
+         "조각 [16,17) 가운데 16:30 = 경과 가운데 16:30 → 출발 지점(앞 절반에 넣는 규칙) → 비 60분 = 주행 내내 → "
+         "'비, 주행 내내' +40%. 도착 지점을 쓰는 규칙이었다면 0",
+         effort_input("16:00", "17:00", eta_min=60, wdep="rain", n=2,
+                      trip=trip_hours(16, ["rain"], ["none"]))),
+        ("R26", "시간대별 전부 unknown(unavailable) → 1회 관측 규칙으로: R22와 같은 주행",
+         "겹친 조각이 모두 unknown이면 엔진도 weather_dep·weather_arr 절반씩으로 돌아간다(계약의 unavailable 대체와 같음) → "
+         "비 72.5분 → 29 → +20%",
+         effort_input("14:20", "16:45", eta_min=140, wdep="rain", n=2,
+                      trip=trip_hours(14, ["unknown"] * 3, ["unknown"] * 3))),
     ]
     for fid, title, note, inp in cases:
         write(ROOT / "fixtures/effort" / f"{fid}.json", effort_fixture(fid, title, note, inp))

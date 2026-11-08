@@ -329,6 +329,55 @@ def test_sun_matches_kasi_within_one_minute():
             assert abs(got - kasi) <= 1, f"{c['date']} {k}: 엔진 {c['expected'][k]} vs 천문연 {c['kasi'][k]}"
 
 
+# ---------------------------------------------------------------- 1부: 시간대별 강수 (#63, GET /v1/weather/trip)
+def test_hourly_rain_stopped_midway():
+    """출발 때 오다 그친 비: 시간대별이면 실제 겹친 40분만, 1회 관측 절반 규칙이면 72.5분(R22)."""
+    assert run("R22").rain_min == 40
+    assert run("R22", weather_trip=None).rain_min == 72.5
+
+
+def test_hourly_rain_only_in_middle_scaled_by_rest():
+    """출발·도착 맑음, 중간에만 비: 벽시계 120분 × T/경과(210/240) = 105분(R23). 1회 관측으로는 0."""
+    r = run("R23")
+    assert r.rain_min == 120 * 210 / 240 and r.lines[0].detail_text == "비"
+    assert run("R23", weather_trip=None).rain_min == 0
+
+
+def test_hourly_partial_unknown():
+    """unknown 조각은 가산 0이고, 겹친 조각에 unknown이 있으면 임시 안내(effort.copy.weather_partial_text)."""
+    r = run("R24")
+    assert (r.rain_min, r.snow_min) == (0, 40)
+    assert r.notes == [C.copy.text["weather_partial_text"]]
+
+
+def test_hourly_middle_tie_goes_to_departure():
+    """조각 가운데 = 경과 가운데면 출발 지점(R25). 출발을 1분 당기면 가운데가 앞으로 와서 도착 지점(맑음)."""
+    r = run("R25")
+    assert r.rain_min == 60 and r.lines[0].detail_text == "비, 주행 내내"
+    early = run("R25", departed_at="2026-11-17T15:59:00+09:00")
+    assert early.rain_min == 0 and early.lines == [] and early.notes == []
+
+
+def test_hourly_all_unknown_falls_back():
+    """겹친 조각이 모두 unknown이면 1회 관측 절반 규칙(R26 = R22에서 시간대별 입력을 뺀 것과 같음)."""
+    assert run("R26") == run("R22", weather_trip=None)
+    assert run("R26").notes == []          # 1회 관측은 출발 비·도착 맑음으로 판정됨
+
+
+def test_weather_trip_input_matches_contract_response():
+    """앱은 GET /v1/weather/trip 응답을 그대로 넘겨도 된다(status는 엔진이 쓰지 않음). 없으면 지금 규칙."""
+    sample = load(ROOT / "contract/samples/weather.trip.ok.response.json")
+    wt = EF.weather_trip_from_json(sample)
+    assert [h.precip for h in wt.dep] == [h["precip"] for h in sample["dep"]] and len(wt.dep) == len(wt.arr)
+    no_status = dict(fx("R22")["input"]["weather_trip"])
+    no_status.pop("status")
+    assert run("R22", weather_trip=no_status) == run("R22")
+    assert "weather_trip" not in fx("R1")["input"] and "weather_trip" not in DEMO_INPUT_KEYS
+
+
+DEMO_INPUT_KEYS = set(load(ROOT / "fixtures/effort/demo.json")["input"])
+
+
 # ---------------------------------------------------------------- 1부: 시연 데이터 (명세 v0.5 12절)
 DEMO = load(ROOT / "fixtures/effort/demo.json")
 
@@ -369,10 +418,12 @@ def test_departure_preview(eta_s, route_m, ratio, cm, want):
 
 # ---------------------------------------------------------------- 2부: fixture 전수
 def test_effort_fixture_ids():
-    """R2·R4(자동으로 잰 정차 목록)는 #62에서 지웠다. 번호는 명세·AC·앱 테스트 참조가 안 바뀌게 비워 둔다."""
-    ids = [int(p.stem[1:]) for p in EFFORT]
-    assert ids == [i for i in range(1, ids[-1] + 1) if i not in (2, 4)]
-    assert 9 in ids and len(EFFORT) >= 12
+    """R2·R4(자동으로 잰 정차 목록)는 #62에서 지웠다. 번호는 명세·AC·앱 테스트 참조가 안 바뀌게 비워 둔다.
+    R16~R21은 도착 상한(#71), R22~는 시간대별 강수(#63) — 브랜치가 따로라 한쪽만 있어도 통과한다."""
+    ids = {int(p.stem[1:]) for p in EFFORT}
+    assert not ids & {2, 4}
+    assert {1, 3} | set(range(5, 16)) <= ids
+    assert set(range(22, 27)) <= ids
 
 
 @pytest.mark.parametrize("p", EFFORT, ids=lambda p: p.stem)
