@@ -79,5 +79,8 @@ fun departTrip(
     weatherDep = weatherDep,
     sunrise = sun?.first?.let(::hhmm),
     sunset = sun?.second?.let(::hhmm),
+    // #63: 도착 때 시간대별 날씨 조회에 쓸 출발 지점. 서버로 보내는 것과 같은 반올림 값만 둔다(도착 조회 뒤 삭제)
+    depLat = here?.first?.let { com.mist.pleos_app.net.coord(it).toDouble() },
+    depLng = here?.second?.let { com.mist.pleos_app.net.coord(it).toDouble() },
     )
 }

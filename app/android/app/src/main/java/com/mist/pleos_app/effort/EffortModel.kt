@@ -37,6 +37,11 @@ data class OpenTrip(
     val weatherArr: String? = null,
     val restAnswerMin: Int? = null,         // F21: 도착 때 답한 쉰 시간(0·15·30·60). 자동 측정은 없음(#62)
     val demo: Boolean = false,              // 데모 고정 모드에서 만든 기록이면 "시연용 값" 표시(AC-C-7)
+    // #63 시간대별 날씨(효성 11/8 선택지 2): 출발 지점 좌표를 소수 둘째 자리(약 1km)로 반올림해 도착 조회 전까지만 기기에 둔다.
+    // 도착 때 GET /v1/weather/trip 호출이 끝나면 성공·실패와 상관없이 지운다(AC-N-4 개정 예정).
+    val depLat: Double? = null,
+    val depLng: Double? = null,
+    val weatherTrip: com.mist.pleos_app.engine.WeatherTrip? = null,   // 도착 때 받은 조각별 강수(hour·precip만, 좌표 없음)
 ) {
     val arrived: Boolean get() = arrivedAt != null
 }
@@ -73,6 +78,14 @@ fun OpenTrip.toJson(): JsonObject = obj(
     "arrived_at" to arrivedAt, "weather_arr" to weatherArr,
     "rest_answer_min" to restAnswerMin,
     "demo" to demo,
+    "dep_lat" to depLat, "dep_lng" to depLng,
+    "weather_trip" to weatherTrip?.toJson(),
+)
+
+/** 조각별 강수 저장 모양 = 계약 응답 WeatherTrip의 dep·arr 그대로(status 없음). */
+fun com.mist.pleos_app.engine.WeatherTrip.toJson(): JsonObject = obj(
+    "dep" to JsonArray(dep.map { obj("hour" to it.hour, "precip" to it.precip) }),
+    "arr" to JsonArray(arr.map { obj("hour" to it.hour, "precip" to it.precip) }),
 )
 
 fun parseOpenTrip(o: JsonObject): OpenTrip = OpenTrip(
@@ -92,6 +105,9 @@ fun parseOpenTrip(o: JsonObject): OpenTrip = OpenTrip(
     weatherArr = o.strOrNull("weather_arr"),
     restAnswerMin = o.integerOrNull("rest_answer_min"),
     demo = o["demo"]?.jsonPrimitive?.booleanOrNull == true,
+    depLat = o.dblOrNull("dep_lat"),
+    depLng = o.dblOrNull("dep_lng"),
+    weatherTrip = o["weather_trip"]?.takeIf { it !is JsonNull }?.let { runCatching { com.mist.pleos_app.engine.parseWeatherTrip(it.jsonObject) }.getOrNull() },
 )
 
 fun EffortRecord.toJson(): JsonObject = obj(

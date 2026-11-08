@@ -44,6 +44,7 @@ fun effortInputOf(trip: OpenTrip): EffortInput? {
         congestionM = trip.congestionM,
         congestionS = trip.congestionS,
         distanceKm = trip.routeM?.let { it / 1000 },
+        weatherTrip = trip.weatherTrip,                // #63: 도착 때 받은 조각별 강수. 없거나 전부 unknown이면 엔진이 1회 관측 규칙으로
     )
 }
 
