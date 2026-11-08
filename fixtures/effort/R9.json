@@ -6,7 +6,6 @@
     "departed_at": "2026-11-17T10:00:00+09:00",
     "arrived_at": "2026-11-17T12:40:00+09:00",
     "rest_answer_min": 30,
-    "stops": null,
     "eta_s": 7800,
     "congestion_ratio": 0.0,
     "congestion_m": 0.0,
@@ -19,7 +18,6 @@
     "distance_km": null
   },
   "expected": {
-    "method": "answer",
     "elapsed_min": 160.0,
     "drive_min": 130.0,
     "rest_min": 30.0,

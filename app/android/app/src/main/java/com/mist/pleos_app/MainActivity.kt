@@ -6,7 +6,16 @@ import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.compose.runtime.getValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.mist.pleos_app.effort.DepartNavi
 import com.mist.pleos_app.effort.EffortViewModel
+import com.mist.pleos_app.navi.Destination
+import com.mist.pleos_app.navi.NaviPlace
+import com.mist.pleos_app.navi.TripPreview
+import com.mist.pleos_app.vehicle.seatCount
+import com.mist.pleos_app.vehicle.isParked
+import com.mist.pleos_app.effort.GuideState
+import androidx.lifecycle.DefaultLifecycleObserver
+import androidx.lifecycle.LifecycleOwner
 import com.mist.pleos_app.ui.EffortApp
 import com.mist.pleos_app.ui.theme.ChagokTheme
 import com.mist.pleos_app.util.ChagokLog
@@ -30,16 +39,33 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         vehicle = PleosVehicleRepository(this)
         lifecycle.addObserver(vehicle)
-        navi = NaviRepository(this)                      // 출발 화면(F20, 2단계)에서 목적지·requestTrip·requestRoute에 쓴다
+        navi = NaviRepository(this)                      // 출발 화면(F20): 즐겨찾기·최근 목적지·현재 위치·requestTrip·requestRoute
         lifecycle.addObserver(navi)
+        val n = navi
+        vm.navi = object : DepartNavi {
+            override fun location(done: (Pair<Double, Double>?) -> Unit) = n.fetchLocation { done(it?.let { p -> p.lat to p.lng }) }
+            override fun places(done: (List<NaviPlace>) -> Unit) = n.fetchNaviPlaces(done)
+            override fun preview(d: Destination, done: (TripPreview?) -> Unit) = n.previewTrip(d, done)
+            override fun route(d: Destination) = n.depart(d)
+            override fun guide(done: (GuideState?) -> Unit) = n.fetchGuide(done)
+        }
+        // 다시 보일 때마다 도착 여부를 1번 본다(기본 배치에서는 도착 순간 차곡이 멈춰 있음, 명세 F22)
+        lifecycle.addObserver(object : DefaultLifecycleObserver {
+            override fun onStart(owner: LifecycleOwner) = vm.onShown()
+        })
         ChagokLog.event("app_create", "restored" to (savedInstanceState != null))
         setContent {
             val snapshot by vehicle.state.collectAsStateWithLifecycle()
+            val settings by vm.settings.collectAsStateWithLifecycle()
+            val route by n.state.collectAsStateWithLifecycle()
             ChagokTheme {
-                EffortApp(vm, driving = isDriving(snapshot), onExit = {
+                EffortApp(
+                    vm, driving = isDriving(snapshot), parked = isParked(snapshot), doorOpen = snapshot.driverDoorOpen,
+                    seats = seatCount(snapshot.seatsOccupied, invert = settings.seatInvert), route = route,
+                ) {
                     val moved = moveTaskToBack(true)
                     ChagokLog.event("back_to_background", "moved" to moved)
-                })
+                }
             }
         }
     }

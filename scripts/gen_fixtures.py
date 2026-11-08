@@ -8,7 +8,8 @@ fixture 종류
 - cards/D*.json   app_local(앱 로컬 E1 기대값) → request(앱이 보낼 요청) → expected(서버·오프라인 데모 응답)
 - settle/T*.json  E4 정산 경계 케이스
 - ledger/L*.json  F8·F10·F17 로컬 장부(출발·도착·다시 열기·핀·월 합계) 이벤트 순서
-- effort/R*.json  운전 노고(명세 v0.5 F23~F25) input → expected(영수증·제안). R1~R8 = 명세 12절 표, R9 = AC-F21-1, R10~ = 하네스 추가
+- effort/R*.json  운전 노고(명세 v0.5 F23~F25) input → expected(영수증·제안). R1~R8 = 명세 12절 표(R2·R4는 #62에서 지움),
+                  R9 = AC-F21-1, R10~ = 하네스 추가
 - effort/sun.json 일출·일몰 계산값(엔진 두 벌 대조) + 한국천문연구원 출몰시각(참고, pytest가 ±1분 대조)
 
 계약 샘플(contract/samples)
@@ -163,18 +164,15 @@ def at(hm: str, day: str = DAY) -> str:
     return f"{day}T{hm}:00+09:00"
 
 
-def effort_input(dep: str, arr: str, *, eta_min: float, n: int, answer: int | None = None,
-                 stops: list[tuple[str, str]] | None = None, ratio: float | None = 0.0,
+def effort_input(dep: str, arr: str, *, eta_min: float, n: int, answer: int = 0, ratio: float | None = 0.0,
                  congestion_m: float | None = 0.0, segments_min: float | None = None, wdep: str = "none",
                  warr: str = "none", distance_km: float | None = None, arr_day: str = DAY) -> dict:
-    """정차: answer = 기본(도착 때 답한 쉰 시간, 분), stops = 보조(자동으로 잰 정차 목록, 빈 목록이면 정차 없음). 둘 중 하나만.
+    """정차: answer = 도착 때 답한 쉰 시간(분, #62: 답 하나로만).
     정체: ratio·congestion_m = 기본(출발 전 requestTrip 비율·정체 거리 m = 비율 × 경로 거리, 없으면 None),
     segments_min = 보조(구간 목록 통과 시간)."""
-    assert (stops is None) != (answer is None)
     return {
         "departed_at": at(dep), "arrived_at": at(arr, arr_day),
         "rest_answer_min": answer,
-        "stops": [{"start": s, "end": e} for s, e in stops] if stops is not None else None,
         "eta_s": eta_min * 60,
         "congestion_ratio": ratio,
         "congestion_m": congestion_m,
@@ -234,17 +232,10 @@ def effort_fixtures() -> None:
          "+ 예상보다 더 6.75(25분) + 밤길 2(50분) + 장시간 1.25(10분) = 204.636 → 1.57배, 정체 줄 +10%. "
          "금액 204.636 × 10,700 ÷ 60 = 36,493.42 → 약 3만 6천, 한 사람 9,123.36 → 약 9천, 운전자 몫 27,370.07 → 밥. "
          "정체 값은 효성 결정(11/7): 35%·12km는 거리 104km와 맞지 않고 4% 단위가 아니어서 36%·38km", r1),
-        ("R2", "보조(나란히 배치): 10:00 출발, 12:00~12:20 정차, 13:20 도착, ETA 170분, 맑음·낮, 2명",
-         "AC-F21-2. 자동으로 잰 정차 20분(15분 이상)에서 장시간 구간이 120분 + 60분으로 나뉘어 장시간 0. "
-         "예상보다 더 10분 < ETA의 10%(17분) → 0. 180 → 평소와 같은 길",
-         effort_input("10:00", "13:20", stops=[(at("12:00"), at("12:20"))], eta_min=170, n=2)),
-        ("R3", "R2와 같은 거리를 쉬지 않고 180분(쉰 시간 없음, ETA 170분, 맑음·낮, 2명)",
-         "장시간 (180 − 120) × 0.125 = 7.5 → 187.5 → 1.04배. R2와 비교하면 쉰 효과가 보인다",
+        # R2·R4(자동으로 잰 정차 목록)는 #62에서 지웠다. 번호는 명세·AC·앱 테스트 참조가 안 바뀌게 비워 둔다
+        ("R3", "180분 쉬지 않음(쉰 시간 없음, ETA 170분, 맑음·낮, 2명)",
+         "장시간 (180 − 120) × 0.125 = 7.5 → 187.5 → 1.04배. 예상보다 더 10분 < ETA의 10%(17분) → 0",
          effort_input("10:00", "13:00", answer=0, eta_min=170, n=2)),
-        ("R4", "보조(나란히 배치): 10:00→12:40, 11:30~11:40 정차(10분), ETA 150분, 2명",
-         "AC-F21-3. 10분 정차는 시간만 빠지고 장시간 구간은 이어진다(90 + 60 = 150) → 3.75. "
-         "153.75 ÷ 150 = 1.025 → 1.03(반올림 경계)",
-         effort_input("10:00", "12:40", stops=[(at("11:30"), at("11:40"))], eta_min=150, n=2)),
         ("R5", "60분, 출발 맑음·도착 눈, 쉰 시간 없음, ETA 60분, 낮, 3명",
          "눈은 T의 뒤 절반 30분 × 0.49 = 14.7 → 74.7. 74.7 ÷ 60 = 1.245 → 1.25(반올림 경계, Decimal과 같게)",
          effort_input("10:00", "11:00", answer=0, eta_min=60, warr="snow", n=3)),
@@ -270,17 +261,17 @@ def effort_fixtures() -> None:
         ("R11", "새벽 출발: 05:30→08:00, 쉰 시간 없음, 일출 07:13, ETA 150분, 맑음, 2명",
          "전날 일몰 ~ 그날 일출 구간과 겹친 05:30~07:13 = 103분이 밤길 → 4.12. 장시간 30 × 0.125 = 3.75",
          effort_input("05:30", "08:00", answer=0, eta_min=150, n=2)),
-        ("R12", "보조 + 자정 넘김 + 정확히 15분 정차: 22:00 출발, 00:00~00:15 정차, 02:15 도착, ETA 240분, 2명",
-         "15분 '이상'이면 나눈다 → 120 + 120, 장시간 0. 날짜를 넘겨도 밤길 240분 전부 → 9.6",
-         effort_input("22:00", "02:15", stops=[(at("00:00", NEXT_DAY), at("00:15", NEXT_DAY))], eta_min=240, n=2,
-                      arr_day=NEXT_DAY)),
+        ("R12", "자정 넘김 + 쉰 시간 답 15분: 22:00 출발, 02:15 도착, ETA 240분, 2명",
+         "T = 255 − 15 = 240. 답이 15분 '이상'이면 가운데에서 나눈다 → 120 + 120, 장시간 0. "
+         "날짜를 넘겨도 밤 = 255분 × (240 ÷ 255) = 240 → 9.6",
+         effort_input("22:00", "02:15", answer=15, eta_min=240, n=2, arr_day=NEXT_DAY)),
         ("R13", "답 '1시간 이상'(60분): 09:00→15:00, ETA 300분, 맑음·낮, 2명",
          "#47 표 '5시간 + 점심 1시간'. 언제 쉬었는지 모르니 T 300을 150 + 150으로 나눔 → 장시간 2 × 30 × 0.125 = 7.5. "
          "307.5 ÷ 300 = 1.025 → 1.03(반올림 경계)", r13),
-        ("R14", "보조(나란히 배치)로 구간 목록을 받은 R1: 정체 통과 시간 합 40분, 비율 36%·38km도 있음, 4명",
+        ("R14", "나란히 배치로 정체 구간 목록을 받은 R1: 정체 통과 시간 합 40분, 비율 36%·38km도 있음, 4명",
          "구간 목록이 있으면 비율 × T(46.8분) 대신 통과 시간 40분을 쓴다(명세 7절). 노고 202.8 → 1.56배, 정체 +8%, "
          "금액 36,166 → 약 3만 6천, 한 사람 약 9천, 운전자 몫 27,124.5 → 밥. 정체 줄 문구는 그대로 '38km (경로의 36%)'",
-         dict(r1, rest_answer_min=None, stops=[], congestion_s=2400)),
+         dict(r1, congestion_s=2400)),
         ("R15", "공동 경비: R13과 같은 주행(09:00→15:00, 답 60분, ETA 300분, 맑음·낮), 4명",
          "금액 54,837.5 → 운전자 몫 54,837.5 × 3 ÷ 4 = 41,128.1 ≥ 39,865.5 → 공동 경비. "
          "B 문장은 '공동 경비에서'('값' 없음, 명준 결정), item_examples = 그 자리에 차례로 보일 예시(constants effort.items)",

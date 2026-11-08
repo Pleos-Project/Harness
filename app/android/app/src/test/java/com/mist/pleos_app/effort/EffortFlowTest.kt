@@ -57,16 +57,15 @@ class EffortFlowTest {
     }
 
     @Test
-    fun changingRestAnswerDropsMeasuredStops() {
-        // #55 June·효성: 답을 바꾸면 자동으로 잰 정차 목록은 빼고 답만 넘긴다
+    fun restAnswerOnlyAfterArrival() {
+        // F21: 정차는 도착 때 답 하나로만(#62). 도착 전에는 받지 않는다
         val f = EffortFlow(MemoryEffortStore())
-        f.depart(trip().copy(stops = listOf(RestStop("2026-11-17T17:00:00+09:00", "2026-11-17T17:20:00+09:00"))))
+        f.depart(trip())
         f.answerRest(30)
-        assertEquals(null, f.state.openTrip?.restAnswerMin)     // 도착 전에는 받지 않음
+        assertEquals(null, f.state.openTrip?.restAnswerMin)
         f.arrive("2026-11-17T18:10:00+09:00")
         f.answerRest(30)
         assertEquals(30, f.state.openTrip?.restAnswerMin)
-        assertNull(f.state.openTrip?.stops)
     }
 
     @Test

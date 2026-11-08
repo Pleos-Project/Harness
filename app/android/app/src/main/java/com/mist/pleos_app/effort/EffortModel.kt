@@ -35,14 +35,11 @@ data class OpenTrip(
     val sunset: String? = null,
     val arrivedAt: String? = null,          // F22에서 채움
     val weatherArr: String? = null,
-    val restAnswerMin: Int? = null,         // F21 기본: 도착 때 답한 쉰 시간(0·15·30·60)
-    val stops: List<RestStop>? = null,      // F21 보조: 나란히 배치에서 자동으로 잰 정차 목록
+    val restAnswerMin: Int? = null,         // F21: 도착 때 답한 쉰 시간(0·15·30·60). 자동 측정은 없음(#62)
     val demo: Boolean = false,              // 데모 고정 모드에서 만든 기록이면 "시연용 값" 표시(AC-C-7)
 ) {
     val arrived: Boolean get() = arrivedAt != null
 }
-
-data class RestStop(val start: String, val end: String)
 
 /** 선택 기록(명세 v0.5 F26). 좌표 없음. 홈 최근 기록에 쓰려고 엔진 머리줄 문구를 같이 남긴다. */
 data class EffortRecord(
@@ -74,7 +71,6 @@ fun OpenTrip.toJson(): JsonObject = obj(
     "weather_dep" to weatherDep, "sunrise" to sunrise, "sunset" to sunset,
     "arrived_at" to arrivedAt, "weather_arr" to weatherArr,
     "rest_answer_min" to restAnswerMin,
-    "stops" to stops?.let { s -> JsonArray(s.map { obj("start" to it.start, "end" to it.end) }) },
     "demo" to demo,
 )
 
@@ -94,10 +90,6 @@ fun parseOpenTrip(o: JsonObject): OpenTrip = OpenTrip(
     arrivedAt = o.strOrNull("arrived_at"),
     weatherArr = o.strOrNull("weather_arr"),
     restAnswerMin = o.integerOrNull("rest_answer_min"),
-    stops = o["stops"]?.takeIf { it !is JsonNull }?.jsonArray?.map {
-        val s = it.jsonObject
-        RestStop(s.str("start"), s.str("end"))
-    },
     demo = o["demo"]?.jsonPrimitive?.booleanOrNull == true,
 )
 
