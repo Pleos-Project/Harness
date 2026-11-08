@@ -1,0 +1,46 @@
+package com.mist.pleos_app.effort
+
+import com.mist.pleos_app.engine.EffortReceipt
+import com.mist.pleos_app.engine.roundHalfUp
+
+/**
+ * 도착 화면(Design v2 `screens/arrive.html`, #75)이 보는 값. 영수증과 제안을 한 화면에 둔다.
+ * 고른 뒤에도 같은 화면에 "기록에 남겼어요"를 보여 주므로, 기록(F26)을 남긴 뒤의 영수증·제안을 여기 잠시 둔다(메모리만).
+ */
+data class ArriveDone(
+    val trip: OpenTrip,
+    val receipt: EffortReceipt,
+    val proposal: ProposalView?,
+    val choice: String,            // accept | close | 고른 항목 key
+)
+
+/**
+ * 영수증 바코드 아래 번호 "#2026 1107 104 130"(연 · 월일 · km · 운전 분). 장식이지만 숫자는 출발 기록·엔진 값에서만 만든다.
+ * km는 경로 거리(m)를 km로 반올림, 분은 엔진 운전 시간 T를 반올림(roundHalfUp, CLAUDE.md).
+ */
+fun receiptCode(trip: OpenTrip, r: EffortReceipt): String {
+    val d = trip.departedAt.take(10)                       // "2026-11-17"
+    val y = d.take(4)
+    val md = d.drop(5).replace("-", "")
+    val km = trip.routeM?.let { roundHalfUp(it / 1000) } ?: 0
+    val min = roundHalfUp(r.driveMin)
+    return "#$y $md ${pad3(km)} ${pad3(min)}"
+}
+
+private fun pad3(n: Int): String = n.coerceIn(0, 999).toString().padStart(3, '0')
+
+/** "밥" → "밥이에요", "커피" → "커피예요". 받침이 있으면 "이에요"(한글이 아니면 "이에요"). */
+fun ieyo(word: String): String {
+    val last = word.trimEnd().lastOrNull() ?: return word
+    val hangul = last in '가'..'힣'
+    val batchim = hangul && (last - '가') % 28 != 0
+    return word + if (!hangul || batchim) "이에요" else "예요"
+}
+
+/** "2026-11-17T…" → "11월 17일". 날짜 표기만(계산 없음). */
+fun dayText(iso: String): String {
+    val d = iso.take(10)
+    val m = d.drop(5).take(2).toIntOrNull() ?: return d
+    val day = d.drop(8).take(2).toIntOrNull() ?: return d
+    return "${m}월 ${day}일"
+}
