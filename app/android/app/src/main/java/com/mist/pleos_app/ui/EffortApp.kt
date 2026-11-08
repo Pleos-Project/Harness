@@ -1,5 +1,15 @@
 package com.mist.pleos_app.ui
 
+import com.mist.pleos_app.ui.components.CgSize
+import com.mist.pleos_app.ui.components.CgBottomSheet
+import com.mist.pleos_app.ui.components.CgSwitch
+import com.mist.pleos_app.ui.components.CgSegmented
+import com.mist.pleos_app.ui.components.CgIcon
+import com.mist.pleos_app.ui.components.CgIconButton
+import com.mist.pleos_app.ui.components.CgTitleBar
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -128,7 +138,7 @@ fun EffortApp(
                     onConfirmPayers = { vm.confirmPayers(seats, it) }, onDismissPayers = { vm.dismissPayers(seats) },
                 )
             }
-            EffortScreen.SETTINGS -> EffortSettings(settings, ui.constants?.let(::wageSourceOf), onChange = vm::updateSettings, onReset = vm::resetRecords)
+            EffortScreen.SETTINGS -> EffortSettings(settings, ui.constants?.let(::wageSourceOf), vm.demoSummary, ui.recordCount, onBack = { vm.back() }, onChange = vm::updateSettings, onReset = vm::resetRecords)
             EffortScreen.CALC -> if (ui.calcItems.isEmpty()) LaunchedEffect(Unit) { vm.calcDone() } else EffortCalcScreen(ui, ui.calcItems, onDone = vm::calcDone)
             EffortScreen.RECEIPT -> EffortArriveScreen(ui, onRest = vm::answerRest, onPick = vm::pick, onClose = vm::closeArrive)
         }
@@ -156,67 +166,96 @@ private fun EffortFrame(demoValues: Boolean, driving: Boolean, toast: @Composabl
 
 // ------------------------------------------------------------ 도착: 영수증(F23) + 쉰 시간(F21) + 제안(F24·F25) 한 화면 → EffortArrive.kt
 
-// ------------------------------------------------------------ 설정(S20): 제안 방식 A/B · 데모 고정 모드 · 단가 출처 · 기록 초기화
+// ------------------------------------------------------------ 설정(S20): Design v2 v41 `screens/settings.html`
+// 제안 방식(둘로 나뉜 알약) · 시연 고정 모드(스위치) · 단가 출처(펼침) · 기록 초기화(확인 시트). 바꾼 값은 바로 다른 화면에 적용
 @Composable
-private fun EffortSettings(s: Settings, wage: WageSource?, onChange: (Settings) -> Unit, onReset: () -> Unit) {
-    val gap = Arrangement.spacedBy(24.gpx)
-    var confirmReset by rememberSaveable { mutableStateOf(false) }
-    var resetDone by rememberSaveable { mutableStateOf(false) }
-    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()), verticalArrangement = gap) {
-        CgCaption(stringResource(R.string.effort_settings_method))
-        CgCard(Modifier.fillMaxWidth()) {
-            Row(horizontalArrangement = gap, verticalAlignment = Alignment.CenterVertically) {
-                CgChip(stringResource(R.string.effort_settings_method_a), selected = s.proposalMethod == Settings.METHOD_A, onClick = { onChange(s.copy(proposalMethod = Settings.METHOD_A)) })
-                CgChip(stringResource(R.string.effort_settings_method_b), selected = s.proposalMethod == Settings.METHOD_B, onClick = { onChange(s.copy(proposalMethod = Settings.METHOD_B)) })
+private fun EffortSettings(
+    s: Settings, wage: WageSource?, demoSummary: Pair<String, String>?, recordCount: Int,
+    onBack: () -> Unit, onChange: (Settings) -> Unit, onReset: () -> Unit,
+) {
+    val narrow = LocalNarrow.current
+    val c = Chagok.colors
+    val t = Chagok.type
+    var wipe by rememberSaveable { mutableStateOf(false) }
+    var wageOpen by rememberSaveable { mutableStateOf(false) }
+    val isA = s.proposalMethod != Settings.METHOD_B
+    val side = if (narrow) 24.gpx else 40.gpx
+    val row: @Composable (String, String, @Composable () -> Unit) -> Unit = { title, sub, end ->
+        Row(
+            Modifier.fillMaxWidth().heightIn(min = if (narrow) 112.gpx else 136.gpx).padding(horizontal = side, vertical = 20.gpx),
+            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(32.gpx),
+        ) {
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.gpx)) {
+                Text(title, style = t.titleS, color = c.textPrimary)
+                Text(sub, style = if (narrow) t.labelM else t.bodyM, color = c.textTertiary)
             }
-            CgCaption(stringResource(R.string.effort_settings_method_hint))
+            end()
         }
-        CgCaption(stringResource(R.string.settings_mock))
-        CgCard(Modifier.fillMaxWidth()) {
-            Row(horizontalArrangement = gap, verticalAlignment = Alignment.CenterVertically) {
-                CgBody(stringResource(R.string.settings_demo_fixed), Modifier.weight(1f))
-                CgChip(stringResource(R.string.on), selected = s.demoFixed, onClick = { onChange(s.copy(demoFixed = true)) })
-                CgChip(stringResource(R.string.off), selected = !s.demoFixed, onClick = { onChange(s.copy(demoFixed = false)) })
-            }
-            CgCaption(stringResource(R.string.effort_settings_demo_hint))
-        }
-        // 단가 출처(S20, 노고 PRD 5-2): A 화면 근거 줄과 같은 문구 + 시급·1분 단가 + B 항목 가격·출처. 상수를 못 읽으면 칸을 숨김
-        if (wage != null) {
-            CgCaption(stringResource(R.string.effort_settings_wage))
-            CgCard(Modifier.fillMaxWidth()) {
-                CgBody(wage.wageText)
-                CgCaption(stringResource(R.string.effort_settings_wage_how, wage.wageLabel, wage.hourlyText, wage.perMinText))
-                CgCaption(stringResource(R.string.effort_settings_wage_use))
-            }
-            if (wage.items.isNotEmpty()) {
-                CgCaption(stringResource(R.string.effort_settings_items))
-                CgCard(Modifier.fillMaxWidth()) {
-                    Column(verticalArrangement = Arrangement.spacedBy(20.gpx)) {
-                        wage.items.forEach { i ->
-                            Column {
-                                Row(horizontalArrangement = gap, verticalAlignment = Alignment.CenterVertically) {
-                                    CgBody(i.label, Modifier.weight(1f))
-                                    CgBody(i.priceText)
-                                }
-                                if (i.source.isNotBlank()) CgCaption(i.source)
-                            }
-                        }
+    }
+    val line: @Composable () -> Unit = { Box(Modifier.fillMaxWidth().height(1.gpx).background(c.line)) }
+    Box(Modifier.fillMaxSize()) {
+        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(24.gpx)) {
+            CgTitleBar(
+                stringResource(R.string.screen_settings), compact = narrow,
+                leading = { CgIconButton(stringResource(R.string.back), CgIcon.Back, onBack, plain = true) },
+            )
+            val card = RoundedCornerShape(40.gpx)
+            Column(Modifier.fillMaxWidth().background(c.surfaceCard, card).border(1.gpx, c.line, card)) {
+                // 제안 방식(개발·시험용 A/B)
+                val method = stringResource(R.string.effort_settings_method)
+                val methodSub = stringResource(
+                    R.string.effort_settings_method_now,
+                    stringResource(if (isA) R.string.effort_settings_a_short else R.string.effort_settings_b_short),
+                )
+                val seg: @Composable (Modifier) -> Unit = { m ->
+                    CgSegmented(
+                        listOf(stringResource(R.string.effort_settings_method_a), stringResource(R.string.effort_settings_method_b)), if (isA) 0 else 1,
+                        { onChange(s.copy(proposalMethod = if (it == 0) Settings.METHOD_A else Settings.METHOD_B)) }, m, compact = narrow,
+                    )
+                }
+                if (narrow) Column(Modifier.padding(bottom = 20.gpx)) {
+                    row(method, methodSub) {}
+                    seg(Modifier.fillMaxWidth().padding(horizontal = side))
+                } else row(method, methodSub) { seg(Modifier) }
+                line()
+                // 시연 고정 모드
+                val demoOn = demoSummary?.let { (dest, mult) -> stringResource(R.string.effort_settings_demo_on, dest, mult) }
+                    ?: stringResource(R.string.effort_settings_demo_on_plain)
+                row(stringResource(R.string.effort_settings_demo), if (s.demoFixed) demoOn else stringResource(R.string.effort_settings_demo_off)) {
+                    CgSwitch(s.demoFixed, { onChange(s.copy(demoFixed = it)) }, stringResource(R.string.effort_settings_demo))
+                }
+                // 단가 출처(PRD 5-2): 접힘 = A 화면 근거 줄, 펼침 = 시급 ÷ 60과 "보여 드리기만" 안내. 상수를 못 읽으면 칸을 숨김
+                if (wage != null) {
+                    line()
+                    row(stringResource(R.string.effort_settings_wage), wage.wageText) {
+                        CgIconButton(
+                            stringResource(if (wageOpen) R.string.effort_settings_wage_close else R.string.effort_settings_wage_open), CgIcon.Chevron,
+                            { wageOpen = !wageOpen }, Modifier.graphicsLayer { rotationZ = if (wageOpen) 180f else 0f }, plain = true,
+                        )
+                    }
+                    if (wageOpen) Column(Modifier.padding(start = side, end = side, bottom = 28.gpx), verticalArrangement = Arrangement.spacedBy(6.gpx)) {
+                        Text(stringResource(R.string.effort_settings_wage_how, wage.wageLabel, wage.hourlyManText, wage.perMinExactText), style = t.bodyM, color = c.textSecondary)
+                        Text(stringResource(R.string.effort_settings_wage_show_only), style = t.bodyM, color = c.textSecondary)
                     }
                 }
+                line()
+                // 기록 초기화
+                row(stringResource(R.string.settings_reset), stringResource(R.string.effort_settings_wipe_sub, recordCount)) {
+                    CgButton(stringResource(R.string.settings_reset_confirm), { wipe = true }, kind = CgButtonKind.Basic, size = CgSize.S, enabled = recordCount > 0)
+                }
             }
+            Text(stringResource(R.string.effort_settings_note), Modifier.padding(start = 8.gpx), style = t.labelM, color = c.textTertiary)
         }
-        CgCaption(stringResource(R.string.settings_records))
-        CgButton(stringResource(R.string.settings_reset), { confirmReset = true }, Modifier.fillMaxWidth(), kind = CgButtonKind.Basic)
-        if (resetDone) CgBody(stringResource(R.string.settings_reset_done), secondary = true)
-    }
-    if (confirmReset) {
-        Dialog(onDismissRequest = { confirmReset = false }) {
-            CgCard(Modifier.width(720.gpx)) {
-                CgTitle(stringResource(R.string.settings_reset_title))
-                CgBody(stringResource(R.string.effort_reset_body), secondary = true)
-                Row(horizontalArrangement = gap, modifier = Modifier.fillMaxWidth()) {
-                    CgButton(stringResource(R.string.cancel), { confirmReset = false }, Modifier.weight(1f), kind = CgButtonKind.Basic)
-                    CgButton(stringResource(R.string.settings_reset_confirm), { onReset(); confirmReset = false; resetDone = true }, Modifier.weight(1f))
+        // 기록 초기화 확인(settings-wipe): 짧은 하단 시트. 지우면 홈이 첫 사용 모양으로
+        if (wipe) {
+            CgBottomSheet(Modifier.align(Alignment.BottomCenter).then(if (narrow) Modifier.fillMaxWidth() else Modifier.width(760.gpx)), compact = narrow) {
+                Column(verticalArrangement = Arrangement.spacedBy(8.gpx)) {
+                    Text(stringResource(R.string.effort_settings_wipe_title), style = if (narrow) t.bodyL else t.titleM, color = c.textPrimary)
+                    Text(stringResource(R.string.effort_settings_wipe_body), style = t.bodyM, color = c.textSecondary)
+                }
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.gpx)) {
+                    CgButton(stringResource(R.string.cancel), { wipe = false }, Modifier.weight(1f), kind = CgButtonKind.Basic)
+                    CgButton(stringResource(R.string.settings_reset_confirm), { onReset(); wipe = false }, Modifier.weight(1f))
                 }
             }
         }

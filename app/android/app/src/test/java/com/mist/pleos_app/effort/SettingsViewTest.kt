@@ -35,6 +35,25 @@ class SettingsViewTest {
     }
 
     @Test
+    fun manWonAndExactPerMin() {
+        // #75 v41 설정 › 단가 출처 펼침: "최저임금 시급 1만 700원을 60분으로 나눈 값이에요(1분 178.33원)"
+        assertEquals("1만 700원", manWonText(10700.0))
+        assertEquals("2만 원", manWonText(20000.0))
+        assertEquals("4,700원", manWonText(4700.0))
+        assertEquals("12만 3,456원", manWonText(123456.0))
+        assertEquals("178.33원", perMinExactText(c))
+        val w = wageSourceOf(c)
+        assertEquals("1만 700원", w.hourlyManText)
+        assertEquals("178.33원", w.perMinExactText)
+    }
+
+    @Test
+    fun demoSummaryIsDestAndMultiplier() {
+        val scene = parseDemoScene(File(locate("fixtures"), "effort/demo.json").readText())
+        assertEquals("태안 꽃지해수욕장" to "1.57배", demoSummaryOf(scene, c))
+    }
+
+    @Test
     fun itemsWithPriceAndSource() {
         val items = wageSourceOf(c).items
         assertEquals(listOf("커피", "밥", "공동 경비"), items.map { it.label })   // 가격 오름차순

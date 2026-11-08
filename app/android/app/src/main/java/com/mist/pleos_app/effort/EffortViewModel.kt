@@ -69,6 +69,7 @@ data class EffortUi(
     val calcItems: List<CalcItem> = emptyList(),        // 계산 연출 체크포인트 6개(도착 뒤, 정리하지 못함이 아닐 때)
     val justFinished: String? = null,                   // 방금 끝난 기록 trip_id(홈 맨 위 굵은 테두리, 메모리만)
     val constants: com.mist.pleos_app.engine.EffortConstants? = null,
+    val recordCount: Int = 0,                           // 남은 기록 수(설정 › 기록 초기화 "N건을 지워요")
 )
 
 /**
@@ -86,6 +87,9 @@ class EffortViewModel(app: Application, private val saved: SavedStateHandle) : A
         runCatching { parseDemoScene(t) }.onFailure { ChagokLog.event("effort_demo_invalid", "err" to it.javaClass.simpleName) }.getOrNull()
     }
     private val demoSource = demoScene?.let(::DemoEffortSource)
+
+    /** 설정 '시연 고정 모드' 설명 줄용 "목적지 · 배수"(#75 v41). 시연 데이터나 상수가 없으면 null. */
+    val demoSummary: Pair<String, String>? by lazy { demoScene?.let { sc -> effortConstants?.let { demoSummaryOf(sc, it) } } }
 
     /** 노고 상수·문구(constants.json effort, 빌드 때 fixtures/에서 복사). 없으면 미리보기 문구 없이 진행. */
     private val effortConstants: EffortConstants? = readAsset(app, "data/constants.json")?.let { t ->
@@ -125,6 +129,7 @@ class EffortViewModel(app: Application, private val saved: SavedStateHandle) : A
             phase = flow.phase,
             openTrip = trip,
             recent = flow.recent(),
+            recordCount = flow.state.records.size,
             demo = source.demo || trip?.demo == true,
             demoAvailable = demoSource != null,
             receipt = receipt,
