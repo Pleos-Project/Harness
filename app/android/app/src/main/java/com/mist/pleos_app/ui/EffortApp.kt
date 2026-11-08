@@ -124,6 +124,8 @@ fun EffortApp(
                 onSettings = { vm.open(EffortScreen.SETTINGS) },
                 onReceipt = { vm.open(EffortScreen.RECEIPT) },
                 onArrive = vm::arriveNow,
+                onLog = { vm.open(EffortScreen.LOG) },
+                onRecord = vm::openRecord,
             )
             EffortScreen.DEPART -> {
                 // Design v2 출발 화면(#75): 시연이면 정해 둔 목적지 하나를 고른 상태로
@@ -141,6 +143,8 @@ fun EffortApp(
             EffortScreen.SETTINGS -> EffortSettings(settings, ui.constants?.let(::wageSourceOf), vm.demoSummary, ui.recordCount, onBack = { vm.back() }, onChange = vm::updateSettings, onReset = vm::resetRecords)
             EffortScreen.CALC -> if (ui.calcItems.isEmpty()) LaunchedEffect(Unit) { vm.calcDone() } else EffortCalcScreen(ui, ui.calcItems, onDone = vm::calcDone)
             EffortScreen.RECEIPT -> EffortArriveScreen(ui, onRest = vm::answerRest, onPick = vm::pick, onClose = vm::closeArrive)
+            EffortScreen.LOG -> EffortLogScreen(ui, onBack = { vm.back() }, onRecord = vm::openRecord)
+            EffortScreen.RECORD -> EffortRecordScreen(ui, onBack = { vm.back() })
         }
     }
 }

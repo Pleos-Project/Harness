@@ -49,13 +49,15 @@ interface DepartNavi {
 
 /** 노고 흐름 화면(명세 v0.5 3절). */
 /** 도착 화면(RECEIPT)은 영수증과 제안을 한 화면에 둔다(Design v2 arrive, #75). */
-enum class EffortScreen { HOME, DEPART, SETTINGS, CALC, RECEIPT }
+enum class EffortScreen { HOME, DEPART, SETTINGS, CALC, RECEIPT, LOG, RECORD }
 
 /** 홈·출발·영수증 화면이 보는 상태. */
 data class EffortUi(
     val phase: EffortPhase,
     val openTrip: OpenTrip?,
     val recent: List<EffortRecord>,
+    val records: List<EffortRecord> = emptyList(),      // 주행 기록 목록(최근 순, Q-08-01)
+    val record: EffortRecord? = null,                   // 기록 상세로 연 기록
     val demo: Boolean,              // 지금 쓰는 출처가 시연 데이터인지(AC-C-7)
     val demoAvailable: Boolean,     // 시연 데이터(assets/data/effort/demo.json)가 들어 있는지
     val receipt: EffortReceipt? = null,                 // 도착했으면 엔진 영수증(F23)
@@ -129,6 +131,8 @@ class EffortViewModel(app: Application, private val saved: SavedStateHandle) : A
             phase = flow.phase,
             openTrip = trip,
             recent = flow.recent(),
+            records = flow.state.records,
+            record = saved.get<String>(KEY_RECORD)?.let { id -> flow.state.records.firstOrNull { it.tripId == id } },
             recordCount = flow.state.records.size,
             demo = source.demo || trip?.demo == true,
             demoAvailable = demoSource != null,
@@ -161,6 +165,13 @@ class EffortViewModel(app: Application, private val saved: SavedStateHandle) : A
     }
 
     /** 뒤로. 홈이면 false → Activity가 moveTaskToBack(true)로 숨긴다(CCP Back, Pleos 앱 개발 가이드). */
+    /** 기록 상세(Q-08-01): 홈 최근 기록 카드나 목록 줄에서. */
+    fun openRecord(tripId: String) {
+        saved[KEY_RECORD] = tripId
+        refresh()
+        open(EffortScreen.RECORD)
+    }
+
     fun back(): Boolean {
         val names = saved.get<List<String>>(KEY_STACK) ?: return false
         if (names.size <= 1) return false
@@ -448,6 +459,7 @@ class EffortViewModel(app: Application, private val saved: SavedStateHandle) : A
         const val NET_TIMEOUT_MS = 3_000L                   // 날씨·검색 전체 마감(AC-C-6, #57)
         const val TRIP_TIMEOUT_MS = 4_000L                  // 시간대별 강수 마감(#66)
         const val KEY_STACK = "effort_stack"
+        const val KEY_RECORD = "effort_record"
         const val DEMO_ASSET = "data/effort/demo.json"
 
         fun readAsset(app: Application, path: String): String? =
