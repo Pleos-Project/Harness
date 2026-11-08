@@ -290,4 +290,20 @@
     <string name="effort_settings_method_b">방식 B · 한 번 빼 주기</string>
     <string name="effort_settings_wage">단가 출처</string>
     <string name="effort_settings_wage_how">%1$s 시급 %2$s을 60분으로 나눈 값이에요(1분 %3$s)</string>
+    <string name="effort_log_open">기록 전체</string>
+    <string name="effort_log_title">주행 기록</string>
+    <string name="effort_log_note">좌표 없이 수치와 고른 것만 이 차에 남아요</string>
+    <string name="effort_record_title">%1$s · %2$s</string>
+    <string name="effort_record_day_cap">그날의 노고</string>
+    <string name="effort_record_choice_cap">그날 고른 것</string>
+    <string name="effort_record_note">좌표 없이 이 차에만 남아요</string>
+    <string name="effort_record_amount">운전 노고 %1$s</string>
+    <string name="effort_record_drive">운전 %1$s</string>
+    <string name="effort_record_people">함께 %1$d명</string>
+    <string name="effort_record_method_a">방식 A</string>
+    <string name="effort_record_method_b">방식 B</string>
+    <string name="effort_record_choice_none">제안 없이 기록만 남겼어요</string>
+    <string name="effort_record_choice_accept">%1$s · %2$s · 좋아요를 눌렀어요</string>
+    <string name="effort_record_choice_close">%1$s · 닫았어요</string>
+    <string name="effort_record_choice_item">%1$s · %2$s에서 운전자 빼기로 했어요</string>
 </resources>
