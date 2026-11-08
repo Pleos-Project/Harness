@@ -70,3 +70,8 @@ fun autoArrivalAllowed(trip: OpenTrip, cue: ArrivalCue): Boolean =
     trip.demo || trip.etaS > 0 || cue == ArrivalCue.DOOR
 
 private const val MINUTES_PER_DAY = 24 * 60
+
+/** 엔진 영수증 상태(#68·#71). 도착이 너무 늦게 잡혀(경과 > min(max(ETA × 2, ETA + 60분), 12시간)) 영수증 대신 안내만. */
+const val RECEIPT_UNSETTLED = "unsettled"
+
+fun isUnsettled(r: EffortReceipt?): Boolean = r?.status == RECEIPT_UNSETTLED

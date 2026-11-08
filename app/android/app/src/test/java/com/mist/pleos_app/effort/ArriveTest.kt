@@ -110,6 +110,36 @@ class ArriveTest {
         ArrivalCue.entries.forEach { assertTrue(autoArrivalAllowed(noEta.copy(demo = true), it)) }
     }
 
+    @Test
+    fun lateArrivalIsUnsettledWithoutProposal() {
+        // #68·#71: ETA 105분인데 211분 뒤에 도착이 잡히면(앱을 늦게 다시 엶) 영수증 대신 정리하지 못함
+        val t = OpenTrip(
+            "t1", "2026-11-17T16:00:00+09:00", "태안 꽃지해수욕장", 4, 6300.0, routeM = 104300.0,
+            weatherDep = "rain", sunrise = "07:13", sunset = "17:20",
+            arrivedAt = "2026-11-17T19:31:00+09:00", weatherArr = "rain",
+        )
+        val r = receiptOf(t, c)!!
+        assertTrue(isUnsettled(r))
+        assertEquals(c.copy.text.getValue("unsettled_text"), r.statusText)
+        assertNull(proposalViewOf(r, com.mist.pleos_app.app.Settings.METHOD_A, c.items))   // 제안으로 가지 않음
+        assertTrue(isUnsettled(receiptOf(t.copy(restAnswerMin = 60), c)))                     // 쉰 시간을 답해도 그대로
+        // 210분(상한과 같음)이면 영수증
+        assertFalse(isUnsettled(receiptOf(t.copy(arrivedAt = "2026-11-17T19:30:00+09:00"), c)))
+        assertFalse(isUnsettled(null))
+    }
+
+    @Test
+    fun unsettledCloseLeavesNoRecord() {
+        // #71 June: 정리하지 못함은 선택 기록 없이 출발 기록만 닫는다
+        val f = EffortFlow(MemoryEffortStore())
+        f.depart(OpenTrip("t1", "2026-11-17T16:00:00+09:00", "태안 꽃지해수욕장", 4, 6300.0))
+        f.arrive("2026-11-18T09:00:00+09:00", "none")
+        assertTrue(isUnsettled(receiptOf(f.state.openTrip, c)))
+        f.discardTrip()
+        assertEquals(EffortPhase.IDLE, f.phase)
+        assertTrue(f.recent().isEmpty())
+    }
+
     private fun locate(rel: String): File {
         var dir: File? = File("").absoluteFile
         while (dir != null) {
