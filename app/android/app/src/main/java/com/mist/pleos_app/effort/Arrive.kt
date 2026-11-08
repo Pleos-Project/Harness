@@ -39,7 +39,7 @@ fun effortInputOf(trip: OpenTrip): EffortInput? {
         sunriseMin = if (known) sunrise!! else 0,
         sunsetMin = if (known) sunset!! else MINUTES_PER_DAY,
         n = trip.n,
-        restAnswerMin = trip.restAnswerMin ?: 0,           // 답하기 전에는 "없음"(명세 F21·#62)
+        restAnswerMin = trip.restAnswerMin ?: 0, // 답하기 전(null)은 0분. #64 전 엔진의 `?: 0`과 같은 동작
         congestionRatio = trip.congestionRatio,
         congestionM = trip.congestionM,
         congestionS = trip.congestionS,
