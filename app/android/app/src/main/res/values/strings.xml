@@ -139,6 +139,8 @@
     <string name="effort_driving_hint">도착하면 오늘 운전을 정리해 드릴게요</string>
     <string name="effort_arrived">%1$s 도착</string>
     <string name="effort_discard">그만두기</string>
+    <!-- #68 5번: 내비가 안내를 끝내지 않아도 직접 도착 처리. 글자는 명준 확정 전 임시 -->
+    <string name="effort_arrive_now">도착했어요</string>
     <string name="effort_recent">최근 기록</string>
     <string name="effort_recent_empty">아직 기록이 없어요</string>
     <string name="effort_record_line">%1$s · %2$s</string>

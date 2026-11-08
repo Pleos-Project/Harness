@@ -117,6 +117,7 @@ fun EffortApp(
                 onRetry = { vm.retryRoute() },
                 onSettings = { vm.open(EffortScreen.SETTINGS) },
                 onReceipt = { vm.open(EffortScreen.RECEIPT) },
+                onArrive = vm::arriveNow,
             )
             EffortScreen.DEPART -> {
                 val demo = (vm.source as? DemoEffortSource)?.scene
@@ -158,13 +159,14 @@ private fun EffortHome(
     onRetry: () -> Unit,
     onSettings: () -> Unit,
     onReceipt: () -> Unit = {},
+    onArrive: () -> Unit = {},
 ) {
     val gap = Arrangement.spacedBy(24.gpx)
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()), verticalArrangement = gap) {
         val trip = ui.openTrip
         when (ui.phase) {
             EffortPhase.IDLE -> CgButton(stringResource(R.string.effort_depart_start), onDepart, Modifier.fillMaxWidth())
-            EffortPhase.DRIVING -> trip?.let { TripCard(it, arrived = false, routeFailed = routeFailed, onDiscard = onDiscard, onRetry = onRetry) }
+            EffortPhase.DRIVING -> trip?.let { TripCard(it, arrived = false, routeFailed = routeFailed, onDiscard = onDiscard, onRetry = onRetry, onArrive = onArrive) }
             EffortPhase.ARRIVED -> trip?.let { TripCard(it, arrived = true, routeFailed = false, onDiscard = onDiscard, onRetry = onRetry, onReceipt = onReceipt) }
         }
         CgCaption(stringResource(R.string.effort_recent))
@@ -186,6 +188,7 @@ private fun TripCard(
     onDiscard: () -> Unit,
     onRetry: () -> Unit,
     onReceipt: () -> Unit = {},
+    onArrive: () -> Unit = {},
 ) {
     CgCard(Modifier.fillMaxWidth()) {
         CgTitle(stringResource(if (arrived) R.string.effort_arrived else R.string.effort_driving, trip.destName))
@@ -193,6 +196,7 @@ private fun TripCard(
         else if (!arrived) CgBody(stringResource(R.string.effort_driving_hint), secondary = true)
         Row(horizontalArrangement = Arrangement.spacedBy(24.gpx)) {
             if (arrived) CgButton(stringResource(R.string.effort_receipt_open), onReceipt)
+            else CgButton(stringResource(R.string.effort_arrive_now), onArrive)   // 내비가 안내를 끝내지 않아도 직접 도착(#68)
             if (routeFailed) CgButton(stringResource(R.string.effort_route_retry), onRetry)
             CgButton(stringResource(R.string.effort_discard), onDiscard, kind = CgButtonKind.Basic)
         }
@@ -344,6 +348,12 @@ private fun EffortReceiptScreen(ui: EffortUi, onRest: (Int) -> Unit, onNext: () 
             return@Column
         }
         ui.openTrip?.let { CgCaption(it.destName) }
+        // 정리하지 못함(#68): 숫자 없이 안내 문구만. 쉰 시간을 답해도 바뀌지 않아 질문도 감춘다(#71)
+        if (ui.unsettled) {
+            CgTitle(r.statusText ?: r.headlineText)
+            CgButton(stringResource(R.string.effort_home), onNext, Modifier.fillMaxWidth())
+            return@Column
+        }
         CgTitle(r.headlineText)
 
         // 쉰 시간(F21): 없음·15분·30분·1시간 이상. 답이 없으면 0분으로 계산해 두고 고르게 한다

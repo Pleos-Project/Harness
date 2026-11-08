@@ -61,6 +61,7 @@ data class EffortUi(
     val restQuestion: String? = null,                   // effort.copy rest_question_text("중간에 쉰 시간")
     val restAnswers: List<Pair<Int, String>> = emptyList(),   // (분, 문구): 없음·15분·30분·1시간 이상
     val proposal: ProposalView? = null,                 // 설정 방식(A/B)의 제안 화면. null이면 영수증만(F25 '제안 없음'·혼자 탄 주행)
+    val unsettled: Boolean = false,                     // 정리하지 못함(#68): 영수증 대신 안내 문구(receipt.statusText)와 [홈으로]만
 )
 
 /**
@@ -118,6 +119,7 @@ class EffortViewModel(app: Application, private val saved: SavedStateHandle) : A
             restQuestion = effortConstants?.copy?.text?.get("rest_question_text"),
             restAnswers = effortConstants?.copy?.restAnswers.orEmpty(),
             proposal = proposalViewOf(receipt, settingsFlow.value.proposalMethod, effortConstants?.items.orEmpty()),
+            unsettled = isUnsettled(receipt),
         )
     }
 
@@ -288,8 +290,15 @@ class EffortViewModel(app: Application, private val saved: SavedStateHandle) : A
         ChagokLog.event("effort_arrived", "reason" to reason, "demo" to demo)
         refresh()
         open(EffortScreen.RECEIPT)
-        if (weather == null) fetchArrivalWeather(arrivedAt)
+        if (ui.value.unsettled) ChagokLog.event("effort_unsettled", "reason" to reason)   // 날씨를 받아도 영수증이 안 나오니 부르지 않는다
+        else if (weather == null) fetchArrivalWeather(arrivedAt)
     }
+
+    /**
+     * 홈 "○○ 가는 중" 카드의 [도착했어요](#68 5번). 내비가 안내를 끝내지 않아도 사용자가 직접 도착 처리한다.
+     * 누른 시각이 도착 시각이고, 상한 판정(정리하지 못함)도 그대로 탄다. 시연이면 시연 도착 시각.
+     */
+    fun arriveNow() { if (flow.phase == EffortPhase.DRIVING) arrive("button") }
 
     /** 도착 지점 날씨(GET /v1/weather, 3초) + 출발 때 못 구한 일출·일몰(도착 좌표, 명세 F23). 좌표는 메모리에서만 쓴다. */
     private fun fetchArrivalWeather(arrivedAt: String) {
@@ -312,7 +321,18 @@ class EffortViewModel(app: Application, private val saved: SavedStateHandle) : A
     // ------------------------------------------------------------ 제안(F24·F25) → 선택·기록(F26)
     /** 영수증 아래 버튼. 제안이 있으면 제안 화면으로, 없으면 영수증만 보고 닫은 것으로 기록하고 홈으로. */
     fun afterReceipt() {
-        if (ui.value.proposal != null) open(EffortScreen.PROPOSAL) else choose(CHOICE_CLOSE)
+        when {
+            ui.value.unsettled -> closeUnsettled()
+            ui.value.proposal != null -> open(EffortScreen.PROPOSAL)
+            else -> choose(CHOICE_CLOSE)
+        }
+    }
+
+    /** 정리하지 못함(#68·#71 June): 선택 기록(F26) 없이 출발 기록만 닫는다. 최근 기록에는 영수증만 남긴다. */
+    private fun closeUnsettled() {
+        flow.discardTrip()
+        refresh(); home()
+        ChagokLog.event("effort_unsettled_close")
     }
 
     /**
@@ -322,6 +342,7 @@ class EffortViewModel(app: Application, private val saved: SavedStateHandle) : A
     fun choose(choice: String) {
         val trip = flow.state.openTrip ?: return
         val r = receiptOf(trip, effortConstants) ?: return
+        if (isUnsettled(r)) { closeUnsettled(); return }
         val method = settingsFlow.value.proposalMethod
         flow.finish(recordOf(trip, r, ui.value.proposal, method, choice))
         refresh(); home()
