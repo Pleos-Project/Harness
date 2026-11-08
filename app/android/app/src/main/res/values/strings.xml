@@ -168,6 +168,9 @@
     <string name="effort_receipt_none">아직 도착 전이에요</string>
     <string name="effort_weather_pending">도착 날씨를 확인하고 있어요</string>
     <string name="effort_home">홈으로</string>
+    <string name="effort_next">다음</string>
+    <!-- F24 방식 A 버튼(PRD v1.3 5-2, 글자는 디자인 확인) -->
+    <string name="effort_accept">받아들이기</string>
     <string name="effort_settings_method">제안 방식</string>
     <string name="effort_settings_method_a">A · 금액</string>
     <string name="effort_settings_method_b">B · 한 번 빼 주기</string>
