@@ -257,6 +257,23 @@ class FixturesTest {
         assertEquals(720.0 * 60, elapsedLimitS(0.0, effortConstants), 0.0)
     }
 
+    /** 시간대별 강수(#63): 조각 가운데로 출발·도착 관측을 고르고, 벽시계 겹침 × T/경과. 전부 unknown이면 1회 관측 규칙. */
+    @Test
+    fun effortWeatherTrip() {
+        fun run(id: String) =
+            effort(parseEffortInput(load(File(root, "effort/$id.json")).getValue("input").jsonObject), effortConstants)
+        assertEquals(40.0, run("R22").rainMin, 0.0)                     // 출발 비 → 그침: 겹친 40분만
+        assertEquals(120.0 * 210 / 240, run("R23").rainMin, 0.0)        // 중간에만 비, × T/경과
+        assertEquals(listOf("일부 시간은 날씨 정보 없음"), run("R24").notes)   // partial
+        assertEquals("비, 주행 내내", run("R25").lines[0].detailText)     // 가운데 같으면 출발 지점
+        assertEquals(72.5, run("R26").rainMin, 0.0)                     // 전부 unknown → 절반 규칙
+        // 계약 응답을 그대로 넘겨도 된다(status는 안 씀)
+        val sample = parseObject(File(root, "../contract/samples/weather.trip.ok.response.json").readText())
+        val wt = parseWeatherTrip(sample)
+        assertEquals(3, wt.dep.size)
+        assertEquals("rain", wt.dep[0].precip)
+    }
+
     /** 명세 9절 경계표: 2,350 미만 제안 없음 / 7,715.5 이상 밥 / 39,865.5 이상 공동 경비. */
     @Test
     fun effortBBoundaries() {

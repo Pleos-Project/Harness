@@ -47,6 +47,7 @@
       },
       "footnote_congestion_text": "정체 구간은 내비 안내 경로 기준",
       "weather_unknown_text": "날씨 정보 없음",
+      "weather_partial_text": "일부 시간은 날씨 정보 없음",
       "congestion_unknown_text": "정체 정보 없음",
       "rest_question_text": "중간에 쉰 시간",
       "rest_answers": [{"min": 0, "label_text": "없음"}, {"min": 15, "label_text": "15분"}, {"min": 30, "label_text": "30분"}, {"min": 60, "label_text": "1시간 이상"}],

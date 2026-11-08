@@ -1,5 +1,7 @@
 package com.mist.pleos_app.engine
 
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.jsonArray
@@ -47,6 +49,7 @@ data class EffortItem(
     val priceKrw: Double,
     val phraseText: String = "",            // B 문장에 들어갈 말 "커피값"·"밥값"·"공동 경비"
     val examples: List<String> = emptyList(),   // 그 자리 글자가 차례로 바뀌는 예시(공동 경비만, 첫 값 = phraseText)
+    val source: String = "",                // 가격 출처(설정 › 단가 출처, S20)
 )
 
 data class EffortConstants(
@@ -115,13 +118,19 @@ fun parseEffortConstants(text: String): EffortConstants {
         wageLabel = e.str("wage_label"),
         items = e.getValue("items").jsonArray.map {
             val i = it.jsonObject
-            EffortItem(i.str("key"), i.str("label"), i.dbl("price_krw"), i.str("phrase_text"), i.strList("examples"))
+            EffortItem(i.str("key"), i.str("label"), i.dbl("price_krw"), i.str("phrase_text"), i.strList("examples"), i.str("source"))
         }.sortedBy { it.priceKrw },
         copy = parseEffortCopy(e.getValue("copy").jsonObject),
     )
 }
 
 // ------------------------------------------------------------ 입력·출력
+/** 조각 [hour, hour + 1시간)의 강수(none | rain | snow | unknown). hour는 ISO 8601 + 오프셋 정시. */
+data class HourPrecip(val hour: String, val precip: String)
+
+/** GET /v1/weather/trip 응답의 dep·arr(#63). 같은 조각을 같은 순서로 담는다. 앱은 응답을 그대로 넘기면 된다(status는 안 씀). */
+data class WeatherTrip(val dep: List<HourPrecip>, val arr: List<HourPrecip>)
+
 data class EffortInput(
     val departedAt: String,                 // ISO 8601 + 오프셋
     val arrivedAt: String,
@@ -138,6 +147,8 @@ data class EffortInput(
     val congestionM: Double? = null,        // 정체 km(비율 × 경로 거리, 표시만)
     val congestionS: Double? = null,        // 보조: 구간 목록 Σ distance ÷ avrSpeed(나란히 배치)
     val distanceKm: Double? = null,         // 표시만
+    // 시간대별 강수(#63, GET /v1/weather/trip). 없거나 겹친 조각이 모두 unknown이면 weatherDep·weatherArr 절반씩
+    val weatherTrip: WeatherTrip? = null,
 )
 
 data class EffortLine(
@@ -288,12 +299,39 @@ fun DeparturePreview.toJson(): JsonObject =
     obj("eta_text" to etaText, "route_text" to routeText, "congestion_text" to congestionText)
 
 /** 날씨 줄 값: 출발·도착이 같으면 "비, 주행 내내", 한쪽만이면 "비"(임시 문구, 디자인 확정 대기). */
-fun weatherDetail(key: String, weatherDep: String, weatherArr: String, c: EffortConstants): String? {
-    val dep = weatherDep == key
-    val arr = weatherArr == key
-    if (!dep && !arr) return null
-    val t = c.copy.lineDetail.getValue(if (dep && arr) "weather_all_text" else "weather_part_text")
+fun weatherDetail(key: String, whole: Boolean, c: EffortConstants): String {
+    val t = c.copy.lineDetail.getValue(if (whole) "weather_all_text" else "weather_part_text")
     return fill(t, "precip" to c.copy.precipWords.getValue(key))
+}
+
+data class HourlyPrecip(
+    val rainWallS: Double,              // 출발~도착과 비 조각이 겹친 벽시계 초
+    val snowWallS: Double,
+    val known: Boolean,                 // 겹친 조각 가운데 판정된(none·rain·snow) 조각이 있음
+    val unknown: Boolean,               // 겹친 조각 가운데 unknown 조각이 있음
+)
+
+/** 1시간 조각 [H, H+1)마다 조각 가운데가 주행 경과의 앞 절반이면 출발 지점, 뒤 절반이면 도착 지점 관측을 쓴다(#63).
+ *  조각 가운데가 경과 가운데와 같으면 출발 지점(앞 절반에 넣음). 출발~도착과 겹치지 않는 조각은 안 쓴다. */
+fun hourlyPrecip(dep: Double, arr: Double, wt: WeatherTrip): HourlyPrecip {
+    val mid = dep + (arr - dep) / 2
+    var rain = 0.0
+    var snow = 0.0
+    var known = false
+    var unknown = false
+    for (i in 0 until min(wt.dep.size, wt.arr.size)) {
+        val h0 = epochS(wt.dep[i].hour).toDouble()
+        val ov = overlap(dep, arr, h0, h0 + 3600)
+        if (ov <= 0) continue
+        val p = if (h0 + 1800 <= mid) wt.dep[i].precip else wt.arr[i].precip
+        if (p !in KNOWN_PRECIP) {
+            unknown = true
+            continue
+        }
+        known = true
+        if (p == "rain") rain += ov else if (p == "snow") snow += ov
+    }
+    return HourlyPrecip(rain, snow, known, unknown)
 }
 
 /** "+25분"·"50분"·"2시간 넘긴 10분". {time}은 운전 시간과 같은 "○시간 ○분" 표기(명세 2절). */
@@ -364,9 +402,32 @@ fun effort(inp: EffortInput, c: EffortConstants): EffortReceipt {
     val eta = inp.etaS
     var delay = if (eta > 0) max(0.0, drive - eta) else 0.0
     if (delay * 100 < c.delayThresholdPct * eta) delay = 0.0
-    val half = drive / 2
-    val rain = (if (inp.weatherDep == "rain") half else 0.0) + (if (inp.weatherArr == "rain") half else 0.0)
-    val snow = (if (inp.weatherDep == "snow") half else 0.0) + (if (inp.weatherArr == "snow") half else 0.0)
+    val hp = inp.weatherTrip?.let { hourlyPrecip(dep, arr, it) }
+    val rain: Double
+    val snow: Double
+    val rainWhole: Boolean
+    val snowWhole: Boolean
+    val weatherNote: String?
+    if (hp != null && hp.known) {
+        // 시간대별(#63): 강수 분 = 벽시계 겹침 × T/경과(밤길과 같은 방식). unknown 조각은 가산 0
+        rain = hp.rainWallS * drive / elapsed
+        snow = hp.snowWallS * drive / elapsed
+        rainWhole = hp.rainWallS >= elapsed
+        snowWhole = hp.snowWallS >= elapsed
+        weatherNote = if (hp.unknown) c.copy.text.getValue("weather_partial_text") else null
+    } else {
+        // 시간대별 입력이 없거나 겹친 조각이 모두 unknown이면 출발·도착 1회 관측, 앞·뒤 절반씩
+        val half = drive / 2
+        rain = (if (inp.weatherDep == "rain") half else 0.0) + (if (inp.weatherArr == "rain") half else 0.0)
+        snow = (if (inp.weatherDep == "snow") half else 0.0) + (if (inp.weatherArr == "snow") half else 0.0)
+        rainWhole = inp.weatherDep == "rain" && inp.weatherArr == "rain"
+        snowWhole = inp.weatherDep == "snow" && inp.weatherArr == "snow"
+        weatherNote = if (inp.weatherDep !in KNOWN_PRECIP || inp.weatherArr !in KNOWN_PRECIP) {
+            c.copy.text.getValue("weather_unknown_text")
+        } else {
+            null
+        }
+    }
     val limitS = c.fatigueLimitMin * 60
     var excess = 0.0
     for (g in groups) excess += max(0.0, g - limitS)
@@ -388,7 +449,7 @@ fun effort(inp: EffortInput, c: EffortConstants): EffortReceipt {
         if (a > 0) {
             val pct = roundHalfUp(a / drive)
             val detail = when (k) {
-                "rain", "snow" -> weatherDetail(k, inp.weatherDep, inp.weatherArr, c)
+                "rain", "snow" -> weatherDetail(k, if (k == "rain") rainWhole else snowWhole, c)
                 "congestion" -> congestionText(inp.congestionM, inp.congestionRatio, c)
                 "delay" -> timeDetail("delay_text", delay, c)
                 "night" -> timeDetail("night_text", night, c)
@@ -400,7 +461,7 @@ fun effort(inp: EffortInput, c: EffortConstants): EffortReceipt {
     val m100 = if (drive > 0) roundHalfUp(total / drive) else 100
 
     val notes = mutableListOf<String>()
-    if (inp.weatherDep !in KNOWN_PRECIP || inp.weatherArr !in KNOWN_PRECIP) notes.add(c.copy.text.getValue("weather_unknown_text"))
+    if (weatherNote != null) notes.add(weatherNote)
     if (inp.congestionS == null && inp.congestionRatio == null) notes.add(c.copy.text.getValue("congestion_unknown_text"))
 
     val dt = driveText(drive)
@@ -420,6 +481,9 @@ fun effort(inp: EffortInput, c: EffortConstants): EffortReceipt {
     )
 }
 
+/** 1분 단가(원, 표기용) = 시급 ÷ 60을 원 단위로. 금액 계산은 반올림 전 시급을 그대로 쓴다. */
+fun wagePerMin(c: EffortConstants): Int = roundHalfUp(c.wagePerHour / 60)
+
 /** F24 금액(방식 A)과 F25 한 번 빼 주기(방식 B). 같은 노고 금액을 보여 주는 방식만 다르고, 두 화면은 따로다. */
 fun effortProposal(effortPctS: Double, n: Int, c: EffortConstants): EffortProposal {
     val amount = effortPctS * c.wagePerHour / 360_000
@@ -428,7 +492,7 @@ fun effortProposal(effortPctS: Double, n: Int, c: EffortConstants): EffortPropos
     val (aV, aT) = approxText(amount)
     val (pV, pT) = approxText(per)
     val item = bItem(share, c.items)
-    val perMin = roundHalfUp(c.wagePerHour / 60)
+    val perMin = wagePerMin(c)
     val t = c.copy.text
     return EffortProposal(
         amountKrw = amount, amountApprox = aV, amountText = aT,
@@ -519,7 +583,14 @@ fun parseEffortInput(o: JsonObject): EffortInput = EffortInput(
     congestionM = o.dblOrNull("congestion_m"),
     congestionS = o.dblOrNull("congestion_s"),
     distanceKm = o.dblOrNull("distance_km"),
+    weatherTrip = o["weather_trip"]?.takeIf { it !is JsonNull }?.jsonObject?.let { parseWeatherTrip(it) },
 )
+
+private fun parseHours(a: JsonElement): List<HourPrecip> =
+    a.jsonArray.map { val h = it.jsonObject; HourPrecip(h.str("hour"), h.str("precip")) }
+
+/** GET /v1/weather/trip 응답(또는 그 dep·arr) → 엔진 입력. status 등 다른 키는 무시한다. */
+fun parseWeatherTrip(o: JsonObject): WeatherTrip = WeatherTrip(parseHours(o.getValue("dep")), parseHours(o.getValue("arr")))
 
 fun EffortLine.toJson(): JsonObject = obj(
     "key" to key, "label" to label, "add_min" to addMin, "pct" to pct, "pct_text" to pctText,

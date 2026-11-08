@@ -25,6 +25,7 @@ import com.mist.pleos_app.net.PlacesStatus
 import com.mist.pleos_app.util.ChagokLog
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
@@ -170,6 +171,8 @@ class EffortViewModel(app: Application, private val saved: SavedStateHandle) : A
     var navi: DepartNavi? = null
 
     private val api = EffortApi(BuildConfig.API_BASE_URL)
+    /** 시간대별 강수는 서버가 기상청 호출을 3초에서 끊으므로 앱은 4초까지 기다린다(#66 June 답). */
+    private val tripApi = EffortApi(BuildConfig.API_BASE_URL, timeoutMs = TRIP_TIMEOUT_MS.toInt())
     private val departFlow = MutableStateFlow(DepartUi())
     val departUi: StateFlow<DepartUi> = departFlow.asStateFlow()
 
@@ -342,11 +345,17 @@ class EffortViewModel(app: Application, private val saved: SavedStateHandle) : A
         n.location { loc ->
             if (loc == null) { flow.completeArrival(WEATHER_UNKNOWN); refresh(); return@location }
             val sun = sunTimes(loc.first, loc.second, arrivedAt.take(10))
+            val trip = flow.state.openTrip
+            // #63: 출발 기록의 반올림 좌표(없으면 도착 좌표)로 시간대별 강수를 같이 부른다. 1회 관측(/v1/weather)은 실패 때 대체용
+            val dep = trip?.depLat?.let { lat -> trip.depLng?.let { lat to it } } ?: loc
             viewModelScope.launch {
-                val w = withTimeoutOrNull(NET_TIMEOUT_MS) { withContext(Dispatchers.IO) { api.weather(loc.first, loc.second) } } ?: WEATHER_UNKNOWN
-                flow.completeArrival(w, hhmm(sun.first), hhmm(sun.second))
+                val hourly = async { withTimeoutOrNull(TRIP_TIMEOUT_MS) { withContext(Dispatchers.IO) { tripApi.weatherTrip(dep, loc, trip?.departedAt ?: arrivedAt, arrivedAt) } } }
+                val once = async { withTimeoutOrNull(NET_TIMEOUT_MS) { withContext(Dispatchers.IO) { api.weather(loc.first, loc.second) } } ?: WEATHER_UNKNOWN }
+                val w = once.await()
+                val wt = hourly.await()
+                flow.completeArrival(w, hhmm(sun.first), hhmm(sun.second), weatherTrip = wt)   // 출발 좌표도 여기서 지움
                 refresh()
-                ChagokLog.event("effort_weather", "at" to "arr", "precip" to w)
+                ChagokLog.event("effort_weather", "at" to "arr", "precip" to w, "hourly" to (wt != null), "hours" to (wt?.dep?.size ?: 0))
             }
         }
     }
@@ -427,6 +436,7 @@ class EffortViewModel(app: Application, private val saved: SavedStateHandle) : A
 
     private companion object {
         const val NET_TIMEOUT_MS = 3_000L                   // 날씨·검색 전체 마감(AC-C-6, #57)
+        const val TRIP_TIMEOUT_MS = 4_000L                  // 시간대별 강수 마감(#66)
         const val KEY_STACK = "effort_stack"
         const val DEMO_ASSET = "data/effort/demo.json"
 

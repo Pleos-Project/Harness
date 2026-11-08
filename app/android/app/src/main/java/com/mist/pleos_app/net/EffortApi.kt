@@ -13,6 +13,8 @@ import kotlinx.serialization.json.jsonObject
 import java.net.HttpURLConnection
 import java.net.URL
 import java.net.URLEncoder
+import com.mist.pleos_app.engine.WeatherTrip
+import com.mist.pleos_app.engine.parseWeatherTrip
 import kotlin.math.floor
 
 /** 목적지 검색 결과 한 곳(계약 `Place`, #57). 앱은 고른 곳의 이름만 출발 기록에 남기고 좌표는 메모리에만 둔다(AC-N-4). */
@@ -51,6 +53,14 @@ class EffortApi(private val baseUrl: String, private val timeoutMs: Int = Chagok
         parsePlaces(get("/v1/places?query=$q$loc"))
     }.onFailure { failed("places", it) }.getOrDefault(PlacesResult(PlacesStatus.UNAVAILABLE, emptyList()))
 
+    /**
+     * 시간대별 강수(#63, `GET /v1/weather/trip`). 200이면 status와 상관없이 dep·arr를 그대로 돌려준다
+     * (unavailable·partial은 엔진이 처리, #72 June 답). 200 아님·연결 실패·형식 오류는 null → 1회 관측 규칙.
+     */
+    fun weatherTrip(dep: Pair<Double, Double>, arr: Pair<Double, Double>, from: String, to: String): WeatherTrip? =
+        runCatching { parseWeatherTrip(get(weatherTripPath(dep, arr, from, to))) }
+            .onFailure { failed("weather_trip", it) }.getOrNull()
+
     /** 실패 종류만 남긴다(URL·검색어·좌표 없음, AC-C-10). */
     private fun failed(api: String, e: Throwable) =
         ChagokLog.event("api_failed", "api" to api, "err" to e.javaClass.simpleName, "status" to (e as? ApiException)?.status)
@@ -71,6 +81,11 @@ class EffortApi(private val baseUrl: String, private val timeoutMs: Int = Chagok
         }
     }
 }
+
+/** `/v1/weather/trip` 경로. 좌표는 반올림, 시각의 `+`는 `%2B`로(쿼리에서 공백이 되면 422, #66). */
+fun weatherTripPath(dep: Pair<Double, Double>, arr: Pair<Double, Double>, from: String, to: String): String =
+    "/v1/weather/trip?dep_lat=${coord(dep.first)}&dep_lon=${coord(dep.second)}&arr_lat=${coord(arr.first)}&arr_lon=${coord(arr.second)}" +
+        "&from=${URLEncoder.encode(from, "UTF-8")}&to=${URLEncoder.encode(to, "UTF-8")}"
 
 /** 소수 둘째 자리(약 1km) 반올림. 위치를 덜 정확하게 보내려는 것이라 화면·계산에는 쓰지 않는다. */
 fun coord(x: Double): String = "%.2f".format(java.util.Locale.ROOT, floor(x * 100 + 0.5) / 100)

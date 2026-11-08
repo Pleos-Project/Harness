@@ -55,13 +55,15 @@ class EffortFlow(private val store: EffortStore) {
      * 도착 뒤 받은 도착 날씨, 그리고 출발 때 못 구한 일출·일몰(도착 좌표로 계산, 명세 F23)을 채운다.
      * 이미 채워진 값은 바꾸지 않는다.
      */
-    fun completeArrival(weatherArr: String, sunrise: String? = null, sunset: String? = null) {
+    fun completeArrival(weatherArr: String, sunrise: String? = null, sunset: String? = null, weatherTrip: com.mist.pleos_app.engine.WeatherTrip? = null) {
         val cur = state.openTrip ?: return
         if (!cur.arrived) return
         val next = cur.copy(
             weatherArr = cur.weatherArr ?: weatherArr,
             sunrise = cur.sunrise ?: sunrise,
             sunset = cur.sunset ?: sunset,
+            weatherTrip = cur.weatherTrip ?: weatherTrip,
+            depLat = null, depLng = null,              // #63: 도착 조회가 끝나면 출발 좌표는 성공·실패와 상관없이 지운다
         )
         if (next != cur) put(state.copy(openTrip = next))
     }
