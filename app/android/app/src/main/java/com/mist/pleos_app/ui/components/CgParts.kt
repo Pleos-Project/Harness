@@ -402,10 +402,11 @@ fun CgPeopleAlert(title: String, sub: String?, modifier: Modifier = Modifier, co
     val c = Chagok.colors
     val drop = remember { Animatable(0f) }
     LaunchedEffect(Unit) { drop.animateTo(1f, tween(420, easing = EaseIn)) }
-    val shape = RoundedCornerShape(60.gpx)
+    // v37~v38(명준 11/8): 폭 = 목적지 검색 창(1040, 분할은 좌우 40 안쪽), 높이 96(분할 88). 내려오는 효과는 처음 뜰 때만
+    val shape = RoundedCornerShape(if (compact) 44.gpx else 48.gpx)
     Row(
-        modifier.then(if (compact) Modifier.fillMaxWidth().padding(start = 96.gpx) else Modifier.width(1120.gpx))
-            .height(if (compact) 104.gpx else 120.gpx)
+        modifier.then(if (compact) Modifier.fillMaxWidth() else Modifier.width(1040.gpx))
+            .height(if (compact) 88.gpx else 96.gpx)
             .graphicsLayer { alpha = drop.value; translationY = -(1f - drop.value) * 16f * density; val k = .98f + .02f * drop.value; scaleX = k; scaleY = k }
             .shadow(16.gpx, shape).background(c.surfaceCard, shape).border(1.gpx, c.lineStrong, shape)
             .padding(start = if (compact) 26.gpx else 40.gpx, end = 10.gpx),
