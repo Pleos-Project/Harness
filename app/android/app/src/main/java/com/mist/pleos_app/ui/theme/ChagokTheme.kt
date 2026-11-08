@@ -50,6 +50,12 @@ data class ChagokColors(
     val badgeExtraText: Color,
     val badgeTight: Color,
     val badgeTightText: Color,
+    // Design v2(11/8, #75) 흑백 와이어가 쓰는 면·선·자리
+    val surfaceCard: Color,
+    val lineWeak: Color,
+    val lineStrong: Color,
+    val placeholder: Color,
+    val placeholderStrong: Color,
 )
 
 private val DarkColors = ChagokColors(
@@ -63,6 +69,8 @@ private val DarkColors = ChagokColors(
     badgeZero = Color(0xFF00E074), badgeZeroText = Color(0xFF131417),
     badgeExtra = Color(0xFF0082FF), badgeExtraText = Color(0xFF131417),
     badgeTight = Color(0xFFFF4C28), badgeTightText = Color(0xFF131417),
+    surfaceCard = Color(0xFF26272B), lineWeak = Color(0x0DFFFFFF), lineStrong = Color(0x33FFFFFF),
+    placeholder = Color(0x0DFFFFFF), placeholderStrong = Color(0x1AFFFFFF),
 )
 
 private val LightColors = ChagokColors(
@@ -76,6 +84,8 @@ private val LightColors = ChagokColors(
     badgeZero = Color(0xFF02C265), badgeZeroText = Color(0xFF131417),
     badgeExtra = Color(0xFF0064FF), badgeExtraText = Color(0xFFFFFFFF),
     badgeTight = Color(0xFFFE3D16), badgeTightText = Color(0xFF131417),
+    surfaceCard = Color(0xFFFFFFFF), lineWeak = Color(0x0D131417), lineStrong = Color(0x33131417),
+    placeholder = Color(0x0D131417), placeholderStrong = Color(0x1A131417),
 )
 
 private val Dark = darkColorScheme(
@@ -106,11 +116,15 @@ private val Light = lightColorScheme(
  */
 @Immutable
 data class ChagokType(
+    val headlineL: TextStyle,
+    val headlineM: TextStyle,
     val headlineS: TextStyle,
+    val titleL: TextStyle,
     val titleM: TextStyle,
     val titleS: TextStyle,
     val bodyL: TextStyle,
     val bodyM: TextStyle,
+    val bodyMB: TextStyle,
     val bodyS: TextStyle,
     val labelM: TextStyle,
     val labelS: TextStyle,
@@ -122,13 +136,18 @@ private fun chagokType(): ChagokType {
     val density = LocalDensity.current
     fun style(size: Int, line: Int, weight: FontWeight) =
         with(density) { TextStyle(fontSize = size.toSp(), lineHeight = line.toSp(), fontWeight = weight) }
+    // 굵기는 Pleos design assets 2.1.5(Design v2, #75 명준 11/8): Title M 700, Body L·S 700
     return ChagokType(
+        headlineL = style(60, 80, FontWeight.ExtraBold),
+        headlineM = style(56, 72, FontWeight.ExtraBold),
         headlineS = style(48, 64, FontWeight.ExtraBold),
-        titleM = style(36, 44, FontWeight.ExtraBold),
+        titleL = style(40, 52, FontWeight.Bold),
+        titleM = style(36, 44, FontWeight.Bold),
         titleS = style(32, 40, FontWeight.Bold),
-        bodyL = style(30, 38, FontWeight.Normal),
+        bodyL = style(30, 38, FontWeight.Bold),
         bodyM = style(28, 36, FontWeight.Normal),
-        bodyS = style(26, 34, FontWeight.Normal),
+        bodyMB = style(28, 36, FontWeight.Bold),
+        bodyS = style(26, 34, FontWeight.Bold),
         labelM = style(24, 28, FontWeight.Normal),
         labelS = style(20, 24, FontWeight.Normal),
     )
