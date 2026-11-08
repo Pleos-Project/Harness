@@ -66,6 +66,8 @@ data class EffortUi(
     val items: List<com.mist.pleos_app.engine.EffortItem> = emptyList(),   // 방식 B 항목(공동 경비 예시 포함)
     val done: ArriveDone? = null,                       // 고른 뒤: 기록은 남겼고 같은 화면에 "남겼어요"를 보여 주는 중
     val calcItems: List<CalcItem> = emptyList(),        // 계산 연출 체크포인트 6개(도착 뒤, 정리하지 못함이 아닐 때)
+    val justFinished: String? = null,                   // 방금 끝난 기록 trip_id(홈 맨 위 굵은 테두리, 메모리만)
+    val constants: com.mist.pleos_app.engine.EffortConstants? = null,
 )
 
 /**
@@ -108,6 +110,8 @@ class EffortViewModel(app: Application, private val saved: SavedStateHandle) : A
     // ------------------------------------------------------------ 상태
     /** 고른 뒤 [닫기] 전까지 보여 줄 영수증·제안(메모리만, 기록은 이미 저장됨). */
     private var done: ArriveDone? = null
+    /** 방금 끝난 기록(홈 "방금" 표시). 다음 출발 화면에 들어가면 지운다. */
+    private var justFinished: String? = null
 
     private val ui = MutableStateFlow(uiOf())
     val state: StateFlow<EffortUi> = ui.asStateFlow()
@@ -130,6 +134,8 @@ class EffortViewModel(app: Application, private val saved: SavedStateHandle) : A
             unsettled = isUnsettled(receipt),
             items = effortConstants?.items.orEmpty(),
             done = d,
+            justFinished = justFinished,
+            constants = effortConstants,
             calcItems = if (trip?.arrived == true && receipt != null && !isUnsettled(receipt) && effortConstants != null)
                 calcItems(trip, receipt, effortConstants, getApplication<Application>().getString(com.mist.pleos_app.R.string.effort_receipt_distance)) else emptyList(),
         )
@@ -176,6 +182,7 @@ class EffortViewModel(app: Application, private val saved: SavedStateHandle) : A
 
     /** 홈 [동승 출발] → 출발 화면. 실제 모드면 내비 후보·현재 위치·출발 날씨를 1번씩 읽는다(폴링 없음). */
     fun openDepart() {
+        justFinished = null
         open(EffortScreen.DEPART)
         departFlow.value = DepartUi()
         here = null; weatherDep = null
@@ -376,12 +383,12 @@ class EffortViewModel(app: Application, private val saved: SavedStateHandle) : A
      */
     fun closeArrive() {
         when {
-            done != null -> { done = null; refresh(); home() }
+            done != null -> { justFinished = done?.trip?.tripId; done = null; refresh(); home() }
             ui.value.unsettled -> closeUnsettled()
             else -> {
                 val trip = flow.state.openTrip
                 val r = receiptOf(trip, effortConstants)
-                if (trip != null && r != null) flow.finish(recordOf(trip, r, ui.value.proposal, settingsFlow.value.proposalMethod, CHOICE_CLOSE))
+                if (trip != null && r != null && flow.finish(recordOf(trip, r, ui.value.proposal, settingsFlow.value.proposalMethod, CHOICE_CLOSE))) justFinished = trip.tripId
                 refresh(); home()
             }
         }

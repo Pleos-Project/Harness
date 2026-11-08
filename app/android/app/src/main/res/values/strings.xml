@@ -186,6 +186,29 @@
     <string name="effort_receipt_total">합계</string>
     <string name="effort_rest_sheet_title">중간에 쉰 시간이 있었나요?</string>
     <string name="effort_rest_sheet_sub">고르면 운전 시간에서 빼고 영수증을 고쳐요</string>
+    <!-- 홈(Design v2 screens/home.html, #75) 임시 문구. 앱 이름은 가제(시안 "Nogo") -->
+    <string name="effort_home_logo">Nogo</string>
+    <string name="effort_home_loading">준비하고 있어요</string>
+    <string name="effort_home_sub">도착하면 운전한 만큼을 계산해 살짝 알려 드릴게요</string>
+    <string name="effort_home_head">오늘도 함께\n달려 볼까요?</string>
+    <string name="effort_home_first_sub">처음 오셨네요</string>
+    <string name="effort_home_first_head">함께 타고 떠나면\n운전한 만큼 세어 둘게요</string>
+    <string name="effort_home_go">출발하기</string>
+    <string name="effort_home_progress_sub">%1$s 가는 중이에요</string>
+    <string name="effort_home_progress_head">도착하면\n오늘 운전을 정리해 드려요</string>
+    <string name="effort_home_progress_pill">진행 중 · %1$s 출발 · 함께 %2$d명</string>
+    <string name="effort_home_arrived_sub">%1$s에 도착했어요</string>
+    <string name="effort_home_arrived_head">오늘 운전을\n정리해 볼까요?</string>
+    <string name="effort_home_sheet_title">%1$s 가는 중</string>
+    <string name="effort_home_sheet_dep">%1$s 출발</string>
+    <string name="effort_home_sheet_people">함께 %1$d명</string>
+    <string name="effort_home_sheet_eta">도착 예상 %1$s</string>
+    <string name="effort_home_sheet_note">도착해서 Nogo를 열면 오늘 운전을 정리해 드려요</string>
+    <string name="effort_home_just_now">방금</string>
+    <string name="effort_home_rec_per">한 사람 %1$s</string>
+    <string name="effort_home_rec_closed">닫음</string>
+    <string name="effort_home_rec_item">%1$s에서 운전자 빼기</string>
+    <string name="effort_recent_empty_hint">첫 출발을 마치면 여기에 차곡차곡 쌓여요</string>
     <!-- 출발 화면(Design v2 screens/depart.html·search.html, #75) 임시 문구 -->
     <string name="effort_depart_people_pill">함께 %1$d명</string>
     <string name="effort_depart_people_check">인원 확인 필요</string>

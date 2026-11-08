@@ -451,12 +451,12 @@ private fun DrawScope.drawFx(
 }
 
 // ------------------------------------------------------------ 내 차(2D 옆모습, 오른쪽을 봄) — 시안 cg-car SVG(170 × 70)
-private class CarPaths(val body: Path, val win: Path)
+internal class CarPaths(val body: Path, val win: Path)
 
-private fun carPaths() = CarPaths(PathParser().parsePathString(CAR_BODY).toPath(), PathParser().parsePathString(CAR_WIN).toPath())
+internal fun carPaths() = CarPaths(PathParser().parsePathString(CAR_BODY).toPath(), PathParser().parsePathString(CAR_WIN).toPath())
 
 /** 차 그리기: topLeft에서 폭 w(높이 = w × 70/170). 시안처럼 좌우를 뒤집어 오른쪽을 본다. wheel = 바퀴 회전(도). */
-private fun DrawScope.drawCar(p: CarPaths, topLeft: Offset, w: Float, ink: Color, face: Color, glass: Color, wheel: Float) {
+internal fun DrawScope.drawCar(p: CarPaths, topLeft: Offset, w: Float, ink: Color, face: Color, glass: Color, wheel: Float) {
     val k = w / 170f
     translate(topLeft.x + w, topLeft.y) {
         scale(-k, k, Offset.Zero) {
