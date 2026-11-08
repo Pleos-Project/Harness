@@ -47,7 +47,8 @@ interface DepartNavi {
 }
 
 /** 노고 흐름 화면(명세 v0.5 3절). */
-enum class EffortScreen { HOME, DEPART, SETTINGS, RECEIPT, PROPOSAL }
+/** 도착 화면(RECEIPT)은 영수증과 제안을 한 화면에 둔다(Design v2 arrive, #75). */
+enum class EffortScreen { HOME, DEPART, SETTINGS, RECEIPT }
 
 /** 홈·출발·영수증 화면이 보는 상태. */
 data class EffortUi(
@@ -61,7 +62,9 @@ data class EffortUi(
     val restQuestion: String? = null,                   // effort.copy rest_question_text("중간에 쉰 시간")
     val restAnswers: List<Pair<Int, String>> = emptyList(),   // (분, 문구): 없음·15분·30분·1시간 이상
     val proposal: ProposalView? = null,                 // 설정 방식(A/B)의 제안 화면. null이면 영수증만(F25 '제안 없음'·혼자 탄 주행)
-    val unsettled: Boolean = false,                     // 정리하지 못함(#68): 영수증 대신 안내 문구(receipt.statusText)와 [홈으로]만
+    val unsettled: Boolean = false,                     // 정리하지 못함(#68): 영수증 대신 안내 문구(receipt.statusText)와 [닫기]만
+    val items: List<com.mist.pleos_app.engine.EffortItem> = emptyList(),   // 방식 B 항목(공동 경비 예시 포함)
+    val done: ArriveDone? = null,                       // 고른 뒤: 기록은 남겼고 같은 화면에 "남겼어요"를 보여 주는 중
 )
 
 /**
@@ -102,12 +105,16 @@ class EffortViewModel(app: Application, private val saved: SavedStateHandle) : A
         get() = demoSource?.takeIf { settingsFlow.value.demoFixed } ?: liveSource
 
     // ------------------------------------------------------------ 상태
+    /** 고른 뒤 [닫기] 전까지 보여 줄 영수증·제안(메모리만, 기록은 이미 저장됨). */
+    private var done: ArriveDone? = null
+
     private val ui = MutableStateFlow(uiOf())
     val state: StateFlow<EffortUi> = ui.asStateFlow()
 
     private fun uiOf(): EffortUi {
-        val trip = flow.state.openTrip
-        val receipt = receiptOf(trip, effortConstants)
+        val d = done
+        val trip = flow.state.openTrip ?: d?.trip
+        val receipt = if (flow.state.openTrip != null) receiptOf(trip, effortConstants) else d?.receipt
         return EffortUi(
             phase = flow.phase,
             openTrip = trip,
@@ -118,8 +125,10 @@ class EffortViewModel(app: Application, private val saved: SavedStateHandle) : A
             weatherPending = trip?.arrived == true && trip.weatherArr == null,
             restQuestion = effortConstants?.copy?.text?.get("rest_question_text"),
             restAnswers = effortConstants?.copy?.restAnswers.orEmpty(),
-            proposal = proposalViewOf(receipt, settingsFlow.value.proposalMethod, effortConstants?.items.orEmpty()),
+            proposal = d?.proposal ?: proposalViewOf(receipt, settingsFlow.value.proposalMethod, effortConstants?.items.orEmpty()),
             unsettled = isUnsettled(receipt),
+            items = effortConstants?.items.orEmpty(),
+            done = d,
         )
     }
 
@@ -141,6 +150,7 @@ class EffortViewModel(app: Application, private val saved: SavedStateHandle) : A
         val names = saved.get<List<String>>(KEY_STACK) ?: return false
         if (names.size <= 1) return false
         saved[KEY_STACK] = names.dropLast(1)
+        if (done != null) { done = null; refresh() }   // 고른 뒤 뒤로 = [닫기]와 같음(기록은 이미 저장됨)
         return true
     }
 
@@ -324,12 +334,36 @@ class EffortViewModel(app: Application, private val saved: SavedStateHandle) : A
     fun answerRest(min: Int) { flow.answerRest(min); refresh(); ChagokLog.event("effort_rest", "min" to min) }
 
     // ------------------------------------------------------------ 제안(F24·F25) → 선택·기록(F26)
-    /** 영수증 아래 버튼. 제안이 있으면 제안 화면으로, 없으면 영수증만 보고 닫은 것으로 기록하고 홈으로. */
-    fun afterReceipt() {
+    /**
+     * 제안 카드에서 고름(F26): A [좋아요], B 항목. 기록 1건을 바로 남기고, 같은 화면에 "오늘 기록에 남겼어요"를 보여 준다.
+     * 그 뒤로는 아무것도 요구하지 않는다(알림·재촉·전송 없음, AC-F26-1). [닫기]로 홈.
+     */
+    fun pick(choice: String) {
+        if (done != null) return
+        val trip = flow.state.openTrip ?: return
+        val r = receiptOf(trip, effortConstants) ?: return
+        if (isUnsettled(r)) return
+        val view = ui.value.proposal
+        val method = settingsFlow.value.proposalMethod
+        if (!flow.finish(recordOf(trip, r, view, method, choice))) return
+        done = ArriveDone(trip, r, view, choice)
+        refresh()
+    }
+
+    /**
+     * 도착 화면 [닫기]. 이미 골랐으면 홈으로만. 정리하지 못함이면 기록 없이 출발 기록을 닫는다(#71 June).
+     * 고르지 않고 닫으면 "닫기"로 기록 1건(제안이 없을 때 포함).
+     */
+    fun closeArrive() {
         when {
+            done != null -> { done = null; refresh(); home() }
             ui.value.unsettled -> closeUnsettled()
-            ui.value.proposal != null -> open(EffortScreen.PROPOSAL)
-            else -> choose(CHOICE_CLOSE)
+            else -> {
+                val trip = flow.state.openTrip
+                val r = receiptOf(trip, effortConstants)
+                if (trip != null && r != null) flow.finish(recordOf(trip, r, ui.value.proposal, settingsFlow.value.proposalMethod, CHOICE_CLOSE))
+                refresh(); home()
+            }
         }
     }
 
@@ -338,19 +372,6 @@ class EffortViewModel(app: Application, private val saved: SavedStateHandle) : A
         flow.discardTrip()
         refresh(); home()
         ChagokLog.event("effort_unsettled_close")
-    }
-
-    /**
-     * 선택(F26): A [받아들이기]·[닫기], B 항목·[닫기]. 무엇을 골라도 기록 1건을 남기고 홈으로 간다.
-     * 그 뒤로는 아무것도 요구하지 않는다(알림·재촉·전송 없음, AC-F26-1).
-     */
-    fun choose(choice: String) {
-        val trip = flow.state.openTrip ?: return
-        val r = receiptOf(trip, effortConstants) ?: return
-        if (isUnsettled(r)) { closeUnsettled(); return }
-        val method = settingsFlow.value.proposalMethod
-        flow.finish(recordOf(trip, r, ui.value.proposal, method, choice))
-        refresh(); home()
     }
 
     // ------------------------------------------------------------ 나눠 낼 인원(인원 확인 알림, PR #34·#40 재사용)
