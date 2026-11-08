@@ -83,10 +83,13 @@ paths:
           (조각 가운데가 주행 경과의 앞 절반이면 출발, 뒤 절반이면 도착 — 엔진 두 벌, #63 2단계).
         - status: ok(모든 조각 판정) · partial(일부 unknown) · unavailable(전부 unknown: 서버 키 없음·연결 실패·
           기상청 오류·3초 초과). 셋 다 200이다. 앱은 3초 안에 못 받거나, 연결이 안 되거나, 200이 아니거나,
-          unavailable이면 지금 규칙(출발·도착 1회, 절반씩)으로 돌아간다. 도착을 막지 않는다(AC-C-6).
+          unavailable이면 지금 규칙으로 돌아간다: 출발 때 받은 weather_dep(/v1/weather)와 도착 때 /v1/weather, 절반씩
+          (효성 11/8). 그래서 출발 때 /v1/weather 조회는 그대로 둔다. 도착을 막지 않는다(AC-C-6).
         - 좌표·시각은 이 조회에만 쓴다. 서버는 저장·캐시·로그하지 않는다(AC-N-4). 응답은 Cache-Control: no-store.
           보내는 좌표는 /v1/weather처럼 출발·도착 지점 1개씩이고 보내는 때만 도착 때 한 번으로 바뀐다.
-          출발 좌표는 앱 메모리에만 두고, 없으면 도착 좌표로 대신한다. 앱은 소수 둘째 자리(약 1km)로 반올림해 보낸다.
+          출발 좌표는 출발 때 소수 둘째 자리(약 1km)로 반올림한 값만 출발 기록에 두고, 도착 조회가 끝나면 지운다
+          (효성 11/8, June #63 선택지 2: 동결 뒤 프로세스가 정리돼 메모리가 사라져도 출발 지점을 쓰려고).
+          출발 때 위치를 못 읽어 기록에 없으면 도착 좌표로 대신한다. 도착 좌표도 소수 둘째 자리로 반올림해 보낸다.
         - 쿼리는 dep_lat·dep_lon·arr_lat·arr_lon·from·to뿐. 다른 쿼리(원시 차량값, /v1/weather의 lat·lon 등)가 붙으면 422.
         - 지금 /v1/weather는 그대로 둔다(대체 경로).
         - 서버 구현: server/chagok/weather.py(trip). 키는 /v1/weather와 같다(TOURAPI_SERVICE_KEY).
@@ -95,7 +98,7 @@ paths:
           in: query
           required: true
           schema: { type: number, minimum: -90, maximum: 90 }
-          description: 출발 지점 위도(WGS84). 출발 좌표가 없으면 도착 좌표. NaN·Infinity는 422
+          description: 출발 지점 위도(WGS84). 출발 기록에 둔 반올림 좌표(없으면 도착 좌표). NaN·Infinity는 422
           example: 37.41
         - name: dep_lon
           in: query
@@ -119,13 +122,13 @@ paths:
           in: query
           required: true
           schema: { type: string, format: date-time }
-          description: 출발 시각. ISO 8601, 시간대 필수(+09:00 또는 Z). 쿼리 문자열에서 +는 %2B로 인코딩한다(안 하면 공백이 돼 422)
+          description: 출발 시각 = 출발 기록 시각 그대로(효성 11/8). ISO 8601, 시간대 필수(+09:00 또는 Z). 쿼리 문자열에서 +는 %2B로 인코딩한다(안 하면 공백이 돼 422)
           example: '2026-11-07T14:20:00+09:00'
         - name: to
           in: query
           required: true
           schema: { type: string, format: date-time }
-          description: 도착 시각. from보다 뒤, from + 24시간 이하, 서버 시각 + 10분 이하(앱 시계가 조금 빨라도 받는다). 어기면 422
+          description: 도착 시각 = 도착 기록 시각 그대로. from보다 뒤, from + 24시간 이하, 서버 시각 + 10분 이하(앱 시계가 조금 빨라도 받는다). 어기면 422
           example: '2026-11-07T16:45:00+09:00'
       responses:
         '200':
