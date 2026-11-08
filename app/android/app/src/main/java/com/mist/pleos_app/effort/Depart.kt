@@ -10,8 +10,11 @@ import com.mist.pleos_app.net.PlaceResult
 import com.mist.pleos_app.net.PlacesStatus
 
 /** 출발 화면 목적지 후보 한 줄: 즐겨찾기·최근 목적지(내비) 또는 검색 결과(서버). */
-data class DestOption(val dest: Destination, val kind: Kind, val category: String? = null) {
+data class DestOption(val dest: Destination, val kind: Kind, val category: String? = null, val distanceM: Int? = null) {
     enum class Kind { HOME, OFFICE, BOOKMARK, RECENT, SEARCH }
+
+    /** 검색 결과의 현재 위치부터 거리(서버 distance_m) → "104km". 위치를 못 보냈으면 null(정확도순, 거리 칸 비움). */
+    val distanceText: String? get() = distanceM?.let { com.mist.pleos_app.engine.kmText(it.toDouble()) }
 }
 
 fun NaviPlace.toOption() = DestOption(
@@ -25,7 +28,7 @@ fun NaviPlace.toOption() = DestOption(
 )
 
 /** 검색 결과 → 내비 목적지(#57 매핑: name→poiName, address, lat·lng, place_id→poiId). */
-fun PlaceResult.toOption() = DestOption(Destination(placeId, name, lat, lng, address), DestOption.Kind.SEARCH, category)
+fun PlaceResult.toOption() = DestOption(Destination(placeId, name, lat, lng, address), DestOption.Kind.SEARCH, category, distanceM)
 
 /**
  * 출발 화면 상태(명세 v0.5 F20). 좌표는 [DestOption.dest] 안에만 있고 메모리에만 둔다(AC-N-4).

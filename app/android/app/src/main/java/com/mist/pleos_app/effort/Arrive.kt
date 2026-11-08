@@ -53,4 +53,25 @@ fun receiptOf(trip: OpenTrip?, c: EffortConstants?): EffortReceipt? {
     return effortInputOf(trip)?.let { effort(it, c) }
 }
 
+/** 자동 도착 판정의 계기(F22). */
+enum class ArrivalCue {
+    DOOR,           // 화면이 보이는 동안 운전석 문이 닫힘 → 열림으로 바뀜
+    DOOR_ON_SHOW,   // 다시 보였을 때 문이 이미 열려 있음
+    RESUME,         // 다시 보였을 때(기어 P) 내비 안내 상태로 판정
+}
+
+/**
+ * 이 계기로 자동 도착을 봐도 되는지.
+ * 출발 때 ETA를 못 받은 실제 주행(경로 미리보기 실패 — 오프라인 등)은 내비 경로 요청도 실패했을 가능성이 커서,
+ * 다시 열었을 때 "안내 안 함"을 도착으로 읽으면 출발 직후 영수증이 뜬다(에뮬 오프라인 11/8).
+ * 이때는 보이는 동안 문이 실제로 열리는 순간만 도착으로 본다. 그 밖에는 홈 [도착했어요](#68)로 직접.
+ */
+fun autoArrivalAllowed(trip: OpenTrip, cue: ArrivalCue): Boolean =
+    trip.demo || trip.etaS > 0 || cue == ArrivalCue.DOOR
+
 private const val MINUTES_PER_DAY = 24 * 60
+
+/** 엔진 영수증 상태(#68·#71). 도착이 너무 늦게 잡혀(경과 > min(max(ETA × 2, ETA + 60분), 12시간)) 영수증 대신 안내만. */
+const val RECEIPT_UNSETTLED = "unsettled"
+
+fun isUnsettled(r: EffortReceipt?): Boolean = r?.status == RECEIPT_UNSETTLED

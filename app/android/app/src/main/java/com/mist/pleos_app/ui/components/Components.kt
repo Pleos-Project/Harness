@@ -47,6 +47,13 @@ private fun Modifier.pressScale(pressed: Boolean): Modifier = graphicsLayer {
 /** 버튼 종류: 가이드 Basic button의 filled(주요)·basic(보조). */
 enum class CgButtonKind { Filled, Basic }
 
+/** 버튼 크기(Design v2 components/button): S 64 · M 80 · L 100. */
+enum class CgSize { S, M, L }
+
+/**
+ * Basic Button(Design v2 `components/button`): 기본 = 회색 면, 채움 = 진한 면. 누름 배경 0.12초, 비활성은 옅은 면 + 선.
+ * M 80(모서리 24, Body L) · L 100(모서리 32, Title S) · S 64(모서리 16, Body S).
+ */
 @Composable
 fun CgButton(
     text: String,
@@ -54,6 +61,7 @@ fun CgButton(
     modifier: Modifier = Modifier,
     kind: CgButtonKind = CgButtonKind.Filled,
     enabled: Boolean = true,
+    size: CgSize = CgSize.M,
 ) {
     val c = Chagok.colors
     val source = remember { MutableInteractionSource() }
@@ -63,20 +71,29 @@ fun CgButton(
         kind == CgButtonKind.Filled -> (if (pressed) c.btnFilledPressed else c.btnFilled) to c.btnFilledText
         else -> (if (pressed) c.btnBasicPressed else c.btnBasic) to c.textPrimary
     }
+    val (h, r, style) = when (size) {
+        CgSize.S -> Triple(64, 16, Chagok.type.bodyS)
+        CgSize.M -> Triple(80, 24, Chagok.type.bodyL)
+        CgSize.L -> Triple(100, 32, Chagok.type.titleS)
+    }
+    val shape = RoundedCornerShape(r.gpx)
     Box(
         modifier
-            .pressScale(pressed)
-            .defaultMinSize(minWidth = MinTouch, minHeight = 80.gpx.coerceAtLeast(MinTouch))
-            .background(bg, RoundedCornerShape(16.gpx))
+            .defaultMinSize(minWidth = (if (size == CgSize.S) 100 else 120).gpx, minHeight = h.gpx.coerceAtLeast(MinTouch))
+            .background(bg, shape)
+            .then(if (!enabled) Modifier.border(2.gpx, c.line, shape) else Modifier)
             .clickable(source, indication = null, enabled = enabled, role = Role.Button, onClick = onClick)
-            .padding(horizontal = 32.gpx, vertical = 16.gpx),
+            .padding(horizontal = (if (size == CgSize.L) 38 else if (size == CgSize.M) 30 else 22).gpx),
         contentAlignment = Alignment.Center,
     ) {
-        Text(text, style = Chagok.type.titleS, color = fg, textAlign = TextAlign.Center)
+        Text(text, style = style, color = fg, textAlign = TextAlign.Center, maxLines = 1)
     }
 }
 
-/** 프리셋·당일/1박·인원·테마 칩 = 가이드 Toggle button(Toggled 상태). 비활성(예: 추가 0원 불가)은 enabled=false. */
+/**
+ * Toggle Button(Design v2 `components/chip`): M 80(모서리 24, Body L) · S 64(모서리 16, Body S).
+ * 켜짐 = 카드 면 + 테두리 3(흑백안). 비활성(예: 추가 0원 불가)은 enabled=false.
+ */
 @Composable
 fun CgChip(
     text: String,
@@ -84,31 +101,29 @@ fun CgChip(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
+    size: CgSize = CgSize.S,
 ) {
     val c = Chagok.colors
     val source = remember { MutableInteractionSource() }
     val pressed by source.collectIsPressedAsState()
+    val m = size != CgSize.S
+    val shape = RoundedCornerShape((if (m) 24 else 16).gpx)
     val bg = when {
         !enabled -> c.btnDisabled
-        selected -> if (pressed) c.btnFilledPressed else c.btnFilled
+        selected -> c.surfaceCard
         else -> if (pressed) c.btnBasicPressed else c.btnBasic
-    }
-    val fg = when {
-        !enabled -> c.textTertiary
-        selected -> c.btnFilledText
-        else -> c.textPrimary
     }
     Box(
         modifier
-            .pressScale(pressed)
-            .defaultMinSize(minWidth = MinTouch, minHeight = 64.gpx.coerceAtLeast(MinTouch))
-            .background(bg, RoundedCornerShape(32.gpx))
+            .defaultMinSize(minWidth = (if (m) 120 else 48).gpx, minHeight = (if (m) 80 else 64).gpx.coerceAtLeast(MinTouch))
+            .background(bg, shape)
+            .then(if (selected && enabled) Modifier.border(3.gpx, c.textPrimary, shape) else Modifier)
             .semantics { this.selected = selected }
             .clickable(source, indication = null, enabled = enabled, role = Role.Tab, onClick = onClick)
-            .padding(horizontal = 28.gpx, vertical = 12.gpx),
+            .padding(horizontal = (if (m) 32 else 24).gpx, vertical = 8.gpx),
         contentAlignment = Alignment.Center,
     ) {
-        Text(text, style = Chagok.type.bodyS, color = fg)
+        Text(text, style = if (m) Chagok.type.bodyL else Chagok.type.bodyS, color = if (enabled) c.textPrimary else c.textTertiary, maxLines = 1)
     }
 }
 
