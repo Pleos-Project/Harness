@@ -40,6 +40,19 @@ class EffortFlow(private val store: EffortStore) {
     }
 
     /**
+     * F20 ② 나란히 배치에서 받은 정체 구간 목록으로 출발 기록의 정체 값을 바꾼다(AC-F20-2: `congestion_*`는 구간 ≥1 응답에서).
+     * 분은 `congestion_s`(엔진이 min(congestion_s, T)로 씀), km·비율도 같은 목록에서 낸다. 시연·도착 뒤·이미 받았으면 무시(false).
+     */
+    fun setCongestionList(c: CongestionList): Boolean {
+        val cur = state.openTrip ?: return false
+        if (cur.demo || cur.arrived || cur.congestionS != null) return false
+        val ratio = cur.routeM?.takeIf { it > 0 }?.let { (c.meters / it).coerceIn(0.0, 1.0) } ?: cur.congestionRatio
+        put(state.copy(openTrip = cur.copy(congestionS = c.seconds, congestionM = c.meters, congestionRatio = ratio)))
+        ChagokLog.event("effort_congestion_list", "sections" to c.sections, "min" to com.mist.pleos_app.engine.roundHalfUp(c.seconds / 60))
+        return true
+    }
+
+    /**
      * 도착(F22). 열린 기록이 없거나 이미 도착했으면 false.
      * @param weatherArr null이면 "받는 중" → 영수증을 먼저 띄우고 [completeArrival]로 채운다(AC-F22-1: 1초 안에 영수증)
      */
