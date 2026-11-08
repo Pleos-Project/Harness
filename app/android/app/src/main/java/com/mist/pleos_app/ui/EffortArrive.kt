@@ -288,7 +288,7 @@ private fun OfferCard(ui: EffortUi, trip: OpenTrip, narrow: Boolean, onPick: (St
                 close(false)
             }
             else -> {
-                // 방식 B 제안 없음(운전자 몫이 커피 1인분의 절반보다 작음, 명세 F25)
+                // 제안 없음(운전자 몫이 커피 1인분의 절반보다 작음, 명세 F25 · A·B 같음 Q-07-04)
                 Text(stringResource(R.string.effort_offer_plain_head), style = head, color = c.textTertiary)
                 Text(stringResource(R.string.effort_offer_none), style = head, color = c.textPrimary)
                 Text(stringResource(R.string.effort_offer_none_why), style = why, color = c.textSecondary)

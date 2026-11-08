@@ -52,9 +52,11 @@ class ProposalTest {
 
     @Test
     fun noProposalWhenShareTooSmallOrAlone() {
-        // AC-F25-1: R6(G 891.7원) → B 제안 없음(영수증만). A는 금액을 보여 준다
+        // AC-F25-1: R6(G 891.7원) → B 제안 없음(영수증만). Q-07-04(명준 11/8): A도 같은 기준이라 제안 없음
         assertNull(proposalViewOf(receiptOf(r6Trip, c), Settings.METHOD_B, c.items))
-        assertTrue(proposalViewOf(receiptOf(r6Trip, c), Settings.METHOD_A, c.items) is ProposalView.A)
+        assertNull(proposalViewOf(receiptOf(r6Trip, c), Settings.METHOD_A, c.items))
+        // 기준을 넘으면(R1) A는 금액을 보여 준다
+        assertTrue(proposalViewOf(receiptOf(r1Trip(), c), Settings.METHOD_A, c.items) is ProposalView.A)
         // 혼자 탄 주행(n = 1)은 A·B 모두 제안 없음
         assertNull(proposalViewOf(receiptOf(r1Trip(n = 1), c), Settings.METHOD_A, c.items))
         assertNull(proposalViewOf(null, Settings.METHOD_A, c.items))
