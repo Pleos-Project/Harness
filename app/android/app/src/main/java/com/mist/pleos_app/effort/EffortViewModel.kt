@@ -322,7 +322,7 @@ class EffortViewModel(app: Application, private val saved: SavedStateHandle) : A
         val resume = resumeCheck && !source.demo && !trip.demo
         resumeCheck = false
         val c = cue ?: (if (resume) ArrivalCue.RESUME else return)
-        if (!autoArrivalAllowed(trip, c)) { ChagokLog.event("effort_auto_arrive_skip", "cue" to c.name, "eta" to false); return }
+        if (!autoArrivalAllowed(trip, c, isoNow())) { ChagokLog.event("effort_auto_arrive_skip", "cue" to c.name, "eta" to (trip.etaS > 0)); return }
         checkArrival(c.name.lowercase())
     }
 
