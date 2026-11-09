@@ -109,12 +109,10 @@ fun EffortApp(
     // F22 도착: 기어·운전석 문이 바뀔 때, 그리고 화면이 다시 보일 때(이벤트, 폴링 없음). 기어 P + 문 열림이면 도착인지 본다
     val shown by vm.shown.collectAsStateWithLifecycle()
     LaunchedEffect(parked, doorOpen, shown) { vm.onCar(parked, doorOpen) }
-    // F28 ① 앱을 켤 때(콜드 스타트·다른 앱에서 돌아올 때·주행 가림이 풀려 기어 P로 다시 보일 때): 화면이 보이는 동안 짧게 켰다가
-    // 되돌린다. 화면 연출이라 수집 타이머가 아님. 주행으로 바뀌면 이 효과가 취소되고 차량 쪽이 바로 되돌린다(X1)
-    LaunchedEffect(shown, driving) {
-        if (driving) return@LaunchedEffect
-        vm.ambient?.acquire(AMBIENT_OPEN)
-        try { kotlinx.coroutines.delay(AMBIENT_OPEN_MS) } finally { vm.ambient?.release(AMBIENT_OPEN) }
+    // F28 앰비언트 라이트(구두 합의 11/9): 앱이 보이는 동안(정차) 늘 브랜드 색으로 켜 둔다. 주행으로 바뀌면(X1)·가려지면(onStop)
+    // 차량 쪽이 그 자리에서 되돌리고, 기어 P로 다시 보이면 다시 켠다. 설정(S20)을 다시 켜도 다시 켠다
+    LaunchedEffect(shown, driving, settings.ambientLight) {
+        if (!driving && settings.ambientLight) vm.ambient?.acquire(AMBIENT_APP)
     }
     // 인원 확인 알림(PR #34·#40 재사용): 출발 화면에서 2명 이상 + 지난번 확인값과 다르면(노고 PRD v1.3 8장)
     val askPayers = remember(seats, payer, screen) { screen == EffortScreen.DEPART && vm.shouldAskPayers(seats) }
@@ -280,6 +278,5 @@ private fun EffortSettings(
     }
 }
 
-/** F28 ① 앱을 켤 때 켜 두는 길이(임시). 길이·모양은 명준 디자인(#109 열린 결정 31). */
-private const val AMBIENT_OPEN_MS = 2_000L
-private const val AMBIENT_OPEN = "open"
+/** F28: 앱이 보이는 동안 켜 두는 이유. 되돌리기는 주행 전환·onStop·설정 끔에서 차량 쪽(AmbientLight.restoreAll)이 한다. */
+private const val AMBIENT_APP = "app"

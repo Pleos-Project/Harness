@@ -187,8 +187,7 @@ class EffortViewModel(app: Application, private val saved: SavedStateHandle) : A
         val names = saved.get<List<String>>(KEY_STACK) ?: return false
         if (names.size <= 1) return false
         saved[KEY_STACK] = names.dropLast(1)
-        if (names.last() == EffortScreen.MIDWAY.name) { midway = null; refresh(); ambient?.release(AMBIENT_MIDWAY) }
-        if (names.last() == EffortScreen.RECEIPT.name || names.last() == EffortScreen.CALC.name) ambient?.release(AMBIENT_SETTLE)
+        if (names.last() == EffortScreen.MIDWAY.name) { midway = null; refresh() }
         if (done != null) { done = null; refresh() }   // 고른 뒤 뒤로 = [닫기]와 같음(기록은 이미 저장됨)
         return true
     }
@@ -199,7 +198,7 @@ class EffortViewModel(app: Application, private val saved: SavedStateHandle) : A
     /** MainActivity가 넣는다(NaviRepository). 없으면(미리보기·테스트) 내비 후보·미리보기·경로 없이 진행. */
     var navi: DepartNavi? = null
 
-    /** F28: 정산할 때(도착 계산 연출·중간 정산 영수증) 켜고, 고르거나 닫으면 놓는다. 앱을 켤 때는 화면(EffortApp)이 직접. */
+    /** F28: 앱이 보이는 동안 브랜드 색으로 켜 둔다(화면 EffortApp이 부름, 구두 합의 11/9). */
     var ambient: EffortAmbient? = null
 
     private val api = EffortApi(BuildConfig.API_BASE_URL)
@@ -372,7 +371,6 @@ class EffortViewModel(app: Application, private val saved: SavedStateHandle) : A
         refresh()
         // 계산 연출(Design v2 #75) → 영수증. 정리하지 못함은 셀 것이 없어 바로 안내로
         open(if (ui.value.unsettled) EffortScreen.RECEIPT else EffortScreen.CALC)
-        if (!ui.value.unsettled) ambient?.acquire(AMBIENT_SETTLE)   // F28 ②: 계산 연출이 시작될 때. 정리하지 못함이면 켜지 않음
         if (ui.value.unsettled) ChagokLog.event("effort_unsettled", "reason" to reason)   // 날씨를 받아도 영수증이 안 나오니 부르지 않는다
         else if (weather == null) fetchArrivalWeather(arrivedAt)
     }
@@ -433,7 +431,6 @@ class EffortViewModel(app: Application, private val saved: SavedStateHandle) : A
                     val r = midwayReceiptOf(cur, now, remain, wt, effortConstants) ?: run { midwayFailed(now, "no_route"); return@launch }
                     val view = if (cur.n >= 2 && !isUnsettled(r)) proposalViewOf(r, settingsFlow.value.proposalMethod, effortConstants?.items.orEmpty()) else null
                     midway = MidwayUi(now, pending = false, receipt = r, proposal = view)
-                    if (!isUnsettled(r)) ambient?.acquire(AMBIENT_MIDWAY)       // F28 ②: 중간 정산 영수증이 나올 때
                     refresh()
                     ChagokLog.event("effort_midway", "hourly" to (wt != null), "unsettled" to isUnsettled(r), "offer" to (view != null), "count" to cur.settlements.size)
                 }
@@ -447,7 +444,6 @@ class EffortViewModel(app: Application, private val saved: SavedStateHandle) : A
         val r = midwayReceiptOf(trip, m.at, m.remainM, m.weatherTrip, effortConstants) ?: return
         val view = if (trip.n >= 2 && !isUnsettled(r)) proposalViewOf(r, settingsFlow.value.proposalMethod, effortConstants?.items.orEmpty()) else null
         midway = MidwayUi(m.at, pending = false, receipt = r, proposal = view)
-        if (!isUnsettled(r)) ambient?.acquire(AMBIENT_MIDWAY)
         refresh(); open(EffortScreen.MIDWAY)
         ChagokLog.event("effort_midway", "demo" to true, "offer" to (view != null), "count" to trip.settlements.size)
     }
@@ -472,11 +468,10 @@ class EffortViewModel(app: Application, private val saved: SavedStateHandle) : A
         if (!flow.settle(Settlement(m.at, remain, method, choice, suggestion))) return
         midway = m.copy(choice = choice)
         refresh()
-        ambient?.release(AMBIENT_MIDWAY)                              // 고르면 되돌림(F28 ②)
     }
 
     /** 중간 정산 [계속 가기] · 뒤로. 고르지 않았으면 아무것도 남기지 않는다. */
-    fun closeMidway() { midway = null; refresh(); home(); ambient?.release(AMBIENT_MIDWAY) }
+    fun closeMidway() { midway = null; refresh(); home() }
 
     /** 영수증 화면의 쉰 시간 답(F21). 고르면 바로 다시 계산한다(#55). */
     fun answerRest(min: Int) { flow.answerRest(min); refresh(); ChagokLog.event("effort_rest", "min" to min) }
@@ -501,7 +496,6 @@ class EffortViewModel(app: Application, private val saved: SavedStateHandle) : A
         val method = settingsFlow.value.proposalMethod
         if (!flow.finish(recordOf(trip, r, view, method, choice))) return
         done = ArriveDone(trip, r, view, choice)
-        ambient?.release(AMBIENT_SETTLE)                              // 고르면 되돌림(F28 ②)
         refresh()
     }
 
@@ -510,7 +504,6 @@ class EffortViewModel(app: Application, private val saved: SavedStateHandle) : A
      * 고르지 않고 닫으면 "닫기"로 기록 1건(제안이 없을 때 포함).
      */
     fun closeArrive() {
-        ambient?.release(AMBIENT_SETTLE)
         when {
             done != null -> { justFinished = done?.trip?.tripId; done = null; refresh(); home() }
             ui.value.unsettled -> closeUnsettled()
@@ -561,8 +554,6 @@ class EffortViewModel(app: Application, private val saved: SavedStateHandle) : A
         const val NET_TIMEOUT_MS = 3_000L                   // 날씨·검색 전체 마감(AC-C-6, #57)
         const val TRIP_TIMEOUT_MS = 4_000L                  // 시간대별 강수 마감(#66)
         const val KEY_STACK = "effort_stack"
-        const val AMBIENT_SETTLE = "settle"
-        const val AMBIENT_MIDWAY = "midway"
         const val KEY_RECORD = "effort_record"
         const val DEMO_ASSET = "data/effort/demo.json"
 
