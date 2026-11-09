@@ -216,7 +216,7 @@ fun CgTextButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifie
     val src = remember { MutableInteractionSource() }
     val pressed by src.collectIsPressedAsState()
     Box(
-        modifier.heightIn(min = 72.gpx).background(if (pressed) c.btnBasicPressed else Color.Transparent, RoundedCornerShape(36.gpx))
+        modifier.heightIn(min = if (compact) 64.gpx else 72.gpx).background(if (pressed) c.btnBasicPressed else Color.Transparent, RoundedCornerShape(36.gpx))
             .clickable(src, indication = null, role = Role.Button, onClick = onClick).padding(horizontal = if (compact) 12.gpx else 22.gpx),
         contentAlignment = Alignment.Center,
     ) {
@@ -291,7 +291,7 @@ fun CgProgressPill(text: String, onClick: () -> Unit, modifier: Modifier = Modif
 }
 
 // ------------------------------------------------------------ search-field
-/** 검색 한 줄(`components/search-field`, Text Field 100 알약): 가로 1040 가운데, 입력 중이면 테두리 3 + [지우기]. */
+/** 검색 한 줄(`components/search-field`, Text Field 100 알약): 가로 1040 가운데, 입력 중이면 테두리 3 + [지우기](v3: 면 없는 글자 버튼, 인원 알림 [닫기]와 같은 규칙). */
 @Composable
 fun CgSearchField(query: String, hint: String, clearLabel: String, onQuery: (String) -> Unit, onSearch: () -> Unit, onClear: () -> Unit, compact: Boolean = false) {
     val c = Chagok.colors
@@ -315,7 +315,7 @@ fun CgSearchField(query: String, hint: String, clearLabel: String, onQuery: (Str
                     modifier = Modifier.fillMaxWidth().semantics { contentDescription = hint },
                 )
             }
-            if (active) CgButton(clearLabel, onClear, kind = CgButtonKind.Basic, size = CgSize.S)
+            if (active) CgTextButton(clearLabel, onClear, compact = compact)
         }
     }
 }

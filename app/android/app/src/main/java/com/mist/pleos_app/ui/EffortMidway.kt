@@ -44,7 +44,7 @@ import com.mist.pleos_app.ui.theme.gpx
 
 /*
  * 지금까지의 노고(중간 정산, F27) — Design v2 v41 `screens/midway.html` mid-a · mid-b · *-done.
- * 왼쪽 "지금까지 영수증"(도착과 같은 줄, 쉰 시간 줄 없음) / 오른쪽 제안 카드: A [좋아요] · B 항목 → 여기까지 기록 · [계속 가기].
+ * 왼쪽 "오늘 주행 영수증"(v3)(도착과 같은 줄, 쉰 시간 줄 없음) / 오른쪽 제안 카드: A [좋아요] · B 항목 → 여기까지 기록 · [계속 가기].
  * 숫자는 엔진(midwayReceiptOf)에서만 온다.
  */
 @Composable

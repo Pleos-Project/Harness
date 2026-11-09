@@ -161,7 +161,7 @@ internal fun ReceiptColumn(
     trip: OpenTrip, r: EffortReceipt, ui: EffortUi, narrow: Boolean, reduce: Boolean,
     paperShift: Float, open: String?, onToggle: (String) -> Unit, onChangeRest: () -> Unit, modifier: Modifier,
     editable: Boolean = true,   // 기록 상세(Q-08-01)는 쉰 시간 [바꾸기] 없이 근거 펼침만
-    midwaySub: String? = null,  // 중간 정산(F27): 제목 "지금까지 영수증" + 이 줄("14:20 출발 · 아직 가는 중"), 쉰 시간 줄 없음
+    midwaySub: String? = null,  // 중간 정산(F27): 제목 "오늘 주행 영수증"(v3) + 이 줄("14:20 출발 · 아직 가는 중"), 쉰 시간 줄 없음
 ) {
     val c = Chagok.colors
     val t = Chagok.type
