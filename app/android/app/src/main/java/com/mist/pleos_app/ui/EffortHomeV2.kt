@@ -1,6 +1,11 @@
 package com.mist.pleos_app.ui
 
 import androidx.compose.foundation.clickable
+import androidx.compose.ui.graphics.drawscope.rotate
+import androidx.compose.foundation.layout.offset
+import androidx.compose.ui.graphics.drawscope.translate
+import androidx.compose.ui.graphics.drawscope.scale
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.keyframes
@@ -200,32 +205,6 @@ internal fun EffortHomeScreen(
     }
 }
 
-/** 원 안의 내 차(1.8초 반복 위아래 5px). */
-@Composable
-internal fun CarIllustration(size: Dp, pin: String? = null) {
-    val c = Chagok.colors
-    val paths = remember { carPaths() }
-    val inf = rememberInfiniteTransition(label = "idle")
-    val y by inf.animateFloat(-1f, 1f, infiniteRepeatable(tween(1800, easing = Idle), RepeatMode.Reverse), label = "y")
-    Box {
-    CgIllustrationCircle(size) {
-        Canvas(Modifier.fillMaxSize()) {
-            val s = this.size.width / 300f
-            val w = 200f * s
-            val line = 4f * s
-            drawRoundRect(c.lineStrong, Offset(60f * s, this.size.height - 88f * s - line), Size(this.size.width - 120f * s, line), CornerRadius(2f * s))
-            val top = this.size.height - 92f * s - 82f * s + y * 5f * s
-            drawCar(paths, Offset((this.size.width - w) / 2, top), w, c.textPrimary, c.surfaceCard, c.placeholderStrong, 0f)
-        }
-    }
-    // v32 home-pending: 내 차 그림에 "도착" 깃발
-    pin?.let {
-        Text(it, Modifier.align(Alignment.TopEnd).background(c.textPrimary, RoundedCornerShape(24.gpx)).padding(horizontal = 20.gpx, vertical = 6.gpx),
-            style = Chagok.type.labelM.copy(fontWeight = FontWeight.Bold), color = c.surfaceCard)
-    }
-    }
-}
-
 /** 고른 것 한 줄: "한 사람 약 9천 원 · 좋아요" · "닫음" · "커피값에서 운전자 빼기"(홈 카드·주행 기록 목록 공통). */
 @Composable
 internal fun recordNoteText(r: EffortRecord, ui: EffortUi): String = when {
@@ -266,17 +245,19 @@ internal fun LogoSymbol(size: Dp, pin: String? = null) {
     val c = Chagok.colors
     val reduce = rememberReduceMotion()
     val inf = rememberInfiniteTransition(label = "float")
-    val k by inf.animateFloat(0f, 1f, infiniteRepeatable(tween(1600, easing = CubicBezierEasing(.45f, 0f, .55f, 1f)), RepeatMode.Reverse), label = "k")
-    val f = if (reduce) 0f else k
+    // 움직임은 그리기 단계에서만(drawWithContent · Canvas). graphicsLayer로 옮기면 화면 좌표가 매 프레임 바뀌어 uiautomator가 idle을 못 잡는다(시연 스크립트 11/9 실측)
+    val k = inf.animateFloat(0f, 1f, infiniteRepeatable(tween(1600, easing = CubicBezierEasing(.45f, 0f, .55f, 1f)), RepeatMode.Reverse), label = "k")
+    fun f() = if (reduce) 0f else k.value
     val lift = 4.gpx
     Box(Modifier.size(size), contentAlignment = Alignment.Center) {
         val shadow = if (c.isDark) Color(0x80000000) else Color(0x4D242033)
-        Canvas(Modifier.align(Alignment.BottomCenter).size(size * .62f, size * .09f).graphicsLayer { scaleX = 1f - .1f * f; alpha = 1f - .25f * f }) {
-            drawOval(Brush.radialGradient(listOf(shadow, Color.Transparent), center = center, radius = this.size.width / 2f), size = this.size)
+        Canvas(Modifier.align(Alignment.BottomCenter).size(size * .62f, size * .09f)) {
+            val f = f()
+            scale(1f - .1f * f, 1f) { drawOval(Brush.radialGradient(listOf(shadow.copy(alpha = shadow.alpha * (1f - .25f * f)), Color.Transparent), center = center, radius = this.size.width / 2f), size = this.size) }
         }
         androidx.compose.foundation.Image(
             androidx.compose.ui.res.painterResource(if (c.isDark) R.drawable.nogo_symbol_night else R.drawable.nogo_symbol_day), contentDescription = null,
-            modifier = Modifier.size(size * .78f, size * .84f).graphicsLayer { translationY = -lift.toPx() * f - size.toPx() * .04f },
+            modifier = Modifier.size(size * .78f, size * .84f).offset(y = -size * .04f).drawWithContent { translate(0f, -lift.toPx() * f()) { this@drawWithContent.drawContent() } },
         )
         // v32 home-pending: "도착" 깃발(딥 잉크 알약 + 흰 글자)
         pin?.let {
@@ -349,9 +330,8 @@ internal fun StartButton(size: Dp, label: String, onClick: () -> Unit) {
                 Box(Modifier.fillMaxSize(.58f).padding(top = 0.gpx)) {
                     androidx.compose.foundation.Image(
                         androidx.compose.ui.res.painterResource(R.drawable.nogo_startbtn_wheel), null,
-                        Modifier.matchParentSize().graphicsLayer {
-                            transformOrigin = androidx.compose.ui.graphics.TransformOrigin(.702f, .252f)
-                            rotationZ = if (reduce) 0f else turn
+                        Modifier.matchParentSize().drawWithContent {   // 그리기 단계에서 돌림(홈 로고와 같은 이유)
+                            rotate(if (reduce) 0f else turn, Offset(this.size.width * .702f, this.size.height * .252f)) { this@drawWithContent.drawContent() }
                         },
                     )
                     androidx.compose.foundation.Image(androidx.compose.ui.res.painterResource(R.drawable.nogo_startbtn_hand), null, Modifier.matchParentSize())

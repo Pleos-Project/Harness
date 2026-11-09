@@ -121,7 +121,6 @@ internal fun EffortCalcScreen(ui: EffortUi, items: List<CalcItem>, onDone: () ->
     val crouch = remember { Animatable(0f) }
     val jolt = remember { Animatable(0f) }
     val hop = remember { Animatable(0f) }
-    val smokeT = remember { Animatable(0f) }
     val total = remember { Animatable(0f) }
     val pops = remember(n) { List(n) { Animatable(0f) } }
     val vals = remember(n) { List(n) { Animatable(0f) } }
@@ -134,8 +133,7 @@ internal fun EffortCalcScreen(ui: EffortUi, items: List<CalcItem>, onDone: () ->
         loading = false
         if (reduce) { delay(1500); done(); return@LaunchedEffect }
         delay(500)
-        // ① 웅크림 0.26초 + ② 배기 연기(0.1초에 생김, 1.3초 동안) → ③ 튀어 나감 0.46초
-        launch { delay(100); smokeT.animateTo(1300f, tween(1300, easing = LinearEasing)) }
+        // ① 웅크림 0.26초 → ③ 튀어 나감 0.46초(v3: 전기차라 연기 없음)
         crouch.animateTo(1f, tween(260, easing = Crouch))
         launch { crouch.animateTo(0f, tween(200, easing = Crouch)) }
         launch { jolt.snapTo(0f); jolt.animateTo(1f, tween(460, easing = CubicBezierEasing(.2f, .8f, .3f, 1f))) }
@@ -196,7 +194,7 @@ internal fun EffortCalcScreen(ui: EffortUi, items: List<CalcItem>, onDone: () ->
             }
             Rail(geo, n, fill, px(4), c)
             items.forEachIndexed { i, it -> Node(geo, i, n, it, pops[i], vals[i], fx[i], px, c, t) }
-            Car(geo, n, car, crouch, jolt, hop, smokeT, moving, px, c)
+            Car(geo, n, car, crouch, jolt, hop, moving, px, c)
             // 합계
             Column(
                 Modifier.fillMaxWidth().align(Alignment.BottomCenter).padding(bottom = if (narrow) 0.gpx else (150 - 32).gpx)
@@ -298,7 +296,7 @@ private fun Node(
 @Composable
 private fun FxSlot(it: CalcItem, fx: Animatable<Float, *>, modifier: Modifier, k: Float, c: ChagokColors) {
     val tm = rememberTextMeasurer()
-    val car = remember { carPaths() }
+    val car = remember { NogoCarPaths() }
     val cloud = remember { PathParser().parsePathString(CLOUD).toPath() }
     val hg = remember { PathParser().parsePathString(HOURGLASS).toPath() }
     val sand = remember { PathParser().parsePathString(SAND).toPath() }
@@ -328,7 +326,7 @@ private fun FxSlot(it: CalcItem, fx: Animatable<Float, *>, modifier: Modifier, k
 
 private fun DrawScope.drawFx(
     it: CalcItem, ms: Float, u: Float, a: Float, c: ChagokColors, tm: TextMeasurer,
-    car: CarPaths, cloud: Path, hg: Path, sand: Path, honk: String, zip: String, none: String,
+    car: NogoCarPaths, cloud: Path, hg: Path, sand: Path, honk: String, zip: String, none: String,
 ) {
     val ink = c.textPrimary.copy(alpha = c.textPrimary.alpha * a)
     val face = c.surfaceCard.copy(alpha = c.surfaceCard.alpha * a)
@@ -383,13 +381,13 @@ private fun DrawScope.drawFx(
             val crawl = 20 * (1 - (1 - ms / FX_MS).let { it * it })
             for (i in 0 until 3) {
                 val jit = 3 * sin((ms / 160f + i * .3f) * PI).toFloat()
-                drawCar(car, Offset((12 + i * 96 + crawl) * u, (150 + jit) * u), 86 * u, ink, face, c.placeholderStrong, 0f)
+                drawNogoCar(car, Offset((12 + i * 96 + crawl) * u, (150 + jit) * u), 86 * u, otherCarTone(illustOf(c.isDark)), 0f, a)   // 정체: 다른 차
                 tag(honk, (12 + i * 96 + 18) * u, (150 - 64) * u, 24f, 200f + i * 360f)
             }
         }
         CalcFx.ZIP -> {
             val q = (ms / 1100f).coerceIn(0f, 1f)
-            drawCar(car, Offset((20 + 190 * CubicBezierEasing(.6f, 0f, .2f, 1f).transform(q)) * u, 150 * u), 86 * u, ink, face, c.placeholderStrong, 0f)
+            drawNogoCar(car, Offset((20 + 190 * CubicBezierEasing(.6f, 0f, .2f, 1f).transform(q)) * u, 150 * u), 86 * u, myCarTone(illustOf(c.isDark), c.isDark), 0f, a)
             tag(zip, 180 * u, 60 * u, 28f, 350f)
         }
         CalcFx.LATE -> {
@@ -439,7 +437,7 @@ private fun DrawScope.drawFx(
                 x += 52 * u
             }
             val jit = 2 * sin((ms / 180f) * PI).toFloat()
-            drawCar(car, Offset(107 * u, (150 + jit) * u), 86 * u, ink, face, c.placeholderStrong, 0f)
+            drawNogoCar(car, Offset(107 * u, (150 + jit) * u), 86 * u, myCarTone(illustOf(c.isDark), c.isDark), 0f, a)
         }
         CalcFx.NONE -> {
             val q = Pop.transform(((ms - 100f) / 450f).coerceIn(0f, 1f))
@@ -455,37 +453,18 @@ private fun DrawScope.drawFx(
     }
 }
 
-// ------------------------------------------------------------ 내 차(2D 옆모습, 오른쪽을 봄) — 시안 cg-car SVG(170 × 70)
-internal class CarPaths(val body: Path, val win: Path)
-
-internal fun carPaths() = CarPaths(PathParser().parsePathString(CAR_BODY).toPath(), PathParser().parsePathString(CAR_WIN).toPath())
-
-/** 차 그리기: topLeft에서 폭 w(높이 = w × 70/170). 시안처럼 좌우를 뒤집어 오른쪽을 본다. wheel = 바퀴 회전(도). */
-internal fun DrawScope.drawCar(p: CarPaths, topLeft: Offset, w: Float, ink: Color, face: Color, glass: Color, wheel: Float) {
-    val k = w / 170f
-    translate(topLeft.x + w, topLeft.y) {
-        scale(-k, k, Offset.Zero) {
-            drawPath(p.body, face); drawPath(p.body, ink, style = Stroke(5f, join = StrokeJoin.Round))
-            drawPath(p.win, glass); drawPath(p.win, ink, style = Stroke(3f, join = StrokeJoin.Round))
-            listOf(44f, 134f).forEach { x ->
-                drawCircle(ink, 14f, Offset(x, 55f)); drawCircle(face, 6f, Offset(x, 55f))
-                rotate(wheel, Offset(x, 55f)) { drawRect(face, Offset(x - 1.5f, 42f), Size(3f, 8f)) }
-            }
-        }
-    }
-}
-
 @Composable
 private fun Car(
     g: Geo, n: Int, pos: Animatable<Float, *>, crouch: Animatable<Float, *>, jolt: Animatable<Float, *>, hop: Animatable<Float, *>,
-    smokeT: Animatable<Float, *>, moving: Boolean, px: (Int) -> Float, c: ChagokColors,
+    moving: Boolean, px: (Int) -> Float, c: ChagokColors,
 ) {
-    val paths = remember { carPaths() }
-    val smoke = remember { PathParser().parsePathString(SMOKE).toPath() }
+    val paths = remember { NogoCarPaths() }
+    val tone = myCarTone(illustOf(c.isDark), c.isDark)
     val inf = rememberInfiniteTransition(label = "car")
     val spin by inf.animateFloat(0f, 360f, infiniteRepeatable(tween(300, easing = LinearEasing)), label = "wheel")
     val bob by inf.animateFloat(-1f, 1f, infiniteRepeatable(tween(320), RepeatMode.Reverse), label = "bob")
-    val carW = px(105); val carH = px(43)
+    // v3 5-4: 가로 창은 1.5배(앞 범퍼 · 바닥 기준), 분할은 그대로
+    val carW = px(105) * (if (g.vertical) 1f else 1.5f); val carH = carW * 70f / 170f
     Canvas(Modifier.fillMaxSize()) {
         // 위치: 체크포인트 p의 원 앞(가로: 원 왼쪽 36px, 세로: 원 위 28px). 시작 자리(-1)는 첫 원 앞보다 60px 뒤(가로만)
         val p = pos.value
@@ -501,38 +480,20 @@ private fun Car(
         if (!g.vertical) {
             val x = base.x - back - px(36) - carW - px(4) * cr
             val y = base.y - carH - px(4) + bobY + hopY
-            // 배기 연기(처음 한 번): 차 꽁무니에서 부풀며 뒤·위로 흐르다 흩어짐
-            val st = smokeT.value
-            if (st in 1f..1299f) {
-                val grow = .05f + .95f * CubicBezierEasing(.2f, .7f, .3f, 1f).transform((st / 620f).coerceIn(0f, 1f))
-                val drift = CubicBezierEasing(.45f, 0f, .55f, 1f).transform((st / 1150f).coerceIn(0f, 1f))
-                val fade = if (st < 620f) 1f else 1f - CubicBezierEasing(.4f, 0f, 1f, 1f).transform(((st - 620f) / 500f).coerceIn(0f, 1f))
-                val ax = g.at(0f, n).x - px(60) - px(36) - carW
-                val sw = px(80) * grow * .95f
-                translate(ax - sw - px(30) * drift, base.y - px(44) - px(18) * drift) {
-                    scale(sw / 80f, sw / 80f, Offset.Zero) {
-                        drawPath(smoke, c.surfaceCard.copy(alpha = fade)); drawPath(smoke, c.textPrimary.copy(alpha = fade), style = Stroke(4f, join = StrokeJoin.Round))
-                    }
-                }
-            }
-            drawOval(c.line, Offset(x + carW * .12f, base.y - px(4)), Size(carW * .76f, px(5)))
-            scale(sx, sy, Offset(x + carW / 2, base.y)) { drawCar(paths, Offset(x, y), carW, c.textPrimary, c.surfaceCard, c.placeholderStrong, wheel) }
+            scale(sx, sy, Offset(x + carW / 2, base.y)) { drawNogoCar(paths, Offset(x, y), carW, tone, wheel) }
         } else {
             // 세로 레일: 차를 돌려 앞이 아래, 바퀴가 레일에 닿게
             // 시안 cg-cc-o: rotate(-90deg) scaleX(-1) → 앞이 아래, 바퀴가 오른쪽(레일). 차 상자는 레일 왼쪽, 원 위 28px
             val cx = base.x - px(4) - carH / 2 + bobY
             val cy = base.y - px(28) - carW / 2 + hopY
             rotate(-90f, Offset(cx, cy)) {
-                scale(-sx, sy, Offset(cx, cy)) { drawCar(paths, Offset(cx - carW / 2, cy - carH / 2), carW, c.textPrimary, c.surfaceCard, c.placeholderStrong, wheel) }
+                scale(-sx, sy, Offset(cx, cy)) { drawNogoCar(paths, Offset(cx - carW / 2, cy - carH / 2), carW, tone, wheel) }
             }
         }
     }
 }
 
 // 시안 SVG 경로(design/screens/calc.html, prototype)
-private const val CAR_BODY = "M10 54 L10 42 Q12 31 28 29 L54 26 L74 10 Q80 6 92 6 L118 6 Q128 6 136 14 L151 28 Q163 30 165 42 L165 54 Z"
-private const val CAR_WIN = "M62 27 L78 13 Q82 11 90 11 L105 11 L105 27 Z M111 27 L111 11 L118 11 Q124 11 130 17 L140 27 Z"
 private const val CLOUD = "M38 74 C14 74 8 50 26 42 C24 20 50 10 66 22 C76 2 112 2 120 26 C142 22 160 38 152 56 C162 66 152 76 140 74 Z"
 private const val HOURGLASS = "M8 4 H72 M8 120 H72 M14 4 C14 40 40 50 40 62 C40 74 14 84 14 120 M66 4 C66 40 40 50 40 62 C40 74 66 84 66 120"
 private const val SAND = "M22 112 Q40 92 58 112 Z"
-private const val SMOKE = "M80 20 C76 12 68 10 62 13 C60 5 50 2 43 7 C38 1 26 1 22 9 C14 7 6 13 8 21 C1 23 1 33 8 35 C8 42 18 44 24 40 C29 45 40 45 45 40 C51 44 62 43 65 38 C71 40 77 38 80 36"
