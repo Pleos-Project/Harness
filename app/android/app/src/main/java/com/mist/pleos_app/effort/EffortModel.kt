@@ -42,9 +42,26 @@ data class OpenTrip(
     val depLat: Double? = null,
     val depLng: Double? = null,
     val weatherTrip: com.mist.pleos_app.engine.WeatherTrip? = null,   // 도착 때 받은 조각별 강수(hour·precip만, 좌표 없음)
+    // 중간 정산(F27, 명준 Q-08-02 · 효성 #97 · June #97 답): 정산마다 한 줄. 도착 제안은 남은 몫으로(엔진 settledKrw = remainKrw 합)
+    val settlements: List<Settlement> = emptyList(),
 ) {
     val arrived: Boolean get() = arrivedAt != null
+
+    /** 앞서 정산한 원 단위 합(어림 전). 정산이 없으면 null → 엔진은 지금과 같은 출력(R1~R26 그대로). */
+    val settledKrw: Double? get() = if (settlements.isEmpty()) null else settlements.fold(0.0) { a, s -> a + s.remainKrw }
 }
+
+/**
+ * 중간 정산 한 번(F27). [remainKrw]는 그때 영수증의 proposal.remainKrw(어림 전 원 단위) — 어림 값을 남기면
+ * "마지막에 한 번 반올림"이 깨진다(#97). [suggestion]은 기록 상세에 보일 A 1인 몫 문구, B면 항목 key와 같다.
+ */
+data class Settlement(
+    val at: String,                         // 정산한 시각(ISO)
+    val remainKrw: Double,
+    val method: String,                     // A | B
+    val choice: String,                     // accept | 항목 key
+    val suggestion: String? = null,
+)
 
 /** 선택 기록(명세 v0.5 F26). 좌표 없음. 홈 최근 기록에 쓰려고 엔진 머리줄 문구를 같이 남긴다. */
 data class EffortRecord(
@@ -81,6 +98,7 @@ fun OpenTrip.toJson(): JsonObject = obj(
     "demo" to demo,
     "dep_lat" to depLat, "dep_lng" to depLng,
     "weather_trip" to weatherTrip?.toJson(),
+    "settlements" to JsonArray(settlements.map { obj("at" to it.at, "remain_krw" to it.remainKrw, "method" to it.method, "choice" to it.choice, "suggestion" to it.suggestion) }),
 )
 
 /** 조각별 강수 저장 모양 = 계약 응답 WeatherTrip의 dep·arr 그대로(status 없음). */
@@ -109,6 +127,12 @@ fun parseOpenTrip(o: JsonObject): OpenTrip = OpenTrip(
     depLat = o.dblOrNull("dep_lat"),
     depLng = o.dblOrNull("dep_lng"),
     weatherTrip = o["weather_trip"]?.takeIf { it !is JsonNull }?.let { runCatching { com.mist.pleos_app.engine.parseWeatherTrip(it.jsonObject) }.getOrNull() },
+    settlements = o["settlements"]?.takeIf { it !is JsonNull }?.jsonArray?.mapNotNull { e ->
+        runCatching {
+            val s = e.jsonObject
+            Settlement(s.str("at"), s.dblOrNull("remain_krw") ?: 0.0, s.str("method"), s.str("choice"), s.strOrNull("suggestion"))
+        }.getOrNull()
+    }.orEmpty(),
 )
 
 fun EffortRecord.toJson(): JsonObject = obj(
