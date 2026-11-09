@@ -37,7 +37,7 @@ adb forward tcp:8088 tcp:8088 && make replay   # Virtual Console로 PT 6단계 �
 | `design/illustrations/`, `icons/`, `brand/` | 테마 일러스트 `<theme>-<n>.svg`, 아이콘, 로고·앱 아이콘. 앱이 쓰는 내보낸 파일(SVG·PNG)만, 원본은 레포 밖 | BX 디자이너(제작) · 명준(레포 반영) |
 | `scripts/gen_fixtures.py`, `lint_copy.py`, `check_permissions.py` | fixture 생성 · 문구 검사 · 권한 대조 | 효성 |
 | `scripts/replay.sh` | Virtual Console PT 6단계 주입 | June |
-| `docs/` | 기준 문서: 노고 정산 PRD v1.2(명준·효성), 기능 명세서 v0.5(효성), 11/7. 고치지 않음. 피봇 전 문서는 `docs/archive/` | — |
+| `docs/` | 기준 문서: 노고 정산 PRD v1.3(명준·효성), 기능 명세서 v0.5(효성), 11/7. 고치지 않음. 피봇 전 문서는 `docs/archive/` | — |
 | `DECISIONS.md` | 한 줄 결정 로그 + **열린 결정**(담당·기한) | 모두 적고, 명준(PM)이 정리 |
 
 ## 규칙
@@ -63,6 +63,6 @@ adb forward tcp:8088 tcp:8088 && make replay   # Virtual Console로 PT 6단계 �
 **시작점**
 - **효성**: `docs/기능명세서_v0.5.md` 7~9절 → 노고 엔진 `server/chagok/effort.py` ↔ Kotlin `engine/Effort.kt`(#52) → 12절 날씨 서버(#53) → `DECISIONS.md` 열린 결정 24
 - **June**: `app/README.md` → `docs/기능명세서_v0.5.md` 4~6절(F20~F22)·11절 신호 표 → 열린 결정 1·20·21
-- **명준**: `docs/PRD_노고정산_v1.2.md` → `DECISIONS.md` 열린 결정 19·22·24~26 → `design/RULES.md`(Claude Code에 읽히고 `design/`에 PR, `cd design && python -m http.server`로 `preview.html` 확인)
+- **명준**: `docs/PRD_노고정산_v1.3.md` → `DECISIONS.md` 열린 결정 19·22·24~26 → `design/RULES.md`(Claude Code에 읽히고 `design/`에 PR, `cd design && python -m http.server`로 `preview.html` 확인)
 - **영상**: `docs/기능명세서_v0.5.md` 12절 시연 순서(노고 화면이 나오기 전까지는 목업), 화면 구석 "시연용 값" 표기(AC-C-7) 유지
 - **BX**: `design/RULES.md` 3절의 파일 이름·크기 규칙대로 내보내 명준에게 전달 → 열린 결정 12·13
