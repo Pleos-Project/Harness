@@ -78,7 +78,7 @@ data class EffortUi(
     val done: ArriveDone? = null,                       // 고른 뒤: 기록은 남겼고 같은 화면에 "남겼어요"를 보여 주는 중
     val calcItems: List<CalcItem> = emptyList(),        // 계산 연출 체크포인트 6개(도착 뒤, 정리하지 못함이 아닐 때)
     val justFinished: String? = null,                   // 방금 끝난 기록 trip_id(알림 "방금", 메모리만)
-    val notiDot: Boolean = false,                       // v93 알림 종 빨간 점: 기록이 저장되면 켜고 창을 열면 끔
+    val notiDot: Boolean = false,                       // 알림 종 활성(울리는 종 + 빨간 점): 기록이 저장되면 켜고 창을 닫으면(읽음) 끔(11/9 명준 2차)
     val notiOpen: Boolean = false,                      // 알림 창 열림
     val notiFresh: Set<String> = emptySet(),            // 아직 안 읽은 알림(trip_id). 창을 닫으면 읽음
     val constants: com.mist.pleos_app.engine.EffortConstants? = null,
@@ -149,14 +149,14 @@ class EffortViewModel(app: Application, private val saved: SavedStateHandle) : A
     /** 기록이 저장됐을 때: 종에 빨간 점, 그 기록은 새 알림. */
     private fun notifySaved(tripId: String) { notiDot = true; notiFresh = notiFresh + tripId }
 
-    /** 종: 창을 열면 점을 끄고, 닫으면 새 알림을 읽음으로. */
+    /** 종: 창을 열고, 닫으면 읽음(울리는 종 · 빨간 점 끔, 새 알림 굵기 해제). */
     fun toggleNoti() {
-        if (notiOpen) closeNoti() else { notiOpen = true; notiDot = false; refresh() }
+        if (notiOpen) closeNoti() else { notiOpen = true; refresh() }
     }
 
     fun closeNoti() {
         if (!notiOpen) return
-        notiOpen = false; notiFresh = emptySet(); refresh()
+        notiOpen = false; notiDot = false; notiFresh = emptySet(); refresh()
     }
 
     private val ui = MutableStateFlow(uiOf())

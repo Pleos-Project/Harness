@@ -20,6 +20,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import com.mist.pleos_app.ui.components.CgBasisList
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.background
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -158,7 +159,7 @@ internal fun EffortArriveScreen(ui: EffortUi, onRest: (Int) -> Unit, onPick: (St
                 )
             }
             val card: @Composable (Modifier) -> Unit = { m ->
-                OfferCard(ui, trip, narrow, onPick, onClose, m.graphicsLayer { alpha = offer.value; translationY = (1f - offer.value) * 16f * density })
+                OfferCard(ui, trip, narrow, onPick, onClose, m.graphicsLayer { alpha = offer.value; translationY = (1f - offer.value) * 16f * density }, offerPlayed = !first)
             }
             if (narrow) {
                 Column(Modifier.weight(1f).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(16.gpx)) {
@@ -297,8 +298,9 @@ private fun changedKeys(a: EffortReceipt, b: EffortReceipt): Set<String> {
 
 // ------------------------------------------------------------ 제안 카드(CgOfferCard 조립, 640 고정 / 분할은 아래 전체)
 @Composable
-private fun OfferCard(ui: EffortUi, trip: OpenTrip, narrow: Boolean, onPick: (String) -> Unit, onClose: () -> Unit, modifier: Modifier) {
+private fun OfferCard(ui: EffortUi, trip: OpenTrip, narrow: Boolean, onPick: (String) -> Unit, onClose: () -> Unit, modifier: Modifier, offerPlayed: Boolean = true) {
     val c = Chagok.colors
+    val reduceMotion = rememberReduceMotion()
     val t = Chagok.type
     val head = if (narrow) t.titleL else t.headlineS
     val big = if (narrow) t.headlineS else t.headlineL
@@ -327,12 +329,13 @@ private fun OfferCard(ui: EffortUi, trip: OpenTrip, narrow: Boolean, onPick: (St
                 close(false)
             }
             view is ProposalView.A -> {
-                Text(view.screen.titleText, style = head, color = c.textPrimary)
-                Text(view.screen.mainText, style = big, color = c.textPrimary, maxLines = 1)
-                Column(verticalArrangement = Arrangement.spacedBy(4.gpx)) {
-                    Text(view.screen.basisText, style = why, color = c.textSecondary)
-                    Text(view.screen.wageText, style = why, color = c.textTertiary)
+                // 11/9 명준 위계: 묻는 줄(작게, title-m · textSecondary) + 결과 숫자(크게)는 한 덩어리, 근거는 한 칸 띄움
+                Column {
+                    Text(view.screen.titleText, style = if (narrow) t.titleS else t.titleM, color = c.textSecondary)
+                    Text(view.screen.mainText, style = big, color = c.textPrimary, maxLines = 1)
                 }
+                // 근거 = 별표 글머리 + 운전 노고 금액 밑줄(제안 카드가 올라온 뒤, 출력 연출이면 1.5초)
+                CgBasisList(listOf(view.screen.basisText, view.screen.wageText), compact = narrow, underlineDelay = if (offerPlayed) 500 else 1500, animate = !reduceMotion)
                 Filler(narrow)
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.gpx)) {
                     CgButton(stringResource(R.string.effort_offer_like), { onPick(CHOICE_ACCEPT) }, Modifier.weight(1f), size = btn)

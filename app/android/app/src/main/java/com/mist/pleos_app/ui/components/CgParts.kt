@@ -139,7 +139,7 @@ enum class CgIcon(@androidx.annotation.DrawableRes val res: Int? = null) {
     Rain(R.drawable.ic_ph_cloud_rain), Snow(R.drawable.ic_ph_snowflake), Traffic(R.drawable.ic_ph_traffic_cone),
     Delay(R.drawable.ic_ph_clock_countdown), Moon(R.drawable.ic_ph_moon), Hourglass(R.drawable.ic_ph_hourglass_medium), Sun(R.drawable.ic_ph_sun),
     Check(R.drawable.ic_ph_check_circle), Info(R.drawable.ic_ph_info), Star(R.drawable.ic_ph_star),
-    Bell(R.drawable.ic_ph_bell), CarProfile(R.drawable.ic_ph_car_profile),
+    Bell(R.drawable.ic_ph_bell), BellRinging(R.drawable.ic_ph_bell_ringing), CarProfile(R.drawable.ic_ph_car_profile),
 }
 
 /** 에셋 아이콘을 선으로 그린다(design/icons/pleos). 에셋에 없는 아이콘은 점선 자리(Placeholder). */
@@ -542,6 +542,48 @@ fun CgOfferCard(modifier: Modifier = Modifier, compact: Boolean = false, content
         verticalArrangement = Arrangement.spacedBy(if (compact) 12.gpx else 20.gpx),
         content = content,
     )
+}
+
+/**
+ * 근거 목록(11/9 명준, `.why.wl`): 줄마다 별표(*) 글머리(textTertiary, 왼쪽 4 · 글 28 안쪽, 분할 2 · 20), 줄 사이 6(분할 2).
+ * 첫 줄의 "…원"까지(운전 노고 금액)는 진한 글자 + 밑줄 2px. 밑줄은 [underlineDelay] 뒤 0.6초 동안 왼쪽부터 그어진다(cg-ul).
+ * 넘치면 어절 단위로 고르게 줄바꿈.
+ */
+@Composable
+fun CgBasisList(lines: List<String>, compact: Boolean = false, underlineDelay: Int = 500, animate: Boolean = true) {
+    val c = Chagok.colors
+    val style = (if (compact) Chagok.type.labelM else Chagok.type.bodyM).copy(lineBreak = androidx.compose.ui.text.style.LineBreak.Heading)
+    val k = remember { Animatable(if (animate) 0f else 1f) }
+    LaunchedEffect(Unit) { if (animate) { delay(underlineDelay.toLong()); k.animateTo(1f, tween(600, easing = CubicBezierEasing(.32f, .72f, 0f, 1f))) } }
+    Column(verticalArrangement = Arrangement.spacedBy(if (compact) 2.gpx else 6.gpx)) {
+        lines.forEachIndexed { i, line ->
+            Box(Modifier.fillMaxWidth()) {
+                Text("*", Modifier.padding(start = if (compact) 2.gpx else 4.gpx), style = style.copy(fontWeight = FontWeight.Bold), color = c.textTertiary)
+                val end = if (i == 0) Regex("^.*?원").find(line)?.range?.last?.plus(1) ?: 0 else 0
+                var layout by remember { mutableStateOf<TextLayoutResult?>(null) }
+                val text = androidx.compose.ui.text.buildAnnotatedString {
+                    append(line)
+                    if (end > 0) addStyle(androidx.compose.ui.text.SpanStyle(color = c.textPrimary), 0, end)
+                }
+                Text(
+                    text,
+                    Modifier.padding(start = if (compact) 20.gpx else 28.gpx).drawBehind {
+                        val l = layout ?: return@drawBehind
+                        if (end <= 0) return@drawBehind
+                        val p = k.value
+                        val l0 = l.getLineForOffset(0); val l1 = l.getLineForOffset(end - 1)
+                        for (ln in l0..l1) {
+                            val x0 = if (ln == l0) l.getHorizontalPosition(0, true) else l.getLineLeft(ln)
+                            val x1 = if (ln == l1) l.getHorizontalPosition(end, true) else l.getLineRight(ln)
+                            val y = l.getLineBaseline(ln) + 5f.gpxPx(this)
+                            drawRect(c.textPrimary, Offset(x0, y), Size((x1 - x0) * p, 2f.gpxPx(this)))
+                        }
+                    },
+                    style = style, color = if (i == 0) c.textSecondary else c.textTertiary, onTextLayout = { layout = it },
+                )
+            }
+        }
+    }
 }
 
 /** 방식 B 항목 버튼(`components/offer-card` cg-opt, Basic Button L 100): 기본값만 채움. words가 여럿이면 2초마다 다음 말. */
@@ -980,6 +1022,16 @@ fun CgSwitch(checked: Boolean, onToggle: (Boolean) -> Unit, label: String, modif
 /** 알림 한 줄: "○○ 기록을 남겼어요" + 때("방금" · 날짜). fresh = 아직 안 읽은 새 알림(굵게 · 라임 아이콘 원 · 빨간 점). */
 data class CgNoti(val title: String, val time: String, val fresh: Boolean)
 
+private val BELL_KF = floatArrayOf(0f, 0f, .15f, 14f, .30f, -12f, .45f, 8f, .60f, -5f, .75f, 2f, 1f, 0f)
+
+internal fun bellAngle(p: Float): Float {
+    if (p <= 0f || p >= 1f) return 0f
+    var i = 0
+    while (i + 2 < BELL_KF.size && BELL_KF[i + 2] < p) i += 2
+    val t0 = BELL_KF[i]; val v0 = BELL_KF[i + 1]; val t1 = BELL_KF[i + 2]; val v1 = BELL_KF[i + 3]
+    return v0 + (v1 - v0) * ((p - t0) / (t1 - t0)).coerceIn(0f, 1f)
+}
+
 /** 위 바 알림 종(Icon Button 80). dot = 새 기록이 있음(빨간 점 18, 0.3초 뒤 톡 튀어나옴) · open = 창이 열려 있음(눌린 면). */
 @Composable
 fun CgBell(label: String, dot: Boolean, open: Boolean, onClick: () -> Unit, compact: Boolean = false, reduce: Boolean = false) {
@@ -990,9 +1042,27 @@ fun CgBell(label: String, dot: Boolean, open: Boolean, onClick: () -> Unit, comp
         else if (reduce) pop.snapTo(1f)
         else { delay(300); pop.animateTo(1f, tween(450, easing = CubicBezierEasing(.3f, 1.5f, .5f, 1f))) }
     }
+    // 11/9 명준 2차: 읽기 전(창을 닫기 전)까지 = 활성 아이콘(bell-ringing) + 빨간 점. 0.5초 뒤 1.1초 한 번 흔들림
+    val ring = remember { Animatable(if (dot) 1f else 0f) }
+    LaunchedEffect(dot) {
+        if (!dot || reduce) { ring.snapTo(if (dot) 1f else 0f); return@LaunchedEffect }
+        ring.snapTo(0f); delay(500); ring.animateTo(1f, tween(1100, easing = CubicBezierEasing(.36f, .07f, .19f, .97f)))
+    }
+    val src = remember { MutableInteractionSource() }
+    val pressed by src.collectIsPressedAsState()
     Box {
-        Box(Modifier.background(if (open) c.btnBasicPressed else Color.Transparent, RoundedCornerShape(20.gpx))) {
-            CgIconButton(label, CgIcon.Bell, onClick)
+        Box(
+            Modifier.size(80.gpx)
+                .background(if (pressed || open) c.btnBasicPressed else c.btnBasic, RoundedCornerShape(20.gpx))
+                .clickable(src, indication = null, role = Role.Button, onClick = onClick)
+                .semantics { contentDescription = label },
+            contentAlignment = Alignment.Center,
+        ) {
+            Box(Modifier.graphicsLayer {
+                // cg-ring-bell: 15% 14° · 30% -12° · 45% 8° · 60% -5° · 75% 2° · 100% 0, 기준점 50% 12%
+                transformOrigin = androidx.compose.ui.graphics.TransformOrigin(.5f, .12f)
+                rotationZ = bellAngle(ring.value)
+            }) { CgIconMark(if (dot) CgIcon.BellRinging else CgIcon.Bell, 56.gpx, c.textPrimary) }
         }
         if (dot) Box(
             Modifier.align(Alignment.TopEnd).padding(top = if (compact) 12.gpx else 14.gpx, end = if (compact) 14.gpx else 16.gpx)
