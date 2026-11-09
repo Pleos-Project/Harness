@@ -49,7 +49,7 @@ interface DepartNavi {
 
 /** 노고 흐름 화면(명세 v0.5 3절). */
 /** 도착 화면(RECEIPT)은 영수증과 제안을 한 화면에 둔다(Design v2 arrive, #75). */
-enum class EffortScreen { HOME, DEPART, SETTINGS, CALC, RECEIPT, LOG, RECORD }
+enum class EffortScreen { HOME, DEPART, SETTINGS, CALC, RECEIPT, LOG, RECORD, MIDWAY }
 
 /** 홈·출발·영수증 화면이 보는 상태. */
 data class EffortUi(
@@ -72,6 +72,8 @@ data class EffortUi(
     val justFinished: String? = null,                   // 방금 끝난 기록 trip_id(홈 맨 위 굵은 테두리, 메모리만)
     val constants: com.mist.pleos_app.engine.EffortConstants? = null,
     val recordCount: Int = 0,                           // 남은 기록 수(설정 › 기록 초기화 "N건을 지워요")
+    val midway: MidwayUi? = null,                       // 중간 정산 화면(F27)
+    val midwayAvailable: Boolean = false,               // 가는 중 홈 내 차 그림 = [지금까지의 노고 보기]
 )
 
 /**
@@ -146,6 +148,9 @@ class EffortViewModel(app: Application, private val saved: SavedStateHandle) : A
             done = d,
             justFinished = justFinished,
             constants = effortConstants,
+            midway = midway,
+            // 실제 주행이고 경로 거리를 알 때만(지금까지 거리 = 경로 − 내비 남은 거리). 시연 데이터에는 중간 정산 장면이 없다
+            midwayAvailable = trip != null && !trip.arrived && !trip.demo && (trip.routeM ?: 0.0) > 0 && effortConstants != null,
             calcItems = if (trip?.arrived == true && receipt != null && !isUnsettled(receipt) && effortConstants != null)
                 calcItems(trip, receipt, effortConstants, getApplication<Application>().getString(com.mist.pleos_app.R.string.effort_receipt_distance)) else emptyList(),
         )
@@ -176,6 +181,7 @@ class EffortViewModel(app: Application, private val saved: SavedStateHandle) : A
         val names = saved.get<List<String>>(KEY_STACK) ?: return false
         if (names.size <= 1) return false
         saved[KEY_STACK] = names.dropLast(1)
+        if (names.last() == EffortScreen.MIDWAY.name) { midway = null; refresh() }
         if (done != null) { done = null; refresh() }   // 고른 뒤 뒤로 = [닫기]와 같음(기록은 이미 저장됨)
         return true
     }
@@ -380,6 +386,66 @@ class EffortViewModel(app: Application, private val saved: SavedStateHandle) : A
             }
         }
     }
+
+    // ------------------------------------------------------------ 중간 정산(F27, 명준 Q-08-02 · 효성 #97)
+    private var midway: MidwayUi? = null
+
+    /**
+     * 가는 중 홈 내 차 그림 [지금까지의 노고 보기]. 누른 시각이 '지금'이다.
+     * 내비 남은 거리(안내 중일 때만)와 출발 좌표~현재 위치 시간대별 날씨(4초, 실패면 없이)를 받아 엔진으로 센다.
+     * 좌표는 날씨 조회에만 쓰고(소수 둘째 자리, AC-N-4) 저장·로그하지 않는다.
+     */
+    fun startMidway() {
+        val trip = flow.state.openTrip ?: return
+        if (trip.arrived || trip.demo) return
+        val now = isoNow()
+        midway = MidwayUi(now)
+        refresh(); open(EffortScreen.MIDWAY)
+        val n = navi ?: run { midwayFailed(now, "no_navi"); return }
+        n.guide { g ->
+            val remain = g?.remainM?.takeIf { g.routeGuiding == true }
+            if (remain == null) { midwayFailed(now, "no_remain"); return@guide }
+            n.location { loc ->
+                val dep = trip.depLat?.let { lat -> trip.depLng?.let { lat to it } } ?: loc
+                viewModelScope.launch {
+                    val wt = if (loc != null && dep != null)
+                        withTimeoutOrNull(TRIP_TIMEOUT_MS) { withContext(Dispatchers.IO) { tripApi.weatherTrip(dep, loc, trip.departedAt, now) } } else null
+                    val cur = flow.state.openTrip?.takeIf { it.tripId == trip.tripId && !it.arrived } ?: return@launch
+                    if (midway?.at != now) return@launch            // 그사이 닫았거나 다시 누름
+                    val r = midwayReceiptOf(cur, now, remain, wt, effortConstants) ?: run { midwayFailed(now, "no_route"); return@launch }
+                    val view = if (cur.n >= 2 && !isUnsettled(r)) proposalViewOf(r, settingsFlow.value.proposalMethod, effortConstants?.items.orEmpty()) else null
+                    midway = MidwayUi(now, pending = false, receipt = r, proposal = view)
+                    refresh()
+                    ChagokLog.event("effort_midway", "hourly" to (wt != null), "unsettled" to isUnsettled(r), "offer" to (view != null), "count" to cur.settlements.size)
+                }
+            }
+        }
+    }
+
+    private fun midwayFailed(at: String, reason: String) {
+        if (midway?.at != at) return
+        midway = MidwayUi(at, pending = false, failed = true)
+        refresh()
+        ChagokLog.event("effort_midway_fail", "reason" to reason)
+    }
+
+    /** 중간 정산에서 고름: A [좋아요] · B 항목. 그 영수증의 남은 금액(원 단위)을 출발 기록에 더한다. 도착 제안은 이만큼 뺀 남은 몫으로. */
+    fun midwayPick(choice: String) {
+        val m = midway ?: return
+        if (m.choice != null) return
+        val remain = m.receipt?.proposal?.remainKrw ?: return
+        val view = m.proposal ?: return
+        val (method, suggestion) = when (view) {
+            is ProposalView.A -> Settings.METHOD_A to view.screen.mainText
+            is ProposalView.B -> Settings.METHOD_B to choice
+        }
+        if (!flow.settle(Settlement(m.at, remain, method, choice, suggestion))) return
+        midway = m.copy(choice = choice)
+        refresh()
+    }
+
+    /** 중간 정산 [계속 가기] · 뒤로. 고르지 않았으면 아무것도 남기지 않는다. */
+    fun closeMidway() { midway = null; refresh(); home() }
 
     /** 영수증 화면의 쉰 시간 답(F21). 고르면 바로 다시 계산한다(#55). */
     fun answerRest(min: Int) { flow.answerRest(min); refresh(); ChagokLog.event("effort_rest", "min" to min) }

@@ -267,6 +267,26 @@
     <string name="effort_offer_b_done">%1$s에서 운전자 빼기로 했어요</string>
     <string name="effort_offer_b_done_sub">오늘 기록에 남겼어요</string>
     <string name="effort_offer_done_note">더 할 일은 없어요</string>
+    <!-- 중간 정산(F27, Design v2 v41 screens/midway.html). 문구는 시안 그대로(임시, 명준) -->
+    <string name="effort_mid_open">지금까지의 노고 보기</string>
+    <string name="effort_mid_settled">%1$s까지 정산함</string>
+    <string name="effort_mid_title">지금까지의 노고</string>
+    <string name="effort_mid_people">가는 중 · 함께 %1$d명</string>
+    <string name="effort_mid_receipt_title">지금까지 영수증</string>
+    <string name="effort_mid_receipt_sub">%1$s 출발 · 아직 가는 중</string>
+    <string name="effort_mid_a_title">지금까지를 챙긴다면</string>
+    <string name="effort_mid_note">좋아요를 누르면 여기까지 기록해 두고, 도착하면 이 몫은 빼고 알려 드려요</string>
+    <string name="effort_mid_b_sub">기본은 %1$s. 고르면 여기까지 기록해 두고, 도착하면 이 몫은 빼고 알려 드려요</string>
+    <string name="effort_mid_a_done">좋아요, 여기까지 기록해 뒀어요</string>
+    <string name="effort_mid_b_done">여기까지는 %1$s에서 운전자 빼기로 했어요</string>
+    <string name="effort_mid_done_note">도착하면 전체를 다시 세고, 이 몫은 빼고 알려 드려요</string>
+    <string name="effort_mid_keep">계속 가기</string>
+    <string name="effort_mid_none">여기까지는 영수증만 보여 드릴게요</string>
+    <string name="effort_mid_none_why">도착하면 전체를 세어 알려 드려요</string>
+    <string name="effort_mid_pending">지금까지를 세고 있어요</string>
+    <string name="effort_mid_failed">지금은 내비에서 남은 거리를 읽지 못했어요</string>
+    <string name="effort_mid_failed_why">내비 안내 중일 때 다시 열어 주세요. 도착하면 전체를 세어 알려 드려요</string>
+    <string name="effort_record_midway">중간 정산 %1$s · %2$s</string>
     <string name="effort_offer_plain_head">오늘 운전</string>
     <string name="effort_offer_none">오늘 주행도 수고하셨어요</string>
     <string name="effort_offer_none_why">이번 주행은 기록만 남겨 둘게요</string>
