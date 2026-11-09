@@ -129,6 +129,14 @@ class Midway:
 
 
 @dataclass(frozen=True)
+class Settlement:
+    """앞서 한 중간 정산 한 건(효성 11/9). 앱 출발 기록 settlements의 한 줄에서 at·remain_krw만 넘긴다(method·choice는 안 씀).
+    엔진이 이 목록으로 정산한 합(남은 금액을 낼 때 뺌)과 장시간 구간의 경계(정산 시각)를 둘 다 만든다."""
+    at: str            # 정산한 시각(ISO 8601 + 오프셋) = 그 중간 정산 영수증의 arrived_at
+    remain_krw: float  # 그 영수증의 proposal.remain_krw(원 단위, 어림 전)
+
+
+@dataclass(frozen=True)
 class EffortInput:
     departed_at: str                     # ISO 8601 + 오프셋
     arrived_at: str
@@ -150,9 +158,10 @@ class EffortInput:
     # 중간 정산(Q-08-02). 있으면 '출발~지금(arrived_at)'을 센다: 예상보다 더의 기준 ETA = ETA × 지금까지 거리 ÷ 경로 거리,
     # 정체 km = 비율 × 지금까지 거리, 거리 표시 = 지금까지 거리(distance_km는 안 씀). 나머지 줄은 도착과 같은 규칙
     midway: Midway | None = None
-    # 앞서 정산한 금액의 원 단위 합(어림 전). 정산할 때마다 그 영수증의 proposal.remain_krw를 더한다.
-    # 있으면 제안(1인 몫·운전자 몫·B 항목)은 남은 금액 = 금액 − 이 값으로 한다. 영수증 줄·금액은 그대로
-    settled_krw: float | None = None
+    # 앞서 한 중간 정산들(앱 settlements의 at·remain_krw, 정산한 순서). 있으면
+    # ① 제안(1인 몫·운전자 몫·B 항목)은 남은 금액 = 금액 − Σ remain_krw로 한다(영수증 금액은 출발~도착 전체)
+    # ② 장시간은 정산 시각에서 끊는다(쉰 시간 답으로 가운데에서 끊지 않음). 다른 줄은 그대로
+    settlements: tuple[Settlement, ...] = ()
 
 
 @dataclass
@@ -194,8 +203,8 @@ class Proposal:
     driver_share_krw: float      # 운전자 몫 G = 남은 금액 × (n − 1) ÷ n
     a: ScreenA
     b: ScreenB | None            # None = 방식 B 제안 없음(영수증만)
-    # 중간 정산(Q-08-02). 입력에 midway·settled_krw가 둘 다 없으면 None이고 JSON에도 키를 쓰지 않는다
-    settled_krw: float | None = None   # 앞서 정산한 원 단위 합(입력 그대로, 중간 정산이 처음이면 0)
+    # 중간 정산(Q-08-02). 입력에 midway·settlements가 둘 다 없으면 None이고 JSON에도 키를 쓰지 않는다
+    settled_krw: float | None = None   # 앞서 정산한 원 단위 합(settlements의 remain_krw 합, 중간 정산이 처음이면 0)
     remain_krw: float | None = None    # 남은 금액 = max(0, 금액 − settled_krw), 어림 전. 이번에 정산하면 이 값을 기록에 더함
 
 
@@ -243,7 +252,7 @@ def input_from_json(d: dict) -> EffortInput:
         congestion_m=d.get("congestion_m"), congestion_s=d.get("congestion_s"), distance_km=d.get("distance_km"),
         weather_trip=weather_trip_from_json(d.get("weather_trip")),
         midway=Midway(float(d["midway"]["route_m"]), float(d["midway"]["remain_m"])) if d.get("midway") else None,
-        settled_krw=float(d["settled_krw"]) if d.get("settled_krw") is not None else None,
+        settlements=tuple(Settlement(s["at"], float(s["remain_krw"])) for s in d.get("settlements") or ()),
     )
 
 
@@ -429,6 +438,21 @@ def unsettled(elapsed: float, limit: float, c: EffortConstants) -> Receipt:
     )
 
 
+# ---------------------------------------------------------------- F23 장시간 구간
+def settlement_groups(dep: float, arr: float, drive: float, settlements: tuple[Settlement, ...]) -> list[float]:
+    """중간 정산 시각에서 연속 운전을 끊는다(효성 11/9). [출발, 정산1], [정산1, 정산2], …, [정산k, 도착(또는 지금)].
+    구간 = 벽시계 길이 × (T ÷ E)(밤길·날씨처럼 비례). 쉰 곳은 정산한 휴게소라고 보고 Q로 따로 끊지 않는다.
+    정산 시각은 [출발, 도착]으로 자르고 시각 순으로 본다. 길이 0인 구간(같은 시각에 다시 정산 등)은 넣지 않는다."""
+    cuts = sorted(min(arr, max(dep, float(epoch_s(s.at)))) for s in settlements)
+    groups = []
+    prev = dep
+    for b in cuts + [arr]:
+        if b > prev:
+            groups.append((b - prev) * drive / (arr - dep))
+            prev = b
+    return groups or [drive]
+
+
 # ---------------------------------------------------------------- F23 노고 · F24 금액 · F25 방식 B
 def effort(inp: EffortInput, c: EffortConstants) -> Receipt:
     dep = float(epoch_s(inp.departed_at))
@@ -440,10 +464,16 @@ def effort(inp: EffortInput, c: EffortConstants) -> Receipt:
     nights = night_intervals(inp.departed_at, arr, inp.sunrise_min, inp.sunset_min)
 
     # 정차는 도착 때 답한 쉰 시간 Q만 안다(#62). 언제 쉬었는지 모르니 Q ≥ 15분이면 "중간쯤 한 번 쉬었다"고 보고
-    # 운전 시간을 반으로 나눈다(#47). 밤길은 [출발, 도착]과 밤이 겹친 분 × (T ÷ E).
+    # 운전 시간을 반으로 나눈다(#47). 중간 정산이 있으면 그 시각에서만 끊는다(효성 11/9, Q는 T에서 빼기만).
+    # 밤길은 [출발, 도착]과 밤이 겹친 분 × (T ÷ E).
     q = float(inp.rest_answer_min)
     drive = max(0.0, elapsed - q * 60)
-    groups = [drive / 2, drive / 2] if q >= c.fatigue_reset_rest_min else [drive]
+    if inp.settlements:
+        groups = settlement_groups(dep, arr, drive, inp.settlements)
+    elif q >= c.fatigue_reset_rest_min:
+        groups = [drive / 2, drive / 2]
+    else:
+        groups = [drive]
     night_all = 0.0
     for a, b in nights:
         night_all += overlap(dep, arr, a, b)
@@ -527,8 +557,15 @@ def effort(inp: EffortInput, c: EffortConstants) -> Receipt:
 
     dt = drive_text(drive)
     mt = multiplier_text(m100, c)
-    # 정산 입력: 앞서 정산한 합이 있으면 그 값, 처음 하는 중간 정산이면 0, 둘 다 아니면 None(지금과 같은 출력)
-    settled = inp.settled_krw if inp.settled_krw is not None else (0.0 if inp.midway is not None else None)
+    # 정산 입력: 앞서 정산한 합(정산한 순서대로 더함, 엔진 두 벌 같은 순서), 처음 하는 중간 정산이면 0,
+    # 둘 다 아니면 None(지금과 같은 출력)
+    settled = None
+    if inp.settlements:
+        settled = 0.0
+        for s in inp.settlements:
+            settled += s.remain_krw
+    elif inp.midway is not None:
+        settled = 0.0
     return Receipt(
         status="ok", status_text=None, elapsed_limit_min=limit / 60,
         elapsed_min=elapsed / 60, drive_min=drive / 60, rest_min=(elapsed - drive) / 60,

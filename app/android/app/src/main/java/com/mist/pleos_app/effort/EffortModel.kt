@@ -42,13 +42,11 @@ data class OpenTrip(
     val depLat: Double? = null,
     val depLng: Double? = null,
     val weatherTrip: com.mist.pleos_app.engine.WeatherTrip? = null,   // 도착 때 받은 조각별 강수(hour·precip만, 좌표 없음)
-    // 중간 정산(F27, 명준 Q-08-02 · 효성 #97 · June #97 답): 정산마다 한 줄. 도착 제안은 남은 몫으로(엔진 settledKrw = remainKrw 합)
+    // 중간 정산(F27, 명준 Q-08-02 · 효성 #97 · June #97 답): 정산마다 한 줄. 도착 제안은 남은 몫으로
+    // (엔진 입력 settlements = 각 줄의 at·remainKrw, 합과 장시간 구간 경계는 엔진이 만든다 #105)
     val settlements: List<Settlement> = emptyList(),
 ) {
     val arrived: Boolean get() = arrivedAt != null
-
-    /** 앞서 정산한 원 단위 합(어림 전). 정산이 없으면 null → 엔진은 지금과 같은 출력(R1~R26 그대로). */
-    val settledKrw: Double? get() = if (settlements.isEmpty()) null else settlements.fold(0.0) { a, s -> a + s.remainKrw }
 }
 
 /**

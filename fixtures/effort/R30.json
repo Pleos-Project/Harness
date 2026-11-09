@@ -16,7 +16,12 @@
     "sunset": "17:20",
     "n": 2,
     "distance_km": null,
-    "settled_krw": 16701.0
+    "settlements": [
+      {
+        "at": "2026-11-17T12:00:00+09:00",
+        "remain_krw": 16701.0
+      }
+    ]
   },
   "expected": {
     "status": "ok",
