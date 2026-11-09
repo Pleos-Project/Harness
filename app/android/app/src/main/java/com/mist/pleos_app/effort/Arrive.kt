@@ -21,6 +21,17 @@ data class GuideState(val remainM: Int?, val routeGuiding: Boolean?)
 fun isMidStop(g: GuideState?): Boolean = g != null && (g.remainM ?: 0) > 0 && g.routeGuiding == true
 
 /**
+ * 내비 상태로 도착을 볼 수 있는지. 다시 보일 때(RESUME·DOOR_ON_SHOW)는 내비 연결을 새로 맺느라 상태를 못 읽을 수 있어
+ * (에뮬 11/9: 출발 1분 뒤 다시 열자 `navi_guide got:false` → 2분 주행이 도착으로 잡힘) 못 읽으면(null) 도착으로 보지 않는다.
+ * 보이는 동안 문이 열린 순간(DOOR)은 문 신호 자체가 근거라 지금처럼 못 읽어도 도착. 그 밖에는 홈 [도착했어요].
+ */
+fun arrivalByGuide(g: GuideState?, cue: ArrivalCue): Boolean = when {
+    isMidStop(g) -> false
+    g == null -> cue == ArrivalCue.DOOR
+    else -> true
+}
+
+/**
  * 출발 기록 → 엔진 입력(명세 v0.5 F23). 도착 전이면 null.
  * - 쉰 시간 답이 아직 없으면 엔진이 0으로 본다(영수증 화면에서 고르면 다시 계산)
  * - 도착 날씨를 아직 못 받았으면 unknown("날씨 정보 없음")
