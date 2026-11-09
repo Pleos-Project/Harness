@@ -59,6 +59,7 @@ data class EffortRecord(
     val choice: String,                     // accept | close | coffee·meal·shared …
     val headlineText: String,               // 엔진 headline_text("오늘 운전 2시간 10분 · 평소보다 1.57배 힘든 길")
     val n: Int? = null,                     // 나눠 낼 인원(홈 기록 카드 "· 4명", Design v2 #75). 예전 기록은 없음
+    val trip: OpenTrip? = null,             // 그날 엔진 입력(기록 상세 영수증, Q-08-01). 좌표는 지우고 남긴다(AC-N-4). 예전 기록은 없음
 )
 
 /** 노고 흐름 저장 상태: 열린 출발 기록 1건 + 선택 기록(최근이 앞). */
@@ -114,6 +115,8 @@ fun EffortRecord.toJson(): JsonObject = obj(
     "trip_id" to tripId, "date" to date, "dest_name" to destName,
     "T" to driveMin, "multiplier" to multiplier, "effort_min" to effortMin,
     "method" to method, "suggestion" to suggestion, "choice" to choice, "headline_text" to headlineText, "n" to n,
+    // 기록 속 엔진 입력에는 좌표 칸 자체를 두지 않는다(AC-N-4, 출발 좌표는 도착 조회 뒤 이미 지워짐)
+    "trip" to trip?.toJson()?.let { JsonObject(it - "dep_lat" - "dep_lng") },
 )
 
 fun parseEffortRecord(o: JsonObject): EffortRecord = EffortRecord(
@@ -128,6 +131,7 @@ fun parseEffortRecord(o: JsonObject): EffortRecord = EffortRecord(
     choice = o.str("choice"),
     headlineText = o.strOrNull("headline_text").orEmpty(),
     n = o.integerOrNull("n"),
+    trip = o.objOrNull("trip")?.let { runCatching { parseOpenTrip(it) }.getOrNull() },
 )
 
 fun EffortState.toJson(): JsonObject = obj(

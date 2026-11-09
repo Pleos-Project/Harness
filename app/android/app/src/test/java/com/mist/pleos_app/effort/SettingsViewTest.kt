@@ -23,6 +23,37 @@ class SettingsViewTest {
     }
 
     @Test
+    fun wageConstantMovesAmountAndSourceTogether() {
+        // AC-F24-2: 단가 상수를 바꾸면 화면 금액과 출처 표기가 같이 바뀐다(설정 › 단가 출처도 같이)
+        val c2 = c.copy(wagePerHour = 12000.0, wageLabel = "다른 기준")
+        val p1 = effortProposal(3600.0 * 100, 2, c)
+        val p2 = effortProposal(3600.0 * 100, 2, c2)
+        assertEquals(10700.0, p1.amountKrw, 1e-9)                                    // 60분 × 100% × 10,700원/시
+        assertEquals(12000.0, p2.amountKrw, 1e-9)
+        assertEquals("다른 기준 1분 200원 기준", p2.a.wageText)
+        assertEquals(p2.a.wageText, wageSourceOf(c2).wageText)
+    }
+
+    @Test
+    fun manWonAndExactPerMin() {
+        // #75 v41 설정 › 단가 출처 펼침: "최저임금 시급 1만 700원을 60분으로 나눈 값이에요(1분 178.33원)"
+        assertEquals("1만 700원", manWonText(10700.0))
+        assertEquals("2만 원", manWonText(20000.0))
+        assertEquals("4,700원", manWonText(4700.0))
+        assertEquals("12만 3,456원", manWonText(123456.0))
+        assertEquals("178.33원", perMinExactText(c))
+        val w = wageSourceOf(c)
+        assertEquals("1만 700원", w.hourlyManText)
+        assertEquals("178.33원", w.perMinExactText)
+    }
+
+    @Test
+    fun demoSummaryIsDestAndMultiplier() {
+        val scene = parseDemoScene(File(locate("fixtures"), "effort/demo.json").readText())
+        assertEquals("태안 꽃지해수욕장" to "1.57배", demoSummaryOf(scene, c))
+    }
+
+    @Test
     fun itemsWithPriceAndSource() {
         val items = wageSourceOf(c).items
         assertEquals(listOf("커피", "밥", "공동 경비"), items.map { it.label })   // 가격 오름차순

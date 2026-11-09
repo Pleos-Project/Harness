@@ -49,13 +49,15 @@ interface DepartNavi {
 
 /** 노고 흐름 화면(명세 v0.5 3절). */
 /** 도착 화면(RECEIPT)은 영수증과 제안을 한 화면에 둔다(Design v2 arrive, #75). */
-enum class EffortScreen { HOME, DEPART, SETTINGS, CALC, RECEIPT }
+enum class EffortScreen { HOME, DEPART, SETTINGS, CALC, RECEIPT, LOG, RECORD }
 
 /** 홈·출발·영수증 화면이 보는 상태. */
 data class EffortUi(
     val phase: EffortPhase,
     val openTrip: OpenTrip?,
     val recent: List<EffortRecord>,
+    val records: List<EffortRecord> = emptyList(),      // 주행 기록 목록(최근 순, Q-08-01)
+    val record: EffortRecord? = null,                   // 기록 상세로 연 기록
     val demo: Boolean,              // 지금 쓰는 출처가 시연 데이터인지(AC-C-7)
     val demoAvailable: Boolean,     // 시연 데이터(assets/data/effort/demo.json)가 들어 있는지
     val receipt: EffortReceipt? = null,                 // 도착했으면 엔진 영수증(F23)
@@ -69,6 +71,7 @@ data class EffortUi(
     val calcItems: List<CalcItem> = emptyList(),        // 계산 연출 체크포인트 6개(도착 뒤, 정리하지 못함이 아닐 때)
     val justFinished: String? = null,                   // 방금 끝난 기록 trip_id(홈 맨 위 굵은 테두리, 메모리만)
     val constants: com.mist.pleos_app.engine.EffortConstants? = null,
+    val recordCount: Int = 0,                           // 남은 기록 수(설정 › 기록 초기화 "N건을 지워요")
 )
 
 /**
@@ -86,6 +89,9 @@ class EffortViewModel(app: Application, private val saved: SavedStateHandle) : A
         runCatching { parseDemoScene(t) }.onFailure { ChagokLog.event("effort_demo_invalid", "err" to it.javaClass.simpleName) }.getOrNull()
     }
     private val demoSource = demoScene?.let(::DemoEffortSource)
+
+    /** 설정 '시연 고정 모드' 설명 줄용 "목적지 · 배수"(#75 v41). 시연 데이터나 상수가 없으면 null. */
+    val demoSummary: Pair<String, String>? by lazy { demoScene?.let { sc -> effortConstants?.let { demoSummaryOf(sc, it) } } }
 
     /** 노고 상수·문구(constants.json effort, 빌드 때 fixtures/에서 복사). 없으면 미리보기 문구 없이 진행. */
     private val effortConstants: EffortConstants? = readAsset(app, "data/constants.json")?.let { t ->
@@ -125,6 +131,9 @@ class EffortViewModel(app: Application, private val saved: SavedStateHandle) : A
             phase = flow.phase,
             openTrip = trip,
             recent = flow.recent(),
+            records = flow.state.records,
+            record = saved.get<String>(KEY_RECORD)?.let { id -> flow.state.records.firstOrNull { it.tripId == id } },
+            recordCount = flow.state.records.size,
             demo = source.demo || trip?.demo == true,
             demoAvailable = demoSource != null,
             receipt = receipt,
@@ -156,6 +165,13 @@ class EffortViewModel(app: Application, private val saved: SavedStateHandle) : A
     }
 
     /** 뒤로. 홈이면 false → Activity가 moveTaskToBack(true)로 숨긴다(CCP Back, Pleos 앱 개발 가이드). */
+    /** 기록 상세(Q-08-01): 홈 최근 기록 카드나 목록 줄에서. */
+    fun openRecord(tripId: String) {
+        saved[KEY_RECORD] = tripId
+        refresh()
+        open(EffortScreen.RECORD)
+    }
+
     fun back(): Boolean {
         val names = saved.get<List<String>>(KEY_STACK) ?: return false
         if (names.size <= 1) return false
@@ -282,6 +298,11 @@ class EffortViewModel(app: Application, private val saved: SavedStateHandle) : A
     private val shownFlow = MutableStateFlow(0)
     val shown: StateFlow<Int> = shownFlow.asStateFlow()
 
+    /** F20 ② 나란히 배치에서 받은 정체 구간 목록(NaviRepository.onCongestion). 진행 중 실제 출발에만 붙는다. */
+    fun onCongestionList(c: CongestionList) {
+        if (flow.setCongestionList(c)) refresh()
+    }
+
     /** MainActivity onStart. 시연 모드는 문 열기로만 도착한다(12절 시연 순서). */
     fun onShown() { resumeCheck = true; lastDoorOpen = null; shownFlow.value += 1 }
 
@@ -301,7 +322,7 @@ class EffortViewModel(app: Application, private val saved: SavedStateHandle) : A
         val resume = resumeCheck && !source.demo && !trip.demo
         resumeCheck = false
         val c = cue ?: (if (resume) ArrivalCue.RESUME else return)
-        if (!autoArrivalAllowed(trip, c)) { ChagokLog.event("effort_auto_arrive_skip", "cue" to c.name, "eta" to false); return }
+        if (!autoArrivalAllowed(trip, c, isoNow())) { ChagokLog.event("effort_auto_arrive_skip", "cue" to c.name, "eta" to (trip.etaS > 0)); return }
         checkArrival(c.name.lowercase())
     }
 
@@ -438,6 +459,7 @@ class EffortViewModel(app: Application, private val saved: SavedStateHandle) : A
         const val NET_TIMEOUT_MS = 3_000L                   // 날씨·검색 전체 마감(AC-C-6, #57)
         const val TRIP_TIMEOUT_MS = 4_000L                  // 시간대별 강수 마감(#66)
         const val KEY_STACK = "effort_stack"
+        const val KEY_RECORD = "effort_record"
         const val DEMO_ASSET = "data/effort/demo.json"
 
         fun readAsset(app: Application, path: String): String? =

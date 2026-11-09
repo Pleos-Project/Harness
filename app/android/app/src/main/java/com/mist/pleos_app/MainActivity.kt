@@ -40,6 +40,7 @@ class MainActivity : ComponentActivity() {
         vehicle = PleosVehicleRepository(this)
         lifecycle.addObserver(vehicle)
         navi = NaviRepository(this)                      // 출발 화면(F20): 즐겨찾기·최근 목적지·현재 위치·requestTrip·requestRoute
+        navi.onCongestion = vm::onCongestionList          // F20 ②: 나란히 배치일 때만 오는 정체 구간 목록
         lifecycle.addObserver(navi)
         val n = navi
         vm.navi = object : DepartNavi {

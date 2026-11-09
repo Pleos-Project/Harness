@@ -1,5 +1,8 @@
 package com.mist.pleos_app.ui
 
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.background
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.RepeatMode
@@ -46,17 +49,18 @@ import com.mist.pleos_app.effort.EffortUi
 import com.mist.pleos_app.effort.OpenTrip
 import com.mist.pleos_app.effort.clockText
 import com.mist.pleos_app.effort.dayText
-import com.mist.pleos_app.effort.etaClock
 import com.mist.pleos_app.effort.euro
 import com.mist.pleos_app.effort.recordSummary
 import com.mist.pleos_app.ui.components.CgBottomSheet
+import com.mist.pleos_app.ui.components.CgButton
+import com.mist.pleos_app.ui.components.CgButtonKind
+import com.mist.pleos_app.ui.components.CgSize
 import com.mist.pleos_app.ui.components.CgCta
 import com.mist.pleos_app.ui.components.CgEmpty
 import com.mist.pleos_app.ui.components.CgIcon
 import com.mist.pleos_app.ui.components.CgIconButton
 import com.mist.pleos_app.ui.components.CgIllustrationCircle
 import com.mist.pleos_app.ui.components.CgLoadingDots
-import com.mist.pleos_app.ui.components.CgProgressPill
 import com.mist.pleos_app.ui.components.CgRecordCard
 import com.mist.pleos_app.ui.components.CgTextButton
 import com.mist.pleos_app.ui.components.CgTitleBar
@@ -83,28 +87,33 @@ internal fun EffortHomeScreen(
     onSettings: () -> Unit,
     onReceipt: () -> Unit,
     onArrive: () -> Unit,
+    onLog: () -> Unit = {},
+    onRecord: (String) -> Unit = {},
 ) {
     val narrow = LocalNarrow.current
     val c = Chagok.colors
     val t = Chagok.type
     val trip = ui.openTrip
-    var sheet by rememberSaveable { mutableStateOf(false) }
+    var quit by rememberSaveable { mutableStateOf(false) }   // 그만두기 확인 시트(v32 home-progress-quit)
     val enter = remember { Animatable(0f) }
     LaunchedEffect(Unit) { enter.animateTo(1f, tween(700, easing = EaseIn)) }
 
     Box(Modifier.fillMaxSize()) {
         Column(Modifier.fillMaxSize()) {
-            // 위 바: 왼쪽 아이콘(설정 — 시안은 기록 전체, 기록 화면이 생기면 옮김) · 가운데 앱 이름
+            // 위 바: 왼쪽 기록 전체(주행 기록 목록, Q-08-01) · 가운데 앱 이름 · 오른쪽 설정(#75 v41)
             CgTitleBar(
                 stringResource(R.string.effort_home_logo), centered = true,
                 titleStyle = (if (narrow) t.titleM else t.titleL).copy(fontWeight = FontWeight.ExtraBold, letterSpacing = t.titleL.fontSize * .08f),
-                leading = { CgIconButton(stringResource(R.string.screen_settings), CgIcon.Placeholder, onSettings) },
+                leading = { CgIconButton(stringResource(R.string.effort_log_open), CgIcon.Placeholder, onLog) },
+                trailing = { CgIconButton(stringResource(R.string.screen_settings), CgIcon.Placeholder, onSettings) },
             )
             // 인사 + 내 차 그림 + 출발하기 / 진행 중
             val first = ui.recent.isEmpty() && trip == null
             val (sub, head) = when {
-                trip != null && trip.arrived -> stringResource(R.string.effort_home_arrived_sub, trip.destName) to stringResource(R.string.effort_home_arrived_head)
-                trip != null -> stringResource(R.string.effort_home_progress_sub, euro(trip.destName)) to stringResource(R.string.effort_home_progress_head)
+                // v32 home-pending: 고르기 전에 나간 도착 — "○○에 도착했어요 · 16:30" / "오늘 운전 영수증이 여기 있어요"
+                trip != null && trip.arrived -> stringResource(R.string.effort_home_arrived_sub, trip.destName, clockText(trip.arrivedAt ?: trip.departedAt)) to stringResource(R.string.effort_home_arrived_head)
+                // v32 home-progress: "○○으로 가는 중 · 14:20 출발 · 함께 4명". 머리글은 중간 정산(지금까지의 노고 보기)이 붙을 때 시안 문구로 바꾼다
+                trip != null -> stringResource(R.string.effort_home_progress_sub, euro(trip.destName), clockText(trip.departedAt), trip.n) to stringResource(R.string.effort_home_progress_head)
                 first -> stringResource(R.string.effort_home_first_sub) to stringResource(R.string.effort_home_first_head)
                 else -> stringResource(R.string.effort_home_sub) to stringResource(R.string.effort_home_head)
             }
@@ -114,18 +123,20 @@ internal fun EffortHomeScreen(
                 horizontalArrangement = Arrangement.spacedBy(if (narrow) 28.gpx else 64.gpx, Alignment.CenterHorizontally),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                CarIllustration(if (narrow) 180.gpx else 300.gpx)
+                CarIllustration(if (narrow) 180.gpx else 300.gpx, pin = if (trip?.arrived == true) stringResource(R.string.effort_home_arrived_pin) else null)
                 Column(Modifier.widthIn(max = 820.gpx), verticalArrangement = Arrangement.spacedBy(14.gpx)) {
                     Text(sub, style = if (narrow) t.labelM else t.bodyM, color = c.textTertiary)
                     Text(head, style = if (narrow) t.headlineS else t.headlineL, color = c.textPrimary)
                     when {
                         trip == null -> CgCta(stringResource(R.string.effort_home_go), onDepart, compact = narrow)
-                        trip.arrived -> Row(horizontalArrangement = Arrangement.spacedBy(12.gpx), verticalAlignment = Alignment.CenterVertically) {
-                            CgCta(stringResource(R.string.effort_receipt_open), onReceipt, compact = narrow)
-                            CgTextButton(stringResource(R.string.effort_discard), onDiscard, compact = true)
-                        }
+                        // 영수증 보기 → 고르던 도착 화면(계산 연출 다시 안 봄)
+                        trip.arrived -> CgCta(stringResource(R.string.effort_receipt_open), onReceipt, compact = narrow)
+                        // v32: 진행 중 알약·시트 대신 [도착했어요](채움) · [그만두기](기본 → 확인 시트)
                         else -> Column(verticalArrangement = Arrangement.spacedBy(8.gpx)) {
-                            CgProgressPill(stringResource(R.string.effort_home_progress_pill, clockText(trip.departedAt), trip.n), { sheet = true }, compact = narrow)
+                            Row(horizontalArrangement = Arrangement.spacedBy(16.gpx)) {
+                                CgButton(stringResource(R.string.effort_arrive_now), onArrive, size = if (narrow) CgSize.M else CgSize.L)
+                                CgButton(stringResource(R.string.effort_discard), { quit = true }, kind = CgButtonKind.Basic, size = if (narrow) CgSize.M else CgSize.L)
+                            }
                             if (routeFailed) Row(verticalAlignment = Alignment.CenterVertically) {
                                 Text(stringResource(R.string.effort_route_failed), style = t.bodyM, color = c.textSecondary)
                                 CgTextButton(stringResource(R.string.effort_route_retry), onRetry, primary = true, compact = true)
@@ -141,35 +152,27 @@ internal fun EffortHomeScreen(
                 CgEmpty(stringResource(R.string.effort_recent_empty), stringResource(R.string.effort_recent_empty_hint), Modifier.fillMaxWidth().height(if (narrow) 200.gpx else 240.gpx))
             } else if (narrow) {
                 Column(Modifier.fillMaxWidth().weight(1f).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(16.gpx)) {
-                    ui.recent.forEachIndexed { i, r -> RecordCard(r, ui, narrow, fresh = i == 0 && r.tripId == ui.justFinished, modifier = Modifier.fillMaxWidth()) }
+                    ui.recent.forEachIndexed { i, r -> RecordCard(r, ui, narrow, fresh = i == 0 && r.tripId == ui.justFinished, modifier = Modifier.fillMaxWidth().clickable { onRecord(r.tripId) }) }
                 }
             } else {
                 Row(Modifier.fillMaxWidth().height(240.gpx), horizontalArrangement = Arrangement.spacedBy(24.gpx)) {
-                    ui.recent.forEachIndexed { i, r -> RecordCard(r, ui, narrow, fresh = i == 0 && r.tripId == ui.justFinished, modifier = Modifier.weight(1f).height(240.gpx)) }
+                    ui.recent.forEachIndexed { i, r -> RecordCard(r, ui, narrow, fresh = i == 0 && r.tripId == ui.justFinished, modifier = Modifier.weight(1f).height(240.gpx).clickable { onRecord(r.tripId) }) }
                     repeat(3 - ui.recent.size.coerceAtMost(3)) { Spacer(Modifier.weight(1f)) }
                 }
             }
         }
-        // 진행 중 시트(딤 없음). 시안은 닫기만 — [도착했어요]·[그만두기](#68·#73)는 "확인 필요"로 같이 둔다
-        if (sheet && trip != null && !trip.arrived) {
+        // 그만두기 확인(v32 home-progress-quit, 딤 없음): 그만두면 기록 없이 출발이 닫히고 홈 기본으로
+        if (quit && trip != null && !trip.arrived) {
             CgBottomSheet(
                 Modifier.align(Alignment.BottomCenter).then(if (narrow) Modifier.fillMaxWidth() else Modifier.width(760.gpx)), compact = narrow,
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(8.gpx)) {
-                    Text(stringResource(R.string.effort_home_sheet_title, euro(trip.destName)), style = if (narrow) t.bodyL else t.titleM, color = c.textPrimary)
-                    val eta = etaClock(trip)
-                    Text(
-                        listOfNotNull(stringResource(R.string.effort_home_sheet_dep, clockText(trip.departedAt)), stringResource(R.string.effort_home_sheet_people, trip.n),
-                            eta?.let { stringResource(R.string.effort_home_sheet_eta, it) }).joinToString(" · "),
-                        style = t.bodyM, color = c.textSecondary,
-                    )
-                    Text(stringResource(R.string.effort_home_sheet_note), style = t.labelM, color = c.textTertiary)
+                    Text(stringResource(R.string.effort_quit_title), style = if (narrow) t.bodyL else t.titleM, color = c.textPrimary)
+                    Text(stringResource(R.string.effort_quit_sub), style = t.bodyM, color = c.textSecondary)
                 }
-                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    CgTextButton(stringResource(R.string.effort_arrive_now), { sheet = false; onArrive() }, primary = true, compact = true)
-                    CgTextButton(stringResource(R.string.effort_discard), { sheet = false; onDiscard() }, compact = true)
-                    Spacer(Modifier.weight(1f))
-                    CgTextButton(stringResource(R.string.close), { sheet = false }, compact = true)
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.gpx)) {
+                    CgButton(stringResource(R.string.effort_quit_keep), { quit = false }, Modifier.weight(1f), kind = CgButtonKind.Basic)
+                    CgButton(stringResource(R.string.effort_discard), { quit = false; onDiscard() }, Modifier.weight(1f))
                 }
             }
         }
@@ -178,11 +181,12 @@ internal fun EffortHomeScreen(
 
 /** 원 안의 내 차(1.8초 반복 위아래 5px). */
 @Composable
-internal fun CarIllustration(size: Dp) {
+internal fun CarIllustration(size: Dp, pin: String? = null) {
     val c = Chagok.colors
     val paths = remember { carPaths() }
     val inf = rememberInfiniteTransition(label = "idle")
     val y by inf.animateFloat(-1f, 1f, infiniteRepeatable(tween(1800, easing = Idle), RepeatMode.Reverse), label = "y")
+    Box {
     CgIllustrationCircle(size) {
         Canvas(Modifier.fillMaxSize()) {
             val s = this.size.width / 300f
@@ -193,16 +197,26 @@ internal fun CarIllustration(size: Dp) {
             drawCar(paths, Offset((this.size.width - w) / 2, top), w, c.textPrimary, c.surfaceCard, c.placeholderStrong, 0f)
         }
     }
+    // v32 home-pending: 내 차 그림에 "도착" 깃발
+    pin?.let {
+        Text(it, Modifier.align(Alignment.TopEnd).background(c.textPrimary, RoundedCornerShape(24.gpx)).padding(horizontal = 20.gpx, vertical = 6.gpx),
+            style = Chagok.type.labelM.copy(fontWeight = FontWeight.Bold), color = c.surfaceCard)
+    }
+    }
 }
 
-/** 최근 기록 카드: 날짜(방금) · 목적지 · "2시간 10분 · 1.57배 · 4명" · 고른 것. */
+/** 고른 것 한 줄: "한 사람 약 9천 원 · 좋아요" · "닫음" · "커피값에서 운전자 빼기"(홈 카드·주행 기록 목록 공통). */
+@Composable
+internal fun recordNoteText(r: EffortRecord, ui: EffortUi): String = when {
+    r.choice == CHOICE_ACCEPT -> listOfNotNull(r.suggestion?.removePrefix("한 사람 ")?.let { stringResource(R.string.effort_home_rec_per, it) }, stringResource(R.string.effort_offer_like)).joinToString(" · ")
+    r.choice == CHOICE_CLOSE -> stringResource(R.string.effort_home_rec_closed)
+    else -> stringResource(R.string.effort_home_rec_item, ui.items.firstOrNull { it.key == r.choice }?.phraseText ?: r.choice)
+}
+
+/** 최근 기록 카드: 날짜(방금) · 목적지 · "2시간 10분 · 1.57배 · 4명" · 고른 것. 누르면 기록 상세(Q-08-01). */
 @Composable
 private fun RecordCard(r: EffortRecord, ui: EffortUi, narrow: Boolean, fresh: Boolean, modifier: Modifier) {
-    val note = when {
-        r.choice == CHOICE_ACCEPT -> listOfNotNull(r.suggestion?.removePrefix("한 사람 ")?.let { stringResource(R.string.effort_home_rec_per, it) }, stringResource(R.string.effort_offer_like)).joinToString(" · ")
-        r.choice == CHOICE_CLOSE -> stringResource(R.string.effort_home_rec_closed)
-        else -> stringResource(R.string.effort_home_rec_item, ui.items.firstOrNull { it.key == r.choice }?.phraseText ?: r.choice)
-    }
+    val note = recordNoteText(r, ui)
     CgRecordCard(
         if (fresh) stringResource(R.string.effort_home_just_now) else dayText(r.date + "T"),
         r.destName, recordSummary(r, ui.constants), note, modifier, fresh = fresh, compact = narrow, key = r.tripId,

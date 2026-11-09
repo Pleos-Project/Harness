@@ -43,7 +43,7 @@ FOCUS = (1700, 1290)  # 앱 창 아래 여백. uiautomator가 앱 창을 덤프�
 # 화면에서 기대하는 글자(fixtures/effort/demo.json R1, strings.xml)
 DEST = "태안 꽃지해수욕장"
 EXPECT_PREVIEW = ["104km", "38km (경로의 36%)"]
-EXPECT_DRIVING_HOME = f"{DEST}으로 가는 중이에요"
+EXPECT_DRIVING_HOME = f"{DEST}으로 가는 중"          # v32 홈: "○○으로 가는 중 · 16:00 출발 · 함께 4명"
 EXPECT_ARRIVE = f"{DEST}에 도착했어요"
 EXPECT_RECEIPT = ["2시간 10분", "1.57배"]
 
@@ -216,7 +216,7 @@ def step0(r: Run, reset: bool) -> None:
     bring_app_front()
     for _ in range(5):                                # 어느 화면에 있든 홈으로(지난 리허설이 남긴 영수증·시트·설정)
         ts = texts()
-        if has("출발하기", ts) or has("가는 중이에요", ts):
+        if has("출발하기", ts) or has("으로 가는 중", ts) or has("로 가는 중", ts):
             break
         if has("중간에 쉰 시간이 있었나요?", ts):
             tap("없음", last=True)
@@ -224,18 +224,28 @@ def step0(r: Run, reset: bool) -> None:
             tap("닫기")
         elif has("뒤로", ts):
             tap("뒤로")
+        elif has("제안 방식", ts):                     # 설정 화면은 [뒤로] 단추가 없어 BACK 키(앱 BackHandler → 홈)
+            adb("shell", "input", "keyevent", "4")
+        elif has("영수증 보기", ts):                   # 고르기 전에 나간 도착(v32 home-pending) → 영수증 열고 닫기
+            tap("영수증 보기")
         time.sleep(0.8)
-    if has("가는 중이에요") and tap("›"):            # 지난 리허설이 남긴 진행 중 출발은 그만두기(기록 안 남음)
-        r.check("남은 진행 중 출발 그만두기", tap("그만두기"))
+    if has("로 가는 중") and tap("그만두기"):         # 지난 리허설이 남긴 진행 중 출발은 그만두기(확인 시트, 기록 안 남음)
+        r.check("남은 진행 중 출발 그만두기", tap("그만두기", last=True))
         time.sleep(0.8)
     r.check("홈 설정 단추", tap("설정"))
     time.sleep(0.8)
+    # #75 v41 설정: 시연 고정 모드는 스위치(설명 줄이 "켜짐 · …"이면 이미 켜짐), 기록 초기화는 [지우기] → 확인 시트 [지우기]
+    ts = texts()
+    if not any(t.startswith("켜짐") for t, _, _ in ts):
+        tap("시연 고정 모드", last=True)                 # 제목과 스위치가 같은 이름 → 스위치(마지막)
+        time.sleep(0.6)
+    r.check("데모 고정 모드 켜기", any(t.startswith("켜짐") for t, _, _ in texts()))
     if reset:
-        r.check("기록 초기화", tap("기록 초기화") and tap("지우기")); time.sleep(0.6)
-    on = [(t, x, y) for t, x, y in texts() if t == "켜기"]
-    r.check("데모 고정 모드 켜기", bool(on))
-    adb("shell", "input", "tap", str(on[0][1]), str(on[0][2]))
-    time.sleep(0.5)
+        tap("지우기"); time.sleep(0.8)
+        sheet = has("기록을 모두 지울까요?")
+        if sheet:
+            tap("지우기", last=True); time.sleep(0.6)
+        r.check("기록 초기화", sheet or has("기록 0건"), "" if sheet else "지울 기록 없음")
     tap("뒤로") or adb("shell", "input", "keyevent", "4")
     time.sleep(0.8)
 

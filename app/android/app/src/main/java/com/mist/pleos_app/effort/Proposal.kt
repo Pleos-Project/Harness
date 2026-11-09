@@ -22,12 +22,14 @@ const val CHOICE_ACCEPT = "accept"
 const val CHOICE_CLOSE = "close"
 
 /**
- * 영수증과 설정 방식으로 제안 화면을 고른다. null이면 제안 없이 영수증만(F25 '제안 없음', 혼자 탄 주행 n = 1).
+ * 영수증과 설정 방식으로 제안 화면을 고른다. null이면 제안 없이 영수증만(F25 '제안 없음' — A·B 같음(Q-07-04), 혼자 탄 주행 n = 1).
  * @param method Settings.METHOD_A | METHOD_B
  */
 fun proposalViewOf(r: EffortReceipt?, method: String, items: List<EffortItem>): ProposalView? {
     val p = r?.proposal ?: return null
-    return if (method == Settings.METHOD_B) p.b?.let { ProposalView.B(it, items) } else ProposalView.A(p.a)
+    // Q-07-04(명준 11/8): 방식 A도 B와 같은 기준 — 운전자 몫이 커피 1인분의 절반보다 작으면(엔진 b = null) 제안 없이 기록만
+    val b = p.b ?: return null
+    return if (method == Settings.METHOD_B) ProposalView.B(b, items) else ProposalView.A(p.a)
 }
 
 /**
@@ -62,4 +64,5 @@ fun recordOf(trip: OpenTrip, r: EffortReceipt, view: ProposalView?, method: Stri
         choice = choice,
         headlineText = r.headlineText,
         n = trip.n,
+        trip = trip.copy(depLat = null, depLng = null),   // 기록 상세 영수증용 엔진 입력. 좌표는 남기지 않는다
     )
