@@ -20,6 +20,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -81,9 +82,7 @@ internal fun EffortLogScreen(ui: EffortUi, onBack: () -> Unit, onRecord: (String
                             if (narrow) Text(dayText(r.date + "T"), style = t.labelM, color = c.textTertiary)
                             Text(r.destName, style = t.titleS, color = c.textPrimary, maxLines = 1, overflow = TextOverflow.Ellipsis)
                             Text(recordLogLine(r, ui.constants), style = if (narrow) t.labelM else t.bodyM, color = c.textSecondary, maxLines = 1)
-                            if (narrow) Text(recordNoteText(r, ui), style = t.labelM, color = c.textTertiary, maxLines = 1)
                         }
-                        if (!narrow) Text(recordNoteText(r, ui), style = t.bodyM, color = c.textSecondary, maxLines = 1)
                         CgIconMark(CgIcon.Chevron, 28.gpx, c.textTertiary, Modifier.graphicsLayer { rotationZ = -90f })
                     }
                 }
@@ -101,18 +100,20 @@ internal fun EffortRecordScreen(ui: EffortUi, onBack: () -> Unit) {
     val c = Chagok.colors
     val t = Chagok.type
     val receipt = recordReceiptOf(r, ui.constants)
-    var open by rememberSaveable(r.tripId) { mutableStateOf<String?>(null) }
+    var open by remember(r.tripId) { mutableStateOf<String?>(null) }   // v88: 새로 열 때 근거는 닫힌 채로
+    val seq = rememberPrintSeq(r.tripId, play = !rememberReduceMotion())   // v88: 도착과 같은 출력 연출을 한 번
     Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(if (narrow) 16.gpx else 24.gpx)) {
         CgTitleBar(stringResource(R.string.effort_record_title, dayText(r.date + "T"), r.destName), compact = narrow,
             leading = { CgIconButton(stringResource(R.string.back), CgIcon.Back, onBack, plain = true) })
         val paper: @Composable (Modifier) -> Unit = { m ->
             val trip = r.trip
             if (receipt != null && trip != null) ReceiptColumn(
-                trip, receipt, ui, narrow, reduce = true, paperShift = 0f, open = open,
+                trip, receipt, ui, narrow, reduce = true, paperShift = seq.paper.value, open = open, print = seq,
                 onToggle = { k -> open = if (open == k) null else k }, onChangeRest = {}, modifier = m, editable = false,
             )
         }
-        val card: @Composable (Modifier) -> Unit = { m ->
+        val card: @Composable (Modifier) -> Unit = { m0 ->
+            val m = m0.graphicsLayer { alpha = seq.offer.value; translationY = (1f - seq.offer.value) * 16f * density }
             CgOfferCard(m, compact = narrow) {
                 Text(stringResource(R.string.effort_record_day_cap), style = t.labelM, color = c.textTertiary)
                 Text(receipt?.multiplierText ?: r.headlineText, style = if (narrow) t.titleL else t.headlineS, color = c.textPrimary)

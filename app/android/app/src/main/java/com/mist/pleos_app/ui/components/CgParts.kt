@@ -81,6 +81,10 @@ import androidx.compose.ui.zIndex
 import com.mist.pleos_app.R
 import com.mist.pleos_app.ui.theme.Chagok
 import com.mist.pleos_app.ui.theme.gpx
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
+import androidx.compose.ui.graphics.drawscope.translate
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.fadeIn
@@ -568,12 +572,38 @@ fun CgOptionButton(words: List<String>, isDefault: Boolean, onClick: () -> Unit,
 }
 
 // ------------------------------------------------------------ receipt
+/** cg-slot-on 키프레임(0.8초, linear): 투명도 0 → .55(8%) → 0(11%) → .35(20%) → .05(23%) → .7(31%) → 0(34%) → 0(52%) → 1(56%) → 1. */
+private val SLOT_KF = floatArrayOf(0f, 0f, .08f, .55f, .11f, 0f, .20f, .35f, .23f, .05f, .31f, .7f, .34f, 0f, .52f, 0f, .56f, 1f, 1f, 1f)
+
+internal fun slotAlpha(p: Float): Float {
+    if (p >= 1f) return 1f
+    var i = 0
+    while (i + 2 < SLOT_KF.size && SLOT_KF[i + 2] < p) i += 2
+    val (t0, v0, t1, v1) = listOf(SLOT_KF[i], SLOT_KF[i + 1], SLOT_KF[i + 2], SLOT_KF[i + 3])
+    return if (t1 <= t0) v1 else v0 + (v1 - v0) * ((p - t0) / (t1 - t0)).coerceIn(0f, 1f)
+}
+
+/** 깜빡일 때 ±1px 떨림(8% · 20% · 31%). */
+internal fun slotJitter(p: Float): Float = when {
+    p in 0.05f..0.11f -> 1f
+    p in 0.17f..0.23f -> -1f
+    p in 0.28f..0.34f -> 1f
+    else -> 0f
+}
+
+/** 켜지는 순간(56%) 빛이 크게 번졌다 100%에 가라앉음. */
+internal fun slotBoost(p: Float): Float = if (p < .52f || p >= 1f) 0f else if (p < .56f) (p - .52f) / .04f else 1f - (p - .56f) / .44f
+
 /**
  * 영수증 = 출력 종이(`components/receipt`): 프린터 슬롯 + 슬롯에서 내려오는 종이(슬롯 밖은 잘림) + 지그재그 끝.
  * shift = 종이 위치(-1.05 → 0, 출력 연출). scroll = 종이가 칸보다 길 때 안에서 넘김.
  */
 @Composable
-fun CgReceipt(modifier: Modifier = Modifier, compact: Boolean = false, shift: Float = 0f, fill: Boolean = true, scroll: Boolean = true, content: @Composable ColumnScope.() -> Unit) {
+fun CgReceipt(
+    modifier: Modifier = Modifier, compact: Boolean = false, shift: Float = 0f, fill: Boolean = true, scroll: Boolean = true,
+    light: () -> Float = { 1f },   // v91 출력구 불빛 진행(0 = 꺼짐 … 1 = 켜짐, 0.8초 깜빡임 키프레임). 정지 화면 = 1
+    content: @Composable ColumnScope.() -> Unit,
+) {
     val c = Chagok.colors
     val slotH = if (compact) 40.gpx else 68.gpx
     val slotShape = RoundedCornerShape(if (compact) 14.gpx else 22.gpx)
@@ -584,7 +614,40 @@ fun CgReceipt(modifier: Modifier = Modifier, compact: Boolean = false, shift: Fl
                 .background(Brush.verticalGradient(0f to c.receiptPrinterHighlight, .18f to c.receiptPrinterMidtone, .7f to c.receiptPrinterShade, 1f to c.receiptPrinterMidtone), slotShape)
                 .border(1.gpx, c.receiptPrinterShade, slotShape).padding(horizontal = if (compact) 28.gpx else 44.gpx),
             contentAlignment = Alignment.Center,
-        ) { Box(Modifier.fillMaxWidth().height(if (compact) 6.gpx else 8.gpx).background(Color(0xFF171B22), RoundedCornerShape(4.gpx))) }
+        ) {
+            // 슬롯 줄(검정) 위 라임 불빛: 다 나오면 지직 세 번 → 딱 켜지며 빛이 크게 번졌다 가라앉음(cg-slot-on)
+            val dark = c.isDark
+            Box(
+                Modifier.fillMaxWidth().height(if (compact) 6.gpx else 8.gpx).background(Color(0xFF171B22), RoundedCornerShape(4.gpx))
+                    .drawWithContent {
+                        drawContent()
+                        val p = light()
+                        val a = slotAlpha(p)
+                        if (a <= 0f) return@drawWithContent
+                        val jit = slotJitter(p) * density
+                        val boost = slotBoost(p)
+                        val r = size.height / 2
+                        translate(jit, 0f) {
+                            // 글로우: 0 0 8 · 0 0 22 · 0 0 44(야간 10 · 26 · 56), 켜지는 순간 14 · 40 · 80
+                            val blurs = if (dark) floatArrayOf(10f, 26f, 56f) else floatArrayOf(8f, 22f, 44f)
+                            val alphas = if (dark) floatArrayOf(.9f, .6f, .25f) else floatArrayOf(.8f, .5f, .2f)
+                            drawIntoCanvas { cv ->
+                                for (i in blurs.indices) {
+                                    val b = (blurs[i] + boost * (if (i == 0) 6f else if (i == 1) 18f else 36f)) * density
+                                    val paint = androidx.compose.ui.graphics.Paint().apply { color = Color(0xFFD9F77A).copy(alpha = alphas[i] * a) }
+                                    paint.asFrameworkPaint().maskFilter = android.graphics.BlurMaskFilter(b, android.graphics.BlurMaskFilter.Blur.NORMAL)
+                                    cv.drawRoundRect(0f, 0f, size.width, size.height, r, r, paint)
+                                }
+                            }
+                            drawRoundRect(
+                                Brush.verticalGradient(0f to Color(0xFFF3FEC9), .45f to Color(0xFFD9F77A), 1f to Color(0xFFB4CF4E)),
+                                cornerRadius = androidx.compose.ui.geometry.CornerRadius(r), alpha = a,
+                            )
+                            if (boost > 0f) drawRoundRect(Color.White.copy(alpha = .25f * boost * a), cornerRadius = androidx.compose.ui.geometry.CornerRadius(r))
+                        }
+                    },
+            )
+        }
         Box(
             Modifier.then(if (fill) Modifier.weight(1f) else Modifier).padding(horizontal = if (compact) 16.gpx else 36.gpx)
                 .offset(y = -slotH / 2).clipToBounds(),
@@ -642,6 +705,8 @@ fun CgReceiptRow(
 fun CgReceiptSum(
     label: String, value: String, compact: Boolean = false, total: Boolean = false, hi: Float = 0f,
     onValue: (() -> Unit)? = null, valueLabel: String? = null, trailing: @Composable () -> Unit = {},
+    amount: String? = null,                    // v92 합계 끝 글 = "약 3만 6천 원"(엔진 값). null이면 배수만
+    flip: () -> Triple<Float, Float, Float> = { Triple(1f, 1f, 1f) },   // (배수 나감, 금액 들어옴, 금액 마커) 0..1. 정지 화면 = 금액
 ) {
     val c = Chagok.colors
     val plain = receiptPlain(compact)
@@ -651,7 +716,17 @@ fun CgReceiptSum(
         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.gpx),
     ) {
         Text(label, if (total) Modifier else Modifier.weight(1f), style = if (total) receiptStrong(compact) else plain, color = c.textPrimary)
-        if (total) {
+        if (total && amount != null) {
+            val style = if (compact) TextStyle(fontSize = 32.gsp, lineHeight = 40.gsp, fontWeight = FontWeight.ExtraBold) else TextStyle(fontSize = 38.gsp, lineHeight = 48.gsp, fontWeight = FontWeight.ExtraBold)
+            val pad = if (compact) 4.gpx else 6.gpx
+            Box(
+                Modifier.weight(1f).clipToBounds().clearAndSetSemantics { contentDescription = "$amount · $value" },
+                contentAlignment = Alignment.CenterEnd,
+            ) {
+                MarkedText(value, style, pad, Modifier.graphicsLayer { val o = flip().first; alpha = 1f - o; translationY = -o * .7f * size.height }) { 1f }
+                MarkedText(amount, style, pad, Modifier.graphicsLayer { val n = flip().second; alpha = n; translationY = (1f - n) * .7f * size.height }) { flip().third }
+            }
+        } else if (total) {
             var layout by remember { mutableStateOf<TextLayoutResult?>(null) }
             val pad = if (compact) 4.gpx else 6.gpx
             Text(
@@ -723,6 +798,28 @@ fun CgSettleFold(
             label = "foldValue",
         ) { v -> Text(v, style = receiptStrong(compact), color = c.textPrimary, maxLines = 1) }
     }
+}
+
+/** 오른쪽 정렬 글 + 글자 아래 40% 라임 마커(줄마다, 폭 = mark() 0..1로 왼쪽부터 그어짐). */
+@Composable
+private fun MarkedText(text: String, style: TextStyle, pad: androidx.compose.ui.unit.Dp, modifier: Modifier, mark: () -> Float) {
+    val c = Chagok.colors
+    var layout by remember { mutableStateOf<TextLayoutResult?>(null) }
+    Text(
+        text,
+        modifier.drawBehind {
+            val l = layout ?: return@drawBehind
+            val k = mark()
+            for (i in 0 until l.lineCount) {
+                val top = l.getLineTop(i); val bottom = l.getLineBottom(i)
+                val y = top + (bottom - top) * .6f
+                val x0 = l.getLineLeft(i) - pad.toPx()
+                val w = (l.getLineRight(i) - l.getLineLeft(i) + pad.toPx() * 2) * k
+                drawRect(c.receiptMarker, Offset(x0, y), Size(w, bottom - y))
+            }
+        },
+        style = style, color = c.textPrimary, textAlign = TextAlign.End, onTextLayout = { layout = it },
+    )
 }
 
 /** 영수증 기본 글자(v3: 32/40, 분할 30/38, 보통 굵기). */

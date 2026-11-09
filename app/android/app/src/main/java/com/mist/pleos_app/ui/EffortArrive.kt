@@ -20,6 +20,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.animation.core.LinearEasing
+import com.mist.pleos_app.effort.receiptAmountText
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -78,6 +80,38 @@ import kotlinx.coroutines.launch
 private val EasePrint = CubicBezierEasing(.25f, .8f, .3f, 1f)
 private val EaseRise = CubicBezierEasing(.2f, .7f, .2f, 1f)
 
+/**
+ * 영수증 출력 연출(#118 v90~v94, HANDOFF_v3 5-5 표). 들어온 그 한 번만 재생, 정지 화면 = 다 나온 끝 상태(불 켜짐 · 합계 금액).
+ * 0초 종이 1.1초 → 0.9초 제안 카드 0.45초 → 1.0초 출력구 불빛 0.8초 → 2.6초 배수가 위로 사라짐 0.34초
+ * → 2.8초 금액이 아래에서 올라옴 0.42초 → 3.15초 마커가 다시 그어짐 0.4초. 움직임 줄이기면 끝 상태로 바로.
+ */
+@androidx.compose.runtime.Stable
+internal class PrintSeq(val paper: Animatable<Float, *>, val offer: Animatable<Float, *>, val light: Animatable<Float, *>,
+                        val out: Animatable<Float, *>, val inn: Animatable<Float, *>, val mark: Animatable<Float, *>) {
+    val flip: () -> Triple<Float, Float, Float> = { Triple(out.value, inn.value, mark.value) }
+}
+
+@Composable
+internal fun rememberPrintSeq(key: Any, play: Boolean, onPrinted: suspend () -> Unit = {}): PrintSeq {
+    val end = !play
+    val seq = remember(key) {
+        PrintSeq(Animatable(if (end) 0f else -1.05f), Animatable(if (end) 1f else 0f), Animatable(if (end) 1f else 0f),
+            Animatable(if (end) 1f else 0f), Animatable(if (end) 1f else 0f), Animatable(if (end) 1f else 0f))
+    }
+    LaunchedEffect(key) {
+        if (!play) { onPrinted(); return@LaunchedEffect }
+        launch { seq.paper.animateTo(0f, tween(1100, easing = EasePrint)) }
+        launch { delay(900); seq.offer.animateTo(1f, tween(450, easing = EaseRise)) }
+        launch { delay(1000); seq.light.animateTo(1f, tween(800, easing = LinearEasing)) }
+        launch { delay(2600); seq.out.animateTo(1f, tween(340, easing = CubicBezierEasing(.55f, 0f, .75f, .2f))) }
+        launch { delay(2800); seq.inn.animateTo(1f, tween(420, easing = CubicBezierEasing(.2f, .8f, .3f, 1f))) }
+        launch { delay(3150); seq.mark.animateTo(1f, tween(400, easing = CubicBezierEasing(.3f, .7f, .3f, 1f))) }
+        delay(1100)
+        onPrinted()
+    }
+    return seq
+}
+
 @Composable
 internal fun EffortArriveScreen(ui: EffortUi, onRest: (Int) -> Unit, onPick: (String) -> Unit, onClose: () -> Unit, onSettleSwap: () -> Unit = {}) {
     val trip = ui.openTrip
@@ -95,19 +129,15 @@ internal fun EffortArriveScreen(ui: EffortUi, onRest: (Int) -> Unit, onPick: (St
 
     // 이 도착에서 처음 열 때만 출력 연출(다시 열거나 화면이 돌아오면 끝 상태로)
     var played by rememberSaveable(key) { mutableStateOf(reduce || ui.done != null) }
-    val paper = remember(key) { Animatable(if (played) 0f else -1.05f) }
-    val offer = remember(key) { Animatable(if (played) 1f else 0f) }
     val needsRest = !ui.unsettled && ui.done == null && trip.restAnswerMin == null
     var sheet by rememberSaveable(key) { mutableStateOf(false) }
-    LaunchedEffect(key) {
-        if (!played) {
-            launch { paper.animateTo(0f, tween(1100, easing = EasePrint)) }
-            launch { delay(900); offer.animateTo(1f, tween(450, easing = EaseRise)) }
-            delay(1100)
-            played = true
-            if (needsRest) { delay(1300); sheet = true }
-        } else if (needsRest) sheet = true
+    val first = remember(key) { !played }
+    val seq = rememberPrintSeq(key, play = first) {
+        played = true
+        if (needsRest) { if (first) delay(1300); sheet = true }
     }
+    val paper = seq.paper
+    val offer = seq.offer
     var open by rememberSaveable(key) { mutableStateOf<String?>(null) }
 
     Box(Modifier.fillMaxSize()) {
@@ -115,7 +145,7 @@ internal fun EffortArriveScreen(ui: EffortUi, onRest: (Int) -> Unit, onPick: (St
             // v3 5-5: 위 제목 줄("○○에 도착했어요" · 인원)은 없앰. 인원은 영수증 머리 아래 줄로
             val receipt: @Composable (Modifier) -> Unit = { m ->
                 if (!ui.unsettled) ReceiptColumn(
-                    trip, r, ui, narrow, reduce, paperShift = paper.value, open = open,
+                    trip, r, ui, narrow, reduce, paperShift = paper.value, open = open, print = seq,
                     onToggle = { k -> open = if (open == k) null else k }, onChangeRest = { sheet = true }, modifier = m, onSettleSwap = onSettleSwap,
                 )
             }
@@ -164,6 +194,7 @@ internal fun ReceiptColumn(
     onSettleSwap: () -> Unit = {},
     editable: Boolean = true,   // 기록 상세(Q-08-01)는 쉰 시간 [바꾸기] 없이 근거 펼침만
     midwaySub: String? = null,  // 중간 정산(F27): 제목 "오늘 주행 영수증"(v3) + 이 줄("14:20 출발 · 아직 가는 중"), 쉰 시간 줄 없음
+    print: PrintSeq? = null,    // 출력 연출(#118 v90~v94). null = 끝 상태(불 켜짐 · 합계 금액)
 ) {
     val c = Chagok.colors
     val t = Chagok.type
@@ -180,7 +211,7 @@ internal fun ReceiptColumn(
         }
     }
     val hi = { k: String -> if (k in changed) flash.value else 0f }
-    CgReceipt(modifier, compact = narrow, shift = paperShift, fill = !narrow, scroll = !narrow) {
+    CgReceipt(modifier, compact = narrow, shift = paperShift, fill = !narrow, scroll = !narrow, light = { print?.light?.value ?: 1f }) {
         // v3 5-5: 머리 700 42/54(분할 34/44) · 아래 줄 "장소 · 날짜 · n명"(혼자면 "혼자") 400 30/38
         Text(
             stringResource(if (midwaySub != null) R.string.effort_mid_receipt_title else R.string.effort_receipt_title), Modifier.fillMaxWidth(),
@@ -222,7 +253,9 @@ internal fun ReceiptColumn(
             onValue = if (editable && ui.done == null) onChangeRest else null, valueLabel = stringResource(R.string.effort_receipt_rest_change_label),
         )
         r.distanceText?.let { CgReceiptSum(stringResource(R.string.effort_receipt_distance), it, compact = narrow) }
-        CgReceiptSum(stringResource(R.string.effort_receipt_total), r.multiplierText, compact = narrow, total = true, hi = hi("total"))
+        // v92 · v94: 처음 배수 → 불 켜지고 1.5초 뒤 금액으로 굴러 바뀜(끝 = 금액, 화면 읽기 = "약 3만 6천 원 · 평소보다 …")
+        CgReceiptSum(stringResource(R.string.effort_receipt_total), r.multiplierText, compact = narrow, total = true, hi = hi("total"),
+            amount = receiptAmountText(r, ui.constants), flip = print?.flip ?: { Triple(1f, 1f, 1f) })
         // #118: 중간 정산을 한 주행이면 합계 아래 "운전 노고 전체 · 약 3만 6천 원" + 작은 줄 "중간 정산 있음 ⇅"(누르면 자리 바꿈)
         val fold = ui.settleFold
         if (fold != null && midwaySub == null && editable) {
