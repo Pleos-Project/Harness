@@ -237,8 +237,9 @@ private data class Geo(val vertical: Boolean, val a: Float, val b: Float, val y:
 private fun Rail(g: Geo, n: Int, fill: Animatable<Float, *>, sw: Float, c: ChagokColors) {
     Canvas(Modifier.fillMaxSize()) {
         val s = g.at(0f, n); val e = g.at((n - 1).toFloat(), n); val f = g.at(fill.value, n)   // 채움은 그리기 단계에서 읽음
-        drawLine(c.lineStrong, s, e, strokeWidth = sw)
-        drawLine(c.textPrimary, s, f, strokeWidth = sw)
+        // v3: 뉴트럴 트랙 + 지나온 선(야간 라임 · 주간 잉크)
+        drawLine(c.progressTrack, s, e, strokeWidth = sw)
+        drawLine(c.progressLine, s, f, strokeWidth = sw)
     }
 }
 
@@ -250,7 +251,7 @@ private fun Node(
 ) {
     val o = g.at(i.toFloat(), n)
     val dot = if (g.vertical) 52 else 60
-    val zeroColor = c.textTertiary.copy(alpha = c.textTertiary.alpha * 0.55f)
+    val zeroColor = c.textDisabled
     // 원
     Box(
         Modifier.offset { IntOffset((o.x - px(dot) / 2).toInt(), (o.y - px(dot) / 2).toInt()) }.size(dot.gpx)
@@ -263,9 +264,13 @@ private fun Node(
         Canvas(Modifier.fillMaxSize()) {
             val on = pop.value > 0f
             val r = size.minDimension / 2
-            val bw = (if (g.vertical) 7 else 8) * size.width / dot
-            if (on) drawCircle(if (it.zero) zeroColor else c.textPrimary, r)
-            else { drawCircle(c.surfaceCard, r - bw / 2); drawCircle(c.lineStrong, r - bw / 2, style = Stroke(bw)) }
+            // v3: 지나면 라임 원(테두리 4, 주간 잉크 · 야간 라임), 0인 항목은 꺼진 색, 아직이면 바탕색 + 트랙색 테두리 6(분할 5)
+            val k = size.width / dot
+            when {
+                on && it.zero -> drawCircle(zeroColor, r)
+                on -> { val bw = 4 * k; drawCircle(c.progressIndicator, r - bw / 2); drawCircle(c.progressIndicatorBorder, r - bw / 2, style = Stroke(bw)) }
+                else -> { val bw = (if (g.vertical) 5 else 6) * k; drawCircle(c.bgPrimary, r - bw / 2); drawCircle(c.progressTrack, r - bw / 2, style = Stroke(bw)) }
+            }
         }
     }
     val lbStyle = if (g.vertical) t.bodyMB else t.bodyL
