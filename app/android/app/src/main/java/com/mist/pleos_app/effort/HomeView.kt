@@ -21,6 +21,7 @@ fun euro(word: String): String {
 
 /** 기록 카드 가운데 줄 "2시간 10분 · 1.57배 · 4명". 배수 1.00은 엔진 문구 multiplier_same_text 그대로. */
 fun recordSummary(r: EffortRecord, c: EffortConstants?): String {
+    if (r.choice == CHOICE_UNSETTLED) return listOfNotNull(UNSETTLED_LABEL, r.n?.let { "${it}명" }).joinToString(" · ")
     val drive = driveText(r.driveMin * 60)
     // 저장된 배수는 엔진이 이미 소수 둘째 자리로 반올림한 값(m100/100)이라 두 자리로 적기만 한다
     val mult = if (roundHalfUp(r.multiplier * 100) == 100) c?.copy?.text?.get("multiplier_same_text") ?: "1.00배"

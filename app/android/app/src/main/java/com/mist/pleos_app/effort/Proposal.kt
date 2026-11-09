@@ -20,6 +20,8 @@ sealed interface ProposalView {
 
 const val CHOICE_ACCEPT = "accept"
 const val CHOICE_CLOSE = "close"
+/** 정리하지 못함(#68)을 닫음: 영수증·제안 없이 기록만(명준 #75 11/9). */
+const val CHOICE_UNSETTLED = "unsettled"
 
 /**
  * 영수증과 설정 방식으로 제안 화면을 고른다. null이면 제안 없이 영수증만(F25 '제안 없음' — A·B 같음(Q-07-04), 혼자 탄 주행 n = 1).

@@ -143,7 +143,8 @@ internal fun EffortRecordScreen(ui: EffortUi, onBack: () -> Unit) {
 @Composable
 private fun dayEffortLine(r: EffortRecord, amountText: String?): String = listOfNotNull(
     amountText?.let { stringResource(R.string.effort_record_amount, it) },
-    stringResource(R.string.effort_record_drive, com.mist.pleos_app.engine.driveText(r.driveMin * 60)),
+    if (r.choice == com.mist.pleos_app.effort.CHOICE_UNSETTLED) null   // 정리하지 못함: 운전 시간을 세지 않았다
+    else stringResource(R.string.effort_record_drive, com.mist.pleos_app.engine.driveText(r.driveMin * 60)),
     r.trip?.routeM?.takeIf { it > 0 }?.let { "${com.mist.pleos_app.engine.roundHalfUp(it / 1000)}km" },
     r.n?.let { stringResource(R.string.effort_record_people, it) },
 ).joinToString(" · ")
@@ -153,6 +154,7 @@ private fun dayEffortLine(r: EffortRecord, amountText: String?): String = listOf
 private fun choiceLine(r: EffortRecord, ui: EffortUi): String {
     val method = stringResource(if (r.method == Settings.METHOD_B) R.string.effort_record_method_b else R.string.effort_record_method_a)
     return when {
+        r.choice == com.mist.pleos_app.effort.CHOICE_UNSETTLED -> stringResource(R.string.effort_record_choice_unsettled)
         r.suggestion == null -> stringResource(R.string.effort_record_choice_none)
         r.choice == CHOICE_ACCEPT -> stringResource(R.string.effort_record_choice_accept, method, r.suggestion)
         r.choice == CHOICE_CLOSE -> stringResource(R.string.effort_record_choice_close, method)

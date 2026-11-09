@@ -29,6 +29,21 @@ class RecordViewTest {
     }
 
     @Test
+    fun unsettledLeavesRecordWithoutReceipt() {
+        // 명준 #75 11/9: 정리하지 못함도 기록 1건. 목록·카드 "정리하지 못함", 상세는 영수증 없이
+        val trip = arrivedDemo().copy(arrivedAt = "2026-11-17T23:59:00+09:00")    // 경과가 상한(ETA × 2 등)을 넘음
+        val receipt = receiptOf(trip, c)!!
+        assertEquals(RECEIPT_UNSETTLED, receipt.status)
+        val rec = recordOf(trip, receipt, null, Settings.METHOD_A, CHOICE_UNSETTLED)
+        assertNull(rec.suggestion)
+        assertNull(rec.trip!!.depLat)
+        assertEquals("정리하지 못함 · 함께 4명", recordLogLine(rec, c))
+        assertEquals("정리하지 못함 · 4명", recordSummary(rec, c))
+        assertNull(recordReceiptOf(rec, c))
+        assertEquals(rec, parseEffortRecord(rec.toJson()))
+    }
+
+    @Test
     fun recordKeepsEngineInputWithoutCoords() {
         val trip = arrivedDemo()
         val receipt = receiptOf(trip, c)!!

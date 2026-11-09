@@ -35,6 +35,16 @@ class SettingsViewTest {
     }
 
     @Test
+    fun wageYearOnlyInOpenLine() {
+        // #96·명준 #86: 연도가 있으면 펼침 줄만 "2027년 최저임금 …", 접힌 줄(A 화면 근거와 같음)은 그대로
+        val w = wageSourceOf(c)
+        assertEquals(2027, c.wageYear)
+        assertEquals("2027년 최저임금", w.wageYearLabel)
+        assertEquals("최저임금 1분 178원 기준", w.wageText)
+        assertEquals("최저임금", wageSourceOf(c.copy(wageYear = null)).wageYearLabel)   // 없으면 연도 없이
+    }
+
+    @Test
     fun manWonAndExactPerMin() {
         // #75 v41 설정 › 단가 출처 펼침: "최저임금 시급 1만 700원을 60분으로 나눈 값이에요(1분 178.33원)"
         assertEquals("1만 700원", manWonText(10700.0))

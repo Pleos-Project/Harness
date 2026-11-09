@@ -205,6 +205,7 @@
     <string name="effort_home_just_now">방금</string>
     <string name="effort_home_rec_per">한 사람 %1$s</string>
     <string name="effort_home_rec_closed">닫음</string>
+    <string name="effort_home_rec_unsettled">영수증 없이 기록만</string>
     <string name="effort_home_rec_item">%1$s에서 운전자 빼기</string>
     <string name="effort_recent_empty_hint">첫 출발을 마치면 여기에 차곡차곡 쌓여요</string>
     <!-- 출발 화면(Design v2 screens/depart.html·search.html, #75) 임시 문구 -->
@@ -303,6 +304,7 @@
     <string name="effort_record_method_a">방식 A</string>
     <string name="effort_record_method_b">방식 B</string>
     <string name="effort_record_choice_none">제안 없이 기록만 남겼어요</string>
+    <string name="effort_record_choice_unsettled">도착이 늦게 잡혀 영수증 없이 기록만 남겼어요</string>
     <string name="effort_record_choice_accept">%1$s · %2$s · 좋아요를 눌렀어요</string>
     <string name="effort_record_choice_close">%1$s · 닫았어요</string>
     <string name="effort_record_choice_item">%1$s · %2$s에서 운전자 빼기로 했어요</string>
