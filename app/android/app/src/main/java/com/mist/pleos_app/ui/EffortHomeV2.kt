@@ -208,6 +208,7 @@ internal fun CarIllustration(size: Dp, pin: String? = null) {
 /** 고른 것 한 줄: "한 사람 약 9천 원 · 좋아요" · "닫음" · "커피값에서 운전자 빼기"(홈 카드·주행 기록 목록 공통). */
 @Composable
 internal fun recordNoteText(r: EffortRecord, ui: EffortUi): String = when {
+    r.choice == com.mist.pleos_app.effort.CHOICE_UNSETTLED -> stringResource(R.string.effort_home_rec_unsettled)
     r.choice == CHOICE_ACCEPT -> listOfNotNull(r.suggestion?.removePrefix("한 사람 ")?.let { stringResource(R.string.effort_home_rec_per, it) }, stringResource(R.string.effort_offer_like)).joinToString(" · ")
     r.choice == CHOICE_CLOSE -> stringResource(R.string.effort_home_rec_closed)
     else -> stringResource(R.string.effort_home_rec_item, ui.items.firstOrNull { it.key == r.choice }?.phraseText ?: r.choice)

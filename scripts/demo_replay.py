@@ -222,6 +222,8 @@ def step0(r: Run, reset: bool) -> None:
             tap("없음", last=True)
         elif has("닫기", ts):
             tap("닫기")
+        elif has("홈으로", ts):                        # 정리하지 못함 화면(F22)
+            tap("홈으로")
         elif has("뒤로", ts):
             tap("뒤로")
         elif has("제안 방식", ts):                     # 설정 화면은 [뒤로] 단추가 없어 BACK 키(앱 BackHandler → 홈)

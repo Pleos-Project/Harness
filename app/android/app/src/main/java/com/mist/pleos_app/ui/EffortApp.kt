@@ -238,7 +238,7 @@ private fun EffortSettings(
                         )
                     }
                     if (wageOpen) Column(Modifier.padding(start = side, end = side, bottom = 28.gpx), verticalArrangement = Arrangement.spacedBy(6.gpx)) {
-                        Text(stringResource(R.string.effort_settings_wage_how, wage.wageLabel, wage.hourlyManText, wage.perMinExactText), style = t.bodyM, color = c.textSecondary)
+                        Text(stringResource(R.string.effort_settings_wage_how, wage.wageYearLabel, wage.hourlyManText, wage.perMinExactText), style = t.bodyM, color = c.textSecondary)
                         Text(stringResource(R.string.effort_settings_wage_show_only), style = t.bodyM, color = c.textSecondary)
                     }
                 }
