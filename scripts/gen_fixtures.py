@@ -213,12 +213,33 @@ KASI_SEOUL: dict = {
 }
 
 
+# 시연 출발 미리보기의 정체 구간 막대(#116). (congestionType, startRatio, endRatio) = 경로의 % 정수.
+# 위치는 시연용으로 지어낸 값: 도시를 빠져나가는 구간·목적지 근처. 원활 구간은 목록에 넣지 않는다.
+DEMO_TRAFFIC = [("HEAVY", 2, 8), ("SLOW", 8, 20), ("SLOW", 72, 82), ("HEAVY", 90, 98)]
+DEMO_MIDWAY_M = 52_000   # 휴게소(17:05)까지 온 거리 = R27
+
+
+def demo_traffic(r1: dict) -> list[dict]:
+    """정체 구간 목록을 검사하고 demo.json 모양으로 낸다.
+    - SLOW·HEAVY 합 = 미리보기 정체 비율(36%). 앱 실제 모드도 이 둘만 더해 엔진 정체 입력으로 쓴다(NaviRepository.onTripInfo).
+    - 휴게소 지점 앞뒤로 같게(18%씩): 엔진은 정체를 고르게 세서 중간 정산(R27) 정체가 전체의 절반(23.4분 · 19km)이다."""
+    mid_pct = 100 * DEMO_MIDWAY_M / R1_ROUTE_M
+    total = sum(e - s for _, s, e in DEMO_TRAFFIC)
+    before = sum(e - s for _, s, e in DEMO_TRAFFIC if e <= mid_pct)
+    after = sum(e - s for _, s, e in DEMO_TRAFFIC if s >= mid_pct)
+    assert all(t in ("SLOW", "HEAVY") and 0 <= s < e <= 100 for t, s, e in DEMO_TRAFFIC)
+    assert before + after == total, "휴게소 지점을 걸치는 구간이 없어야 앞뒤를 나눠 셀 수 있다"
+    assert abs(total / 100 - r1["congestion_ratio"]) < 1e-9, "구간 합 = 미리보기 정체 비율"
+    assert before == after, "휴게소 앞뒤 정체를 같게(중간 정산 영수증과 막대가 맞게)"
+    return [{"congestion_type": t, "start_ratio": s, "end_ratio": e} for t, s, e in DEMO_TRAFFIC]
+
+
 def demo_fixture(r1: dict) -> None:
     """시연 데이터(명세 v0.5 12절): R1 입력 그대로 + 화면용 scene. 목업·영상·PT 앱이 같은 숫자를 쓴다.
     앱은 데모 고정 모드에서 assets/data/effort/demo.json을 읽는다(syncChagokData).
     midway·midway_arrival = 휴게소 중간 정산 장면(효성 11/9): 17:05 중간 정산(R27) → [좋아요]로 정산 → 18:10 도착(R28)."""
     r = EF.effort(EF.input_from_json(r1), EFFORT_CONST)
-    mid = r1_midway(r1, "17:05", 52_000)
+    mid = r1_midway(r1, "17:05", DEMO_MIDWAY_M)
     after = dict(r1, settlements=[settled(mid)])
     preview = EF.departure_preview(r1["eta_s"], R1_ROUTE_M, r1["congestion_ratio"], r1["congestion_m"], EFFORT_CONST)
     rest_label = dict(EFFORT_CONST.copy.rest_answers)[r1["rest_answer_min"]]   # 도착 때 질문의 선택지(copy)
@@ -233,6 +254,19 @@ def demo_fixture(r1: dict) -> None:
             "n": r1["n"],
             "rest_answer_label": rest_label,
             "departure_preview": dataclasses.asdict(preview),
+            # 출발 미리보기 정체 구간 막대(#116, 명준 시안 → June 앱). 엔진 입력이 아니라 그림용
+            "route_preview": {
+                "note": "출발 미리보기 정체 구간 막대(#116). 실제 모드의 requestTrip TrafficInfo(congestionType·startRatio·"
+                        "endRatio, 경로의 % 정수)와 같은 뜻. 실제 모드는 경로 전체가 4% 칸으로 오고 FAST·MODERATE도 섞이지만 "
+                        "시연 데이터는 SLOW·HEAVY 구간만 둔다. 앱은 목록에 없는 구간을 원활로 칠해 둘이 같은 그림이 된다(June #117 실측). "
+                        "구간 위치는 시연용으로 지어낸 값이고 4% 칸에 맞추지 않는다(합 36%를 휴게소 앞뒤 18%씩 나누려고). "
+                        "SLOW·HEAVY 합 = 미리보기 정체 비율 36%('38km (경로의 36%)'), 앱이 엔진 정체 입력으로 쓰는 기준과 같다. "
+                        "휴게소(경로의 약 50%) 앞뒤 18%씩: 엔진은 정체를 고르게 세서 중간 정산(R27) 정체가 전체의 절반"
+                        "(23.4분 · 19km)이라 막대와 맞춘다. 출발지 이름: 실제 requestTrip의 routePoints에 출발 지점이 없어 "
+                        "앱이 '현재 위치'로 쓴다(June #117 실측)",
+                "origin_name": "현재 위치",
+                "traffic": demo_traffic(r1),
+            },
         },
         "input": r1, "expected": r.to_json(),
         # 휴게소에서 운전자 교대 → 지금까지의 노고 보기. 시연 모드는 지금 시각·내비 남은 거리·시간대별 날씨 대신 이 값을 쓴다
