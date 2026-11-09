@@ -13,8 +13,8 @@ import com.mist.pleos_app.util.ChagokLog
 /** 조명 상태 한 벌. [switch]는 LightSwitch 이름(OFF·ON·AUTOMATIC…), [color]는 32비트 ARGB(다시 읽으면 알파가 빠진 RGB). */
 data class LightValue(val switch: String, val color: Int)
 
-/** 브랜드 네온 색(임시). 값은 명준 디자인 토큰(#109 열린 결정 31) — 정해지면 여기만 바꾼다. */
-const val AMBIENT_BRAND_ARGB: Int = 0xFF00E5FF.toInt()
+/** 브랜드 색 #D9F77A(June 11/9 전달, #109 열린 결정 31의 색 값). 앱을 켤 때 연출 길이는 아직 임시. */
+const val AMBIENT_BRAND_ARGB: Int = 0xFFD9F77A.toInt()
 const val LIGHT_ON = "ON"
 
 /** SDK와 맞닿는 곳. 대상 영역은 capabilities가 준 영역 전부(에뮬: 전 좌석 묶음 하나). 콜백은 한 번만. */
