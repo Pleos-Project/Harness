@@ -24,6 +24,8 @@
 <link rel="stylesheet" href="components/mid-button.css">
 <link rel="stylesheet" href="components/switch.css">
 <link rel="stylesheet" href="components/segmented.css">
+<link rel="stylesheet" href="components/logo.css">
+<link rel="stylesheet" href="components/nogo-car.css">
 <link rel="stylesheet" href="screens/home.css">
 <link rel="stylesheet" href="screens/depart.css">
 <link rel="stylesheet" href="screens/search.css">
@@ -79,7 +81,7 @@
 <div id="comps"></div>
 <script>
   // components/*.html 조각을 두 폭에 넣는다. file:// 에서 fetch가 막히면 design/ 에서 python -m http.server 로 연다.
-  const parts = [["button","Basic Button"],["icon-button","Icon Button"],["cta","출발 버튼"],["text-button","글자 버튼"],["chip","Toggle Button(칩)"],["stepper","Stepper"],["title-bar","위 바(Title)"],["pill","인원 · 진행 중 알약"],["search-field","검색 한 줄"],["dest-card","목적지 카드"],["record-card","기록 카드"],["preview-panel","미리보기 칸"],["people-alert","인원 확인 알림 바"],["bottom-sheet","짧은 하단 시트"],["receipt","영수증"],["offer-card","제안 카드"],["loading","기다림"],["empty","빈 상태"],["notice","안내"],["mid-button","중간 정산 버튼"],["switch","스위치"],["segmented","둘로 나뉜 알약"]];
+  const parts = [["button","Basic Button"],["icon-button","Icon Button"],["cta","출발 버튼"],["text-button","글자 버튼"],["chip","Toggle Button(칩)"],["stepper","Stepper"],["title-bar","위 바(Title)"],["pill","인원 · 진행 중 알약"],["search-field","검색 한 줄"],["dest-card","목적지 카드"],["record-card","기록 카드"],["preview-panel","미리보기 칸"],["people-alert","인원 확인 알림 바"],["bottom-sheet","짧은 하단 시트"],["receipt","영수증"],["offer-card","제안 카드"],["loading","기다림"],["empty","빈 상태"],["notice","안내"],["mid-button","중간 정산 버튼"],["switch","스위치"],["segmented","둘로 나뉜 알약"],["logo","Nogo 로고 · 워드마크"],["nogo-car","노고 카"]];
   const tall = new Set(["people-alert","bottom-sheet","receipt","offer-card","mid-button"]);
   Promise.all(parts.map(([p]) => fetch('components/' + p + '.html').then(r => r.text()))).then(htmls => {
     document.getElementById('comps').innerHTML = parts.map(([p, name], i) => {

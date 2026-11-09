@@ -108,3 +108,24 @@
 .cg-calc.cg-p .cg-ctrack{left:308px}
 .cg-calc.cg-p .cg-cn .cg-slot{left:250px}
 .cg-calc.cg-p .cg-ctot{align-items:center;text-align:center}
+/* 도착 계산: 뉴트럴 트랙 + 라임 진행 표시 */
+.cg-ctrack,.cg-calc.cg-p .cg-ctrack{border-color:var(--color-progress-track)}
+.cg-cfill{background:var(--color-progress-line)}
+.cg-cn .cg-dot{border-color:var(--color-progress-track);background:var(--color-background-canvas);border-width:6px}
+.cg-calc.cg-p .cg-cn .cg-dot{border-width:5px}
+.cg-cn.cg-on .cg-dot{background:var(--color-progress-indicator);border-color:var(--color-progress-indicator-border);border-width:4px}
+.cg-cn.cg-zero .cg-dot{background:var(--color-text-disabled);border-color:var(--color-text-disabled)}
+/* 크기: 170 × 70 틀(바닥 68 · 그림자 포함) */
+.cg-cc-car{height:43px}
+.cg-cc-car::after,.cg-hero .cg-ill::after{display:none}
+.cg-calc.cg-p .cg-cc-car{width:32px}
+.cg-calc.cg-p .cg-cc-o{width:77px;height:32px;margin:-16px 0 0 -38.5px}
+.cg-fx .cg-jc,.cg-fx .cg-zc,.cg-fx .cg-dc{height:36px;top:150px}
+/* 계산 연출(가로 창): 노고 카를 1.5배로 키워 주인공으로. 앞 범퍼 · 바닥 기준(오른쪽 아래)으로 키워 체크포인트 원과 겹치지 않음 → 배기 · 타이어 연기 붙는 자리도 같이 옮김 */
+.cg-calc:not(.cg-p) .cg-cc-o{transform:translateY(5px) scale(1.5);transform-origin:100% 100%}
+.cg-calc:not(.cg-p) .cg-smoke{left:-324px;top:-44px}
+.cg-calc:not(.cg-p) .cg-tsmoke{left:-312px}
+/* 속을 불투명하게 → 선이 원 뒤로 완전히 숨음, 원과 원 사이만 선으로 이어짐 */
+.cg-cn .cg-dot{z-index:1}
+.cg-cn .cg-lb,.cg-cn .cg-vl,.cg-cn .cg-slot{z-index:2}
+.cg-smoke,.cg-tsmoke{display:none!important}

@@ -8,3 +8,6 @@
 .cg-prog .cg-pdot{width:14px;height:14px;border-radius:50%;background:var(--cg-text-primary);animation:cg-blink 1.2s ease-in-out infinite alternate}
 .cg-prog .cg-chev{width:12px;height:12px;border-right:3px solid var(--cg-text-tertiary);border-bottom:3px solid var(--cg-text-tertiary);transform:rotate(-45deg);margin-left:4px}
 .cg-home.cg-p .cg-prog{height:64px;font:var(--cg-body-m-b);padding:0 18px 0 20px}
+.cg-ppl,.cg-hsearch .cg-mic,.cg-pbar .cg-pst{background:var(--color-button-secondary-fill);color:var(--color-button-secondary-foreground)}
+.cg-prog .cg-pdot{background:var(--color-progress-line)}
+.cg-ppl .cg-ico.cg-pi{width:34px;height:34px}

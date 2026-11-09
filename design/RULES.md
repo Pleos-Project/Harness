@@ -65,13 +65,15 @@
 | `bottom-sheet` | 쉰 시간 · 진행 중 출발 정보 | Bottom Sheet(딤 · 끌기 없음) |
 | `receipt` · `offer-card` | 도착 | 디자인 제안 · Card + Basic Button L |
 | `loading` · `empty` · `notice` | 로딩 · 빈 상태 · 에러 · 시연 표시 | — |
+| `mid-button` | 가는 중 홈 시동 버튼(중간 정산) | 디자인 제안 |
+| `logo` · `nogo-car` | 시작 화면 · 위 바 · 계산 연출(11/9) | 디자인 제안(`brand/`) |
 - 움직임: 등장 움직임 규칙은 `.cg-play` 아래에 있다(시안 정지 화면은 끝 상태). 계산 연출처럼 JS로 차례를 짜는 움직임은 `prototype/`과 `HANDOFF_v2.md`가 기준.
 
 ## 3. 일러스트·아이콘·브랜드
 - 테마 8개 × 변형 3~4장(PRD 7-5). 파일명 `design/illustrations/<theme>-<n>.svg`, `<theme>` = 서버 `theme` 값:
   `sea lake river mountain park city island drive`, `<n>` = 1부터.
 - 같은 장소는 늘 같은 그림: 앱이 장소 ID로 변형을 고른다(Kotlin `illustrationName`). 변형 수를 바꾸면 PR에 적는다.
-- 실제 장소 사진인 척하지 않는다. 아이콘은 48dp 그리드 SVG, `design/icons/<name>.svg`. 로고·앱 아이콘(512px PNG)은 `design/brand/`.
+- 실제 장소 사진인 척하지 않는다. 아이콘은 48dp 그리드 SVG, `design/icons/<name>.svg`(Pleos 에셋 = `icons/pleos/`, 그 밖 = Phosphor Bold `icons/phosphor/`, MIT). 로고·앱 아이콘(512px PNG)은 `design/brand/`.
 - 레포에는 **앱이 쓰는 내보낸 파일(SVG·PNG)만** 둔다. 원본(피그마·AI·PSD)은 피그마·드라이브에.
 
 ### BX 파일 올리기

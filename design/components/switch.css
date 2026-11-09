@@ -3,3 +3,7 @@
 .cg-sw i{position:absolute;left:6px;top:6px;width:56px;height:56px;border-radius:50%;background:var(--cg-surface-card);box-shadow:var(--cg-shadow-1);transition:transform .32s cubic-bezier(.32,.72,0,1)}
 .cg-sw.cg-on{background:var(--cg-text-primary)}
 .cg-sw.cg-on i{transform:translateX(48px)}
+.cg-sw{background:var(--color-switch-track-off)}
+.cg-sw i{background:var(--color-switch-thumb-off)}
+.cg-sw.cg-on{background:var(--color-switch-track-on)}
+.cg-sw.cg-on i{background:var(--color-switch-thumb-on)}

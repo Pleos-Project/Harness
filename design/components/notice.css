@@ -10,3 +10,8 @@
 .cg-home.cg-p .cg-card.cg-notice{padding:24px 28px}
 .cg-home.cg-p .cg-card.cg-notice b{font:var(--cg-body-l)}
 .cg-home.cg-p .cg-offl{font:var(--cg-label-m);height:52px;padding:0 18px;white-space:normal}
+/* 상태: 경고(인터넷 없음 · 검색 안 됨) · 오류(미리보기 · 경로 실패) · 안내(지원 안 하는 지역 · 시연) · 완료(기록에 남김) */
+.cg-offl{background:var(--color-status-warning-background);color:var(--color-status-warning-foreground)}
+.cg-card.cg-notice.cg-warn{background:var(--color-status-warning-background);border-color:transparent}
+.cg-card.cg-notice.cg-warn b,.cg-card.cg-notice.cg-warn span{color:var(--color-status-warning-foreground)}
+.cg-demotag{background:var(--color-status-info-background);color:var(--color-status-info-foreground);border-color:transparent}

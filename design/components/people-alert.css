@@ -25,3 +25,4 @@
 .cg-a-p1 .cg-pbar .cg-pdv{height:44px}
 .cg-a-p1 .cg-pbar .cg-tbtn{height:64px;padding:0 12px;font:var(--cg-body-l)}
 .cg-a-p1 .cg-pbar .cg-tbtn + .cg-tbtn{margin-left:-8px}
+.cg-pbar,.cg-toast{background:var(--color-surface-notification);border-color:var(--color-border-subtle)}

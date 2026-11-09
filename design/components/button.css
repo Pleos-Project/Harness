@@ -26,3 +26,17 @@
 .cg-ico{width:40px;height:40px;border-radius:12px;border:3px dashed currentColor;opacity:.45;flex:none;display:inline-block}
 .cg-btn.cg-s .cg-ico{width:32px;height:32px;border-radius:10px}
 .cg-toast.cg-nb .cg-bt .cg-btn{flex:1}
+/* 버튼: 주요(라임) · 보조(뉴트럴) · 비활성 · 삭제 */
+.cg-btn{color:var(--color-button-secondary-foreground)}
+.cg-btn.cg-fill{color:var(--color-button-primary-foreground)}
+.cg-btn.cg-ib.cg-plain,.cg-btn.cg-ghost{color:var(--color-icon-primary)}
+.cg-btn.cg-ib.cg-plain:active,.cg-btn.cg-ghost:active,.cg-tbtn:active,.cg-schev:active{background:var(--color-button-tertiary-pressed)}
+.cg-btn.cg-off,.cg-btn.cg-fill.cg-off{background:var(--color-button-disabled-fill);color:var(--color-button-disabled-foreground);border-color:transparent}
+.cg-btn.cg-fill.cg-danger{background:var(--color-button-destructive-fill);color:var(--color-button-destructive-foreground)}
+.cg-btn.cg-fill.cg-danger:active{background:var(--color-button-destructive-pressed)}
+:where(.cg-a-land,.cg-a-p1) :is(.cg-btn,.cg-chip,.cg-cta,.cg-sg,.cg-sw,.cg-opt,.cg-hcard,.cg-rec,.cg-dst,.cg-tbtn,.cg-schev,.cg-salt,.cg-rtap,[data-act]):focus-visible{outline:2px solid var(--color-focus-ring);outline-offset:2px}
+/* ── 아이콘(11/9): Phosphor Icons Bold(MIT · img/icons) — 워드마크 · 로고의 굵고 둥근 선과 같은 결. 점선 자리(.ico)를 실제 모양으로 채움.
+   색은 글자색(currentColor) · 크기는 자리(.ico) 크기 그대로. Pleos 에셋 아이콘(뒤로 · + · − · 화살표)은 그대로 둠 */
+.cg-ico.cg-pi{border:none;border-radius:0;opacity:1;background:currentColor;-webkit-mask:var(--m) center/contain no-repeat;mask:var(--m) center/contain no-repeat}
+.cg-btn.cg-ib .cg-ico.cg-pi{width:48px;height:48px}
+.cg-dico figure .cg-ico{width:48px;height:48px}

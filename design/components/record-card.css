@@ -8,3 +8,9 @@
 .cg-rec.cg-new{border:3px solid var(--cg-text-primary)}
 .cg-rec.cg-new .cg-tag{color:var(--cg-text-primary);font-weight:800}
 .cg-play .cg-rec.cg-new{animation:cg-up .7s cubic-bezier(.32,.72,0,1) both}
+/* 표면: 카드 · 시트 · 알림 */
+.cg-card,.cg-rec,.cg-pv,.cg-hsearch,.cg-stepper{border-color:var(--color-border-subtle)}
+.cg-rec.cg-new{border-color:var(--color-selection-border)}
+.cg-rec.cg-new .cg-tag{align-self:flex-start;color:var(--color-selection-foreground);background:var(--color-selection-background);border-radius:999px;padding:0 14px;font-weight:800}
+.cg-rec.cg-img::before{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(180deg,#24203300 0%,#24203314 30%,#242033a6 66%,#242033eb 100%)}
+.cg-rec.cg-img::after{content:"";position:absolute;inset:0;z-index:-1;border-radius:inherit;box-shadow:inset 0 0 0 1px #FFFFFF1f}

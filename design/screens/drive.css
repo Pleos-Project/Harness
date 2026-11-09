@@ -20,3 +20,9 @@
 .cg-block .cg-ico{width:96px;height:96px;border-radius:24px}
 .cg-block b{font:var(--cg-title-l)}
 .cg-block span{font:var(--cg-body-m);color:var(--cg-text-tertiary)}
+/* 플랫폼 영역이 앱 창 안에 겹칠 때(순정 내비 · 시스템 키보드)는 Pleos 값으로 되돌림 */
+.cg-navi-wf{--cg-surface-card:var(--pl-card);--cg-text-primary:var(--pl-txt);--cg-text-secondary:var(--pl-txt2);--cg-text-tertiary:var(--pl-txt3);--cg-line:var(--pl-div2);--cg-line-strong:var(--pl-div3);--cg-btn-filled:var(--pl-btn-fill);--cg-btn-filled-text:var(--pl-btn-fill-txt);color:var(--pl-txt)}
+/* 주행 중 잠금 */
+.cg-block{background:var(--color-driving-lock-background);color:var(--color-driving-lock-foreground)}
+.cg-block span{color:var(--color-driving-lock-foreground);opacity:.72}
+.cg-block .cg-ico.cg-pi{width:104px;height:104px;opacity:.9}

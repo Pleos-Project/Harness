@@ -48,3 +48,9 @@
 .cg-home.cg-dp.cg-p .cg-recempty.cg-dc{height:240px}
 .cg-home.cg-dp.cg-p .cg-pv .cg-pvl{gap:14px}
 .cg-home.cg-dp.cg-p .cg-pst3 .cg-st{font:var(--cg-title-s)}
+.cg-kbd{background:var(--pl-win);color:var(--pl-txt3);border-top-color:var(--pl-div3)}
+.cg-dst.cg-on{background:var(--color-selection-background);box-shadow:inset 0 0 0 2px var(--color-selection-border)}
+.cg-dst.cg-on .cg-ad{color:var(--color-selection-foreground);opacity:.72}
+.cg-dst.cg-on .cg-nm,.cg-dst.cg-on .cg-km{color:var(--color-selection-foreground)}
+.cg-favs .cg-btn.cg-sel{background:var(--color-selection-background);color:var(--color-selection-foreground);box-shadow:inset 0 0 0 2px var(--color-selection-border)}
+.cg-home.cg-dp.cg-p .cg-pv.cg-pvimg::before{background:linear-gradient(180deg,#24203380 0%,#242033CC 45%,#242033F2 100%)}
