@@ -13,10 +13,12 @@ import com.mist.pleos_app.net.PlacesStatus
 private data class DemoPlace(val id: String, val name: String, val address: String, val kind: DestOption.Kind, val distanceM: Int, val recent: Boolean)
 
 private fun places(scene: DemoScene) = listOf(
+    // 시안 depart-home 순서: 즐겨찾기 집 12km · 회사 8km, 최근 태안 꽃지해수욕장 104km · 양평 두물머리 36km
+    DemoPlace("demo-home", "집", "서울 강남구 역삼동", DestOption.Kind.HOME, 12_000, true),
+    DemoPlace("demo-office", "회사", "서울 강남구 테헤란로", DestOption.Kind.OFFICE, 8_000, true),
     DemoPlace("demo-1", scene.destName, "충남 태안군 안면읍", DestOption.Kind.RECENT, 104_000, true),
-    DemoPlace("demo-2", "가평 아침고요수목원", "경기 가평군 상면", DestOption.Kind.RECENT, 62_000, true),
-    DemoPlace("demo-3", "양평 두물머리", "경기 양평군 양서면", DestOption.Kind.BOOKMARK, 45_000, true),
-    DemoPlace("demo-4", "회사", "서울 강남구 테헤란로", DestOption.Kind.OFFICE, 12_000, true),
+    DemoPlace("demo-3", "양평 두물머리", "경기 양평군 양서면", DestOption.Kind.RECENT, 36_000, true),
+    DemoPlace("demo-2", "가평 아침고요수목원", "경기 가평군 상면", DestOption.Kind.SEARCH, 62_000, false),
     DemoPlace("demo-5", "강릉 안목해변", "강원 강릉시 창해로", DestOption.Kind.SEARCH, 228_000, false),
     DemoPlace("demo-6", "양양 서피비치", "강원 양양군 현남면", DestOption.Kind.SEARCH, 196_000, false),
     DemoPlace("demo-7", "코엑스", "서울 강남구 영동대로", DestOption.Kind.SEARCH, 11_000, false),
@@ -29,7 +31,7 @@ private fun DemoPlace.option(search: Boolean) = DestOption(
     distanceM = distanceM,   // 카드 · 검색 결과 모두 거리(시안 dest-card · search)
 )
 
-/** 출발 화면 최근 목적지 · 즐겨찾기 카드(첫 장 = 시연 장면 목적지). */
+/** 출발 화면 즐겨찾기 · 최근 카드 4장(시안 depart-home과 같은 목록 · 순서 · 거리). */
 fun demoRecents(scene: DemoScene): List<DestOption> = places(scene).filter { it.recent }.map { it.option(false) }
 
 /** 시연 검색: 이름 · 주소에 검색어(띄어쓰기 무시)가 들어간 곳. 없으면 EMPTY. */
