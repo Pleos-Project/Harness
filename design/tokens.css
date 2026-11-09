@@ -211,6 +211,7 @@
   --pl-div3:var(--cg-line-strong);
   --pl-btn-fill:var(--cg-btn-filled);
   --pl-btn-fill-txt:var(--cg-btn-filled-text);
+  --color-notification-dot:#E5484D;
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
   --color-background-canvas:#242033;
@@ -321,6 +322,7 @@
   --color-driving-lock-background:#242033;
   --color-driving-lock-foreground:#F7F5FC;
   --color-brand-wordmark:#D9F77A;
+  --color-notification-dot:#FF6B6B;
 }}
 :root[data-theme="dark"]{
   --color-background-canvas:#242033;
@@ -431,4 +433,5 @@
   --color-driving-lock-background:#242033;
   --color-driving-lock-foreground:#F7F5FC;
   --color-brand-wordmark:#D9F77A;
+  --color-notification-dot:#FF6B6B;
 }

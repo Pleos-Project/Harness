@@ -26,6 +26,7 @@
 <link rel="stylesheet" href="components/segmented.css">
 <link rel="stylesheet" href="components/logo.css">
 <link rel="stylesheet" href="components/nogo-car.css">
+<link rel="stylesheet" href="components/noti-panel.css">
 <link rel="stylesheet" href="screens/home.css">
 <link rel="stylesheet" href="screens/depart.css">
 <link rel="stylesheet" href="screens/search.css">
@@ -67,7 +68,7 @@
 </div>
 <h2>화면</h2>
 <div class="scr">
-  <a href="screens/home.html">홈 · 앱 시작<small>시작 화면 · 첫 사용 · 기본 · 방금 끝난 기록 · 고르기 전에 나간 도착</small></a>
+  <a href="screens/home.html">홈 · 앱 시작<small>시작 화면 · 첫 사용 · 기본 · 방금 끝난 기록 · 알림 펼침 · 고르기 전에 나간 도착</small></a>
   <a href="screens/depart.html">출발 화면 · 인원 확인<small>기본 · 인원 알림(감지 그대로 · 직접 바꿈 · 1명) · 센서 오류 · 미리보기(중·준비·실패·지원 안 하는 지역) · 누른 뒤 · 경로 요청 실패 · 빈 상태 · 인터넷 없음</small></a>
   <a href="screens/search.html">목적지 검색<small>결과 · 검색 중 · 결과 없음 · 안 됨 · 위치 못 받음</small></a>
   <a href="screens/drive.html">출발 뒤 · 주행 중<small>순정 내비(와이어) · 시스템 주행 차단</small></a>
@@ -81,7 +82,7 @@
 <div id="comps"></div>
 <script>
   // components/*.html 조각을 두 폭에 넣는다. file:// 에서 fetch가 막히면 design/ 에서 python -m http.server 로 연다.
-  const parts = [["button","Basic Button"],["icon-button","Icon Button"],["cta","출발 버튼"],["text-button","글자 버튼"],["chip","Toggle Button(칩)"],["stepper","Stepper"],["title-bar","위 바(Title)"],["pill","인원 · 진행 중 알약"],["search-field","검색 한 줄"],["dest-card","목적지 카드"],["record-card","기록 카드"],["preview-panel","미리보기 칸"],["people-alert","인원 확인 알림 바"],["bottom-sheet","짧은 하단 시트"],["receipt","영수증"],["offer-card","제안 카드"],["loading","기다림"],["empty","빈 상태"],["notice","안내"],["mid-button","중간 정산 버튼"],["switch","스위치"],["segmented","둘로 나뉜 알약"],["logo","Nogo 로고 · 워드마크"],["nogo-car","노고 카"]];
+  const parts = [["button","Basic Button"],["icon-button","Icon Button"],["cta","출발 버튼"],["text-button","글자 버튼"],["chip","Toggle Button(칩)"],["stepper","Stepper"],["title-bar","위 바(Title)"],["pill","인원 · 진행 중 알약"],["search-field","검색 한 줄"],["dest-card","목적지 카드"],["record-card","기록 카드"],["preview-panel","미리보기 칸"],["people-alert","인원 확인 알림 바"],["bottom-sheet","짧은 하단 시트"],["receipt","영수증"],["offer-card","제안 카드"],["loading","기다림"],["empty","빈 상태"],["notice","안내"],["mid-button","중간 정산 버튼"],["switch","스위치"],["segmented","둘로 나뉜 알약"],["logo","Nogo 로고 · 워드마크"],["nogo-car","노고 카"],["noti-panel","알림 창 · 종 빨간 점"]];
   const tall = new Set(["people-alert","bottom-sheet","receipt","offer-card","mid-button"]);
   Promise.all(parts.map(([p]) => fetch('components/' + p + '.html').then(r => r.text()))).then(htmls => {
     document.getElementById('comps').innerHTML = parts.map(([p, name], i) => {

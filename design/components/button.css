@@ -40,3 +40,8 @@
 .cg-ico.cg-pi{border:none;border-radius:0;opacity:1;background:currentColor;-webkit-mask:var(--m) center/contain no-repeat;mask:var(--m) center/contain no-repeat}
 .cg-btn.cg-ib .cg-ico.cg-pi{width:48px;height:48px}
 .cg-dico figure .cg-ico{width:48px;height:48px}
+.cg-btn.cg-ib.cg-bell{position:relative}
+.cg-btn.cg-ib.cg-bell .cg-ndot{position:absolute;top:14px;right:16px}
+.cg-p .cg-btn.cg-ib.cg-bell .cg-ndot{top:12px;right:14px;width:16px;height:16px}
+.cg-play .cg-btn.cg-ib.cg-bell .cg-ndot{animation:cg-dot .45s cubic-bezier(.3,1.5,.5,1) .3s both}
+.cg-btn.cg-ib.cg-bell.cg-on{background:var(--color-button-secondary-pressed)}

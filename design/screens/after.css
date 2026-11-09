@@ -121,8 +121,12 @@
 :root[data-theme="dark"] .cg-nsym3d .cg-g1{stop-color:#00000080}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .cg-nsym3d .cg-g0{stop-color:#00000000}}
 :root[data-theme="dark"] .cg-nsym3d .cg-g0{stop-color:#00000000}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .cg-nsym3d .cg-top{fill:#D9F77A}}
-:root[data-theme="dark"] .cg-nsym3d .cg-top{fill:#D9F77A}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .cg-nsym3d .cg-t1{stop-color:#E4FA98}}
+:root[data-theme="dark"] .cg-nsym3d .cg-t1{stop-color:#E4FA98}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .cg-nsym3d .cg-t2{stop-color:#D9F77A}}
+:root[data-theme="dark"] .cg-nsym3d .cg-t2{stop-color:#D9F77A}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .cg-nsym3d .cg-t3{stop-color:#BDD95A}}
+:root[data-theme="dark"] .cg-nsym3d .cg-t3{stop-color:#BDD95A}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .cg-nsym3d .cg-top.cg-sep{stroke:#242033}}
 :root[data-theme="dark"] .cg-nsym3d .cg-top.cg-sep{stroke:#242033}
 @media (prefers-reduced-motion:reduce){
@@ -136,6 +140,26 @@
 :root[data-theme="dark"] .cg-splash .cg-appicon{filter:none}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .cg-midb .cg-sface{box-shadow:0 0 0 3px #171B2266,0 12px 24px #00000073,0 3px 6px #00000059}}
 :root[data-theme="dark"] .cg-midb .cg-sface{box-shadow:0 0 0 3px #171B2266,0 12px 24px #00000073,0 3px 6px #00000059}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .cg-prn i::after{box-shadow:0 0 0 1px #D9F77A66,0 0 10px #D9F77AE6,0 0 26px #D9F77A99,0 0 56px #D9F77A40}}
+:root[data-theme="dark"] .cg-prn i::after{box-shadow:0 0 0 1px #D9F77A66,0 0 10px #D9F77AE6,0 0 26px #D9F77A99,0 0 56px #D9F77A40}
+@media (prefers-reduced-motion:reduce){
+  .cg-arr.cg-print .cg-prn i::after{animation:none}
+}
+@media (prefers-reduced-motion:reduce){
+  .cg-arr.cg-print .cg-tflip .cg-t1,.cg-arr.cg-print .cg-tflip .cg-t2{animation:none}
+}
+@media (prefers-reduced-motion:reduce){
+  .cg-play .cg-btn.cg-ib.cg-bell .cg-ndot{animation:none}
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .cg-npanel{background:#FFFFFF0D;box-shadow:0 0 0 1px #FFFFFF17,0 48px 96px -24px #000000A6,0 14px 28px -10px #00000066}}
+:root[data-theme="dark"] .cg-npanel{background:#FFFFFF0D;box-shadow:0 0 0 1px #FFFFFF17,0 48px 96px -24px #000000A6,0 14px 28px -10px #00000066}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .cg-npanel .cg-ncaret{box-shadow:-1px -1px 0 0 #FFFFFF17}}
+:root[data-theme="dark"] .cg-npanel .cg-ncaret{box-shadow:-1px -1px 0 0 #FFFFFF17}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .cg-npanel .cg-nin{box-shadow:inset 0 1px 1px #FFFFFF26}}
+:root[data-theme="dark"] .cg-npanel .cg-nin{box-shadow:inset 0 1px 1px #FFFFFF26}
+@media (prefers-reduced-motion:reduce){
+  .cg-play .cg-npanel,.cg-play .cg-npanel .cg-nit,.cg-play .cg-npanel .cg-nhd,.cg-play .cg-npanel .cg-nft,.cg-play .cg-npanel.cg-out{animation:none}
+}
 /* 장소 사진(임시, ../places/CREDITS.md) — 출발 미리보기 배경 */
 .cg-pl-taean{background-image:url(../places/taean.jpg)}
 .cg-pl-gapyeong{background-image:url(../places/gapyeong.jpg)}

@@ -1,4 +1,6 @@
 /* Design v2(운전 노고 정산) — 아티팩트 시안에서 옮김. 값은 tokens.css의 --cg-* 변수, 크기는 Connect-S 실제 픽셀(1dp = 1px). */
+.cg-toast.cg-nb .cg-nh .cg-t1{font:800 36px/44px var(--cg-font)}
+.cg-toast.cg-nb .cg-nh .cg-t2{font:400 26px/34px var(--cg-font);color:var(--cg-text-tertiary)}
 .cg-rrow{display:grid;grid-template-columns:200px minmax(0,1fr) 120px 28px;align-items:center;column-gap:16px;min-height:100px;border-bottom:1px dashed var(--cg-line-strong);cursor:pointer}
 .cg-rrow .cg-k{font:var(--cg-body-m);color:var(--cg-text-secondary)}
 .cg-rrow .cg-v{font:var(--cg-body-l);min-width:0}
@@ -190,3 +192,17 @@
   background:linear-gradient(transparent 60%,var(--color-receipt-result-marker) 60%);-webkit-box-decoration-break:clone;box-decoration-break:clone}
 .cg-paper .cg-rsum.cg-tot + .cg-bc,.cg-paper .cg-rsum.cg-tot + .cg-sfold{margin-top:28px}
 .cg-p .cg-paper .cg-rsum.cg-tot b{padding:0 4px}
+/* ── 출력구 불빛(11/9 명준): 영수증이 다 나오면 출력구 줄이 지직 깜빡이다 딱 켜지고 라임 빛이 살짝 번짐.
+   정지 화면(다 나온 뒤) = 켜진 상태 · 계산 전(.off) = 꺼짐. 움직임은 .print(도착 · 기록 상세에 들어온 그 한 번)에서만 ── */
+.cg-prn i{overflow:visible}
+.cg-prn i::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+  background:linear-gradient(180deg,#F3FEC9 0%,#D9F77A 45%,#B4CF4E 100%);
+  box-shadow:0 0 0 1px #A9C64099,0 0 8px #D9F77ACC,0 0 22px #D9F77A80,0 0 44px #D9F77A33}
+.cg-prn.cg-off i::after{opacity:0;box-shadow:none}
+/* ── 영수증 합계 바뀜(11/9 명준): 종이가 나오면 처음엔 "평소보다 1.57배 힘든 길", 출력구 불이 켜지고 1초쯤 뒤 "약 3만 6천 원"으로 굴러 바뀜.
+   두 글을 같은 칸에 겹쳐 두고(오른쪽 정렬) 마커는 글마다. 정지 화면(다 나온 뒤) = 금액. 움직임은 .print(들어온 그 한 번)에서만 ── */
+.cg-paper .cg-rsum.cg-tot b.cg-tflip{display:inline-grid;justify-items:end;align-items:center;background:none;padding:0;overflow:hidden}
+.cg-tflip > span{grid-area:1/1;padding:0 6px;font:inherit;color:inherit;
+  background:linear-gradient(transparent 60%,var(--color-receipt-result-marker) 60%) left bottom/100% 100% no-repeat;-webkit-box-decoration-break:clone;box-decoration-break:clone}
+.cg-p .cg-tflip > span{padding:0 4px}
+.cg-tflip .cg-t1{visibility:hidden}

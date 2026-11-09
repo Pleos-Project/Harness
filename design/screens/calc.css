@@ -122,7 +122,10 @@
 .cg-calc.cg-p .cg-cc-o{width:77px;height:32px;margin:-16px 0 0 -38.5px}
 .cg-fx .cg-jc,.cg-fx .cg-zc,.cg-fx .cg-dc{height:36px;top:150px}
 /* 계산 연출(가로 창): 노고 카를 1.5배로 키워 주인공으로. 앞 범퍼 · 바닥 기준(오른쪽 아래)으로 키워 체크포인트 원과 겹치지 않음 → 배기 · 타이어 연기 붙는 자리도 같이 옮김 */
-.cg-calc:not(.cg-p) .cg-cc-o{transform:translateY(5px) scale(1.5);transform-origin:100% 100%}
+.cg-calc:not(.cg-p) .cg-cc-o{transform:translateY(5px) scale(1.275);transform-origin:100% 100%}
+/* 11/9 명준: 1.5배 → 15% 줄임(1.275배) */
+.cg-calc.cg-p .cg-cc-o{transform:rotate(-90deg) scaleX(-1) scale(.85)}
+/* 분할 창도 15% 줄임 */
 .cg-calc:not(.cg-p) .cg-smoke{left:-324px;top:-44px}
 .cg-calc:not(.cg-p) .cg-tsmoke{left:-312px}
 /* 속을 불투명하게 → 선이 원 뒤로 완전히 숨음, 원과 원 사이만 선으로 이어짐 */

@@ -24,3 +24,8 @@
 .cg-pg.cg-p .cg-logr{flex:1;display:flex;flex-direction:column;justify-content:center;gap:6px}
 .cg-pg.cg-p .cg-logr b{font:var(--cg-title-s)}
 .cg-pg.cg-p .cg-logr span{font:var(--cg-body-m)}
+/* 주행 기록 목록(11/9 명준): 고른 것 글자를 빼고 상세에서만. 분할 창 줄 = 왼쪽 위 날짜 · 아래 목적지 + 수치(좌측 정렬) · 오른쪽 가운데 › */
+.cg-pg.cg-p .cg-logr{display:grid;grid-template-columns:1fr auto;grid-template-areas:"ld ch" "lm ch";align-content:center;justify-content:stretch;gap:6px 16px;text-align:left}
+.cg-pg.cg-p .cg-logr .cg-ld{grid-area:ld;width:auto;color:var(--color-text-tertiary)}
+.cg-pg.cg-p .cg-logr .cg-lm{grid-area:lm;align-items:flex-start}
+.cg-pg.cg-p .cg-logr .cg-chev{grid-area:ch;align-self:center}
