@@ -11,7 +11,7 @@
               콘솔: 기어 D(가림) → 기어 P(같은 주행을 이어 감, [출발]을 다시 누르지 않음)
   3 도착      콘솔: 운전석 문 열기 → 계산 연출 → 영수증(2시간 10분 · 1.56배, 휴게소에서 장시간이 끊김)
               --no-midway면 1.57배(R1)
-  4 선택      앱: [좋아요](방식 A, 남은 몫 한 사람 약 5천 원) 또는 첫 항목(방식 B) → 기록 → [닫기] → 홈 최근 기록
+  4 선택      앱: 영수증 하단 '중간 정산 있음' → [좋아요](방식 A, 남은 몫 한 사람 약 5천 원) 또는 첫 항목(방식 B) → 기록 → [닫기] → 홈 최근 기록
 
 사용
   python -I scripts/demo_replay.py            # 리허설: 단계마다 엔터, 앱은 사람이 누른다
@@ -54,7 +54,8 @@ EXPECT_RECEIPT = ["2시간 10분", "1.57배"]                 # 중간 정산 �
 EXPECT_RECEIPT_MIDWAY = ["2시간 10분", "1.56배"]          # 휴게소 17:05 정산 뒤(demo.json midway_arrival = R28)
 EXPECT_MIDWAY = ["오늘 주행 영수증", "아직 가는 중", "1시간 5분", "52km", "1.55배", "한 사람 약 4천 원"]   # demo.json midway = R27
 EXPECT_MIDWAY_DONE = "도착하면 전체를 다시 세고, 이 몫은 빼고 알려 드려요"
-EXPECT_REMAIN = "한 사람 약 5천 원"                       # 정산 뒤 남은 몫(방식 A)
+EXPECT_REMAIN = "한 사람 약 5천 원"                       # 정산 뒤 남은 몫(방식 A, 영수증 하단 포함 모드)
+EXPECT_FULL_AFTER_MIDWAY = "한 사람 약 9천 원"            # 영수증 하단 전체 모드(#118 arrive-mid-a, 처음 모습)
 
 
 # ------------------------------------------------------------ 콘솔
@@ -383,7 +384,10 @@ def step4(r: Run, midway: bool = False) -> None:
     ts = texts()
     if has("좋아요", ts):
         if midway:
-            r.check("남은 몫(방식 A)", has(EXPECT_REMAIN, ts), EXPECT_REMAIN)
+            r.check("전체 모드(방식 A)", has(EXPECT_FULL_AFTER_MIDWAY, ts), EXPECT_FULL_AFTER_MIDWAY)
+            r.check("영수증 하단 '중간 정산 있음'", tap("중간 정산 있음"))
+            time.sleep(0.8)
+            r.check("남은 몫(방식 A)", has(EXPECT_REMAIN), EXPECT_REMAIN)
         r.check("방식 A [좋아요]", tap("좋아요"))
         r.expect("기록 남김", "오늘 기록에 남겼어요")
     else:

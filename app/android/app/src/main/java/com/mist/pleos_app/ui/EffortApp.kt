@@ -147,7 +147,7 @@ fun EffortApp(
             }
             EffortScreen.SETTINGS -> EffortSettings(settings, ui.constants?.let(::wageSourceOf), vm.demoSummary, ui.recordCount, onBack = { vm.back() }, onChange = vm::updateSettings, onReset = vm::resetRecords)
             EffortScreen.CALC -> if (ui.calcItems.isEmpty()) LaunchedEffect(Unit) { vm.calcDone() } else EffortCalcScreen(ui, ui.calcItems, onDone = vm::calcDone)
-            EffortScreen.RECEIPT -> EffortArriveScreen(ui, onRest = vm::answerRest, onPick = vm::pick, onClose = vm::closeArrive)
+            EffortScreen.RECEIPT -> EffortArriveScreen(ui, onRest = vm::answerRest, onPick = vm::pick, onClose = vm::closeArrive, onSettleSwap = vm::toggleSettle)
             EffortScreen.LOG -> EffortLogScreen(ui, onBack = { vm.back() }, onRecord = vm::openRecord)
             EffortScreen.RECORD -> EffortRecordScreen(ui, onBack = { vm.back() })
             EffortScreen.MIDWAY -> EffortMidwayScreen(ui, onPick = vm::midwayPick, onClose = vm::closeMidway)

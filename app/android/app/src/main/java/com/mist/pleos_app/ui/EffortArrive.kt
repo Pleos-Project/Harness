@@ -59,6 +59,7 @@ import com.mist.pleos_app.ui.components.CgReceiptRow
 import com.mist.pleos_app.ui.components.CgReceiptSum
 import com.mist.pleos_app.ui.components.CgSize
 import com.mist.pleos_app.ui.components.CgTitleBar
+import com.mist.pleos_app.ui.components.CgSettleFold
 import com.mist.pleos_app.ui.theme.Chagok
 import com.mist.pleos_app.ui.theme.gpx
 import androidx.compose.ui.text.TextStyle
@@ -78,7 +79,7 @@ private val EasePrint = CubicBezierEasing(.25f, .8f, .3f, 1f)
 private val EaseRise = CubicBezierEasing(.2f, .7f, .2f, 1f)
 
 @Composable
-internal fun EffortArriveScreen(ui: EffortUi, onRest: (Int) -> Unit, onPick: (String) -> Unit, onClose: () -> Unit) {
+internal fun EffortArriveScreen(ui: EffortUi, onRest: (Int) -> Unit, onPick: (String) -> Unit, onClose: () -> Unit, onSettleSwap: () -> Unit = {}) {
     val trip = ui.openTrip
     val r = ui.receipt
     if (trip == null || r == null) {
@@ -115,7 +116,7 @@ internal fun EffortArriveScreen(ui: EffortUi, onRest: (Int) -> Unit, onPick: (St
             val receipt: @Composable (Modifier) -> Unit = { m ->
                 if (!ui.unsettled) ReceiptColumn(
                     trip, r, ui, narrow, reduce, paperShift = paper.value, open = open,
-                    onToggle = { k -> open = if (open == k) null else k }, onChangeRest = { sheet = true }, modifier = m,
+                    onToggle = { k -> open = if (open == k) null else k }, onChangeRest = { sheet = true }, modifier = m, onSettleSwap = onSettleSwap,
                 )
             }
             val card: @Composable (Modifier) -> Unit = { m ->
@@ -160,6 +161,7 @@ internal fun EffortArriveScreen(ui: EffortUi, onRest: (Int) -> Unit, onPick: (St
 internal fun ReceiptColumn(
     trip: OpenTrip, r: EffortReceipt, ui: EffortUi, narrow: Boolean, reduce: Boolean,
     paperShift: Float, open: String?, onToggle: (String) -> Unit, onChangeRest: () -> Unit, modifier: Modifier,
+    onSettleSwap: () -> Unit = {},
     editable: Boolean = true,   // 기록 상세(Q-08-01)는 쉰 시간 [바꾸기] 없이 근거 펼침만
     midwaySub: String? = null,  // 중간 정산(F27): 제목 "오늘 주행 영수증"(v3) + 이 줄("14:20 출발 · 아직 가는 중"), 쉰 시간 줄 없음
 ) {
@@ -221,6 +223,19 @@ internal fun ReceiptColumn(
         )
         r.distanceText?.let { CgReceiptSum(stringResource(R.string.effort_receipt_distance), it, compact = narrow) }
         CgReceiptSum(stringResource(R.string.effort_receipt_total), r.multiplierText, compact = narrow, total = true, hi = hi("total"))
+        // #118: 중간 정산을 한 주행이면 합계 아래 "운전 노고 전체 · 약 3만 6천 원" + 작은 줄 "중간 정산 있음 ⇅"(누르면 자리 바꿈)
+        val fold = ui.settleFold
+        if (fold != null && midwaySub == null && editable) {
+            val inc = ui.settleIncluded
+            val all = stringResource(if (fold.amount) R.string.effort_settle_all_a else R.string.effort_settle_all_b)
+            val incL = stringResource(if (fold.amount) R.string.effort_settle_inc_a else R.string.effort_settle_inc_b)
+            CgSettleFold(
+                main = if (inc) incL else all, alt = if (inc) all else stringResource(R.string.effort_settle_has),
+                altLabel = stringResource(if (inc) R.string.effort_settle_to_all else R.string.effort_settle_to_inc),
+                value = if (inc) fold.incValue else fold.allValue, swapKey = inc, onSwap = onSettleSwap,
+                compact = narrow, reduce = reduce, enabled = ui.done == null,
+            )
+        }
         if (!narrow && open == null) CgBarcode(receiptCode(trip, r), Modifier.padding(top = 22.gpx))
     }
 }
@@ -285,7 +300,11 @@ private fun OfferCard(ui: EffortUi, trip: OpenTrip, narrow: Boolean, onPick: (St
             }
             view is ProposalView.B -> {
                 Text(view.screen.text, style = head, color = c.textPrimary)
-                view.items.firstOrNull { it.key == view.screen.item }?.let { Text(stringResource(R.string.effort_offer_b_sub, ieyo(it.label)), style = why, color = c.textSecondary) }
+                view.items.firstOrNull { it.key == view.screen.item }?.let {
+                    // #118 arrive-mid-b-open: 포함 모드면 끝에 "· 중간 정산 몫은 빼고 골랐어요"
+                    val sub = stringResource(R.string.effort_offer_b_sub, ieyo(it.label))
+                    Text(if (ui.settleFold != null && ui.settleIncluded) sub + stringResource(R.string.effort_settle_b_note) else sub, style = why, color = c.textSecondary)
+                }
                 Filler(narrow)
                 val opt: @Composable (Modifier, EffortItem) -> Unit = { m, item ->
                     CgOptionButton(item.examples.ifEmpty { listOf(item.label) }, isDefault = item.key == view.screen.item, onClick = { onPick(item.key) }, modifier = m, compact = narrow)
