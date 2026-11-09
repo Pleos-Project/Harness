@@ -67,6 +67,17 @@ data class DemoScene(
     val sunrise: String?,
     val sunset: String?,
     val restAnswerMin: Int?,
+    val midway: DemoMidway? = null,         // 휴게소 중간 정산 장면(#105 demo.json midway). 없으면 시연에서 중간 정산을 숨김
+)
+
+/**
+ * 시연 중간 정산(F27, 효성 #105): 지금 시각 대신 [at], 내비 남은 거리 대신 [remainM], 날씨 조회 대신 [weatherTrip].
+ * 정산하면 그 뒤 도착은 demo.json midway_arrival(= R28)과 같다.
+ */
+data class DemoMidway(
+    val at: String,
+    val remainM: Int,
+    val weatherTrip: com.mist.pleos_app.engine.WeatherTrip?,
 )
 
 fun parseDemoScene(text: String): DemoScene {
@@ -87,6 +98,16 @@ fun parseDemoScene(text: String): DemoScene {
         sunrise = input.strOrNull("sunrise"),
         sunset = input.strOrNull("sunset"),
         restAnswerMin = input.integerOrNull("rest_answer_min"),
+        midway = root["midway"]?.let { m ->
+            runCatching {
+                val o = m.jsonObject
+                DemoMidway(
+                    at = o.str("at"),
+                    remainM = o.integer("remain_m"),
+                    weatherTrip = o["input"]?.jsonObject?.get("weather_trip")?.let { com.mist.pleos_app.engine.parseWeatherTrip(it.jsonObject) },
+                )
+            }.getOrNull()
+        },
     )
 }
 

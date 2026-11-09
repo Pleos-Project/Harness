@@ -109,6 +109,13 @@ fun EffortApp(
     // F22 도착: 기어·운전석 문이 바뀔 때, 그리고 화면이 다시 보일 때(이벤트, 폴링 없음). 기어 P + 문 열림이면 도착인지 본다
     val shown by vm.shown.collectAsStateWithLifecycle()
     LaunchedEffect(parked, doorOpen, shown) { vm.onCar(parked, doorOpen) }
+    // F28 ① 앱을 켤 때(콜드 스타트·다른 앱에서 돌아올 때·주행 가림이 풀려 기어 P로 다시 보일 때): 화면이 보이는 동안 짧게 켰다가
+    // 되돌린다. 화면 연출이라 수집 타이머가 아님. 주행으로 바뀌면 이 효과가 취소되고 차량 쪽이 바로 되돌린다(X1)
+    LaunchedEffect(shown, driving) {
+        if (driving) return@LaunchedEffect
+        vm.ambient?.acquire(AMBIENT_OPEN)
+        try { kotlinx.coroutines.delay(AMBIENT_OPEN_MS) } finally { vm.ambient?.release(AMBIENT_OPEN) }
+    }
     // 인원 확인 알림(PR #34·#40 재사용): 출발 화면에서 2명 이상 + 지난번 확인값과 다르면(노고 PRD v1.3 8장)
     val askPayers = remember(seats, payer, screen) { screen == EffortScreen.DEPART && vm.shouldAskPayers(seats) }
     // 앱 시작 화면(Design v2 home app-splash, 1.6초) — 처음 켤 때 한 번
@@ -230,6 +237,11 @@ private fun EffortSettings(
                 row(stringResource(R.string.effort_settings_demo), if (s.demoFixed) demoOn else stringResource(R.string.effort_settings_demo_off)) {
                     CgSwitch(s.demoFixed, { onChange(s.copy(demoFixed = it)) }, stringResource(R.string.effort_settings_demo))
                 }
+                line()
+                // 앰비언트 라이트(F28, 기본 켜짐): 끄면 조명을 부르지 않는다(AC-F28-5)
+                row(stringResource(R.string.effort_settings_ambient), stringResource(if (s.ambientLight) R.string.effort_settings_ambient_on else R.string.effort_settings_ambient_off)) {
+                    CgSwitch(s.ambientLight, { onChange(s.copy(ambientLight = it)) }, stringResource(R.string.effort_settings_ambient))
+                }
                 // 단가 출처(PRD 5-2): 접힘 = A 화면 근거 줄, 펼침 = 시급 ÷ 60과 "보여 드리기만" 안내. 상수를 못 읽으면 칸을 숨김
                 if (wage != null) {
                     line()
@@ -267,3 +279,7 @@ private fun EffortSettings(
         }
     }
 }
+
+/** F28 ① 앱을 켤 때 켜 두는 길이(임시). 길이·모양은 명준 디자인(#109 열린 결정 31). */
+private const val AMBIENT_OPEN_MS = 2_000L
+private const val AMBIENT_OPEN = "open"

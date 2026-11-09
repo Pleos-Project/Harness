@@ -1,7 +1,7 @@
 {
   "id": "demo",
-  "title": "시연 데이터: R1(PRD 대표 장면)",
-  "note": "명세 v0.5 12절. gen_fixtures.py가 R1 정의로 만든다(손으로 고치지 않음). 목적지 이름·경로 거리는 바꿔도 배수·금액이 그대로(정체 km 표시만 바뀜). 목적지 이름은 명준 #60. 화면 문구는 constants effort.copy의 임시 값(디자인 확정 대기)",
+  "title": "시연 데이터: R1(PRD 대표 장면) + 휴게소 중간 정산(R27 → R28)",
+  "note": "명세 v0.5 12절. gen_fixtures.py가 R1·R27·R28 정의로 만든다(손으로 고치지 않음). 목적지 이름·경로 거리는 바꿔도 배수·금액이 그대로(정체 km 표시만 바뀜). 목적지 이름은 명준 #60. 화면 문구는 constants effort.copy의 임시 값(디자인 확정 대기)",
   "scene": {
     "dest_name": "태안 꽃지해수욕장",
     "route_m": 104300,
@@ -117,6 +117,239 @@
         "item": "meal",
         "text": "오늘은 밥값에서 운전자 빼고 나누는 게 어때요",
         "item_examples": []
+      }
+    }
+  },
+  "midway": {
+    "note": "휴게소 17:05 중간 정산(= R27). at = 정산 시각(input.arrived_at), remain_m = 그때 내비 남은 거리(input.midway.remain_m). 정산하면 출발 기록 settlements에 {at, remain_krw = expected.proposal.remain_krw}",
+    "at": "2026-11-17T17:05:00+09:00",
+    "remain_m": 52300,
+    "input": {
+      "departed_at": "2026-11-17T16:00:00+09:00",
+      "arrived_at": "2026-11-17T17:05:00+09:00",
+      "rest_answer_min": 0,
+      "eta_s": 6300,
+      "congestion_ratio": 0.36,
+      "congestion_m": 37548.0,
+      "congestion_s": null,
+      "weather_dep": "rain",
+      "weather_arr": "rain",
+      "sunrise": "07:13",
+      "sunset": "17:20",
+      "n": 4,
+      "distance_km": null,
+      "midway": {
+        "route_m": 104300,
+        "remain_m": 52300
+      },
+      "weather_trip": {
+        "status": "ok",
+        "dep": [
+          {
+            "hour": "2026-11-17T16:00:00+09:00",
+            "precip": "rain"
+          },
+          {
+            "hour": "2026-11-17T17:00:00+09:00",
+            "precip": "rain"
+          }
+        ],
+        "arr": [
+          {
+            "hour": "2026-11-17T16:00:00+09:00",
+            "precip": "rain"
+          },
+          {
+            "hour": "2026-11-17T17:00:00+09:00",
+            "precip": "rain"
+          }
+        ]
+      }
+    },
+    "expected": {
+      "status": "ok",
+      "status_text": null,
+      "elapsed_limit_min": 210.0,
+      "elapsed_min": 65.0,
+      "drive_min": 65.0,
+      "rest_min": 0.0,
+      "fatigue_segments_min": [
+        65.0
+      ],
+      "congestion_min": 23.4,
+      "delay_min": 12.651006711409392,
+      "night_min": 0.0,
+      "rain_min": 65.0,
+      "snow_min": 0.0,
+      "fatigue_excess_min": 0.0,
+      "effort_min": 100.73377181208055,
+      "multiplier": 1.55,
+      "lines": [
+        {
+          "key": "rain",
+          "label": "날씨",
+          "add_min": 26.0,
+          "pct": 40,
+          "pct_text": "+40%",
+          "detail_text": "비, 주행 내내",
+          "basis_text": "비 오는 날은 맑은 날보다 운전 부담이 40% 커요 · 시뮬레이터 30명 연구(Frontiers in Neuroscience 2026)"
+        },
+        {
+          "key": "congestion",
+          "label": "정체 구간",
+          "add_min": 6.318,
+          "pct": 10,
+          "pct_text": "+10%",
+          "detail_text": "19km (경로의 36%)",
+          "basis_text": "차가 몰린 길은 한산한 길보다 운전 부담이 27% 커요 · 시뮬레이터 연구(Shakouri, LSU 2015)"
+        },
+        {
+          "key": "delay",
+          "label": "예상보다 더",
+          "add_min": 3.415771812080536,
+          "pct": 5,
+          "pct_text": "+5%",
+          "detail_text": "+13분",
+          "basis_text": "예상보다 늦어진 시간은 정체와 같은 값으로 쳐요 · 예상 못 한 지연이 더 힘들다는 통근 연구(Wener·Evans 2011)"
+        }
+      ],
+      "notes": [],
+      "footnote_text": "정체 구간은 내비 안내 경로 기준",
+      "drive_text": "1시간 5분",
+      "multiplier_text": "평소보다 1.55배 힘든 길",
+      "headline_text": "오늘 운전 1시간 5분 · 평소보다 1.55배 힘든 길",
+      "distance_text": "52km",
+      "proposal": {
+        "amount_krw": 17964.189306487697,
+        "amount_approx": 18000,
+        "amount_text": "약 1만 8천 원",
+        "per_person_krw": 4491.047326621924,
+        "per_person_approx": 4000,
+        "per_person_text": "약 4천 원",
+        "driver_share_krw": 13473.141979865773,
+        "a": {
+          "title_text": "오늘 운전을 챙긴다면",
+          "main_text": "한 사람 약 4천 원",
+          "basis_text": "운전 노고 약 1만 8천 원을 운전자 포함 4명이 나눈 값",
+          "wage_text": "최저임금 1분 178원 기준"
+        },
+        "b": {
+          "item": "meal",
+          "text": "오늘은 밥값에서 운전자 빼고 나누는 게 어때요",
+          "item_examples": []
+        },
+        "settled_krw": 0.0,
+        "remain_krw": 17964.189306487697
+      }
+    }
+  },
+  "midway_arrival": {
+    "note": "midway를 [좋아요]로 정산한 뒤 18:10 도착(= R28). input = 위 input(R1) + settlements 한 줄. 장시간이 17:05에서 끊겨 1.56배(중간 정산 없는 위 expected는 1.57배)",
+    "input": {
+      "departed_at": "2026-11-17T16:00:00+09:00",
+      "arrived_at": "2026-11-17T18:10:00+09:00",
+      "rest_answer_min": 0,
+      "eta_s": 6300,
+      "congestion_ratio": 0.36,
+      "congestion_m": 37548.0,
+      "congestion_s": null,
+      "weather_dep": "rain",
+      "weather_arr": "rain",
+      "sunrise": "07:13",
+      "sunset": "17:20",
+      "n": 4,
+      "distance_km": 104.3,
+      "settlements": [
+        {
+          "at": "2026-11-17T17:05:00+09:00",
+          "remain_krw": 17964.189306487697
+        }
+      ]
+    },
+    "expected": {
+      "status": "ok",
+      "status_text": null,
+      "elapsed_limit_min": 210.0,
+      "elapsed_min": 130.0,
+      "drive_min": 130.0,
+      "rest_min": 0.0,
+      "fatigue_segments_min": [
+        65.0,
+        65.0
+      ],
+      "congestion_min": 46.8,
+      "delay_min": 25.0,
+      "night_min": 50.0,
+      "rain_min": 130.0,
+      "snow_min": 0.0,
+      "fatigue_excess_min": 0.0,
+      "effort_min": 203.386,
+      "multiplier": 1.56,
+      "lines": [
+        {
+          "key": "rain",
+          "label": "날씨",
+          "add_min": 52.0,
+          "pct": 40,
+          "pct_text": "+40%",
+          "detail_text": "비, 주행 내내",
+          "basis_text": "비 오는 날은 맑은 날보다 운전 부담이 40% 커요 · 시뮬레이터 30명 연구(Frontiers in Neuroscience 2026)"
+        },
+        {
+          "key": "congestion",
+          "label": "정체 구간",
+          "add_min": 12.636,
+          "pct": 10,
+          "pct_text": "+10%",
+          "detail_text": "38km (경로의 36%)",
+          "basis_text": "차가 몰린 길은 한산한 길보다 운전 부담이 27% 커요 · 시뮬레이터 연구(Shakouri, LSU 2015)"
+        },
+        {
+          "key": "delay",
+          "label": "예상보다 더",
+          "add_min": 6.75,
+          "pct": 5,
+          "pct_text": "+5%",
+          "detail_text": "+25분",
+          "basis_text": "예상보다 늦어진 시간은 정체와 같은 값으로 쳐요 · 예상 못 한 지연이 더 힘들다는 통근 연구(Wener·Evans 2011)"
+        },
+        {
+          "key": "night",
+          "label": "밤길",
+          "add_min": 2.0,
+          "pct": 2,
+          "pct_text": "+2%",
+          "detail_text": "50분",
+          "basis_text": "밤에는 낮보다 운전 부담이 4% 커요 · 트럭 운전자 50명 시뮬레이터 연구(Fitri 2025)"
+        }
+      ],
+      "notes": [],
+      "footnote_text": "정체 구간은 내비 안내 경로 기준",
+      "drive_text": "2시간 10분",
+      "multiplier_text": "평소보다 1.56배 힘든 길",
+      "headline_text": "오늘 운전 2시간 10분 · 평소보다 1.56배 힘든 길",
+      "distance_text": "104km",
+      "proposal": {
+        "amount_krw": 36270.503333333334,
+        "amount_approx": 36000,
+        "amount_text": "약 3만 6천 원",
+        "per_person_krw": 4576.578506711409,
+        "per_person_approx": 5000,
+        "per_person_text": "약 5천 원",
+        "driver_share_krw": 13729.735520134229,
+        "a": {
+          "title_text": "오늘 운전을 챙긴다면",
+          "main_text": "한 사람 약 5천 원",
+          "basis_text": "운전 노고 약 3만 6천 원에서 중간에 챙긴 몫을 뺀 나머지를 운전자 포함 4명이 나눈 값",
+          "wage_text": "최저임금 1분 178원 기준"
+        },
+        "b": {
+          "item": "meal",
+          "text": "오늘은 밥값에서 운전자 빼고 나누는 게 어때요",
+          "item_examples": []
+        },
+        "settled_krw": 17964.189306487697,
+        "remain_krw": 18306.314026845637
       }
     }
   }

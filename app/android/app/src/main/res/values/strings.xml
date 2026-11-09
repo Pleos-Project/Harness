@@ -310,6 +310,10 @@
     <string name="effort_settings_method_a">방식 A · 돈으로 환산</string>
     <string name="effort_settings_method_b">방식 B · 한 번 빼 주기</string>
     <string name="effort_settings_wage">단가 출처</string>
+    <!-- 앰비언트 라이트(F28, 임시 문구 — 명준) -->
+    <string name="effort_settings_ambient">앰비언트 라이트</string>
+    <string name="effort_settings_ambient_on">앱을 켤 때와 정산할 때 실내 조명을 잠깐 브랜드 색으로 켜요</string>
+    <string name="effort_settings_ambient_off">꺼짐 · 실내 조명을 건드리지 않아요</string>
     <string name="effort_settings_wage_how">%1$s 시급 %2$s을 60분으로 나눈 값이에요(1분 %3$s)</string>
     <string name="effort_log_open">기록 전체</string>
     <string name="effort_log_title">주행 기록</string>
