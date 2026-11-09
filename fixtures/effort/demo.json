@@ -11,6 +11,32 @@
       "eta_text": "1시간 45분",
       "route_text": "104km",
       "congestion_text": "38km (경로의 36%)"
+    },
+    "route_preview": {
+      "note": "출발 미리보기 정체 구간 막대(#116). 실제 모드의 requestTrip TrafficInfo(congestionType·startRatio·endRatio, 경로의 % 정수)와 같은 뜻이고 원활 구간은 목록에 없다. 구간 위치는 시연용으로 지어낸 값. SLOW·HEAVY 합 = 미리보기 정체 비율 36%('38km (경로의 36%)'), 앱이 엔진 정체 입력으로 쓰는 기준과 같다. 휴게소(경로의 약 50%) 앞뒤 18%씩: 엔진은 정체를 고르게 세서 중간 정산(R27) 정체가 전체의 절반(23.4분 · 19km)이라 막대와 맞춘다. 출발지 이름은 SDK가 무엇을 주는지 확인 전이라 '현재 위치'(June 확인 대기)",
+      "origin_name": "현재 위치",
+      "traffic": [
+        {
+          "congestion_type": "HEAVY",
+          "start_ratio": 2,
+          "end_ratio": 8
+        },
+        {
+          "congestion_type": "SLOW",
+          "start_ratio": 8,
+          "end_ratio": 20
+        },
+        {
+          "congestion_type": "SLOW",
+          "start_ratio": 72,
+          "end_ratio": 82
+        },
+        {
+          "congestion_type": "HEAVY",
+          "start_ratio": 90,
+          "end_ratio": 98
+        }
+      ]
     }
   },
   "input": {
