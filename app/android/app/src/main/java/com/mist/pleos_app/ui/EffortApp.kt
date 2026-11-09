@@ -53,6 +53,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.stringArrayResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.window.Dialog
@@ -189,6 +190,7 @@ private fun EffortSettings(
     val t = Chagok.type
     var wipe by rememberSaveable { mutableStateOf(false) }
     var wageOpen by rememberSaveable { mutableStateOf(false) }
+    var photoOpen by rememberSaveable { mutableStateOf(false) }
     val isA = s.proposalMethod != Settings.METHOD_B
     val side = if (narrow) 24.gpx else 40.gpx
     val row: @Composable (String, String, @Composable () -> Unit) -> Unit = { title, sub, end ->
@@ -253,6 +255,17 @@ private fun EffortSettings(
                         Text(stringResource(R.string.effort_settings_wage_how, wage.wageYearLabel, wage.hourlyManText, wage.perMinExactText), style = t.bodyM, color = c.textSecondary)
                         Text(stringResource(R.string.effort_settings_wage_show_only), style = t.bodyM, color = c.textSecondary)
                     }
+                }
+                line()
+                // 사진 출처(#118 HANDOFF_v3 4-3, 임시 자리): 출발 미리보기 장소 사진 CC BY-SA 저작자 표기
+                row(stringResource(R.string.effort_settings_photo), stringResource(R.string.effort_settings_photo_sub)) {
+                    CgIconButton(
+                        stringResource(if (photoOpen) R.string.effort_settings_wage_close else R.string.effort_settings_wage_open), CgIcon.Chevron,
+                        { photoOpen = !photoOpen }, Modifier.graphicsLayer { rotationZ = if (photoOpen) 180f else 0f }, plain = true,
+                    )
+                }
+                if (photoOpen) Column(Modifier.padding(start = side, end = side, bottom = 28.gpx), verticalArrangement = Arrangement.spacedBy(6.gpx)) {
+                    stringArrayResource(R.array.effort_photo_credits).forEach { Text(it, style = t.labelM, color = c.textSecondary) }
                 }
                 line()
                 // 기록 초기화

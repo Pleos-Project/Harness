@@ -310,6 +310,17 @@
     <string name="effort_settings_method_a">방식 A · 돈으로 환산</string>
     <string name="effort_settings_method_b">방식 B · 한 번 빼 주기</string>
     <string name="effort_settings_wage">단가 출처</string>
+    <!-- 사진 출처(#118 design/places/CREDITS.md, 임시 사진 · 자리는 명준이 정함) -->
+    <string name="effort_settings_photo">사진 출처</string>
+    <string name="effort_settings_photo_sub">출발 화면 목적지 사진 · Wikimedia Commons</string>
+    <string-array name="effort_photo_credits">
+        <item>태안 — 「꽃지의석양.jpg」 · HiHoHo · CC BY-SA 3.0</item>
+        <item>가평 — 「The Garden of Morning Calm.JPG」 · 날개 at Korean Wikipedia · CC BY-SA 3.0</item>
+        <item>양평 — 「20221019 양수리 두물머리(Dumulmeori, Yangsu-ri) 04.jpg」 · Shy numis · CC BY-SA 4.0</item>
+        <item>집 — 「Gangnam from Yeoksam 1.jpg」 · kallerna · CC BY-SA 4.0</item>
+        <item>회사 — 「Teheran-ro Yeongdong-daero crossing 7.jpg」 · kallerna · CC BY-SA 4.0</item>
+        <item>크기만 줄여 썼어요. 원본은 commons.wikimedia.org에서 같은 이름으로 찾을 수 있어요</item>
+    </string-array>
     <!-- 앰비언트 라이트(F28, 임시 문구 — 명준) -->
     <string name="effort_settings_ambient">앰비언트 라이트</string>
     <string name="effort_settings_ambient_on">앱을 쓰는 동안 실내 조명을 브랜드 색으로 켜 둬요 · 주행 중에는 원래대로</string>
