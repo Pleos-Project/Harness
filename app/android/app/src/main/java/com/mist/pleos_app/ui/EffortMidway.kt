@@ -13,6 +13,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import com.mist.pleos_app.ui.components.CgBasisList
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -122,12 +123,11 @@ private fun MidwayCard(m: MidwayUi, since: String, items: List<EffortItem>, narr
             m.choice != null -> { Text(since, style = why, color = c.textTertiary); DoneMid(m, view, items, narrow) { keep(true) } }
             view is ProposalView.A -> {
                 Text(since, style = why, color = c.textTertiary)   // v104 mid-a: 캡션
-                Text(stringResource(R.string.effort_mid_a_title), style = head, color = c.textPrimary)
-                Text(view.screen.mainText, style = big, color = c.textPrimary, maxLines = 1)
-                Column(verticalArrangement = Arrangement.spacedBy(4.gpx)) {
-                    Text(view.screen.basisText, style = why, color = c.textSecondary)
-                    Text(view.screen.wageText, style = why, color = c.textTertiary)
+                Column {
+                    Text(stringResource(R.string.effort_mid_a_title), style = if (narrow) t.titleS else t.titleM, color = c.textSecondary)
+                    Text(view.screen.mainText, style = big, color = c.textPrimary, maxLines = 1)
                 }
+                CgBasisList(listOf(view.screen.basisText, view.screen.wageText), compact = narrow)
                 Filler(narrow)
                 Text(stringResource(R.string.effort_mid_note), style = why, color = c.textTertiary)
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.gpx)) {

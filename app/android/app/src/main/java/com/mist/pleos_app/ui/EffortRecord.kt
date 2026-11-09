@@ -20,6 +20,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.unit.dp
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -117,7 +120,12 @@ internal fun EffortRecordScreen(ui: EffortUi, onBack: () -> Unit) {
             CgOfferCard(m, compact = narrow) {
                 Text(stringResource(R.string.effort_record_day_cap), style = t.labelM, color = c.textTertiary)
                 Text(receipt?.multiplierText ?: r.headlineText, style = if (narrow) t.titleL else t.headlineS, color = c.textPrimary)
-                Text(dayEffortLine(r, receipt?.proposal?.amountText), style = t.bodyM, color = c.textSecondary)
+                // 11/9 명준: 금액 밑줄(도착과 같은 .ul) 뒤 줄바꿈 → 아래 줄 운전 시간 · 거리 · 인원, 밑줄과 아래 줄 사이 8(분할 6)
+                val amt = receipt?.proposal?.amountText ?: receipt?.let { com.mist.pleos_app.effort.receiptAmountText(it, ui.constants) }
+                Column(verticalArrangement = Arrangement.spacedBy(if (narrow) 6.gpx else 8.gpx)) {
+                    amt?.let { DayAmountUnderline(stringResource(R.string.effort_record_amount, it), narrow) }
+                    Text(dayEffortLine(r, null), style = t.bodyM, color = c.textSecondary)
+                }
                 Box(Modifier.fillMaxWidth().padding(vertical = 8.gpx).height(1.gpx).background(c.line))
                 Text(stringResource(R.string.effort_record_choice_cap), style = t.labelM, color = c.textTertiary)
                 Text(choiceLine(r, ui), style = t.bodyM, color = c.textSecondary)
@@ -167,4 +175,21 @@ private fun choiceLine(r: EffortRecord, ui: EffortUi): String {
         r.choice == CHOICE_CLOSE -> stringResource(R.string.effort_record_choice_close, method)
         else -> stringResource(R.string.effort_record_choice_item, method, ui.items.firstOrNull { it.key == r.choice }?.phraseText ?: r.choice)
     }
+}
+
+/** 그날의 노고 금액 한 줄: 진한 글자 + 밑줄 2px(출력 연출 뒤 1.5초에 0.6초 동안 그어짐, 도착 제안 카드와 같은 .ul). */
+@Composable
+private fun DayAmountUnderline(text: String, narrow: Boolean) {
+    val c = Chagok.colors
+    val reduce = rememberReduceMotion()
+    val k = remember { androidx.compose.animation.core.Animatable(if (reduce) 1f else 0f) }
+    LaunchedEffect(Unit) { if (!reduce) { kotlinx.coroutines.delay(1500); k.animateTo(1f, androidx.compose.animation.core.tween(600, easing = androidx.compose.animation.core.CubicBezierEasing(.32f, .72f, 0f, 1f))) } }
+    Text(
+        text,
+        Modifier.drawBehind {
+            val h = 2.dp.toPx() * 1f
+            drawRect(c.textPrimary, androidx.compose.ui.geometry.Offset(0f, size.height - h), androidx.compose.ui.geometry.Size(size.width * k.value, h))
+        }.padding(bottom = 3.gpx),
+        style = if (narrow) Chagok.type.labelM else Chagok.type.bodyM, color = c.textPrimary,
+    )
 }

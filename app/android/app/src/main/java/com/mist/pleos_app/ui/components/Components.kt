@@ -121,7 +121,7 @@ fun CgChip(
         modifier
             .defaultMinSize(minWidth = (if (m) 120 else 48).gpx, minHeight = (if (m) 80 else 64).gpx.coerceAtLeast(MinTouch))
             .background(bg, shape)
-            .then(if (selected && enabled) Modifier.border(2.gpx, c.selectionBorder, shape) else Modifier)
+            // 11/9 명준: 고른 칩도 다른 라임 버튼처럼 외곽선 없이
             .semantics { this.selected = selected }
             .clickable(source, indication = null, enabled = enabled, role = Role.Tab, onClick = onClick)
             .padding(horizontal = (if (m) 32 else 24).gpx, vertical = 8.gpx),
