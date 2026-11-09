@@ -1,7 +1,7 @@
 {
   "id": "R33",
-  "title": "두 번 정산한 뒤 도착: R1과 같은 주행, settled_krw = R27 + R32 remain_krw",
-  "note": "정산한 합 17,964.19 + 9,815.69 = 27,779.88(= R32 금액). 남은 36,493.42 − 27,779.88 = 8,713.54 → 한 사람 2,178.38 → 약 2천, 운전자 몫 6,535.15 → 커피",
+  "title": "두 번 정산한 뒤 도착: R1과 같은 주행, settlements = [R27 정산(17:05), R32 정산(17:40)]",
+  "note": "장시간은 65 + 35 + 30분 → 줄 없음, 1.56배·금액 36,270.50(R28과 같음). 정산한 합 17,964.19 + 9,815.69 = 27,779.88(= R32 금액). 남은 36,270.50 − 27,779.88 = 8,490.62 → 한 사람 2,122.66 → 약 2천, 운전자 몫 6,367.97 → 커피",
   "input": {
     "departed_at": "2026-11-17T16:00:00+09:00",
     "arrived_at": "2026-11-17T18:10:00+09:00",
@@ -16,7 +16,16 @@
     "sunset": "17:20",
     "n": 4,
     "distance_km": 104.3,
-    "settled_krw": 27779.88098434004
+    "settlements": [
+      {
+        "at": "2026-11-17T17:05:00+09:00",
+        "remain_krw": 17964.189306487697
+      },
+      {
+        "at": "2026-11-17T17:40:00+09:00",
+        "remain_krw": 9815.691677852345
+      }
+    ]
   },
   "expected": {
     "status": "ok",
@@ -26,16 +35,18 @@
     "drive_min": 130.0,
     "rest_min": 0.0,
     "fatigue_segments_min": [
-      130.0
+      65.0,
+      35.0,
+      30.0
     ],
     "congestion_min": 46.8,
     "delay_min": 25.0,
     "night_min": 50.0,
     "rain_min": 130.0,
     "snow_min": 0.0,
-    "fatigue_excess_min": 10.0,
-    "effort_min": 204.636,
-    "multiplier": 1.57,
+    "fatigue_excess_min": 0.0,
+    "effort_min": 203.386,
+    "multiplier": 1.56,
     "lines": [
       {
         "key": "rain",
@@ -72,31 +83,22 @@
         "pct_text": "+2%",
         "detail_text": "50분",
         "basis_text": "밤에는 낮보다 운전 부담이 4% 커요 · 트럭 운전자 50명 시뮬레이터 연구(Fitri 2025)"
-      },
-      {
-        "key": "fatigue",
-        "label": "장시간",
-        "add_min": 1.25,
-        "pct": 1,
-        "pct_text": "+1%",
-        "detail_text": "2시간 넘긴 10분",
-        "basis_text": "2시간을 넘겨 이어서 운전한 시간에 더해요 · 2시간 운전하면 15분 쉬도록 한 법령 기준(화물자동차 운수사업법 시행규칙)"
       }
     ],
     "notes": [],
     "footnote_text": "정체 구간은 내비 안내 경로 기준",
     "drive_text": "2시간 10분",
-    "multiplier_text": "평소보다 1.57배 힘든 길",
-    "headline_text": "오늘 운전 2시간 10분 · 평소보다 1.57배 힘든 길",
+    "multiplier_text": "평소보다 1.56배 힘든 길",
+    "headline_text": "오늘 운전 2시간 10분 · 평소보다 1.56배 힘든 길",
     "distance_text": "104km",
     "proposal": {
-      "amount_krw": 36493.42,
+      "amount_krw": 36270.503333333334,
       "amount_approx": 36000,
       "amount_text": "약 3만 6천 원",
-      "per_person_krw": 2178.3847539149892,
+      "per_person_krw": 2122.655587248323,
       "per_person_approx": 2000,
       "per_person_text": "약 2천 원",
-      "driver_share_krw": 6535.154261744968,
+      "driver_share_krw": 6367.9667617449695,
       "a": {
         "title_text": "오늘 운전을 챙긴다면",
         "main_text": "한 사람 약 2천 원",
@@ -109,7 +111,7 @@
         "item_examples": []
       },
       "settled_krw": 27779.88098434004,
-      "remain_krw": 8713.539015659957
+      "remain_krw": 8490.622348993293
     }
   }
 }

@@ -449,30 +449,48 @@ def test_midway_design_example():
 
 
 def test_arrival_after_midway_rounds_once():
-    """도착 영수증은 출발~도착 전체(R1 그대로), 제안은 남은 금액(원 단위) ÷ n을 마지막에 한 번만 어림.
-    (36,493.42 − 17,964.19) ÷ 4 = 4,632.31 → 약 5천 원."""
-    settled = fx("R28")["input"]["settled_krw"]
-    assert settled == run("R27").proposal.remain_krw
-    j1, j28 = run("R1").to_json(), run("R28").to_json()
-    j1.pop("proposal")
-    j28.pop("proposal")
-    assert j1 == j28
-    p = run("R28").proposal
-    assert (p.amount_krw, p.amount_text) == (run("R1").proposal.amount_krw, "약 3만 6천 원")
-    assert p.remain_krw == p.amount_krw - settled
+    """도착 영수증은 출발~도착 전체, 제안은 남은 금액(원 단위) ÷ n을 마지막에 한 번만 어림.
+    17:05 정산에서 장시간이 끊겨(65 + 65분) 노고 203.386 → 1.56배, 금액 36,270.50(효성 11/9 예상과 같음).
+    (36,270.50 − 17,964.19) ÷ 4 = 4,576.58 → 약 5천 원."""
+    r27 = run("R27")
+    assert fx("R28")["input"]["settlements"] == [{"at": fx("R27")["input"]["arrived_at"],
+                                                  "remain_krw": r27.proposal.remain_krw}]
+    r = run("R28")
+    assert r.fatigue_segments_min == [65, 65] and r.fatigue_excess_min == 0
+    assert r.effort_min == pytest.approx(203.386, abs=1e-9) and r.multiplier == 1.56
+    assert r.headline_text == "오늘 운전 2시간 10분 · 평소보다 1.56배 힘든 길"
+    assert [l.key for l in r.lines] == ["rain", "congestion", "delay", "night"]   # 장시간 줄 없음
+    j1, j28 = run("R1").to_json(), r.to_json()
+    for k in ("proposal", "fatigue_segments_min", "fatigue_excess_min", "effort_min", "multiplier", "lines",
+              "multiplier_text", "headline_text"):
+        j1.pop(k)
+        j28.pop(k)
+    assert j1 == j28                                                              # 장시간 말고는 R1과 같음
+    assert run("R1").lines[:4] == r.lines
+    p = r.proposal
+    settled = r27.proposal.remain_krw
+    assert p.amount_krw == pytest.approx(36_270.50, abs=0.005) and p.amount_text == "약 3만 6천 원"
+    assert p.settled_krw == settled and p.remain_krw == p.amount_krw - settled
+    assert p.remain_krw == pytest.approx(18_306.31, abs=0.005)
     assert p.per_person_krw == p.remain_krw / 4 and p.per_person_text == "약 5천 원"
-    assert p.per_person_krw == pytest.approx(4_632.31, abs=0.005)
+    assert p.per_person_krw == pytest.approx(4_576.58, abs=0.005)
     assert p.driver_share_krw == p.remain_krw * 3 / 4 and p.b.item == "meal"
     assert p.a.main_text == "한 사람 약 5천 원"
     assert p.a.basis_text == "운전 노고 약 3만 6천 원에서 중간에 챙긴 몫을 뺀 나머지를 운전자 포함 4명이 나눈 값"
 
 
+R1_ARR = "2026-11-17T18:10:00+09:00"
+
+
 def test_no_settlement_input_keeps_output():
-    """settled_krw·midway가 없으면 지금 결과와 완전히 같다(출력에 키도 없음). 0을 넘기면 숫자는 같고 두 키만 생긴다."""
+    """settlements·midway가 없으면(빈 목록도) 지금 결과와 완전히 같다(출력에 키도 없음).
+    도착 시각에 0원을 정산했다고 넘기면 구간이 그대로라 숫자는 같고 두 키만 생긴다."""
     base = run("R1").to_json()
+    assert run("R1", settlements=[]).to_json() == base
+    assert run("R1", settlements=None).to_json() == base
     bp = base.pop("proposal")
     assert "settled_krw" not in bp and "remain_krw" not in bp
-    zero = run("R1", settled_krw=0).to_json()
+    zero = run("R1", settlements=[{"at": R1_ARR, "remain_krw": 0}]).to_json()
     zp = zero.pop("proposal")
     assert zero == base
     assert (zp.pop("settled_krw"), zp.pop("remain_krw")) == (0.0, bp["amount_krw"])
@@ -480,7 +498,7 @@ def test_no_settlement_input_keeps_output():
 
 
 def test_settled_over_amount_never_negative():
-    p = run("R1", settled_krw=50_000).proposal
+    p = run("R1", settlements=[{"at": R1_ARR, "remain_krw": 50_000}]).proposal
     assert (p.remain_krw, p.per_person_krw, p.per_person_text, p.b) == (0.0, 0.0, "1천 원 미만", None)
 
 
@@ -494,22 +512,72 @@ def test_remaining_share_picks_b_again(fid, item):
 
 
 def test_remaining_boundary_changes_item():
-    assert run("R29", settled_krw=None).proposal.b.item == "meal"   # 정산 없이는 운전자 몫 10,700 → 밥
+    assert run("R29", settlements=None).proposal.b.item == "meal"   # 정산 없이는 운전자 몫 10,700 → 밥
     assert run("R29").proposal.driver_share_krw == 2_350            # 남은 4,700 → 2,350 = 경계 '이상' → 커피
     assert run("R30").proposal.driver_share_krw == 2_349.5
     assert run("R31").proposal.remain_krw == 0.0
 
 
 def test_two_settlements_sum():
-    """정산할 때마다 remain_krw를 더한다. 두 번 정산하면 합 = 두 번째 중간 정산 금액."""
+    """정산할 때마다 settlements에 {at, remain_krw}를 쌓고 엔진이 합한다. 두 번 정산하면 합 = 두 번째 중간 정산 금액."""
     s1 = run("R27").proposal.remain_krw
     s2 = run("R32").proposal.remain_krw
-    assert fx("R32")["input"]["settled_krw"] == s1
-    assert fx("R33")["input"]["settled_krw"] == s1 + s2
+    assert fx("R32")["input"]["settlements"] == [{"at": "2026-11-17T17:05:00+09:00", "remain_krw": s1}]
+    assert fx("R33")["input"]["settlements"] == [{"at": "2026-11-17T17:05:00+09:00", "remain_krw": s1},
+                                                 {"at": "2026-11-17T17:40:00+09:00", "remain_krw": s2}]
+    assert run("R32").proposal.settled_krw == s1
+    assert run("R33").proposal.settled_krw == s1 + s2
     assert s1 + s2 == pytest.approx(run("R32").proposal.amount_krw)
-    p = run("R33").proposal
+    r = run("R33")
+    assert r.fatigue_segments_min == [65, 35, 30] and r.multiplier == 1.56
+    p = r.proposal
+    assert p.amount_krw == run("R28").proposal.amount_krw
     assert p.remain_krw == p.amount_krw - (s1 + s2)
     assert (p.per_person_text, p.b.item) == ("약 2천 원", "coffee")
+
+
+# ---------------------------------------------------------------- 1부: 중간 정산 시각에서 장시간 끊기 (효성 11/9, #97 뒤)
+def test_settlement_cuts_fatigue_instead_of_rest_split():
+    """R34(정산 없음, 답 30분) → 가운데에서 105 + 105. R35(같은 주행 + 11:00 정산) → 정산 시각에서만 끊고
+    구간 = 벽시계 × (T ÷ E): 60 × 210/240 = 52.5, 180 × 210/240 = 157.5 → 장시간 37.5분."""
+    r34, r35 = run("R34"), run("R35")
+    assert (r34.drive_min, r35.drive_min) == (210, 210)                        # Q는 두 경우 모두 T에서 뺌
+    assert r34.fatigue_segments_min == [105, 105] and r34.fatigue_excess_min == 0
+    assert r35.fatigue_segments_min == [52.5, 157.5] and r35.fatigue_excess_min == 37.5
+    assert [(l.key, l.pct_text, l.detail_text) for l in r35.lines] == [("fatigue", "+2%", "2시간 넘긴 38분")]
+    assert r35.multiplier == 1.02 and r34.multiplier == 1.0
+
+
+def test_late_settlement_only_front_segment():
+    """R36: 12:30 정산이 늦어 앞 구간 150분만 120분을 넘김 → 장시간 30분. 끊지 않으면 210분 한 구간(90분)."""
+    r = run("R36")
+    assert r.fatigue_segments_min == [150, 60] and r.fatigue_excess_min == 30
+    assert run("R36", settlements=None).fatigue_excess_min == 90
+    assert r.lines[-1].detail_text == "2시간 넘긴 30분"
+
+
+@pytest.mark.parametrize("fid,segments,excess", [("R32", [65, 35], 0), ("R37", [60, 150], 30)])
+def test_midway_cut_by_earlier_settlements(fid, segments, excess):
+    """중간 정산 영수증도 그 앞의 정산 시각들로 끊는다(R32: 17:05, R37: 11:00)."""
+    r = run(fid)
+    assert r.fatigue_segments_min == segments and r.fatigue_excess_min == excess
+    assert run(fid, settlements=None).fatigue_segments_min == [sum(segments)]
+
+
+def test_settlement_times_sorted_and_clipped():
+    """정산 시각은 시각 순으로 보고 [출발, 도착]으로 자른다. 길이 0인 구간은 넣지 않는다. 합은 넘긴 순서대로 더한다."""
+    st = fx("R33")["input"]["settlements"]
+    assert run("R33", settlements=st[::-1]).fatigue_segments_min == [65, 35, 30]
+    out = [{"at": "2026-11-17T15:00:00+09:00", "remain_krw": 0}, {"at": "2026-11-17T19:00:00+09:00", "remain_krw": 0}]
+    assert run("R1", settlements=out).fatigue_segments_min == [130]             # 출발 전·도착 뒤 → 길이 0
+    dup = [st[0], dict(st[0], remain_krw=0)]
+    assert run("R1", settlements=dup).fatigue_segments_min == [65, 65]          # 같은 시각 두 번 → 한 번 끊김
+
+
+def test_settlement_with_rest_answer_keeps_drive():
+    """중간 정산이 있어도 T = 경과 − Q(답 그대로). 정산 시각이 하나도 [출발, 도착] 안에 없어도 가운데 끊기는 하지 않는다."""
+    r = run("R34", settlements=[{"at": "2026-11-17T14:00:00+09:00", "remain_krw": 0}])
+    assert r.drive_min == 210 and r.fatigue_segments_min == [210] and r.fatigue_excess_min == 90
 
 
 def test_midway_arrival_cap_uses_departure_eta():
@@ -549,6 +617,24 @@ def test_demo_is_r1_scene():
     assert DEMO["input"]["distance_km"] * 1000 == sc["route_m"]
 
 
+def test_demo_midway_scene():
+    """시연 데이터 중간 정산 장면(효성 11/9): 휴게소 17:05·남은 52.3km → R27 영수증, [좋아요]로 정산 뒤 18:10 도착 → R28."""
+    m, a = DEMO["midway"], DEMO["midway_arrival"]
+    assert (m["input"], m["expected"]) == (fx("R27")["input"], fx("R27")["expected"])
+    assert (a["input"], a["expected"]) == (fx("R28")["input"], fx("R28")["expected"])
+    assert m["at"] == m["input"]["arrived_at"] == "2026-11-17T17:05:00+09:00"
+    assert m["remain_m"] == m["input"]["midway"]["remain_m"] == 52_300
+    assert m["input"]["midway"]["route_m"] == DEMO["scene"]["route_m"]
+    # 정산 뒤 도착 입력 = 시연 입력(R1) + settlements 한 줄 {정산 시각, 중간 정산 영수증의 remain_krw}
+    assert a["input"] == dict(DEMO["input"], settlements=[{"at": m["at"],
+                                                           "remain_krw": m["expected"]["proposal"]["remain_krw"]}])
+    assert EF.effort(EF.input_from_json(m["input"]), C).to_json() == m["expected"]
+    assert EF.effort(EF.input_from_json(a["input"]), C).to_json() == a["expected"]
+    assert m["expected"]["headline_text"] == "오늘 운전 1시간 5분 · 평소보다 1.55배 힘든 길"
+    assert a["expected"]["headline_text"] == "오늘 운전 2시간 10분 · 평소보다 1.56배 힘든 길"
+    assert a["expected"]["proposal"]["a"]["main_text"] == "한 사람 약 5천 원"
+
+
 def test_demo_fixture():
     i = DEMO["input"]
     assert EF.effort(EF.input_from_json(i), C).to_json() == DEMO["expected"]
@@ -575,6 +661,7 @@ def test_effort_fixture_ids():
     assert {1, 3} | set(range(5, 16)) <= ids
     assert set(range(22, 27)) <= ids
     assert set(range(27, 34)) <= ids   # 중간 정산(Q-08-02)
+    assert set(range(34, 38)) <= ids   # 중간 정산 시각에서 장시간 끊기(효성 11/9)
 
 
 @pytest.mark.parametrize("p", EFFORT, ids=lambda p: p.stem)
