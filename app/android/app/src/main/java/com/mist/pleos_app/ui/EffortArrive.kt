@@ -244,7 +244,8 @@ private fun OfferCard(ui: EffortUi, trip: OpenTrip, narrow: Boolean, onPick: (St
     val why = if (narrow) t.labelM else t.bodyM
     val btn = if (narrow) CgSize.M else CgSize.L
     val close: @Composable (Boolean) -> Unit = { filled ->
-        CgButton(stringResource(R.string.close), onClose, Modifier.fillMaxWidth(), kind = if (filled) CgButtonKind.Filled else CgButtonKind.Basic, size = btn)
+        // 정리하지 못함은 [홈으로](명세 F22·시안 arrive-unsettled), 그 밖은 [닫기]
+        CgButton(stringResource(if (ui.unsettled) R.string.effort_home else R.string.close), onClose, Modifier.fillMaxWidth(), kind = if (filled) CgButtonKind.Filled else CgButtonKind.Basic, size = btn)
     }
     CgOfferCard(modifier, compact = narrow) {
         val done = ui.done
