@@ -114,8 +114,9 @@ fun EffortApp(
     LaunchedEffect(shown, driving, settings.ambientLight) {
         if (!driving && settings.ambientLight) vm.ambient?.acquire(AMBIENT_APP)
     }
-    // 인원 확인 알림(PR #34·#40 재사용): 출발 화면에서 2명 이상 + 지난번 확인값과 다르면(노고 PRD v1.3 8장)
-    val askPayers = remember(seats, payer, screen) { screen == EffortScreen.DEPART && vm.shouldAskPayers(seats) }
+    // 인원 확인 알림(June 11/9): 평소 · 시연 모두 출발 화면에 들어올 때마다 바로(좌석 센서 감지 인원, 못 읽으면 직접 고르기)
+    val askEnter by vm.askPayersOnEnter.collectAsStateWithLifecycle()
+    val askPayers = screen == EffortScreen.DEPART && askEnter
     // 앱 시작 화면(Design v2 home app-splash, 1.6초) — 처음 켤 때 한 번
     var splash by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(true) }
     EffortFrame(demoValues = ui.demo, driving = driving) {

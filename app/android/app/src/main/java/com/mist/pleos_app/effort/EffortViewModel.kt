@@ -254,6 +254,7 @@ class EffortViewModel(app: Application, private val saved: SavedStateHandle) : A
         settleIncluded = false
         open(EffortScreen.DEPART)
         departFlow.value = DepartUi()
+        askFlow.value = true
         here = null; weatherDep = null
         // 시연: 화면 · 기능은 같고 최근 목적지는 앱 안 시연 목록(내비 · 위치 · 날씨를 부르지 않음)
         if (source.demo) { demoScene?.let { s -> departFlow.update { it.copy(naviOptions = demoRecents(s)) } }; return }
@@ -579,16 +580,21 @@ class EffortViewModel(app: Application, private val saved: SavedStateHandle) : A
     private val payerFlow = MutableStateFlow(payers.state)
     val payerState: StateFlow<PayerState> = payerFlow.asStateFlow()
 
-    fun shouldAskPayers(seats: Int): Boolean = payers.shouldAsk(seats)
+    /**
+     * 인원 확인 알림(June 11/9): 평소 · 시연 모두 출발 화면에 들어올 때마다 좌석 센서 감지 인원으로 바로 띄운다.
+     * 센서를 못 읽으면(0명) "몇 명이 함께 타나요?". [확인] · [닫기]로 내리고, 다시 들어오면 또 뜬다.
+     */
+    private val askFlow = MutableStateFlow(false)
+    val askPayersOnEnter: StateFlow<Boolean> = askFlow.asStateFlow()
     fun payersFor(seats: Int): Int = payers.payersFor(seats)
 
     fun confirmPayers(seats: Int, n: Int) {
-        payers.confirm(seats, n); payerFlow.value = payers.state
+        payers.confirm(seats, n); payerFlow.value = payers.state; askFlow.value = false
         ChagokLog.event("payers_confirm", "seats" to seats, "payers" to payers.state.payers)
     }
 
     fun dismissPayers(seats: Int) {
-        payers.dismiss(seats); payerFlow.value = payers.state
+        payers.dismiss(seats); payerFlow.value = payers.state; askFlow.value = false
         ChagokLog.event("payers_dismiss", "seats" to seats)
     }
 

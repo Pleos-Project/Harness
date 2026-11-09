@@ -335,7 +335,7 @@ fun CgSearchField(query: String, hint: String, clearLabel: String, onQuery: (Str
 // ------------------------------------------------------------ dest-card · record-card · preview-panel
 /** 목적지 카드(`components/dest-card`): 바깥 자리 면 8 + 안쪽 카드. 고르면 바깥이 진해진다. */
 @Composable
-fun CgDestCard(tag: String, name: String, meta: String?, selected: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier, compact: Boolean = false) {
+fun CgDestCard(tag: String, name: String, meta: String?, selected: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier, compact: Boolean = false, icon: CgIcon? = null) {
     val c = Chagok.colors
     val src = remember { MutableInteractionSource() }
     val pressed by src.collectIsPressedAsState()
@@ -352,7 +352,7 @@ fun CgDestCard(tag: String, name: String, meta: String?, selected: Boolean, onCl
             verticalArrangement = Arrangement.spacedBy(6.gpx),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.gpx)) {
-                val tagIcon = when { tag.contains("집") -> CgIcon.House; tag.contains("회사") -> CgIcon.Briefcase; else -> CgIcon.Recent }
+                val tagIcon = icon ?: when { tag.contains("집") -> CgIcon.House; tag.contains("회사") -> CgIcon.Briefcase; else -> CgIcon.Recent }
                 CgIconMark(tagIcon, 28.gpx, if (selected) c.selectionForeground else c.textTertiary)
                 Text(tag, style = Chagok.type.bodyS.copy(fontWeight = FontWeight.Normal), color = if (selected) c.selectionForeground else c.textTertiary, maxLines = 1)
             }
