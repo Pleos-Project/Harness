@@ -12,6 +12,7 @@ import java.util.Locale
 
 /** 목록 줄 "2시간 10분 · 평소보다 1.57배 · 함께 4명"(배수 1.00은 엔진 문구 multiplier_same_text, 예전 기록은 인원 없음). */
 fun recordLogLine(r: EffortRecord, c: EffortConstants?): String {
+    if (r.choice == CHOICE_UNSETTLED) return listOfNotNull(UNSETTLED_LABEL, r.n?.let { "함께 ${it}명" }).joinToString(" · ")
     val m100 = roundHalfUp(r.multiplier * 100)
     val mult = if (m100 == 100) c?.copy?.text?.get("multiplier_same_text") ?: "1.00배"
     else String.format(Locale.ROOT, "평소보다 %d.%02d배", m100 / 100, m100 % 100)
@@ -22,4 +23,8 @@ fun recordLogLine(r: EffortRecord, c: EffortConstants?): String {
  * 기록 상세의 그날 영수증. 기록에 남긴 엔진 입력(좌표 없는 출발 기록)을 지금 상수로 다시 계산한다.
  * 이 기능 전에 남긴 기록은 입력이 없어 null(상세는 요약만).
  */
-fun recordReceiptOf(r: EffortRecord, c: EffortConstants?): EffortReceipt? = r.trip?.let { receiptOf(it, c) }
+fun recordReceiptOf(r: EffortRecord, c: EffortConstants?): EffortReceipt? =
+    if (r.choice == CHOICE_UNSETTLED) null else r.trip?.let { receiptOf(it, c) }
+
+/** 정리하지 못한 주행의 목록·카드 표기(명준 #75 11/9: 목록과 상세에 "정리하지 못함"). */
+const val UNSETTLED_LABEL = "정리하지 못함"

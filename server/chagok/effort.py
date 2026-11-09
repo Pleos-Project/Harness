@@ -53,6 +53,7 @@ class EffortConstants:
     wage_label: str                      # 단가 출처 표기("최저임금")
     items: tuple[Item, ...]              # 방식 B 항목, 1인분 가격 오름차순
     copy: "Copy"                          # 화면 문구(effort.copy) — 임시, 디자인 확정 대기
+    wage_year: int | None = None         # 시급 기준 연도(표기용, 계산에 안 씀). 보여 줄지는 앱·디자인(#82·#86)
 
 
 @dataclass(frozen=True)
@@ -101,6 +102,7 @@ def effort_constants(const: dict) -> EffortConstants:
         wage_label=e["wage_label"],
         items=tuple(items),
         copy=copy_from_json(e["copy"]),
+        wage_year=e.get("wage_year"),
     )
 
 

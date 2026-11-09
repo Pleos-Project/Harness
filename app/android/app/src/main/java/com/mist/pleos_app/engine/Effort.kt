@@ -65,6 +65,7 @@ data class EffortConstants(
     val wageLabel: String,                  // 단가 출처 표기
     val items: List<EffortItem>,            // 방식 B 항목, 1인분 가격 오름차순
     val copy: EffortCopy,                   // 화면 문구(effort.copy) — 임시, 디자인 확정 대기
+    val wageYear: Int? = null,              // 시급 기준 연도(표기용, 계산에 안 씀). 보여 줄지는 앱·디자인(#82·#86)
 )
 
 /** 화면 문구는 모두 constants.json effort.copy에 둔다(명준 #60: 디자인이 확정해 넘겨줌). 엔진은 {…}만 채운다. */
@@ -121,6 +122,7 @@ fun parseEffortConstants(text: String): EffortConstants {
             EffortItem(i.str("key"), i.str("label"), i.dbl("price_krw"), i.str("phrase_text"), i.strList("examples"), i.str("source"))
         }.sortedBy { it.priceKrw },
         copy = parseEffortCopy(e.getValue("copy").jsonObject),
+        wageYear = e.integerOrNull("wage_year"),
     )
 }
 
