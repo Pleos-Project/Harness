@@ -54,6 +54,7 @@
       "a_title_text": "오늘 운전을 챙긴다면",
       "a_main_text": "한 사람 {per_person}",
       "a_basis_text": "운전 노고 {amount}을 운전자 포함 {n}명이 나눈 값",
+      "a_basis_remain_text": "운전 노고 {amount}에서 중간에 챙긴 몫을 뺀 나머지를 운전자 포함 {n}명이 나눈 값",
       "a_wage_text": "{wage_label} 1분 {wage_per_min}원 기준",
       "b_text": "오늘은 {phrase}에서 운전자 빼고 나누는 게 어때요",
       "unsettled_text": "이번 주행은 정리하지 못했어요"

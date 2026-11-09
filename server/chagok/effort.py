@@ -121,6 +121,14 @@ class WeatherTrip:
 
 
 @dataclass(frozen=True)
+class Midway:
+    """중간 정산(명준 Q-08-02, 효성 계산 규칙 11/9). 가는 중 '출발~지금'을 도착과 같은 영수증으로 센다.
+    앱은 arrived_at에 지금을 넣고 아래 두 값을 그대로 넘긴다. 지금까지 거리 = route_m − remain_m은 엔진이 만든다."""
+    route_m: float     # 출발 때 경로 거리(requestTrip)
+    remain_m: float    # 지금 내비 남은 거리(remainDistance)
+
+
+@dataclass(frozen=True)
 class EffortInput:
     departed_at: str                     # ISO 8601 + 오프셋
     arrived_at: str
@@ -139,6 +147,12 @@ class EffortInput:
     distance_km: float | None = None        # 표시만(누적 주행거리 Δ, 못 읽으면 route_m ÷ 1000)
     # 시간대별 강수(#63, GET /v1/weather/trip). 없거나 겹친 조각이 모두 unknown이면 weather_dep·weather_arr 절반씩
     weather_trip: WeatherTrip | None = None
+    # 중간 정산(Q-08-02). 있으면 '출발~지금(arrived_at)'을 센다: 예상보다 더의 기준 ETA = ETA × 지금까지 거리 ÷ 경로 거리,
+    # 정체 km = 비율 × 지금까지 거리, 거리 표시 = 지금까지 거리(distance_km는 안 씀). 나머지 줄은 도착과 같은 규칙
+    midway: Midway | None = None
+    # 앞서 정산한 금액의 원 단위 합(어림 전). 정산할 때마다 그 영수증의 proposal.remain_krw를 더한다.
+    # 있으면 제안(1인 몫·운전자 몫·B 항목)은 남은 금액 = 금액 − 이 값으로 한다. 영수증 줄·금액은 그대로
+    settled_krw: float | None = None
 
 
 @dataclass
@@ -171,15 +185,18 @@ class ScreenB:
 
 @dataclass
 class Proposal:
-    amount_krw: float            # 노고 금액(어림 전)
+    amount_krw: float            # 노고 금액(어림 전). 중간 정산 뒤 도착이어도 출발~도착 전체
     amount_approx: int
     amount_text: str             # "약 3만 6천 원"
-    per_person_krw: float        # 동승자 1인 몫 = 금액 ÷ n (어림 전 총액을 나눔)
+    per_person_krw: float        # 동승자 1인 몫 = 남은 금액 ÷ n (어림 전을 나눔. 정산 입력이 없으면 남은 금액 = 금액)
     per_person_approx: int
     per_person_text: str         # "약 9천 원"
-    driver_share_krw: float      # 운전자 몫 G = 금액 × (n − 1) ÷ n
+    driver_share_krw: float      # 운전자 몫 G = 남은 금액 × (n − 1) ÷ n
     a: ScreenA
     b: ScreenB | None            # None = 방식 B 제안 없음(영수증만)
+    # 중간 정산(Q-08-02). 입력에 midway·settled_krw가 둘 다 없으면 None이고 JSON에도 키를 쓰지 않는다
+    settled_krw: float | None = None   # 앞서 정산한 원 단위 합(입력 그대로, 중간 정산이 처음이면 0)
+    remain_krw: float | None = None    # 남은 금액 = max(0, 금액 − settled_krw), 어림 전. 이번에 정산하면 이 값을 기록에 더함
 
 
 @dataclass
@@ -209,7 +226,11 @@ class Receipt:
     proposal: Proposal | None        # n = 1이면 None(영수증만)
 
     def to_json(self) -> dict:
-        return asdict(self)
+        d = asdict(self)
+        p = d["proposal"]
+        if p is not None and p["settled_krw"] is None:   # 정산 입력이 없으면 키도 없음(Kotlin toJson과 같음)
+            del p["settled_krw"], p["remain_krw"]
+        return d
 
 
 def input_from_json(d: dict) -> EffortInput:
@@ -221,6 +242,8 @@ def input_from_json(d: dict) -> EffortInput:
         rest_answer_min=int(d.get("rest_answer_min") or 0), congestion_ratio=d.get("congestion_ratio"),
         congestion_m=d.get("congestion_m"), congestion_s=d.get("congestion_s"), distance_km=d.get("distance_km"),
         weather_trip=weather_trip_from_json(d.get("weather_trip")),
+        midway=Midway(float(d["midway"]["route_m"]), float(d["midway"]["remain_m"])) if d.get("midway") else None,
+        settled_krw=float(d["settled_krw"]) if d.get("settled_krw") is not None else None,
     )
 
 
@@ -432,7 +455,17 @@ def effort(inp: EffortInput, c: EffortConstants) -> Receipt:
         congestion = max(0.0, min(float(inp.congestion_ratio) * drive, drive))
     else:
         congestion = 0.0
-    eta = float(inp.eta_s)
+    eta = float(inp.eta_s)   # 예상보다 더의 기준 ETA
+    congestion_m = inp.congestion_m
+    distance_m = inp.distance_km * 1000 if inp.distance_km is not None else None
+    if inp.midway is not None:
+        # 중간 정산(Q-08-02): 지금까지 거리 = 경로 거리 − 내비 남은 거리(0~경로 거리로 자름).
+        # 도착 상한(#68)은 위에서 출발 때 ETA 그대로 봤다(효성 11/9). 경로 거리를 모르면 예상보다 더는 0
+        route = float(inp.midway.route_m)
+        so_far = max(0.0, min(route, route - float(inp.midway.remain_m)))
+        eta = eta * so_far / route if route > 0 else 0.0
+        congestion_m = float(inp.congestion_ratio) * so_far if inp.congestion_ratio is not None else None
+        distance_m = so_far
     delay = max(0.0, drive - eta) if eta > 0 else 0.0
     if delay * 100 < c.delay_threshold_pct * eta:
         delay = 0.0
@@ -476,7 +509,7 @@ def effort(inp: EffortInput, c: EffortConstants) -> Receipt:
             if k == "rain" or k == "snow":
                 detail = weather_detail(k, rain_whole if k == "rain" else snow_whole, c)
             elif k == "congestion":
-                detail = congestion_text(inp.congestion_m, inp.congestion_ratio, c)
+                detail = congestion_text(congestion_m, inp.congestion_ratio, c)
             elif k == "delay":
                 detail = time_detail("delay_text", delay, c)
             elif k == "night":
@@ -494,6 +527,8 @@ def effort(inp: EffortInput, c: EffortConstants) -> Receipt:
 
     dt = drive_text(drive)
     mt = multiplier_text(m100, c)
+    # 정산 입력: 앞서 정산한 합이 있으면 그 값, 처음 하는 중간 정산이면 0, 둘 다 아니면 None(지금과 같은 출력)
+    settled = inp.settled_krw if inp.settled_krw is not None else (0.0 if inp.midway is not None else None)
     return Receipt(
         status="ok", status_text=None, elapsed_limit_min=limit / 60,
         elapsed_min=elapsed / 60, drive_min=drive / 60, rest_min=(elapsed - drive) / 60,
@@ -503,20 +538,25 @@ def effort(inp: EffortInput, c: EffortConstants) -> Receipt:
         effort_min=total / 6000, multiplier=m100 / 100, lines=lines, notes=notes,
         footnote_text=c.copy.text["footnote_congestion_text"] if any(l.key == "congestion" for l in lines) else None,
         drive_text=dt, multiplier_text=mt, headline_text=fill(c.copy.text["headline_text"], drive=dt, multiplier=mt),
-        distance_text=km_text(inp.distance_km * 1000) if inp.distance_km is not None else None,   # 0km 대신 "1km 미만"
-        proposal=proposal(total, inp.n, c) if inp.n >= 2 else None,
+        distance_text=km_text(distance_m) if distance_m is not None else None,   # 0km 대신 "1km 미만"
+        proposal=proposal(total, inp.n, c, settled) if inp.n >= 2 else None,
     )
 
 
-def proposal(effort_pct_s: float, n: int, c: EffortConstants) -> Proposal:
-    """F24 금액(방식 A)과 F25 한 번 빼 주기(방식 B). 같은 노고 금액을 보여 주는 방식만 다르고, 두 화면은 따로다."""
+def proposal(effort_pct_s: float, n: int, c: EffortConstants, settled_krw: float | None = None) -> Proposal:
+    """F24 금액(방식 A)과 F25 한 번 빼 주기(방식 B). 같은 노고 금액을 보여 주는 방식만 다르고, 두 화면은 따로다.
+    중간 정산(Q-08-02, 효성 11/9): 앞서 정산한 원 단위 합을 뺀 남은 금액(어림 전)으로 1인 몫·운전자 몫·B 항목을 정하고,
+    천 원 어림은 마지막에 한 번만 한다. 어림한 값끼리 빼지 않는다."""
     amount = effort_pct_s * c.wage_per_hour / 360_000
-    per = amount / n
-    share = amount * (n - 1) / n
+    remain = max(0.0, amount - settled_krw) if settled_krw is not None else amount
+    per = remain / n
+    share = remain * (n - 1) / n
     a_v, a_t = approx_text(amount)
     p_v, p_t = approx_text(per)
-    item = b_item(share, c.items)
+    item = b_item(share, c.items)   # 남은 몫이 0이거나 커피 1인분 절반보다 작으면 None(제안 없음)
     t = c.copy.text
+    # 앞서 정산한 몫이 있으면 근거도 '뺀 나머지'(임시 문구, 명준 확정 대기)
+    basis = t["a_basis_remain_text"] if settled_krw is not None and settled_krw > 0 else t["a_basis_text"]
     return Proposal(
         amount_krw=amount, amount_approx=a_v, amount_text=a_t,
         per_person_krw=per, per_person_approx=p_v, per_person_text=p_t,
@@ -524,12 +564,14 @@ def proposal(effort_pct_s: float, n: int, c: EffortConstants) -> Proposal:
         a=ScreenA(
             title_text=t["a_title_text"],
             main_text=fill(t["a_main_text"], per_person=p_t),
-            basis_text=fill(t["a_basis_text"], amount=a_t, n=str(n)),
+            basis_text=fill(basis, amount=a_t, n=str(n)),
             wage_text=fill(t["a_wage_text"], wage_label=c.wage_label,
                            wage_per_min=str(round_half_up(c.wage_per_hour / 60))),
         ),
         b=ScreenB(item.key, fill(t["b_text"], phrase=item.phrase_text), list(item.examples))
         if item else None,
+        settled_krw=settled_krw,
+        remain_krw=remain if settled_krw is not None else None,
     )
 
 
