@@ -61,6 +61,9 @@ import com.mist.pleos_app.ui.components.CgSize
 import com.mist.pleos_app.ui.components.CgTitleBar
 import com.mist.pleos_app.ui.theme.Chagok
 import com.mist.pleos_app.ui.theme.gpx
+import androidx.compose.ui.text.TextStyle
+import com.mist.pleos_app.ui.theme.gsp
+import com.mist.pleos_app.effort.basisFirst
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -108,15 +111,7 @@ internal fun EffortArriveScreen(ui: EffortUi, onRest: (Int) -> Unit, onPick: (St
 
     Box(Modifier.fillMaxSize()) {
         Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(if (narrow) 16.gpx else 24.gpx)) {
-            CgTitleBar(
-                stringResource(R.string.effort_arrive_title, trip.destName), compact = narrow,
-                trailing = if (narrow) null else ({
-                    Text(
-                        if (trip.n >= 2) stringResource(R.string.effort_arrive_people, trip.n) else stringResource(R.string.effort_arrive_solo),
-                        style = Chagok.type.labelM, color = Chagok.colors.textTertiary,
-                    )
-                }),
-            )
+            // v3 5-5: 위 제목 줄("○○에 도착했어요" · 인원)은 없앰. 인원은 영수증 머리 아래 줄로
             val receipt: @Composable (Modifier) -> Unit = { m ->
                 if (!ui.unsettled) ReceiptColumn(
                     trip, r, ui, narrow, reduce, paperShift = paper.value, open = open,
@@ -184,22 +179,29 @@ internal fun ReceiptColumn(
     }
     val hi = { k: String -> if (k in changed) flash.value else 0f }
     CgReceipt(modifier, compact = narrow, shift = paperShift, fill = !narrow, scroll = !narrow) {
-        Text(stringResource(if (midwaySub != null) R.string.effort_mid_receipt_title else R.string.effort_receipt_title), Modifier.fillMaxWidth(), style = if (narrow) t.titleS else t.titleL, color = c.textPrimary, textAlign = TextAlign.Center)
-        if (!narrow) Text(
-            midwaySub ?: stringResource(R.string.effort_receipt_sub, trip.destName, dayText(trip.departedAt)), Modifier.fillMaxWidth(),
-            style = t.bodyM, color = c.textTertiary, textAlign = TextAlign.Center,
+        // v3 5-5: 머리 700 42/54(분할 34/44) · 아래 줄 "장소 · 날짜 · n명"(혼자면 "혼자") 400 30/38
+        Text(
+            stringResource(if (midwaySub != null) R.string.effort_mid_receipt_title else R.string.effort_receipt_title), Modifier.fillMaxWidth(),
+            style = TextStyle(fontSize = (if (narrow) 34 else 42).gsp, lineHeight = (if (narrow) 44 else 54).gsp, fontWeight = FontWeight.Bold),
+            color = c.textPrimary, textAlign = TextAlign.Center,
+        )
+        Text(
+            midwaySub ?: if (trip.n >= 2) stringResource(R.string.effort_receipt_sub_people, trip.destName, dayText(trip.departedAt), trip.n)
+            else stringResource(R.string.effort_receipt_sub_solo, trip.destName, dayText(trip.departedAt)),
+            Modifier.fillMaxWidth().padding(top = if (narrow) 4.gpx else 8.gpx),
+            style = if (narrow) t.labelM else TextStyle(fontSize = 30.gsp, lineHeight = 38.gsp), color = c.textTertiary, textAlign = TextAlign.Center,
         )
         CgDoubleRule(Modifier.padding(top = if (narrow) 8.gpx else 24.gpx, bottom = if (narrow) 4.gpx else 16.gpx))
-        if (!narrow) Row(Modifier.fillMaxWidth().padding(top = 4.gpx, bottom = 10.gpx)) {
-            Text(stringResource(R.string.effort_receipt_col_item), Modifier.weight(1f), style = t.bodyL, color = c.textPrimary)
-            Text(stringResource(R.string.effort_receipt_col_add), style = t.bodyL.copy(fontWeight = FontWeight.Normal), color = c.textSecondary)
+        if (!narrow) Row(Modifier.fillMaxWidth().padding(top = 4.gpx, bottom = 12.gpx)) {
+            Text(stringResource(R.string.effort_receipt_col_item), Modifier.weight(1f), style = TextStyle(fontSize = 32.gsp, lineHeight = 40.gsp, fontWeight = FontWeight.Bold), color = c.textPrimary)
+            Text(stringResource(R.string.effort_receipt_col_add), style = TextStyle(fontSize = 32.gsp, lineHeight = 40.gsp), color = c.textSecondary)
         }
         if (r.lines.isEmpty() && r.notes.isEmpty()) {
             Text(stringResource(R.string.effort_receipt_plain), Modifier.padding(vertical = 14.gpx), style = if (narrow) t.bodyM else t.bodyL.copy(fontWeight = FontWeight.Normal), color = c.textTertiary)
         }
         r.lines.forEach { line ->
             CgReceiptRow(
-                line.label, line.detailText.orEmpty(), line.pctText, line.basisText, expanded = open == line.key,
+                line.label, line.detailText.orEmpty(), line.pctText, basisFirst(line.basisText), expanded = open == line.key,
                 onClick = { onToggle(line.key) }, compact = narrow,
                 extra = if (line.key == "congestion") r.footnoteText else null, hi = hi(line.key),
             )
@@ -212,9 +214,11 @@ internal fun ReceiptColumn(
         CgDashedRule(Modifier.padding(top = if (narrow) 4.gpx else 20.gpx, bottom = if (narrow) 4.gpx else 18.gpx))
         CgReceiptSum(stringResource(R.string.effort_receipt_drive), r.driveText, compact = narrow, hi = hi("drive"))
         val restLabel = ui.restAnswers.firstOrNull { it.first == (trip.restAnswerMin ?: 0) }?.second ?: ""
-        if (midwaySub == null) CgReceiptSum(stringResource(R.string.effort_receipt_rest), restLabel, compact = narrow, hi = hi("rest")) {
-            if (editable && ui.done == null) CgButton(stringResource(R.string.effort_receipt_rest_change), onChangeRest, kind = CgButtonKind.Basic, size = CgSize.S)
-        }
+        // v3 5-5: [바꾸기] 버튼 대신 값을 누르면 쉰 시간 시트가 다시 열림
+        if (midwaySub == null) CgReceiptSum(
+            stringResource(R.string.effort_receipt_rest), restLabel, compact = narrow, hi = hi("rest"),
+            onValue = if (editable && ui.done == null) onChangeRest else null, valueLabel = stringResource(R.string.effort_receipt_rest_change_label),
+        )
         r.distanceText?.let { CgReceiptSum(stringResource(R.string.effort_receipt_distance), it, compact = narrow) }
         CgReceiptSum(stringResource(R.string.effort_receipt_total), r.multiplierText, compact = narrow, total = true, hi = hi("total"))
         if (!narrow && open == null) CgBarcode(receiptCode(trip, r), Modifier.padding(top = 22.gpx))
