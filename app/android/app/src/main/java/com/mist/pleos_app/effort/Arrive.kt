@@ -4,6 +4,7 @@ import com.mist.pleos_app.engine.EffortConstants
 import com.mist.pleos_app.engine.EffortInput
 import com.mist.pleos_app.engine.EffortReceipt
 import com.mist.pleos_app.engine.effort
+import com.mist.pleos_app.engine.epochS
 import com.mist.pleos_app.engine.parseHhmm
 
 /**
@@ -67,8 +68,17 @@ enum class ArrivalCue {
  * 다시 열었을 때 "안내 안 함"을 도착으로 읽으면 출발 직후 영수증이 뜬다(에뮬 오프라인 11/8).
  * 이때는 보이는 동안 문이 실제로 열리는 순간만 도착으로 본다. 그 밖에는 홈 [도착했어요](#68)로 직접.
  */
-fun autoArrivalAllowed(trip: OpenTrip, cue: ArrivalCue): Boolean =
-    trip.demo || trip.etaS > 0 || cue == ArrivalCue.DOOR
+fun autoArrivalAllowed(trip: OpenTrip, cue: ArrivalCue, nowIso: String? = null): Boolean {
+    if (trip.demo || cue == ArrivalCue.DOOR) return true
+    if (trip.etaS <= 0) return false
+    // 출발 직후 다시 열면 내비가 아직 안내를 시작하기 전이라 "남은 거리 0 · 안내 안 함"으로 답한다(에뮬 11/9 실측: 경로 시작까지 몇 초).
+    // 이걸 도착으로 읽지 않도록 출발 뒤 EARLY_RESUME_S 안에는 다시 보임으로 자동 도착하지 않는다
+    if (nowIso != null && epochS(nowIso) - epochS(trip.departedAt) < EARLY_RESUME_S) return false
+    return true
+}
+
+/** 출발 뒤 이 시간(초) 안에 다시 보이면 자동 도착을 보지 않는다. 1분 안에 끝나는 주행은 없다고 본다. */
+const val EARLY_RESUME_S = 60
 
 private const val MINUTES_PER_DAY = 24 * 60
 

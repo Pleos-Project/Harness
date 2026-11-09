@@ -1,5 +1,6 @@
 package com.mist.pleos_app.ui
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.background
 import androidx.compose.animation.core.Animatable
@@ -86,6 +87,8 @@ internal fun EffortHomeScreen(
     onSettings: () -> Unit,
     onReceipt: () -> Unit,
     onArrive: () -> Unit,
+    onLog: () -> Unit = {},
+    onRecord: (String) -> Unit = {},
 ) {
     val narrow = LocalNarrow.current
     val c = Chagok.colors
@@ -97,11 +100,12 @@ internal fun EffortHomeScreen(
 
     Box(Modifier.fillMaxSize()) {
         Column(Modifier.fillMaxSize()) {
-            // 위 바: 왼쪽 아이콘(설정 — 시안은 기록 전체, 기록 화면이 생기면 옮김) · 가운데 앱 이름
+            // 위 바: 왼쪽 기록 전체(주행 기록 목록, Q-08-01) · 가운데 앱 이름 · 오른쪽 설정(#75 v41)
             CgTitleBar(
                 stringResource(R.string.effort_home_logo), centered = true,
                 titleStyle = (if (narrow) t.titleM else t.titleL).copy(fontWeight = FontWeight.ExtraBold, letterSpacing = t.titleL.fontSize * .08f),
-                leading = { CgIconButton(stringResource(R.string.screen_settings), CgIcon.Placeholder, onSettings) },
+                leading = { CgIconButton(stringResource(R.string.effort_log_open), CgIcon.Placeholder, onLog) },
+                trailing = { CgIconButton(stringResource(R.string.screen_settings), CgIcon.Placeholder, onSettings) },
             )
             // 인사 + 내 차 그림 + 출발하기 / 진행 중
             val first = ui.recent.isEmpty() && trip == null
@@ -148,11 +152,11 @@ internal fun EffortHomeScreen(
                 CgEmpty(stringResource(R.string.effort_recent_empty), stringResource(R.string.effort_recent_empty_hint), Modifier.fillMaxWidth().height(if (narrow) 200.gpx else 240.gpx))
             } else if (narrow) {
                 Column(Modifier.fillMaxWidth().weight(1f).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(16.gpx)) {
-                    ui.recent.forEachIndexed { i, r -> RecordCard(r, ui, narrow, fresh = i == 0 && r.tripId == ui.justFinished, modifier = Modifier.fillMaxWidth()) }
+                    ui.recent.forEachIndexed { i, r -> RecordCard(r, ui, narrow, fresh = i == 0 && r.tripId == ui.justFinished, modifier = Modifier.fillMaxWidth().clickable { onRecord(r.tripId) }) }
                 }
             } else {
                 Row(Modifier.fillMaxWidth().height(240.gpx), horizontalArrangement = Arrangement.spacedBy(24.gpx)) {
-                    ui.recent.forEachIndexed { i, r -> RecordCard(r, ui, narrow, fresh = i == 0 && r.tripId == ui.justFinished, modifier = Modifier.weight(1f).height(240.gpx)) }
+                    ui.recent.forEachIndexed { i, r -> RecordCard(r, ui, narrow, fresh = i == 0 && r.tripId == ui.justFinished, modifier = Modifier.weight(1f).height(240.gpx).clickable { onRecord(r.tripId) }) }
                     repeat(3 - ui.recent.size.coerceAtMost(3)) { Spacer(Modifier.weight(1f)) }
                 }
             }
@@ -201,14 +205,18 @@ internal fun CarIllustration(size: Dp, pin: String? = null) {
     }
 }
 
-/** 최근 기록 카드: 날짜(방금) · 목적지 · "2시간 10분 · 1.57배 · 4명" · 고른 것. */
+/** 고른 것 한 줄: "한 사람 약 9천 원 · 좋아요" · "닫음" · "커피값에서 운전자 빼기"(홈 카드·주행 기록 목록 공통). */
+@Composable
+internal fun recordNoteText(r: EffortRecord, ui: EffortUi): String = when {
+    r.choice == CHOICE_ACCEPT -> listOfNotNull(r.suggestion?.removePrefix("한 사람 ")?.let { stringResource(R.string.effort_home_rec_per, it) }, stringResource(R.string.effort_offer_like)).joinToString(" · ")
+    r.choice == CHOICE_CLOSE -> stringResource(R.string.effort_home_rec_closed)
+    else -> stringResource(R.string.effort_home_rec_item, ui.items.firstOrNull { it.key == r.choice }?.phraseText ?: r.choice)
+}
+
+/** 최근 기록 카드: 날짜(방금) · 목적지 · "2시간 10분 · 1.57배 · 4명" · 고른 것. 누르면 기록 상세(Q-08-01). */
 @Composable
 private fun RecordCard(r: EffortRecord, ui: EffortUi, narrow: Boolean, fresh: Boolean, modifier: Modifier) {
-    val note = when {
-        r.choice == CHOICE_ACCEPT -> listOfNotNull(r.suggestion?.removePrefix("한 사람 ")?.let { stringResource(R.string.effort_home_rec_per, it) }, stringResource(R.string.effort_offer_like)).joinToString(" · ")
-        r.choice == CHOICE_CLOSE -> stringResource(R.string.effort_home_rec_closed)
-        else -> stringResource(R.string.effort_home_rec_item, ui.items.firstOrNull { it.key == r.choice }?.phraseText ?: r.choice)
-    }
+    val note = recordNoteText(r, ui)
     CgRecordCard(
         if (fresh) stringResource(R.string.effort_home_just_now) else dayText(r.date + "T"),
         r.destName, recordSummary(r, ui.constants), note, modifier, fresh = fresh, compact = narrow, key = r.tripId,

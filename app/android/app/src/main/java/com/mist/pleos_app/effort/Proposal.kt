@@ -64,4 +64,5 @@ fun recordOf(trip: OpenTrip, r: EffortReceipt, view: ProposalView?, method: Stri
         choice = choice,
         headlineText = r.headlineText,
         n = trip.n,
+        trip = trip.copy(depLat = null, depLng = null),   // 기록 상세 영수증용 엔진 입력. 좌표는 남기지 않는다
     )

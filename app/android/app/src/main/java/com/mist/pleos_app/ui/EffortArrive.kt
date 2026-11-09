@@ -162,9 +162,10 @@ internal fun EffortArriveScreen(ui: EffortUi, onRest: (Int) -> Unit, onPick: (St
 
 // ------------------------------------------------------------ 영수증(CgReceipt 조립)
 @Composable
-private fun ReceiptColumn(
+internal fun ReceiptColumn(
     trip: OpenTrip, r: EffortReceipt, ui: EffortUi, narrow: Boolean, reduce: Boolean,
     paperShift: Float, open: String?, onToggle: (String) -> Unit, onChangeRest: () -> Unit, modifier: Modifier,
+    editable: Boolean = true,   // 기록 상세(Q-08-01)는 쉰 시간 [바꾸기] 없이 근거 펼침만
 ) {
     val c = Chagok.colors
     val t = Chagok.type
@@ -204,14 +205,14 @@ private fun ReceiptColumn(
         }
         // 정보 없음(날씨·정체) — 더하지 않은 줄(시안 arrive-nodata). 문구는 엔진 notes 그대로
         r.notes.forEach { note -> CgReceiptRow(note, "", "—", basis = null, expanded = false, onClick = {}, compact = narrow) }
-        if (ui.weatherPending) Text(stringResource(R.string.effort_weather_pending), Modifier.padding(vertical = 8.gpx), style = t.labelM, color = c.textTertiary)
+        if (editable && ui.weatherPending) Text(stringResource(R.string.effort_weather_pending), Modifier.padding(vertical = 8.gpx), style = t.labelM, color = c.textTertiary)
 
         // 소계: 운전 시간 · 중간에 쉰 시간 [바꾸기] · 거리 → 합계
         CgDashedRule(Modifier.padding(top = if (narrow) 4.gpx else 20.gpx, bottom = if (narrow) 4.gpx else 18.gpx))
         CgReceiptSum(stringResource(R.string.effort_receipt_drive), r.driveText, compact = narrow, hi = hi("drive"))
         val restLabel = ui.restAnswers.firstOrNull { it.first == (trip.restAnswerMin ?: 0) }?.second ?: ""
         CgReceiptSum(stringResource(R.string.effort_receipt_rest), restLabel, compact = narrow, hi = hi("rest")) {
-            if (ui.done == null) CgButton(stringResource(R.string.effort_receipt_rest_change), onChangeRest, kind = CgButtonKind.Basic, size = CgSize.S)
+            if (editable && ui.done == null) CgButton(stringResource(R.string.effort_receipt_rest_change), onChangeRest, kind = CgButtonKind.Basic, size = CgSize.S)
         }
         r.distanceText?.let { CgReceiptSum(stringResource(R.string.effort_receipt_distance), it, compact = narrow) }
         CgReceiptSum(stringResource(R.string.effort_receipt_total), r.multiplierText, compact = narrow, total = true, hi = hi("total"))
