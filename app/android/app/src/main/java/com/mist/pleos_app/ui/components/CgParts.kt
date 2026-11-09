@@ -81,6 +81,7 @@ import androidx.compose.ui.zIndex
 import com.mist.pleos_app.R
 import com.mist.pleos_app.ui.theme.Chagok
 import com.mist.pleos_app.ui.theme.gpx
+import com.mist.pleos_app.ui.theme.gsp
 import kotlinx.coroutines.delay
 
 /*
@@ -349,27 +350,75 @@ fun CgDestCard(tag: String, name: String, meta: String?, selected: Boolean, onCl
 }
 
 /** 기록 카드(`components/record-card`): 날짜(방금) · 목적지 · 요약 · 고른 것. fresh = 방금 끝난 기록(굵은 테두리 3, 0.7초 올라옴). */
+/**
+ * 기록 카드(v3 `components/record-card`, HANDOFF_v3 5-2): 왼쪽 위 날짜 · 오른쪽 위 배수(라임 마커) · 길 조건 칩 · 장소(크게) · 시간·인원.
+ * 분할은 칩이 아이콘만. fresh = 방금 끝난 기록(날짜 꼬리표 라임, 0.7초 올라옴).
+ */
 @Composable
-fun CgRecordCard(tag: String, title: String, summary: String, note: String, modifier: Modifier = Modifier, fresh: Boolean = false, compact: Boolean = false, key: Any = title) {
+fun CgRecordCard(
+    tag: String, title: String, multiplier: String?, flatText: String?, chips: List<Pair<CgIcon, String>>, more: Int, meta: String,
+    modifier: Modifier = Modifier, fresh: Boolean = false, compact: Boolean = false, key: Any = title,
+) {
     val c = Chagok.colors
-    val t = Chagok.type
     val shape = RoundedCornerShape(32.gpx)
     val rise = remember(key) { Animatable(if (fresh) 0f else 1f) }
     LaunchedEffect(key) { if (fresh) rise.animateTo(1f, tween(700, easing = EaseIn)) }
+    @Composable fun st(size: Int, line: Int, w: FontWeight) = TextStyle(fontSize = size.gsp, lineHeight = line.gsp, fontWeight = w)
     Column(
         modifier.graphicsLayer { alpha = rise.value; translationY = (1f - rise.value) * 24f * density }
             .shadow(6.gpx, shape).background(c.surfaceCard, shape)
-            .border(if (fresh) 3.gpx else 2.gpx, if (fresh) c.selectionBorder else c.line, shape)
-            .padding(horizontal = if (compact) 28.gpx else 30.gpx, vertical = if (compact) 18.gpx else 26.gpx),
-        verticalArrangement = Arrangement.spacedBy(if (compact) 6.gpx else 4.gpx),
+            .border(if (fresh) 3.gpx else 2.gpx, if (fresh) c.selectionBorder else c.lineWeak, shape)
+            .padding(start = if (compact) 24.gpx else 30.gpx, end = if (compact) 24.gpx else 30.gpx, top = if (compact) 16.gpx else 28.gpx, bottom = if (compact) 16.gpx else 28.gpx),
+        verticalArrangement = Arrangement.spacedBy(if (compact) 4.gpx else 6.gpx),
     ) {
-        // 방금 기록 꼬리표 = 선택 면 알약(v3.1)
-        Text(tag, if (fresh) Modifier.background(c.selectionBackground, CircleShape).padding(horizontal = 14.gpx) else Modifier,
-            style = t.bodyS.copy(fontWeight = if (fresh) FontWeight.ExtraBold else FontWeight.Normal), color = if (fresh) c.selectionForeground else c.textTertiary)
-        if (!compact) Spacer(Modifier.weight(1f))
-        Text(title, style = if (compact) t.titleS else t.titleM, color = c.textPrimary, maxLines = 1, overflow = TextOverflow.Ellipsis)
-        Text(summary, style = t.bodyM, color = c.textSecondary, maxLines = 1)
-        Text(note, style = t.labelM, color = c.textTertiary, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
+            // 날짜(방금 끝난 기록은 라임 꼬리표)
+            Text(
+                tag, if (fresh) Modifier.background(c.selectionBackground, CircleShape).padding(horizontal = 14.gpx) else Modifier,
+                style = st(if (compact) 22 else 26, if (compact) 28 else 32, if (fresh) FontWeight.ExtraBold else FontWeight.Bold),
+                color = if (fresh) c.selectionForeground else c.textTertiary,
+            )
+            Spacer(Modifier.weight(1f))
+            if (multiplier != null) Row(verticalAlignment = Alignment.Bottom) {
+                // 숫자 아래 40%에 라임 마커(영수증 합계와 같은 마커)
+                Text(
+                    multiplier,
+                    Modifier.drawBehind { drawRect(c.receiptMarker, Offset(0f, size.height * .6f), Size(size.width, size.height * .4f)) },
+                    style = st(if (compact) 30 else 44, if (compact) 36 else 52, FontWeight.ExtraBold), color = c.textPrimary,
+                )
+                Text("배", style = st(if (compact) 20 else 26, if (compact) 26 else 32, FontWeight.Bold), color = c.textPrimary)
+            } else flatText?.let { Text(it, style = st(if (compact) 20 else 26, if (compact) 26 else 32, FontWeight.Bold), color = c.textTertiary) }
+        }
+        if (!compact && chips.isNotEmpty()) Row(Modifier.padding(top = 4.gpx), horizontalArrangement = Arrangement.spacedBy(10.gpx)) {
+            chips.forEach { (icon, label) -> CgCondChip(icon, label) }
+            if (more > 0) CgCondChip(null, "+$more")
+        }
+        Spacer(Modifier.weight(1f))
+        Text(title, style = st(if (compact) 32 else 44, if (compact) 40 else 56, FontWeight.ExtraBold), color = c.textPrimary, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(meta, Modifier.weight(1f), style = st(if (compact) 24 else 30, if (compact) 30 else 38, FontWeight.SemiBold), color = c.textSecondary, maxLines = 1)
+            // 분할: 칩은 아이콘만, 오른쪽 아래
+            if (compact) Row(horizontalArrangement = Arrangement.spacedBy(6.gpx)) {
+                chips.forEach { (icon, label) ->
+                    Box(Modifier.size(36.gpx).background(c.placeholder, CircleShape).semantics { contentDescription = label }, contentAlignment = Alignment.Center) {
+                        CgIconMark(icon, 22.gpx, c.textSecondary)
+                    }
+                }
+            }
+        }
+    }
+}
+
+/** 길 조건 칩(높이 48 알약 · 아이콘 28 + 글자 700 24/30 · 면 backgroundSubtle). */
+@Composable
+private fun CgCondChip(icon: CgIcon?, label: String) {
+    val c = Chagok.colors
+    Row(
+        Modifier.height(48.gpx).background(c.placeholder, CircleShape).padding(horizontal = 16.gpx),
+        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.gpx),
+    ) {
+        icon?.let { CgIconMark(it, 28.gpx, c.textSecondary) }
+        Text(label, style = TextStyle(fontSize = 24.gsp, lineHeight = 30.gsp, fontWeight = FontWeight.Bold), color = c.textSecondary, maxLines = 1)
     }
 }
 
