@@ -4,7 +4,8 @@ import com.mist.pleos_app.util.ChagokLog
 
 /*
  * 앰비언트 라이트(명세 v0.5 F28, 효성 11/9 · June #109 실측 · 권한 #111).
- * 앱을 켤 때·정산할 때만 브랜드 색으로 켜고, 다 쓰면 켜기 전에 읽어 둔 값으로 되돌린다.
+ * 앱이 보이는 동안(정차) 브랜드 색으로 켜 두고(June·효성·명준 구두 합의 11/9, 처음 안은 앱을 켤 때·정산할 때만),
+ * 가려지거나 주행으로 바뀌면 켜기 전에 읽어 둔 값으로 되돌린다.
  * - 쓰기 API는 setAmbientLightSwitch · setAmbientLightBrightnessColor 두 개뿐(밝기·주행 모드 자동 색은 건드리지 않음)
  * - 주행 전환(X1)·onStop이면 그 자리에서 되돌리고 그 뒤로는 부르지 않는다(AC-C-2, AC-F28-3)
  * - 못 읽거나 실패하면 조명 없이 진행하고 로그 1줄(AC-F28-4). 설정에서 끄면 부르지 않는다(AC-F28-5)
@@ -13,7 +14,7 @@ import com.mist.pleos_app.util.ChagokLog
 /** 조명 상태 한 벌. [switch]는 LightSwitch 이름(OFF·ON·AUTOMATIC…), [color]는 32비트 ARGB(다시 읽으면 알파가 빠진 RGB). */
 data class LightValue(val switch: String, val color: Int)
 
-/** 브랜드 색 #D9F77A(June 11/9 전달, #109 열린 결정 31의 색 값). 앱을 켤 때 연출 길이는 아직 임시. */
+/** 브랜드 색 #D9F77A(June 11/9 전달, #109 열린 결정 31의 색 값). */
 const val AMBIENT_BRAND_ARGB: Int = 0xFFD9F77A.toInt()
 const val LIGHT_ON = "ON"
 
@@ -35,7 +36,7 @@ class MemoryAmbientStore(private var v: LightValue? = null) : AmbientStore {
 }
 
 /**
- * 켜 달라는 이유(open · settle · midway)가 하나라도 있으면 켜 두고, 모두 놓으면 되돌린다.
+ * 켜 달라는 이유(지금은 앱 화면 "app" 하나)가 하나라도 있으면 켜 두고, 모두 놓으면 되돌린다.
  * [allowed]가 false면(설정 끔 · 화면이 가려짐 · 주행 중) 켜지 않는다.
  */
 class AmbientLight(
