@@ -23,6 +23,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.size
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -52,7 +55,6 @@ import com.mist.pleos_app.effort.OpenTrip
 import com.mist.pleos_app.effort.clockText
 import com.mist.pleos_app.effort.dayText
 import com.mist.pleos_app.effort.euro
-import com.mist.pleos_app.effort.recordSummary
 import com.mist.pleos_app.ui.components.CgBottomSheet
 import com.mist.pleos_app.ui.components.CgButton
 import com.mist.pleos_app.ui.components.CgButtonKind
@@ -139,7 +141,7 @@ internal fun EffortHomeScreen(
                         CarIllustration(if (narrow) 150.gpx else 260.gpx)
                     }
                     CgPill(stringResource(R.string.effort_mid_open), onMidway, compact = narrow)
-                } else CarIllustration(if (narrow) 180.gpx else 300.gpx, pin = if (trip?.arrived == true) stringResource(R.string.effort_home_arrived_pin) else null)
+                } else LogoSymbol(if (narrow) 180.gpx else 300.gpx, pin = if (trip?.arrived == true) stringResource(R.string.effort_home_arrived_pin) else null)
                 Column(Modifier.widthIn(max = 820.gpx), verticalArrangement = Arrangement.spacedBy(14.gpx)) {
                     Text(sub, style = if (narrow) t.labelM else t.bodyM, color = c.textTertiary)
                     Text(head, style = if (narrow) t.headlineS else t.headlineL, color = c.textPrimary)
@@ -171,8 +173,8 @@ internal fun EffortHomeScreen(
                     ui.recent.forEachIndexed { i, r -> RecordCard(r, ui, narrow, fresh = i == 0 && r.tripId == ui.justFinished, modifier = Modifier.fillMaxWidth().clickable { onRecord(r.tripId) }) }
                 }
             } else {
-                Row(Modifier.fillMaxWidth().height(240.gpx), horizontalArrangement = Arrangement.spacedBy(24.gpx)) {
-                    ui.recent.forEachIndexed { i, r -> RecordCard(r, ui, narrow, fresh = i == 0 && r.tripId == ui.justFinished, modifier = Modifier.weight(1f).height(240.gpx).clickable { onRecord(r.tripId) }) }
+                Row(Modifier.fillMaxWidth().height(340.gpx), horizontalArrangement = Arrangement.spacedBy(24.gpx)) {
+                    ui.recent.forEachIndexed { i, r -> RecordCard(r, ui, narrow, fresh = i == 0 && r.tripId == ui.justFinished, modifier = Modifier.weight(1f).height(340.gpx).clickable { onRecord(r.tripId) }) }
                     repeat(3 - ui.recent.size.coerceAtMost(3)) { Spacer(Modifier.weight(1f)) }
                 }
             }
@@ -230,14 +232,55 @@ internal fun recordNoteText(r: EffortRecord, ui: EffortUi): String = when {
     else -> stringResource(R.string.effort_home_rec_item, ui.items.firstOrNull { it.key == r.choice }?.phraseText ?: r.choice)
 }
 
-/** 최근 기록 카드: 날짜(방금) · 목적지 · "2시간 10분 · 1.57배 · 4명" · 고른 것. 누르면 기록 상세(Q-08-01). */
+/** 최근 기록 카드(v3 5-2): 날짜(방금) · 배수 · 길 조건 칩 · 목적지 · 시간·인원. 누르면 기록 상세(Q-08-01). */
 @Composable
 private fun RecordCard(r: EffortRecord, ui: EffortUi, narrow: Boolean, fresh: Boolean, modifier: Modifier) {
-    val note = recordNoteText(r, ui)
+    val v = remember(r, ui.constants) { com.mist.pleos_app.effort.recordCardOf(r, ui.constants) }
     CgRecordCard(
         if (fresh) stringResource(R.string.effort_home_just_now) else dayText(r.date + "T"),
-        r.destName, recordSummary(r, ui.constants), note, modifier, fresh = fresh, compact = narrow, key = r.tripId,
+        r.destName, v.multiplier, v.flatText, v.chips.map { condChip(it) }, v.more, v.meta, modifier, fresh = fresh, compact = narrow, key = r.tripId,
     )
+}
+
+/** 길 조건 칩 = 영수증 줄 key → 아이콘 + 짧은 이름(HANDOFF_v3 3·5-2). */
+@Composable
+private fun condChip(key: String): Pair<CgIcon, String> = when (key) {
+    "rain" -> CgIcon.Rain to stringResource(R.string.effort_cond_rain)
+    "snow" -> CgIcon.Snow to stringResource(R.string.effort_cond_snow)
+    "congestion" -> CgIcon.Traffic to stringResource(R.string.effort_cond_congestion)
+    "delay" -> CgIcon.Delay to stringResource(R.string.effort_cond_delay)
+    "night" -> CgIcon.Moon to stringResource(R.string.effort_cond_night)
+    "fatigue" -> CgIcon.Hourglass to stringResource(R.string.effort_cond_fatigue)
+    else -> CgIcon.Sun to stringResource(R.string.effort_cond_clear)
+}
+
+/**
+ * 홈 로고 심볼(v3 5-1): 손 + 운전대 평면 심볼, 원 바탕 없음. 주간 잉크 · 야간 라임(손가락 구분선은 반대색).
+ * 3.2초 주기로 4px 떠올랐다 내려오고, 바닥 타원 그림자가 같은 주기로 가로 1 → 0.9 · 투명도 1 → 0.75. 움직임 줄이기면 멈춤.
+ */
+@Composable
+internal fun LogoSymbol(size: Dp, pin: String? = null) {
+    val c = Chagok.colors
+    val reduce = rememberReduceMotion()
+    val inf = rememberInfiniteTransition(label = "float")
+    val k by inf.animateFloat(0f, 1f, infiniteRepeatable(tween(1600, easing = CubicBezierEasing(.45f, 0f, .55f, 1f)), RepeatMode.Reverse), label = "k")
+    val f = if (reduce) 0f else k
+    val lift = 4.gpx
+    Box(Modifier.size(size), contentAlignment = Alignment.Center) {
+        val shadow = if (c.isDark) Color(0x80000000) else Color(0x4D242033)
+        Canvas(Modifier.align(Alignment.BottomCenter).size(size * .62f, size * .09f).graphicsLayer { scaleX = 1f - .1f * f; alpha = 1f - .25f * f }) {
+            drawOval(Brush.radialGradient(listOf(shadow, Color.Transparent), center = center, radius = this.size.width / 2f), size = this.size)
+        }
+        androidx.compose.foundation.Image(
+            androidx.compose.ui.res.painterResource(if (c.isDark) R.drawable.nogo_symbol_night else R.drawable.nogo_symbol_day), contentDescription = null,
+            modifier = Modifier.size(size * .78f, size * .84f).graphicsLayer { translationY = -lift.toPx() * f - size.toPx() * .04f },
+        )
+        // v32 home-pending: "도착" 깃발(딥 잉크 알약 + 흰 글자)
+        pin?.let {
+            Text(it, Modifier.align(Alignment.TopEnd).background(c.textPrimary, RoundedCornerShape(24.gpx)).padding(horizontal = 20.gpx, vertical = 6.gpx),
+                style = Chagok.type.labelM.copy(fontWeight = FontWeight.Bold), color = c.surfaceCard)
+        }
+    }
 }
 
 /** 앱 시작 화면(1.6초): 원 안의 내 차 · 이름 · "준비하고 있어요" + 점 세 개. */

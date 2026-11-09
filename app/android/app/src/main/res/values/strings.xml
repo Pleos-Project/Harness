@@ -310,6 +310,14 @@
     <string name="effort_settings_method_a">방식 A · 돈으로 환산</string>
     <string name="effort_settings_method_b">방식 B · 한 번 빼 주기</string>
     <string name="effort_settings_wage">단가 출처</string>
+    <!-- 홈 기록 카드 길 조건 칩(#118 v3 5-2) -->
+    <string name="effort_cond_rain">비</string>
+    <string name="effort_cond_snow">눈</string>
+    <string name="effort_cond_congestion">정체</string>
+    <string name="effort_cond_delay">지연</string>
+    <string name="effort_cond_night">밤길</string>
+    <string name="effort_cond_fatigue">장시간</string>
+    <string name="effort_cond_clear">맑은 길</string>
     <!-- 사진 출처(#118 design/places/CREDITS.md, 임시 사진 · 자리는 명준이 정함) -->
     <string name="effort_settings_photo">사진 출처</string>
     <string name="effort_settings_photo_sub">출발 화면 목적지 사진 · Wikimedia Commons</string>
