@@ -4,6 +4,7 @@ import com.mist.pleos_app.engine.EffortConstants
 import com.mist.pleos_app.engine.EffortInput
 import com.mist.pleos_app.engine.EffortMidway
 import com.mist.pleos_app.engine.EffortReceipt
+import com.mist.pleos_app.engine.EffortSettlement
 import com.mist.pleos_app.engine.effort
 import com.mist.pleos_app.engine.epochS
 import com.mist.pleos_app.engine.parseHhmm
@@ -47,7 +48,8 @@ fun effortInputOf(trip: OpenTrip): EffortInput? {
         congestionS = trip.congestionS,
         distanceKm = trip.routeM?.let { it / 1000 },
         weatherTrip = trip.weatherTrip,                // #63: 도착 때 받은 조각별 강수. 없거나 전부 unknown이면 엔진이 1회 관측 규칙으로
-        settledKrw = trip.settledKrw,                  // F27: 앞서 중간 정산한 원 단위 합. 없으면 null(출력 그대로)
+        // F27: 앞서 한 중간 정산(정산한 순서). 합(남은 몫)과 장시간 구간 경계(정산 시각)는 엔진이 만든다(#105). 없으면 빈 목록(출력 그대로)
+        settlements = trip.settlements.map { EffortSettlement(it.at, it.remainKrw) },
     )
 }
 
@@ -55,7 +57,7 @@ fun effortInputOf(trip: OpenTrip): EffortInput? {
  * 중간 정산 엔진 입력(F27, 효성 #97). 출발~[nowIso]를 도착과 같은 규칙으로 센다.
  * - 지금까지 거리는 엔진이 경로 거리 − [remainM]으로 만든다(화면에서 계산하지 않음)
  * - 날씨는 출발 좌표~현재 위치 시간대별 강수([weatherTrip], 실패면 null) · 도착 1회 관측은 부르지 않고 unknown(June #97 답)
- * - 쉰 시간은 묻지 않아 0, 앞서 정산한 합은 그대로
+ * - 쉰 시간은 묻지 않아 0, 앞서 한 정산은 그대로(엔진이 합과 정산 시각을 씀, #105)
  * 경로 거리를 모르거나 이미 도착했으면 null(중간 정산 없음).
  */
 fun midwayInputOf(trip: OpenTrip, nowIso: String, remainM: Int, weatherTrip: com.mist.pleos_app.engine.WeatherTrip?): EffortInput? {
