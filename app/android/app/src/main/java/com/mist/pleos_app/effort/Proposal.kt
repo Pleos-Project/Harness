@@ -100,3 +100,10 @@ fun receiptForSettleMode(r: EffortReceipt, included: Boolean, n: Int, c: EffortC
     if (included || c == null || settleFoldOf(r, Settings.METHOD_A) == null) return r
     return r.copy(proposal = effortProposal(r.effortMin * 6000, n, c, null))
 }
+
+/**
+ * 영수증 합계 끝 글 "약 3만 6천 원"(#118 v92 · v94) = 제안 카드 근거의 "운전 노고 약 ○만 ○천 원"과 같은 엔진 값.
+ * 혼자 탄 주행은 엔진이 제안을 만들지 않아서 같은 노고로 effortProposal(n = 1)의 금액 표기를 쓴다.
+ */
+fun receiptAmountText(r: EffortReceipt, c: EffortConstants?): String? =
+    r.proposal?.amountText ?: c?.let { effortProposal(r.effortMin * 6000, 1, it, null).amountText }
