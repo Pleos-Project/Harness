@@ -68,7 +68,6 @@ import com.mist.pleos_app.effort.EffortScreen
 import com.mist.pleos_app.effort.EffortUi
 import com.mist.pleos_app.effort.EffortViewModel
 import com.mist.pleos_app.effort.OpenTrip
-import com.mist.pleos_app.effort.DemoEffortSource
 import com.mist.pleos_app.effort.DemoScene
 import com.mist.pleos_app.ui.components.CgBody
 import com.mist.pleos_app.ui.components.CgButton
@@ -135,15 +134,14 @@ fun EffortApp(
                 onRecord = vm::openRecord,
             )
             EffortScreen.DEPART -> {
-                // Design v2 출발 화면(#75): 시연이면 정해 둔 목적지 하나를 고른 상태로
-                val demo = (vm.source as? DemoEffortSource)?.scene
+                // Design v2 출발 화면(#75). 시연 모드도 같은 화면 · 기능(데이터만 시연 목록, June 11/9)
                 EffortDepartScreen(
-                    depart, demo = demo, demoPreview = if (demo != null) vm.demoPreview else null,
+                    depart,
                     demoMissing = settings.demoFixed && !ui.demoAvailable,
                     seats = seats, payers = vm.payersFor(seats), askPayers = askPayers,
                     onBack = { vm.back() }, onQuery = vm::setQuery, onSearch = vm::search, onClearSearch = vm::clearSearch,
                     onSelect = vm::select, onUnselect = vm::unselect,
-                    onGo = { if (demo != null) vm.depart() else vm.depart(seats) },
+                    onGo = { vm.depart(seats) },
                     onConfirmPayers = { vm.confirmPayers(seats, it) }, onDismissPayers = { vm.dismissPayers(seats) },
                 )
             }

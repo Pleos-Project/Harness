@@ -220,7 +220,8 @@ class EffortViewModel(app: Application, private val saved: SavedStateHandle) : A
         open(EffortScreen.DEPART)
         departFlow.value = DepartUi()
         here = null; weatherDep = null
-        if (source.demo) return
+        // 시연: 화면 · 기능은 같고 최근 목적지는 앱 안 시연 목록(내비 · 위치 · 날씨를 부르지 않음)
+        if (source.demo) { demoScene?.let { s -> departFlow.update { it.copy(naviOptions = demoRecents(s)) } }; return }
         val n = navi ?: return
         departFlow.update { it.copy(naviLoading = true) }
         n.places { list -> departFlow.update { it.copy(naviOptions = list.map { p -> p.toOption() }, naviLoading = false) } }
@@ -251,6 +252,11 @@ class EffortViewModel(app: Application, private val saved: SavedStateHandle) : A
         val q = departFlow.value.query.trim()
         if (q.isEmpty()) return
         searchJob?.cancel()
+        if (source.demo) {   // 시연: 서버 대신 앱 안 시연 검색
+            val (status, list) = demoScene?.let { demoSearch(q, it) } ?: (PlacesStatus.EMPTY to emptyList())
+            departFlow.update { it.copy(searching = false, searchStatus = status, searchResults = list) }
+            return
+        }
         departFlow.update { it.copy(searching = true, searchStatus = null, searchResults = emptyList()) }
         searchJob = viewModelScope.launch {
             val r = withTimeoutOrNull(NET_TIMEOUT_MS) { withContext(Dispatchers.IO) { api.places(q, here) } }
@@ -262,6 +268,10 @@ class EffortViewModel(app: Application, private val saved: SavedStateHandle) : A
 
     /** 목적지 고르기 → requestTrip으로 ETA·경로 거리·정체 비율을 미리 받는다(출발 뒤에는 차곡이 멈춰 못 받음, #51). */
     fun select(o: DestOption) {
+        if (source.demo) {   // 시연: 어느 곳이든 미리보기는 시연 장면 값(이름만 고른 곳)
+            departFlow.update { it.copy(selected = o, preview = null, previewText = demoPreview, previewing = false) }
+            return
+        }
         departFlow.update { it.copy(selected = o, preview = null, previewText = null, previewing = navi != null) }
         navi?.preview(o.dest) { p ->
             val text = p?.let { t -> effortConstants?.let { c -> departurePreview(t.etaS.toDouble(), t.distanceM.toDouble(), t.congestionRatio, t.congestionM, c) } }
@@ -276,14 +286,16 @@ class EffortViewModel(app: Application, private val saved: SavedStateHandle) : A
      * @return 출발 기록을 새로 열었으면 true
      */
     fun depart(seats: Int = 1): Boolean {
-        source.demoTrip()?.let { trip ->
-            val opened = flow.depart(trip)
-            refresh(); home()
-            return opened
-        }
         val ui = departFlow.value
         val sel = ui.selected ?: return false
         if (!ui.canDepart) return false
+        // 시연: 주행 숫자는 시연 장면 그대로, 목적지 이름 · 나눠 낼 인원만 화면에서 고른 값(내비 호출 없음)
+        source.demoTrip()?.let { demo ->
+            val opened = flow.depart(demo.copy(destName = sel.dest.name, n = payersFor(seats)))
+            refresh(); home()
+            departFlow.value = DepartUi()
+            return opened
+        }
         val trip = departTrip(newTripId(), source.departedAt(), sel.dest, payersFor(seats), ui.preview, weatherDep ?: WEATHER_UNKNOWN, here)
         val opened = flow.depart(trip)
         lastRoute = sel.dest
