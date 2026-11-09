@@ -1,6 +1,8 @@
 package com.mist.pleos_app.ui
 
 import androidx.compose.foundation.clickable
+import androidx.compose.ui.semantics.Role
+import com.mist.pleos_app.ui.components.CgPill
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.background
 import androidx.compose.animation.core.Animatable
@@ -89,6 +91,7 @@ internal fun EffortHomeScreen(
     onArrive: () -> Unit,
     onLog: () -> Unit = {},
     onRecord: (String) -> Unit = {},
+    onMidway: () -> Unit = {},
 ) {
     val narrow = LocalNarrow.current
     val c = Chagok.colors
@@ -113,7 +116,11 @@ internal fun EffortHomeScreen(
                 // v32 home-pending: 고르기 전에 나간 도착 — "○○에 도착했어요 · 16:30" / "오늘 운전 영수증이 여기 있어요"
                 trip != null && trip.arrived -> stringResource(R.string.effort_home_arrived_sub, trip.destName, clockText(trip.arrivedAt ?: trip.departedAt)) to stringResource(R.string.effort_home_arrived_head)
                 // v32 home-progress: "○○으로 가는 중 · 14:20 출발 · 함께 4명". 머리글은 중간 정산(지금까지의 노고 보기)이 붙을 때 시안 문구로 바꾼다
-                trip != null -> stringResource(R.string.effort_home_progress_sub, euro(trip.destName), clockText(trip.departedAt), trip.n) to stringResource(R.string.effort_home_progress_head)
+                // 중간 정산을 했으면 "· 15:25까지 정산함"을 붙인다(v41 HANDOFF '휴게소에서 다시 연 홈')
+                trip != null -> listOfNotNull(
+                    stringResource(R.string.effort_home_progress_sub, euro(trip.destName), clockText(trip.departedAt), trip.n),
+                    trip.settlements.lastOrNull()?.let { stringResource(R.string.effort_mid_settled, clockText(it.at)) },
+                ).joinToString(" · ") to stringResource(R.string.effort_home_progress_head)
                 first -> stringResource(R.string.effort_home_first_sub) to stringResource(R.string.effort_home_first_head)
                 else -> stringResource(R.string.effort_home_sub) to stringResource(R.string.effort_home_head)
             }
@@ -123,7 +130,13 @@ internal fun EffortHomeScreen(
                 horizontalArrangement = Arrangement.spacedBy(if (narrow) 28.gpx else 64.gpx, Alignment.CenterHorizontally),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                CarIllustration(if (narrow) 180.gpx else 300.gpx, pin = if (trip?.arrived == true) stringResource(R.string.effort_home_arrived_pin) else null)
+                // v32 home-progress: 가는 중이면 내 차 그림 = 중간 정산 버튼 + 아래 알약 "지금까지의 노고 보기 ›"(F27)
+                if (ui.midwayAvailable) Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.gpx)) {
+                    Box(Modifier.clickable(role = Role.Button, onClickLabel = stringResource(R.string.effort_mid_open), onClick = onMidway)) {
+                        CarIllustration(if (narrow) 150.gpx else 260.gpx)
+                    }
+                    CgPill(stringResource(R.string.effort_mid_open), onMidway, compact = narrow)
+                } else CarIllustration(if (narrow) 180.gpx else 300.gpx, pin = if (trip?.arrived == true) stringResource(R.string.effort_home_arrived_pin) else null)
                 Column(Modifier.widthIn(max = 820.gpx), verticalArrangement = Arrangement.spacedBy(14.gpx)) {
                     Text(sub, style = if (narrow) t.labelM else t.bodyM, color = c.textTertiary)
                     Text(head, style = if (narrow) t.headlineS else t.headlineL, color = c.textPrimary)
@@ -208,6 +221,7 @@ internal fun CarIllustration(size: Dp, pin: String? = null) {
 /** 고른 것 한 줄: "한 사람 약 9천 원 · 좋아요" · "닫음" · "커피값에서 운전자 빼기"(홈 카드·주행 기록 목록 공통). */
 @Composable
 internal fun recordNoteText(r: EffortRecord, ui: EffortUi): String = when {
+    r.choice == com.mist.pleos_app.effort.CHOICE_UNSETTLED -> stringResource(R.string.effort_home_rec_unsettled)
     r.choice == CHOICE_ACCEPT -> listOfNotNull(r.suggestion?.removePrefix("한 사람 ")?.let { stringResource(R.string.effort_home_rec_per, it) }, stringResource(R.string.effort_offer_like)).joinToString(" · ")
     r.choice == CHOICE_CLOSE -> stringResource(R.string.effort_home_rec_closed)
     else -> stringResource(R.string.effort_home_rec_item, ui.items.firstOrNull { it.key == r.choice }?.phraseText ?: r.choice)

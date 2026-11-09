@@ -166,6 +166,7 @@ internal fun ReceiptColumn(
     trip: OpenTrip, r: EffortReceipt, ui: EffortUi, narrow: Boolean, reduce: Boolean,
     paperShift: Float, open: String?, onToggle: (String) -> Unit, onChangeRest: () -> Unit, modifier: Modifier,
     editable: Boolean = true,   // 기록 상세(Q-08-01)는 쉰 시간 [바꾸기] 없이 근거 펼침만
+    midwaySub: String? = null,  // 중간 정산(F27): 제목 "지금까지 영수증" + 이 줄("14:20 출발 · 아직 가는 중"), 쉰 시간 줄 없음
 ) {
     val c = Chagok.colors
     val t = Chagok.type
@@ -183,9 +184,9 @@ internal fun ReceiptColumn(
     }
     val hi = { k: String -> if (k in changed) flash.value else 0f }
     CgReceipt(modifier, compact = narrow, shift = paperShift, fill = !narrow, scroll = !narrow) {
-        Text(stringResource(R.string.effort_receipt_title), Modifier.fillMaxWidth(), style = if (narrow) t.titleS else t.titleL, color = c.textPrimary, textAlign = TextAlign.Center)
+        Text(stringResource(if (midwaySub != null) R.string.effort_mid_receipt_title else R.string.effort_receipt_title), Modifier.fillMaxWidth(), style = if (narrow) t.titleS else t.titleL, color = c.textPrimary, textAlign = TextAlign.Center)
         if (!narrow) Text(
-            stringResource(R.string.effort_receipt_sub, trip.destName, dayText(trip.departedAt)), Modifier.fillMaxWidth(),
+            midwaySub ?: stringResource(R.string.effort_receipt_sub, trip.destName, dayText(trip.departedAt)), Modifier.fillMaxWidth(),
             style = t.bodyM, color = c.textTertiary, textAlign = TextAlign.Center,
         )
         CgDoubleRule(Modifier.padding(top = if (narrow) 8.gpx else 24.gpx, bottom = if (narrow) 4.gpx else 16.gpx))
@@ -205,13 +206,13 @@ internal fun ReceiptColumn(
         }
         // 정보 없음(날씨·정체) — 더하지 않은 줄(시안 arrive-nodata). 문구는 엔진 notes 그대로
         r.notes.forEach { note -> CgReceiptRow(note, "", "—", basis = null, expanded = false, onClick = {}, compact = narrow) }
-        if (editable && ui.weatherPending) Text(stringResource(R.string.effort_weather_pending), Modifier.padding(vertical = 8.gpx), style = t.labelM, color = c.textTertiary)
+        if (editable && midwaySub == null && ui.weatherPending) Text(stringResource(R.string.effort_weather_pending), Modifier.padding(vertical = 8.gpx), style = t.labelM, color = c.textTertiary)
 
         // 소계: 운전 시간 · 중간에 쉰 시간 [바꾸기] · 거리 → 합계
         CgDashedRule(Modifier.padding(top = if (narrow) 4.gpx else 20.gpx, bottom = if (narrow) 4.gpx else 18.gpx))
         CgReceiptSum(stringResource(R.string.effort_receipt_drive), r.driveText, compact = narrow, hi = hi("drive"))
         val restLabel = ui.restAnswers.firstOrNull { it.first == (trip.restAnswerMin ?: 0) }?.second ?: ""
-        CgReceiptSum(stringResource(R.string.effort_receipt_rest), restLabel, compact = narrow, hi = hi("rest")) {
+        if (midwaySub == null) CgReceiptSum(stringResource(R.string.effort_receipt_rest), restLabel, compact = narrow, hi = hi("rest")) {
             if (editable && ui.done == null) CgButton(stringResource(R.string.effort_receipt_rest_change), onChangeRest, kind = CgButtonKind.Basic, size = CgSize.S)
         }
         r.distanceText?.let { CgReceiptSum(stringResource(R.string.effort_receipt_distance), it, compact = narrow) }
@@ -244,7 +245,8 @@ private fun OfferCard(ui: EffortUi, trip: OpenTrip, narrow: Boolean, onPick: (St
     val why = if (narrow) t.labelM else t.bodyM
     val btn = if (narrow) CgSize.M else CgSize.L
     val close: @Composable (Boolean) -> Unit = { filled ->
-        CgButton(stringResource(R.string.close), onClose, Modifier.fillMaxWidth(), kind = if (filled) CgButtonKind.Filled else CgButtonKind.Basic, size = btn)
+        // 정리하지 못함은 [홈으로](명세 F22·시안 arrive-unsettled), 그 밖은 [닫기]
+        CgButton(stringResource(if (ui.unsettled) R.string.effort_home else R.string.close), onClose, Modifier.fillMaxWidth(), kind = if (filled) CgButtonKind.Filled else CgButtonKind.Basic, size = btn)
     }
     CgOfferCard(modifier, compact = narrow) {
         val done = ui.done
@@ -327,7 +329,7 @@ private fun ColumnScope.DoneBody(done: ArriveDone, items: List<EffortItem>, narr
 
 /** 가로 창은 버튼을 카드 아래로 민다. 분할은 쌓기만. */
 @Composable
-private fun ColumnScope.Filler(narrow: Boolean) { if (!narrow) Spacer(Modifier.weight(1f)) }
+internal fun ColumnScope.Filler(narrow: Boolean) { if (!narrow) Spacer(Modifier.weight(1f)) }
 
 /** 움직임 줄이기(개발자 옵션 애니메이션 배율 0): 연출을 끄고 끝 상태로(HANDOFF_v2 3-2). */
 @Composable

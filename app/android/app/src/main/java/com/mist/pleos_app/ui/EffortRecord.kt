@@ -120,6 +120,12 @@ internal fun EffortRecordScreen(ui: EffortUi, onBack: () -> Unit) {
                 Box(Modifier.fillMaxWidth().padding(vertical = 8.gpx).height(1.gpx).background(c.line))
                 Text(stringResource(R.string.effort_record_choice_cap), style = t.labelM, color = c.textTertiary)
                 Text(choiceLine(r, ui), style = t.bodyM, color = c.textSecondary)
+                // 중간 정산(F27): "중간 정산 15:25 · 한 사람 약 4천 원" / "… · 밥값에서 운전자 빼기"
+                r.trip?.settlements.orEmpty().forEach { s ->
+                    val what = if (s.method == Settings.METHOD_B) stringResource(R.string.effort_home_rec_item, ui.items.firstOrNull { it.key == s.choice }?.phraseText ?: s.choice)
+                    else s.suggestion.orEmpty()
+                    Text(stringResource(R.string.effort_record_midway, com.mist.pleos_app.effort.clockText(s.at), what), style = t.bodyM, color = c.textSecondary)
+                }
                 Text(stringResource(R.string.effort_record_note), style = t.labelM, color = c.textTertiary)
                 if (!narrow) Spacer(Modifier.weight(1f))
                 CgButton(stringResource(R.string.close), onBack, Modifier.fillMaxWidth(), kind = CgButtonKind.Basic, size = if (narrow) CgSize.M else CgSize.L)
@@ -143,7 +149,8 @@ internal fun EffortRecordScreen(ui: EffortUi, onBack: () -> Unit) {
 @Composable
 private fun dayEffortLine(r: EffortRecord, amountText: String?): String = listOfNotNull(
     amountText?.let { stringResource(R.string.effort_record_amount, it) },
-    stringResource(R.string.effort_record_drive, com.mist.pleos_app.engine.driveText(r.driveMin * 60)),
+    if (r.choice == com.mist.pleos_app.effort.CHOICE_UNSETTLED) null   // 정리하지 못함: 운전 시간을 세지 않았다
+    else stringResource(R.string.effort_record_drive, com.mist.pleos_app.engine.driveText(r.driveMin * 60)),
     r.trip?.routeM?.takeIf { it > 0 }?.let { "${com.mist.pleos_app.engine.roundHalfUp(it / 1000)}km" },
     r.n?.let { stringResource(R.string.effort_record_people, it) },
 ).joinToString(" · ")
@@ -153,6 +160,7 @@ private fun dayEffortLine(r: EffortRecord, amountText: String?): String = listOf
 private fun choiceLine(r: EffortRecord, ui: EffortUi): String {
     val method = stringResource(if (r.method == Settings.METHOD_B) R.string.effort_record_method_b else R.string.effort_record_method_a)
     return when {
+        r.choice == com.mist.pleos_app.effort.CHOICE_UNSETTLED -> stringResource(R.string.effort_record_choice_unsettled)
         r.suggestion == null -> stringResource(R.string.effort_record_choice_none)
         r.choice == CHOICE_ACCEPT -> stringResource(R.string.effort_record_choice_accept, method, r.suggestion)
         r.choice == CHOICE_CLOSE -> stringResource(R.string.effort_record_choice_close, method)

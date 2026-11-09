@@ -54,6 +54,7 @@
       "a_title_text": "오늘 운전을 챙긴다면",
       "a_main_text": "한 사람 {per_person}",
       "a_basis_text": "운전 노고 {amount}을 운전자 포함 {n}명이 나눈 값",
+      "a_basis_remain_text": "운전 노고 {amount}에서 중간에 챙긴 몫을 뺀 나머지를 운전자 포함 {n}명이 나눈 값",
       "a_wage_text": "{wage_label} 1분 {wage_per_min}원 기준",
       "b_text": "오늘은 {phrase}에서 운전자 빼고 나누는 게 어때요",
       "unsettled_text": "이번 주행은 정리하지 못했어요"
@@ -70,7 +71,7 @@
     "_items_doc": "방식 B 항목. label = 선택지 버튼, phrase_text = B 문장 '오늘은 {phrase_text}에서 운전자 빼고 나누는 게 어때요'에 들어갈 말, examples = 그 자리 글자가 차례로 바뀌는 예시(첫 값 = phrase_text, 간격·반복·모션은 디자인 몫)",
     "items": [
       {"key": "coffee", "label": "커피", "phrase_text": "커피값", "price_krw": 4700, "source": "스타벅스 톨 아메리카노(공식 메뉴)"},
-      {"key": "meal", "label": "밥", "phrase_text": "밥값", "price_krw": 10731, "source": "참가격 서울 2026 냉면 12,615·비빔밥 11,615·칼국수 10,038·김치찌개 백반 8,654원 평균"},
+      {"key": "meal", "label": "밥", "phrase_text": "밥값", "price_krw": 10711, "source": "참가격 서울 2026년 3월 냉면 12,538·비빔밥 11,615·칼국수 10,038·김치찌개 백반 8,654원 평균"},
       {"key": "shared", "label": "공동 경비", "phrase_text": "공동 경비", "price_krw": 69000, "source": "2025 국민여행조사 당일여행 1회 평균 지출",
        "examples": ["공동 경비", "장 본 값", "펜션비", "바베큐장 이용료", "입장료", "물품 구매비"]}
     ]

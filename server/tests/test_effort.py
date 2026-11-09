@@ -231,11 +231,11 @@ def test_f25_shared_phrase_and_examples():
 
 
 @pytest.mark.parametrize("share,want", [
-    (2_349.99, None), (2_350, "coffee"), (7_715.49, "coffee"), (7_715.5, "meal"),
-    (39_865.49, "meal"), (39_865.5, "shared"), (500_000, "shared"),
+    (2_349.99, None), (2_350, "coffee"), (7_705.49, "coffee"), (7_705.5, "meal"),
+    (39_855.49, "meal"), (39_855.5, "shared"), (500_000, "shared"),
 ])
 def test_f25_b_boundaries(share, want):
-    """명세 9절 경계표: 2,350 미만 제안 없음 / ~7,715.5 미만 커피 / ~39,865.5 미만 밥 / 이상 공동 경비."""
+    """명세 9절 경계표(밥 10,711원, DECISIONS 11/9): 2,350 미만 제안 없음 / ~7,705.5 미만 커피 / ~39,855.5 미만 밥 / 이상 공동 경비."""
     item = EF.b_item(share, C.items)
     assert (item.key if item else None) == want
 
@@ -419,6 +419,115 @@ def test_weather_trip_input_matches_contract_response():
 DEMO_INPUT_KEYS = set(load(ROOT / "fixtures/effort/demo.json")["input"])
 
 
+# ---------------------------------------------------------------- 1부: 중간 정산 (명준 Q-08-02, 효성 계산 규칙 11/9)
+def midway_input(now="17:05", so_far_m=52_000, **kw):
+    """R1 장면을 가는 중에 정산(시간대별 강수 없이 1회 관측 비·비로도 같은 비 줄)."""
+    i = dict(fx("R1")["input"], arrived_at=f"2026-11-17T{now}:00+09:00", distance_km=None,
+             midway={"route_m": 104_300, "remain_m": 104_300 - so_far_m})
+    i.update(kw)
+    return i
+
+
+def mid(**kw):
+    return EF.effort(EF.input_from_json(midway_input(**kw)), C)
+
+
+def test_midway_design_example():
+    """HANDOFF_v2 7-2 시안: 65분·52km → 비 +40%·정체 19km +10%·예상보다 더 +13분 +5%·1.55배·한 사람 약 4천 원."""
+    r = run("R27")
+    assert r.headline_text == "오늘 운전 1시간 5분 · 평소보다 1.55배 힘든 길"
+    assert [(l.key, l.pct_text, l.detail_text) for l in r.lines] == [
+        ("rain", "+40%", "비, 주행 내내"), ("congestion", "+10%", "19km (경로의 36%)"), ("delay", "+5%", "+13분")]
+    assert r.distance_text == "52km"
+    assert r.delay_min == pytest.approx(65 - 105 * 52_000 / 104_300)   # 기준 ETA = ETA × 지금까지 거리 ÷ 경로 거리
+    p = r.proposal
+    assert (p.amount_text, p.per_person_text, p.b.item) == ("약 1만 8천 원", "약 4천 원", "meal")
+    assert p.amount_krw == pytest.approx(17_964.19, abs=0.005)
+    assert (p.settled_krw, p.remain_krw) == (0.0, p.amount_krw)          # 처음 정산: 정산하면 금액 전체를 기록
+    assert p.a.basis_text == "운전 노고 약 1만 8천 원을 운전자 포함 4명이 나눈 값"
+    assert mid().to_json() == r.to_json()                                 # 시간대별 비 = 1회 관측 비·비
+
+
+def test_arrival_after_midway_rounds_once():
+    """도착 영수증은 출발~도착 전체(R1 그대로), 제안은 남은 금액(원 단위) ÷ n을 마지막에 한 번만 어림.
+    (36,493.42 − 17,964.19) ÷ 4 = 4,632.31 → 약 5천 원."""
+    settled = fx("R28")["input"]["settled_krw"]
+    assert settled == run("R27").proposal.remain_krw
+    j1, j28 = run("R1").to_json(), run("R28").to_json()
+    j1.pop("proposal")
+    j28.pop("proposal")
+    assert j1 == j28
+    p = run("R28").proposal
+    assert (p.amount_krw, p.amount_text) == (run("R1").proposal.amount_krw, "약 3만 6천 원")
+    assert p.remain_krw == p.amount_krw - settled
+    assert p.per_person_krw == p.remain_krw / 4 and p.per_person_text == "약 5천 원"
+    assert p.per_person_krw == pytest.approx(4_632.31, abs=0.005)
+    assert p.driver_share_krw == p.remain_krw * 3 / 4 and p.b.item == "meal"
+    assert p.a.main_text == "한 사람 약 5천 원"
+    assert p.a.basis_text == "운전 노고 약 3만 6천 원에서 중간에 챙긴 몫을 뺀 나머지를 운전자 포함 4명이 나눈 값"
+
+
+def test_no_settlement_input_keeps_output():
+    """settled_krw·midway가 없으면 지금 결과와 완전히 같다(출력에 키도 없음). 0을 넘기면 숫자는 같고 두 키만 생긴다."""
+    base = run("R1").to_json()
+    bp = base.pop("proposal")
+    assert "settled_krw" not in bp and "remain_krw" not in bp
+    zero = run("R1", settled_krw=0).to_json()
+    zp = zero.pop("proposal")
+    assert zero == base
+    assert (zp.pop("settled_krw"), zp.pop("remain_krw")) == (0.0, bp["amount_krw"])
+    assert zp == bp
+
+
+def test_settled_over_amount_never_negative():
+    p = run("R1", settled_krw=50_000).proposal
+    assert (p.remain_krw, p.per_person_krw, p.per_person_text, p.b) == (0.0, 0.0, "1천 원 미만", None)
+
+
+@pytest.mark.parametrize("fid,item", [("R29", "coffee"), ("R30", None), ("R31", None)])
+def test_remaining_share_picks_b_again(fid, item):
+    """B는 남은 금액의 운전자 몫으로 5-3 경계를 다시 고른다. 0이거나 커피 1인분 절반(2,350) 미만이면 제안 없음."""
+    p = run(fid).proposal
+    n = fx(fid)["input"]["n"]
+    assert p.driver_share_krw == p.remain_krw * (n - 1) / n
+    assert (p.b.item if p.b else None) == item
+
+
+def test_remaining_boundary_changes_item():
+    assert run("R29", settled_krw=None).proposal.b.item == "meal"   # 정산 없이는 운전자 몫 10,700 → 밥
+    assert run("R29").proposal.driver_share_krw == 2_350            # 남은 4,700 → 2,350 = 경계 '이상' → 커피
+    assert run("R30").proposal.driver_share_krw == 2_349.5
+    assert run("R31").proposal.remain_krw == 0.0
+
+
+def test_two_settlements_sum():
+    """정산할 때마다 remain_krw를 더한다. 두 번 정산하면 합 = 두 번째 중간 정산 금액."""
+    s1 = run("R27").proposal.remain_krw
+    s2 = run("R32").proposal.remain_krw
+    assert fx("R32")["input"]["settled_krw"] == s1
+    assert fx("R33")["input"]["settled_krw"] == s1 + s2
+    assert s1 + s2 == pytest.approx(run("R32").proposal.amount_krw)
+    p = run("R33").proposal
+    assert p.remain_krw == p.amount_krw - (s1 + s2)
+    assert (p.per_person_text, p.b.item) == ("약 2천 원", "coffee")
+
+
+def test_midway_arrival_cap_uses_departure_eta():
+    """도착 상한(#68)은 출발 때 ETA 그대로(효성 11/9). 기준 ETA(52.35분)로 줄였다면 112분이지만 경과 150분도 영수증."""
+    r = mid(now="18:30")
+    assert (r.status, r.elapsed_limit_min) == ("ok", 210)
+    assert mid(now="19:31").status == "unsettled"   # 211분 > 210
+
+
+def test_midway_input_made_by_engine():
+    """지금까지 거리 = 경로 − 남은 거리는 엔진이 만든다. 앱이 넘긴 distance_km·congestion_m(경로 전체)은 중간 정산에서 안 쓴다."""
+    assert mid().to_json() == mid(distance_km=104.3, congestion_m=99_999).to_json()
+    z = mid(so_far_m=-5_000)            # 경로가 바뀌어 남은 거리가 경로보다 길면 지금까지 0
+    assert (z.delay_min, z.distance_text) == (0, "1km 미만")
+    u = EF.effort(EF.input_from_json(midway_input(midway={"route_m": 0, "remain_m": 0})), C)
+    assert u.delay_min == 0              # 경로 거리를 모르면 예상보다 더 0
+
+
 # ---------------------------------------------------------------- 1부: 시연 데이터 (명세 v0.5 12절)
 DEMO = load(ROOT / "fixtures/effort/demo.json")
 
@@ -465,6 +574,7 @@ def test_effort_fixture_ids():
     assert not ids & {2, 4}
     assert {1, 3} | set(range(5, 16)) <= ids
     assert set(range(22, 27)) <= ids
+    assert set(range(27, 34)) <= ids   # 중간 정산(Q-08-02)
 
 
 @pytest.mark.parametrize("p", EFFORT, ids=lambda p: p.stem)
@@ -554,7 +664,10 @@ def test_copy_rules_hold_everywhere():
             a = r.proposal.a
             assert a.title_text == "오늘 운전을 챙긴다면"
             assert a.main_text == f"한 사람 {r.proposal.per_person_text}"
-            assert a.basis_text.startswith(f"운전 노고 {r.proposal.amount_text}을 운전자 포함 ")
+            if r.proposal.settled_krw:   # 앞서 정산한 몫이 있으면 '뺀 나머지'(중간 정산)
+                assert a.basis_text.startswith(f"운전 노고 {r.proposal.amount_text}에서 중간에 챙긴 몫을 뺀 나머지를 운전자 포함 ")
+            else:
+                assert a.basis_text.startswith(f"운전 노고 {r.proposal.amount_text}을 운전자 포함 ")
         for s in texts(r):
             for rx, msg in lint_copy.FORBIDDEN + lint_copy.COPY_RULES:
                 assert not rx.search(s), f"{msg}: {s}"

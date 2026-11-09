@@ -125,6 +125,7 @@ fun EffortApp(
                 onReceipt = { vm.open(EffortScreen.RECEIPT) },
                 onArrive = vm::arriveNow,
                 onLog = { vm.open(EffortScreen.LOG) },
+                onMidway = vm::startMidway,
                 onRecord = vm::openRecord,
             )
             EffortScreen.DEPART -> {
@@ -145,6 +146,7 @@ fun EffortApp(
             EffortScreen.RECEIPT -> EffortArriveScreen(ui, onRest = vm::answerRest, onPick = vm::pick, onClose = vm::closeArrive)
             EffortScreen.LOG -> EffortLogScreen(ui, onBack = { vm.back() }, onRecord = vm::openRecord)
             EffortScreen.RECORD -> EffortRecordScreen(ui, onBack = { vm.back() })
+            EffortScreen.MIDWAY -> EffortMidwayScreen(ui, onPick = vm::midwayPick, onClose = vm::closeMidway)
         }
     }
 }
@@ -238,7 +240,7 @@ private fun EffortSettings(
                         )
                     }
                     if (wageOpen) Column(Modifier.padding(start = side, end = side, bottom = 28.gpx), verticalArrangement = Arrangement.spacedBy(6.gpx)) {
-                        Text(stringResource(R.string.effort_settings_wage_how, wage.wageLabel, wage.hourlyManText, wage.perMinExactText), style = t.bodyM, color = c.textSecondary)
+                        Text(stringResource(R.string.effort_settings_wage_how, wage.wageYearLabel, wage.hourlyManText, wage.perMinExactText), style = t.bodyM, color = c.textSecondary)
                         Text(stringResource(R.string.effort_settings_wage_show_only), style = t.bodyM, color = c.textSecondary)
                     }
                 }

@@ -1,0 +1,65 @@
+{
+  "id": "R30",
+  "title": "남은 몫 B 경계(1원 아래 → 제안 없음): R29에서 앞서 정산 16,701원",
+  "note": "남은 4,699 → 운전자 몫 2,349.5 < 2,350 → B 제안 없음(b null). 앱은 A도 같은 기준으로 기록만(Q-07-04)",
+  "input": {
+    "departed_at": "2026-11-17T10:00:00+09:00",
+    "arrived_at": "2026-11-17T12:00:00+09:00",
+    "rest_answer_min": 0,
+    "eta_s": 7200,
+    "congestion_ratio": 0.0,
+    "congestion_m": 0.0,
+    "congestion_s": null,
+    "weather_dep": "none",
+    "weather_arr": "none",
+    "sunrise": "07:13",
+    "sunset": "17:20",
+    "n": 2,
+    "distance_km": null,
+    "settled_krw": 16701.0
+  },
+  "expected": {
+    "status": "ok",
+    "status_text": null,
+    "elapsed_limit_min": 240.0,
+    "elapsed_min": 120.0,
+    "drive_min": 120.0,
+    "rest_min": 0.0,
+    "fatigue_segments_min": [
+      120.0
+    ],
+    "congestion_min": 0.0,
+    "delay_min": 0.0,
+    "night_min": 0.0,
+    "rain_min": 0.0,
+    "snow_min": 0.0,
+    "fatigue_excess_min": 0.0,
+    "effort_min": 120.0,
+    "multiplier": 1.0,
+    "lines": [],
+    "notes": [],
+    "footnote_text": null,
+    "drive_text": "2시간",
+    "multiplier_text": "평소와 같은 길",
+    "headline_text": "오늘 운전 2시간 · 평소와 같은 길",
+    "distance_text": null,
+    "proposal": {
+      "amount_krw": 21400.0,
+      "amount_approx": 21000,
+      "amount_text": "약 2만 1천 원",
+      "per_person_krw": 2349.5,
+      "per_person_approx": 2000,
+      "per_person_text": "약 2천 원",
+      "driver_share_krw": 2349.5,
+      "a": {
+        "title_text": "오늘 운전을 챙긴다면",
+        "main_text": "한 사람 약 2천 원",
+        "basis_text": "운전 노고 약 2만 1천 원에서 중간에 챙긴 몫을 뺀 나머지를 운전자 포함 2명이 나눈 값",
+        "wage_text": "최저임금 1분 178원 기준"
+      },
+      "b": null,
+      "settled_krw": 16701.0,
+      "remain_krw": 4699.0
+    }
+  }
+}
