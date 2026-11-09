@@ -6,8 +6,8 @@
   0 준비      콘솔: 기어 P · 운전석 문 닫힘 · 4석 착석 / 앱: 데모 고정 모드 켜기
   1 출발      앱: 출발하기 → 미리보기(태안 꽃지해수욕장 · 104km · 정체 38km) → [출발]
   2 주행      콘솔: 기어 D → 1초 안에 화면 가림(AC-C-1) → 기어 P → 홈 복귀
-  2+ 휴게소   앱: [지금까지의 노고 보기] → 지금까지 영수증(1시간 5분 · 52km · 1.55배, 한 사람 약 4천 원)
-              → [좋아요]로 여기까지 정산 → [계속 가기] → 홈 "17:05까지 정산함"
+  2+ 휴게소   앱: 시동 버튼(지금까지의 노고 보기) → 지금까지 영수증(1시간 5분 · 52km · 1.55배, 한 사람 약 4천 원)
+              → [좋아요]로 여기까지 정산 → [계속 가기] → 가는 중 홈(v3: "~까지 정산함" 표시 없음)
               콘솔: 기어 D(가림) → 기어 P(같은 주행을 이어 감, [출발]을 다시 누르지 않음)
   3 도착      콘솔: 운전석 문 열기 → 계산 연출 → 영수증(2시간 10분 · 1.56배, 휴게소에서 장시간이 끊김)
               --no-midway면 1.57배(R1)
@@ -54,7 +54,6 @@ EXPECT_RECEIPT = ["2시간 10분", "1.57배"]                 # 중간 정산 �
 EXPECT_RECEIPT_MIDWAY = ["2시간 10분", "1.56배"]          # 휴게소 17:05 정산 뒤(demo.json midway_arrival = R28)
 EXPECT_MIDWAY = ["지금까지 영수증", "1시간 5분", "52km", "1.55배", "한 사람 약 4천 원"]   # demo.json midway = R27
 EXPECT_MIDWAY_DONE = "도착하면 전체를 다시 세고, 이 몫은 빼고 알려 드려요"
-EXPECT_MIDWAY_SETTLED = "17:05까지 정산함"
 EXPECT_REMAIN = "한 사람 약 5천 원"                       # 정산 뒤 남은 몫(방식 A)
 
 
@@ -329,7 +328,7 @@ def step_midway(r: Run) -> None:
     if r.auto:
         r.check("[지금까지의 노고 보기]", tap("지금까지의 노고 보기"))
     else:
-        r.person("휴게소 — 홈 내 차 그림 [지금까지의 노고 보기]")
+        r.person("휴게소 — 홈 시동 버튼(지금까지의 노고 보기)")
     r.expect("지금까지 영수증", EXPECT_MIDWAY)
     if r.auto:
         ts = texts()
@@ -345,7 +344,7 @@ def step_midway(r: Run) -> None:
         r.check("[계속 가기]", tap("계속 가기"))
     else:
         r.person("[계속 가기]")
-    r.expect("홈 정산함 표시", EXPECT_MIDWAY_SETTLED)
+    r.expect("가는 중 홈으로 돌아옴", EXPECT_DRIVING_HOME)
     r.person("다시 출발 — 콘솔 기어 D를 넣어요(운전자 교대, [출발]은 다시 누르지 않음)")
     gear("Drive")
     if r.auto:
@@ -353,7 +352,7 @@ def step_midway(r: Run) -> None:
     time.sleep(1.5)
     r.person("정차 — 콘솔 기어 P를 넣어요")
     gear("Park")
-    r.expect("기어 P → 홈(가는 중 · 정산함)", [EXPECT_DRIVING_HOME, EXPECT_MIDWAY_SETTLED], timeout=6)
+    r.expect("기어 P → 가는 중 홈", EXPECT_DRIVING_HOME, timeout=6)
 
 
 def step3(r: Run, midway: bool = False) -> None:
