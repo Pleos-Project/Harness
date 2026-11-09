@@ -67,7 +67,7 @@ class SettingsViewTest {
     fun itemsWithPriceAndSource() {
         val items = wageSourceOf(c).items
         assertEquals(listOf("커피", "밥", "공동 경비"), items.map { it.label })   // 가격 오름차순
-        assertEquals(listOf("4,700원", "10,731원", "69,000원"), items.map { it.priceText })
+        assertEquals(listOf("4,700원", "10,711원", "69,000원"), items.map { it.priceText })
         assertTrue(items.all { it.source.isNotBlank() })
     }
 

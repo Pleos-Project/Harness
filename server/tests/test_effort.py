@@ -231,11 +231,11 @@ def test_f25_shared_phrase_and_examples():
 
 
 @pytest.mark.parametrize("share,want", [
-    (2_349.99, None), (2_350, "coffee"), (7_715.49, "coffee"), (7_715.5, "meal"),
-    (39_865.49, "meal"), (39_865.5, "shared"), (500_000, "shared"),
+    (2_349.99, None), (2_350, "coffee"), (7_705.49, "coffee"), (7_705.5, "meal"),
+    (39_855.49, "meal"), (39_855.5, "shared"), (500_000, "shared"),
 ])
 def test_f25_b_boundaries(share, want):
-    """명세 9절 경계표: 2,350 미만 제안 없음 / ~7,715.5 미만 커피 / ~39,865.5 미만 밥 / 이상 공동 경비."""
+    """명세 9절 경계표(밥 10,711원, DECISIONS 11/9): 2,350 미만 제안 없음 / ~7,705.5 미만 커피 / ~39,855.5 미만 밥 / 이상 공동 경비."""
     item = EF.b_item(share, C.items)
     assert (item.key if item else None) == want
 
