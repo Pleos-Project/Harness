@@ -195,7 +195,7 @@ data class EffortScreenA(
 /** 방식 B 화면(명세 v0.5 F25, 노고 PRD v1.3 5-3). 금액은 보여 주지 않는다. 선택지는 effort.items 전부. */
 data class EffortScreenB(
     val item: String,                   // 기본값으로 올릴 항목 key
-    val text: String,                   // "오늘은 밥값에서 운전자 빼고 나누는 게 어때요" / "오늘은 공동 경비에서 …"
+    val text: String,                   // "오늘은 밥값에서 운전자 빼는 게 어때요" / "오늘은 공동 경비에서 …"
     val itemExamples: List<String>,     // 공동 경비면 그 자리에 차례로 보일 예시(첫 값이 text 안의 말), 커피·밥은 빈 목록
 )
 
@@ -232,7 +232,7 @@ data class EffortReceipt(
     val multiplier: Double,
     val lines: List<EffortLine>,        // 가산이 0인 줄은 생략
     val notes: List<String>,
-    val footnoteText: String?,          // 정체 줄이 있으면 "정체 구간은 내비 안내 경로 기준"
+    val footnoteText: String?,          // 정체 줄이 있고 비율을 알면 "출발 때 내비가 안내한 경로의 36%가 막혀 있었어요"(시안 v104 정체 줄 펼침 첫 줄)
     val driveText: String,
     val multiplierText: String,
     val headlineText: String,
@@ -278,7 +278,7 @@ fun driveText(driveS: Double): String {
     }
 }
 
-/** 배수 x.xx(명세 2절). 1.00이면 '평소와 같은 길' 문구. */
+/** 배수 x.xx(명세 2절). 1.00이면 multiplier_same_text("평소 같은 길", 시안 v104). */
 fun multiplierText(m100: Int, c: EffortConstants): String =
     if (m100 <= 100) c.copy.text.getValue("multiplier_same_text")
     else fill(c.copy.text.getValue("multiplier_more_text"), "x" to "${m100 / 100}.${(m100 % 100).toString().padStart(2, '0')}")
@@ -307,26 +307,28 @@ fun congestionText(congestionM: Double?, ratio: Double?, c: EffortConstants): St
 data class DeparturePreview(
     val etaText: String,                // "1시간 45분"
     val routeText: String,              // "104km"
-    val congestionText: String?,        // "38km (경로의 36%)". 비율을 모르거나 0이면 null(정체 표시 없음)
+    val congestionText: String?,        // "경로의 36%"(preview_congestion_text, 시안 v104). 비율을 모르거나 0이면 null(정체 표시 없음)
 )
 
 fun departurePreview(
     etaS: Double, routeM: Double, congestionRatio: Double?, congestionM: Double?, c: EffortConstants,
 ): DeparturePreview {
+    // 미리보기 정체는 비율만 보여 준다(시안 v104 "경로의 36%"). congestionM은 호출 모양을 바꾸지 않으려고 남겨 둠
     val has = congestionRatio != null && congestionRatio > 0
     return DeparturePreview(
         etaText = driveText(etaS),
         routeText = kmText(routeM),
-        congestionText = if (has) congestionText(congestionM, congestionRatio, c) else null,
+        congestionText = if (has) fill(c.copy.text.getValue("preview_congestion_text"), "pct" to ratioText(congestionRatio!!)) else null,
     )
 }
 
 fun DeparturePreview.toJson(): JsonObject =
     obj("eta_text" to etaText, "route_text" to routeText, "congestion_text" to congestionText)
 
-/** 날씨 줄 값: 출발·도착이 같으면 "비, 주행 내내", 한쪽만이면 "비"(임시 문구, 디자인 확정 대기). */
-fun weatherDetail(key: String, whole: Boolean, c: EffortConstants): String {
-    val t = c.copy.lineDetail.getValue(if (whole) "weather_all_text" else "weather_part_text")
+/** 날씨 줄 값: 주행 내내면 "비, 주행 내내"(중간 정산이면 "비, 지금까지 내내", 시안 v104), 일부면 "비". */
+fun weatherDetail(key: String, whole: Boolean, c: EffortConstants, midway: Boolean = false): String {
+    val t = c.copy.lineDetail.getValue(
+        if (whole) (if (midway) "weather_all_midway_text" else "weather_all_text") else "weather_part_text")
     return fill(t, "precip" to c.copy.precipWords.getValue(key))
 }
 
@@ -510,7 +512,7 @@ fun effort(inp: EffortInput, c: EffortConstants): EffortReceipt {
         if (a > 0) {
             val pct = roundHalfUp(a / drive)
             val detail = when (k) {
-                "rain", "snow" -> weatherDetail(k, if (k == "rain") rainWhole else snowWhole, c)
+                "rain", "snow" -> weatherDetail(k, if (k == "rain") rainWhole else snowWhole, c, inp.midway != null)
                 "congestion" -> congestionText(congestionM, inp.congestionRatio, c)
                 "delay" -> timeDetail("delay_text", delay, c)
                 "night" -> timeDetail("night_text", night, c)
@@ -545,7 +547,8 @@ fun effort(inp: EffortInput, c: EffortConstants): EffortReceipt {
         congestionMin = congestion / 60, delayMin = delay / 60, nightMin = night / 60,
         rainMin = rain / 60, snowMin = snow / 60, fatigueExcessMin = excess / 60,
         effortMin = total / 6000, multiplier = m100 / 100.0, lines = lines, notes = notes,
-        footnoteText = if (lines.any { it.key == "congestion" }) c.copy.text.getValue("footnote_congestion_text") else null,
+        footnoteText = if (inp.congestionRatio != null && lines.any { it.key == "congestion" })
+            fill(c.copy.text.getValue("footnote_congestion_text"), "pct" to ratioText(inp.congestionRatio)) else null,
         driveText = dt, multiplierText = mt,
         headlineText = fill(c.copy.text.getValue("headline_text"), "drive" to dt, "multiplier" to mt),
         distanceText = distanceM?.let { kmText(it) },   // 0km 대신 "1km 미만"
@@ -566,10 +569,11 @@ fun effortProposal(effortPctS: Double, n: Int, c: EffortConstants, settledKrw: D
     val share = remain * (n - 1) / n
     val (aV, aT) = approxText(amount)
     val (pV, pT) = approxText(per)
+    val rT = approxText(remain).second   // 남은 금액도 원 단위에서 한 번만 어림(어림한 값끼리 빼지 않음)
     val item = bItem(share, c.items)   // 남은 몫이 0이거나 커피 1인분 절반보다 작으면 null(제안 없음)
     val perMin = wagePerMin(c)
     val t = c.copy.text
-    // 앞서 정산한 몫이 있으면 근거도 '뺀 나머지'(임시 문구, 명준 확정 대기)
+    // 앞서 정산한 몫이 있으면 근거는 '남은 운전 노고'(시안 v104)
     val basis = t.getValue(if (settledKrw != null && settledKrw > 0) "a_basis_remain_text" else "a_basis_text")
     return EffortProposal(
         amountKrw = amount, amountApprox = aV, amountText = aT,
@@ -578,7 +582,7 @@ fun effortProposal(effortPctS: Double, n: Int, c: EffortConstants, settledKrw: D
         a = EffortScreenA(
             titleText = t.getValue("a_title_text"),
             mainText = fill(t.getValue("a_main_text"), "per_person" to pT),
-            basisText = fill(basis, "amount" to aT, "n" to n.toString()),
+            basisText = fill(basis, "amount" to aT, "remain" to rT, "n" to n.toString()),
             wageText = fill(t.getValue("a_wage_text"), "wage_label" to c.wageLabel, "wage_per_min" to perMin.toString()),
         ),
         b = item?.let { EffortScreenB(it.key, fill(t.getValue("b_text"), "phrase" to it.phraseText), it.examples) },

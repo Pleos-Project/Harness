@@ -58,7 +58,7 @@
         "pct": 40,
         "pct_text": "+40%",
         "detail_text": "비, 주행 내내",
-        "basis_text": "비 오는 날은 맑은 날보다 운전 부담이 40% 커요 · 시뮬레이터 30명 연구(Frontiers in Neuroscience 2026)"
+        "basis_text": "비 오는 날은 운전 부담이 40% 늘어요 · 시뮬레이터 30명 연구(Frontiers in Neuroscience 2026)"
       }
     ],
     "notes": [],
@@ -83,7 +83,7 @@
       },
       "b": {
         "item": "coffee",
-        "text": "오늘은 커피값에서 운전자 빼고 나누는 게 어때요",
+        "text": "오늘은 커피값에서 운전자 빼는 게 어때요",
         "item_examples": []
       }
     }

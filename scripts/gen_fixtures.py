@@ -234,20 +234,39 @@ def demo_traffic(r1: dict) -> list[dict]:
     return [{"congestion_type": t, "start_ratio": s, "end_ratio": e} for t, s, e in DEMO_TRAFFIC]
 
 
+DEMO_DAY = "2026-11-10"   # 시연 날짜(명준 시안 v104 "11월 10일"). 명세 R1·R27·R28 fixture는 DAY 그대로
+
+
+def on_demo_day(inp: dict) -> dict:
+    """R1 장면 입력을 시연 날짜로 옮긴다(날짜 글자만). 일출·일몰은 R1 입력(07:13·17:20)을 그대로 둬서
+    배수·금액·밤길 분이 R1·R27·R28과 같다. 11/10 서울 실제 일몰은 17:25지만 앱은 일몰 시각을 화면에 보여 주지 않아
+    시연용 값으로 둔다(효성 11/9, 실제 일몰을 쓰면 밤길만 50분 → 45분)."""
+    moved = json.loads(json.dumps(inp, ensure_ascii=False).replace(DAY, DEMO_DAY))
+    assert DAY not in json.dumps(moved) and (moved["sunrise"], moved["sunset"]) == (inp["sunrise"], inp["sunset"])
+    return moved
+
+
 def demo_fixture(r1: dict) -> None:
     """시연 데이터(명세 v0.5 12절): R1 입력 그대로 + 화면용 scene. 목업·영상·PT 앱이 같은 숫자를 쓴다.
     앱은 데모 고정 모드에서 assets/data/effort/demo.json을 읽는다(syncChagokData).
     midway·midway_arrival = 휴게소 중간 정산 장면(효성 11/9): 17:05 중간 정산(R27) → [좋아요]로 정산 → 18:10 도착(R28)."""
-    r = EF.effort(EF.input_from_json(r1), EFFORT_CONST)
-    mid = r1_midway(r1, "17:05", DEMO_MIDWAY_M)
-    after = dict(r1, settlements=[settled(mid)])
+    r1_day = on_demo_day(r1)
+    mid = on_demo_day(r1_midway(r1, "17:05", DEMO_MIDWAY_M))
+    after = dict(r1_day, settlements=[settled(mid)])
+    r = EF.effort(EF.input_from_json(r1_day), EFFORT_CONST)
+    # 날짜만 옮겼으니 영수증·제안은 R1·R27·R28과 글자까지 같아야 한다
+    r1_mid = r1_midway(r1, "17:05", DEMO_MIDWAY_M)
+    for moved, orig in ((r1_day, r1), (mid, r1_mid), (after, dict(r1, settlements=[settled(r1_mid)]))):
+        assert EF.effort(EF.input_from_json(moved), EFFORT_CONST).to_json() ==             EF.effort(EF.input_from_json(orig), EFFORT_CONST).to_json()
     preview = EF.departure_preview(r1["eta_s"], R1_ROUTE_M, r1["congestion_ratio"], r1["congestion_m"], EFFORT_CONST)
     rest_label = dict(EFFORT_CONST.copy.rest_answers)[r1["rest_answer_min"]]   # 도착 때 질문의 선택지(copy)
     write(ROOT / "fixtures/effort/demo.json", {
         "id": "demo", "title": "시연 데이터: R1(PRD 대표 장면) + 휴게소 중간 정산(R27 → R28)",
         "note": "명세 v0.5 12절. gen_fixtures.py가 R1·R27·R28 정의로 만든다(손으로 고치지 않음). "
                 "목적지 이름·경로 거리는 바꿔도 배수·금액이 그대로(정체 km 표시만 바뀜). "
-                "목적지 이름은 명준 #60. 화면 문구는 constants effort.copy의 임시 값(디자인 확정 대기)",
+                "목적지 이름은 명준 #60. 화면 문구는 constants effort.copy(시안 v104 반영). "
+                "날짜는 시연 날짜 2026-11-10(시안 v104)으로 옮겼고 일출·일몰은 R1 입력(07:13·17:20) 그대로라 "
+                "숫자가 R1·R27·R28과 같다(11/10 서울 실제 일몰 17:25, 시연용 값)",
         "scene": {
             "dest_name": "태안 꽃지해수욕장",
             "route_m": R1_ROUTE_M,
@@ -260,7 +279,8 @@ def demo_fixture(r1: dict) -> None:
                         "endRatio, 경로의 % 정수)와 같은 뜻. 실제 모드는 경로 전체가 4% 칸으로 오고 FAST·MODERATE도 섞이지만 "
                         "시연 데이터는 SLOW·HEAVY 구간만 둔다. 앱은 목록에 없는 구간을 원활로 칠해 둘이 같은 그림이 된다(June #117 실측). "
                         "구간 위치는 시연용으로 지어낸 값이고 4% 칸에 맞추지 않는다(합 36%를 휴게소 앞뒤 18%씩 나누려고). "
-                        "SLOW·HEAVY 합 = 미리보기 정체 비율 36%('38km (경로의 36%)'), 앱이 엔진 정체 입력으로 쓰는 기준과 같다. "
+                        "SLOW·HEAVY 합 = 미리보기 정체 비율 36%(미리보기 '경로의 36%', 영수증 정체 줄 '38km (경로의 36%)'), "
+                        "앱이 엔진 정체 입력으로 쓰는 기준과 같다. "
                         "휴게소(경로의 약 50%) 앞뒤 18%씩: 엔진은 정체를 고르게 세서 중간 정산(R27) 정체가 전체의 절반"
                         "(23.4분 · 19km)이라 막대와 맞춘다. 출발지 이름: 실제 requestTrip의 routePoints에 출발 지점이 없어 "
                         "앱이 '현재 위치'로 쓴다(June #117 실측)",
@@ -268,7 +288,7 @@ def demo_fixture(r1: dict) -> None:
                 "traffic": demo_traffic(r1),
             },
         },
-        "input": r1, "expected": r.to_json(),
+        "input": r1_day, "expected": r.to_json(),
         # 휴게소에서 운전자 교대 → 지금까지의 노고 보기. 시연 모드는 지금 시각·내비 남은 거리·시간대별 날씨 대신 이 값을 쓴다
         "midway": {
             "note": "휴게소 17:05 중간 정산(= R27). at = 정산 시각(input.arrived_at), remain_m = 그때 내비 남은 거리"

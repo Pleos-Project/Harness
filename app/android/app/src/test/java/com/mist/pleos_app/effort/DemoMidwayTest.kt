@@ -31,7 +31,7 @@ class DemoMidwayTest {
     fun demoMidwayThenArrivalLikeFixture() {
         assertNotNull(scene.midway)
         val m = scene.midway!!
-        assertEquals("2026-11-17T17:05:00+09:00", m.at)
+        assertEquals("2026-11-10T17:05:00+09:00", m.at)   // 시연 날짜 11/10(시안 v104)
         assertEquals(52300, m.remainM)
 
         // 휴게소 17:05: 앱 시연 경로(출발 기록 → midwayReceiptOf)로 낸 영수증 = midway.expected

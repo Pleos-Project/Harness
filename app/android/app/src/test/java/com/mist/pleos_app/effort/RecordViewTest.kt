@@ -21,17 +21,17 @@ class RecordViewTest {
 
     @Test
     fun logLineLikeDesign() {
-        // 시안: "2시간 10분 · 평소보다 1.57배 · 함께 4명", "1시간 · 평소와 같은 길 · 함께 2명"(1.00은 엔진 문구)
+        // 시안: "2시간 10분 · 평소보다 1.57배 · 함께 4명", "1시간 · 평소 같은 길 · 함께 2명"(1.00은 엔진 문구)
         val r = EffortRecord("t1", "2026-11-17", "태안 꽃지해수욕장", 130.0, 1.57, 204.0, "A", "한 사람 약 9천 원", "accept", "", n = 4)
         assertEquals("2시간 10분 · 평소보다 1.57배 · 함께 4명", recordLogLine(r, c))
-        assertEquals("1시간 · 평소와 같은 길 · 함께 2명", recordLogLine(r.copy(driveMin = 60.0, multiplier = 1.0, n = 2), c))
+        assertEquals("1시간 · 평소 같은 길 · 함께 2명", recordLogLine(r.copy(driveMin = 60.0, multiplier = 1.0, n = 2), c))
         assertEquals("55분 · 평소보다 1.14배", recordLogLine(r.copy(driveMin = 55.0, multiplier = 1.14, n = null), c))
     }
 
     @Test
     fun unsettledLeavesRecordWithoutReceipt() {
         // 명준 #75 11/9: 정리하지 못함도 기록 1건. 목록·카드 "정리하지 못함", 상세는 영수증 없이
-        val trip = arrivedDemo().copy(arrivedAt = "2026-11-17T23:59:00+09:00")    // 경과가 상한(ETA × 2 등)을 넘음
+        val trip = arrivedDemo().copy(arrivedAt = "2026-11-10T23:59:00+09:00")    // 경과가 상한(ETA × 2 등)을 넘음
         val receipt = receiptOf(trip, c)!!
         assertEquals(RECEIPT_UNSETTLED, receipt.status)
         val rec = recordOf(trip, receipt, null, Settings.METHOD_A, CHOICE_UNSETTLED)
