@@ -176,7 +176,7 @@ internal fun EffortDepartScreen(
         }
         // 인원 확인 알림 바(위 바 줄에 겹침)
         // depart-sensor: 좌석 센서를 못 읽으면 감지 인원 없이 "몇 명이 함께 타나요?"로 직접 고르게
-        if ((askPayers || peopleOpen) && (seats >= 1 || peopleOpen)) {
+        if (askPayers || peopleOpen) {
             var n by rememberSaveable(seats) { mutableIntStateOf((if (peopleOpen || seats <= 0) payers else seats).coerceIn(PayerFlow.MIN, PayerFlow.MAX)) }
             // v39(명준 11/8): 감지 인원과 다르게 바꾸면 "N명이 낼게요" + "감지는 S명 · N명으로 나눠요", 되돌리면 원래 문구
             CgPeopleAlert(
@@ -215,6 +215,7 @@ private fun DestCards(options: List<DestOption>, selected: DestOption?, narrow: 
                         kindText(o), o.dest.name,
                         meta = o.distanceText ?: o.dest.address?.takeIf { it.isNotBlank() && it != o.dest.name },   // 내비 최근은 주소가 이름과 같을 때가 많음
                         selected = selected?.dest?.name == o.dest.name, onClick = { onClick(o) }, modifier = Modifier.weight(1f), compact = narrow,
+                        icon = when (o.kind) { DestOption.Kind.HOME -> CgIcon.House; DestOption.Kind.OFFICE -> CgIcon.Briefcase; DestOption.Kind.BOOKMARK -> CgIcon.Star; else -> CgIcon.Recent },
                     )
                 }
                 repeat(cols - row.size) { Spacer(Modifier.weight(1f)) }

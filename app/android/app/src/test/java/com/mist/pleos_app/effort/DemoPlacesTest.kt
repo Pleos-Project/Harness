@@ -13,8 +13,10 @@ class DemoPlacesTest {
     @Test
     fun recentsStartWithDemoDestination() {
         val r = demoRecents(scene)
-        assertEquals(4, r.size)
-        assertEquals(scene.destName, r.first().dest.name)
+        // 시안 depart-home: 즐겨찾기 집 · 회사, 최근 태안 · 양평(거리 12 · 8 · 104 · 36km)
+        assertEquals(listOf("집", "회사", scene.destName, "양평 두물머리"), r.map { it.dest.name })
+        assertEquals(listOf(DestOption.Kind.HOME, DestOption.Kind.OFFICE, DestOption.Kind.RECENT, DestOption.Kind.RECENT), r.map { it.kind })
+        assertEquals(listOf(12_000, 8_000, 104_000, 36_000), r.map { it.distanceM })
         assertTrue(r.all { it.dest.lat == 0.0 && it.dest.lng == 0.0 })          // 좌표 없음
     }
 
@@ -23,8 +25,9 @@ class DemoPlacesTest {
         val (ok, list) = demoSearch("강릉", scene)
         assertEquals(PlacesStatus.OK, ok)
         assertEquals(listOf("강릉 안목해변"), list.map { it.dest.name })
+        assertEquals(listOf("가평 아침고요수목원"), demoSearch("가평", scene).second.map { it.dest.name })   // 카드에서 빠져도 검색으로 찾음
         assertEquals(DestOption.Kind.SEARCH, list.first().kind)
-        assertEquals(listOf("코엑스", "회사").sorted(), demoSearch("강남 구", scene).second.map { it.dest.name }.sorted())   // 띄어쓰기 무시
+        assertEquals(listOf("집", "코엑스", "회사").sorted(), demoSearch("강남 구", scene).second.map { it.dest.name }.sorted())   // 띄어쓰기 무시
         assertEquals(PlacesStatus.EMPTY, demoSearch("없는곳", scene).first)
     }
 

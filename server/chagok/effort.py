@@ -227,7 +227,7 @@ class Receipt:
     multiplier: float                # 부담 배수, 소수 둘째 자리 반올림
     lines: list[Line]                # 가산이 0인 줄은 생략
     notes: list[str]                 # "날씨 정보 없음", "정체 정보 없음"
-    footnote_text: str | None        # 정체 줄이 있고 비율을 알면 "출발 때 내비가 안내한 경로의 36%가 막혀 있었어요"(시안 v104 정체 줄 펼침 첫 줄)
+    footnote_text: str | None        # 정체 줄이 있고 비율을 알면 "출발 때 내비가 안내한 경로의 36%가 붐볐어요"(시안 v104 정체 줄 펼침 첫 줄)
     drive_text: str                  # "2시간 10분"
     multiplier_text: str             # "평소보다 1.56배 힘든 길" | "평소 같은 길"
     headline_text: str               # "오늘 운전 2시간 10분 · 평소보다 1.56배 힘든 길"

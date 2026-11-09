@@ -88,7 +88,7 @@ def test_ac_f23_1_r1_headline_and_lines():
     # 줄 값 = 노고 PRD v1.3 5-1 영수증 예시 그대로
     assert [l.detail_text for l in r.lines] == [
         "비, 주행 내내", "38km (경로의 36%)", "+25분", "50분", "2시간 넘긴 10분"]
-    assert r.footnote_text == "출발 때 내비가 안내한 경로의 36%가 막혀 있었어요"   # 시안 v104 정체 줄 펼침 첫 줄
+    assert r.footnote_text == "출발 때 내비가 안내한 경로의 36%가 붐볐어요"   # 시안 v104 정체 줄 펼침 첫 줄
     assert run("R3").footnote_text is None                 # 정체 줄이 없으면 주석도 없음
     # 구간 목록만 있고 비율을 모르면 정체 줄은 있어도 비율 문장은 없음
     seg_only = run("R1", congestion_ratio=None, congestion_m=None, congestion_s=2400)
@@ -128,7 +128,7 @@ BASIS_R1 = {
     "rain": "비 오는 날은 운전 부담이 40% 늘어요 · 시뮬레이터 30명 연구(Frontiers in Neuroscience 2026)",
     "congestion": "차가 붐비는 길은 운전 부담이 27% 늘어요 · 시뮬레이터 연구(Shakouri, LSU 2015)",
     "delay": "예상보다 늦어진 시간은 정체와 같은 값으로 쳐요 · 예상 못 한 지연이 더 힘들다는 통근 연구(Wener·Evans 2011)",
-    "night": "밤에는 낮보다 운전 부담이 4% 커요 · 트럭 운전자 50명 시뮬레이터 연구(Fitri 2025)",
+    "night": "밤 운전은 부담이 4% 늘어요 · 트럭 운전자 50명 시뮬레이터 연구(Fitri 2025)",
     "fatigue": "2시간을 넘겨 이어서 운전한 시간에 더해요 · 2시간 운전하면 15분 쉬도록 한 법령 기준(화물자동차 운수사업법 시행규칙)",
 }
 
@@ -137,7 +137,7 @@ def test_ac_f23_4_basis_line_per_shown_line():
     """줄을 탭하면 근거 한 줄(AC-F23-4). 보이는 줄마다 있고, 숫자는 rates_pct에서 채운다."""
     assert {l.key: l.basis_text for l in run("R1").lines} == BASIS_R1
     assert run("R5").lines[0].basis_text == (
-        "눈 오는 날은 맑은 날보다 운전 부담이 49% 커요 · 시뮬레이터 30명 연구(Frontiers in Neuroscience 2026)")
+        "눈 오는 날은 운전 부담이 49% 늘어요 · 시뮬레이터 30명 연구(Frontiers in Neuroscience 2026)")
 
 
 def test_basis_follows_rate_constant():
@@ -441,7 +441,7 @@ def test_midway_design_example():
     assert r.headline_text == "오늘 운전 1시간 5분 · 평소보다 1.55배 힘든 길"
     assert [(l.key, l.pct_text, l.detail_text) for l in r.lines] == [
         ("rain", "+40%", "비, 지금까지 내내"), ("congestion", "+10%", "19km (경로의 36%)"), ("delay", "+5%", "+13분")]
-    assert r.footnote_text == "출발 때 내비가 안내한 경로의 36%가 막혀 있었어요"
+    assert r.footnote_text == "출발 때 내비가 안내한 경로의 36%가 붐볐어요"
     assert r.distance_text == "52km"
     assert r.delay_min == pytest.approx(65 - 105 * 52_000 / 104_300)   # 기준 ETA = ETA × 지금까지 거리 ÷ 경로 거리
     p = r.proposal
@@ -691,7 +691,7 @@ def test_sun_fixture():
 
 # ---------------------------------------------------------------- 3부: 표기 불변식 (명세 2절)
 MULT = re.compile(r"^(평소 같은 길|평소보다 \d+\.\d\d배 힘든 길)$")
-FOOT = re.compile(r"^출발 때 내비가 안내한 경로의 \d+%가 막혀 있었어요$")
+FOOT = re.compile(r"^출발 때 내비가 안내한 경로의 \d+%가 붐볐어요$")
 PCT = re.compile(r"^(\+[1-9]\d*%|\+1% 미만)$")
 KRW = re.compile(r"^(약 (\d+만)?( ?\d천)? 원|1천 원 미만)$")
 DETAIL = re.compile(r"^(\d+km|1km 미만) \(경로의 (\d+%|1% 미만)\)$")

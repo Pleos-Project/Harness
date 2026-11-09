@@ -216,7 +216,7 @@ class FixturesTest {
             listOf("비, 주행 내내", "38km (경로의 36%)", "+25분", "50분", "2시간 넘긴 10분"),
             r.lines.map { it.detailText },
         )
-        assertEquals("출발 때 내비가 안내한 경로의 36%가 막혀 있었어요", r.footnoteText)   // 시안 v104 정체 줄 펼침 첫 줄
+        assertEquals("출발 때 내비가 안내한 경로의 36%가 붐볐어요", r.footnoteText)   // 시안 v104 정체 줄 펼침 첫 줄
         // AC-F23-4: 줄마다 근거 한 줄, {pct}는 rates_pct 값
         assertEquals(
             "비 오는 날은 운전 부담이 40% 늘어요 · 시뮬레이터 30명 연구(Frontiers in Neuroscience 2026)",
@@ -303,7 +303,7 @@ class FixturesTest {
         val r27 = run("R27")
         assertEquals("오늘 운전 1시간 5분 · 평소보다 1.55배 힘든 길", r27.headlineText)
         assertEquals(listOf("비, 지금까지 내내", "19km (경로의 36%)", "+13분"), r27.lines.map { it.detailText })   // 중간 정산 날씨(시안 v104)
-        assertEquals("출발 때 내비가 안내한 경로의 36%가 막혀 있었어요", r27.footnoteText)
+        assertEquals("출발 때 내비가 안내한 경로의 36%가 붐볐어요", r27.footnoteText)
         assertEquals("52km", r27.distanceText)
         val p27 = r27.proposal!!
         assertEquals("약 1만 8천 원", p27.amountText)

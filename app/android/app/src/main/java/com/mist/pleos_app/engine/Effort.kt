@@ -232,7 +232,7 @@ data class EffortReceipt(
     val multiplier: Double,
     val lines: List<EffortLine>,        // 가산이 0인 줄은 생략
     val notes: List<String>,
-    val footnoteText: String?,          // 정체 줄이 있고 비율을 알면 "출발 때 내비가 안내한 경로의 36%가 막혀 있었어요"(시안 v104 정체 줄 펼침 첫 줄)
+    val footnoteText: String?,          // 정체 줄이 있고 비율을 알면 "출발 때 내비가 안내한 경로의 36%가 붐볐어요"(시안 v104 정체 줄 펼침 첫 줄)
     val driveText: String,
     val multiplierText: String,
     val headlineText: String,

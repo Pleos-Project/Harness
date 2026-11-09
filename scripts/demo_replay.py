@@ -269,9 +269,12 @@ def step1(r: Run) -> None:
             r.check("진행 중 출발 없음", False, "이전 시연이 진행 중이에요. 홈 '›' → 그만두기 뒤 다시 돌리세요")
         r.check("출발하기", tap("출발하기"))
         time.sleep(1.0)
+        r.expect("인원 확인 알림(좌석 센서)", "4명이 탔어요")   # 출발 화면에 들어오면 바로(June 11/9)
+        r.check("인원 [확인]", tap("확인"))
+        time.sleep(0.6)
         r.check(f"목적지 카드 '{DEST}'", tap(DEST))       # 시연 모드도 실제처럼 카드를 눌러 고름(June 11/9)
     else:
-        r.person(f"홈 [출발하기] → 목적지 카드 '{DEST}'")
+        r.person(f"홈 [출발하기] → 인원 알림 [확인] → 목적지 카드 '{DEST}'")
     r.expect("출발 미리보기", [DEST] + EXPECT_PREVIEW)
     r.expect("시연용 값 표시(AC-C-7)", "시연용 값")
     if r.auto:

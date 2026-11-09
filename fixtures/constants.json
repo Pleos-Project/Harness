@@ -40,13 +40,13 @@
       "precip_words": {"rain": "비", "snow": "눈"},
       "basis": {
         "rain": "비 오는 날은 운전 부담이 {pct}% 늘어요 · 시뮬레이터 30명 연구(Frontiers in Neuroscience 2026)",
-        "snow": "눈 오는 날은 맑은 날보다 운전 부담이 {pct}% 커요 · 시뮬레이터 30명 연구(Frontiers in Neuroscience 2026)",
+        "snow": "눈 오는 날은 운전 부담이 {pct}% 늘어요 · 시뮬레이터 30명 연구(Frontiers in Neuroscience 2026)",
         "congestion": "차가 붐비는 길은 운전 부담이 {pct}% 늘어요 · 시뮬레이터 연구(Shakouri, LSU 2015)",
         "delay": "예상보다 늦어진 시간은 정체와 같은 값으로 쳐요 · 예상 못 한 지연이 더 힘들다는 통근 연구(Wener·Evans 2011)",
-        "night": "밤에는 낮보다 운전 부담이 {pct}% 커요 · 트럭 운전자 50명 시뮬레이터 연구(Fitri 2025)",
+        "night": "밤 운전은 부담이 {pct}% 늘어요 · 트럭 운전자 50명 시뮬레이터 연구(Fitri 2025)",
         "fatigue": "2시간을 넘겨 이어서 운전한 시간에 더해요 · 2시간 운전하면 15분 쉬도록 한 법령 기준(화물자동차 운수사업법 시행규칙)"
       },
-      "footnote_congestion_text": "출발 때 내비가 안내한 경로의 {pct}가 막혀 있었어요",
+      "footnote_congestion_text": "출발 때 내비가 안내한 경로의 {pct}가 붐볐어요",
       "preview_congestion_text": "경로의 {pct}",
       "weather_unknown_text": "날씨 정보 없음",
       "weather_partial_text": "일부 시간은 날씨 정보 없음",

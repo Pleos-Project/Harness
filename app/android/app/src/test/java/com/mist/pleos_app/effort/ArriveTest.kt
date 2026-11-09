@@ -43,7 +43,7 @@ class ArriveTest {
         assertEquals(expected.str("headline_text"), r.headlineText)
         assertEquals(expected.dbl("effort_min"), r.effortMin, 1e-9)
         assertEquals(expected.dbl("multiplier"), r.multiplier, 0.0)
-        assertEquals("출발 때 내비가 안내한 경로의 36%가 막혀 있었어요", r.footnoteText)
+        assertEquals("출발 때 내비가 안내한 경로의 36%가 붐볐어요", r.footnoteText)
         assertTrue(r.lines.all { it.basisText != null })                 // AC-F23-4
     }
 
