@@ -26,7 +26,7 @@ private fun DemoPlace.option(search: Boolean) = DestOption(
     Destination(id, name, 0.0, 0.0, address),
     if (search) DestOption.Kind.SEARCH else kind,
     category = if (search) "시연 장소" else null,
-    distanceM = if (search) distanceM else null,
+    distanceM = distanceM,   // 카드 · 검색 결과 모두 거리(시안 dest-card · search)
 )
 
 /** 출발 화면 최근 목적지 · 즐겨찾기 카드(첫 장 = 시연 장면 목적지). */

@@ -44,7 +44,7 @@ class PayerFlow(private val store: PayerStore) {
 
     /** 지금 1인 몫·정산에 쓰는 인원. */
     fun payersFor(seats: Int): Int = when {
-        seats < 2 -> 1
+        seats < 2 -> if (state.askedSeats == seats) state.payers ?: 1 else 1   // 좌석 센서를 못 읽어(0) 직접 고른 인원은 그대로
         state.askedSeats == seats -> state.payers ?: seats
         else -> seats                                   // 아직 확인 전: 감지 인원(PRD 5-3)
     }

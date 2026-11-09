@@ -20,6 +20,13 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.RoundedCornerShape
+import com.mist.pleos_app.effort.unsettledElapsedText
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.border
+import androidx.compose.ui.draw.shadow
 import androidx.compose.animation.core.LinearEasing
 import com.mist.pleos_app.effort.receiptAmountText
 import androidx.compose.runtime.LaunchedEffect
@@ -126,6 +133,7 @@ internal fun EffortArriveScreen(ui: EffortUi, onRest: (Int) -> Unit, onPick: (St
     val narrow = LocalNarrow.current
     val reduce = rememberReduceMotion()
     val key = trip.tripId
+    if (ui.unsettled) { UnsettledArrive(trip, r, ui, narrow, onClose); return }
 
     // 이 도착에서 처음 열 때만 출력 연출(다시 열거나 화면이 돌아오면 끝 상태로)
     var played by rememberSaveable(key) { mutableStateOf(reduce || ui.done != null) }
@@ -393,5 +401,49 @@ internal fun rememberReduceMotion(): Boolean {
     val ctx = LocalContext.current
     return remember {
         runCatching { AndroidSettings.Global.getFloat(ctx.contentResolver, AndroidSettings.Global.ANIMATOR_DURATION_SCALE, 1f) == 0f }.getOrDefault(false)
+    }
+}
+
+/**
+ * 정리하지 못함(#118 arrive-unsettled, #68 · #71): 경과가 상한을 넘으면 계산 연출 없이 바로. 숫자 · 쉰 시간 · 제안 없이 [홈으로]만.
+ * 위 바 "○○에 도착했어요" + "함께 탄 사람 n명" · 빈 영수증 종이(제목 흐리게 · "장소 · 날짜") · 엔진 문구 · 이유 두 줄 · 회색 빈 줄 3개 · 안내.
+ */
+@Composable
+private fun UnsettledArrive(trip: OpenTrip, r: EffortReceipt, ui: EffortUi, narrow: Boolean, onClose: () -> Unit) {
+    val c = Chagok.colors
+    val t = Chagok.type
+    Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(if (narrow) 16.gpx else 24.gpx)) {
+        CgTitleBar(
+            stringResource(R.string.effort_arrive_title, trip.destName), compact = narrow,
+            trailing = if (narrow) null else ({
+                Text(if (trip.n >= 2) stringResource(R.string.effort_arrive_people, trip.n) else stringResource(R.string.effort_arrive_solo),
+                    style = t.labelM, color = c.textTertiary)
+            }),
+        )
+        Column(
+            Modifier.fillMaxWidth().weight(1f),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(if (narrow) 20.gpx else 32.gpx, if (narrow) Alignment.Top else Alignment.CenterVertically),
+        ) {
+            val shape = RoundedCornerShape(32.gpx)
+            Column(
+                Modifier.widthIn(max = 960.gpx).fillMaxWidth().shadow(10.gpx, shape).background(c.surfaceCard, shape).border(2.gpx, c.lineStrong, shape)
+                    .padding(start = if (narrow) 26.gpx else 64.gpx, end = if (narrow) 26.gpx else 64.gpx, top = if (narrow) 30.gpx else 52.gpx, bottom = if (narrow) 24.gpx else 40.gpx),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Text(stringResource(R.string.effort_receipt_title), style = if (narrow) t.bodyL else t.titleL, color = c.textDisabled)
+                Text(stringResource(R.string.effort_receipt_sub_place, trip.destName, dayText(trip.departedAt)), style = t.labelM, color = c.textDisabled)
+                CgDoubleRule(Modifier.padding(top = if (narrow) 12.gpx else 22.gpx, bottom = if (narrow) 20.gpx else 34.gpx))
+                Text(r.statusText.orEmpty(), style = if (narrow) t.titleM else t.headlineS, color = c.textPrimary, textAlign = TextAlign.Center)
+                Spacer(Modifier.height(14.gpx))
+                Text(stringResource(R.string.effort_unsettled_why_late, unsettledElapsedText(r)), style = if (narrow) t.labelM else t.bodyL.copy(fontWeight = FontWeight.Normal), color = c.textSecondary, textAlign = TextAlign.Center)
+                Text(stringResource(R.string.effort_unsettled_why_time), style = if (narrow) t.labelM else t.bodyL.copy(fontWeight = FontWeight.Normal), color = c.textSecondary, textAlign = TextAlign.Center)
+                Column(Modifier.fillMaxWidth().padding(top = if (narrow) 24.gpx else 40.gpx, bottom = if (narrow) 20.gpx else 32.gpx), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(if (narrow) 12.gpx else 16.gpx)) {
+                    floatArrayOf(.72f, .54f, .64f).forEach { w -> Box(Modifier.fillMaxWidth(w).height(if (narrow) 12.gpx else 16.gpx).background(c.placeholder, RoundedCornerShape(8.gpx))) }
+                }
+                Text(stringResource(R.string.effort_unsettled_hint), style = t.labelM, color = c.textTertiary, textAlign = TextAlign.Center)
+            }
+            CgButton(stringResource(R.string.effort_home), onClose, if (narrow) Modifier.fillMaxWidth() else Modifier, size = if (narrow) CgSize.M else CgSize.L)
+        }
     }
 }

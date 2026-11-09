@@ -33,3 +33,9 @@ const val UNSETTLED_LABEL = "정리하지 못함"
  * 영수증 줄 근거 펼침에 보이는 글(#118 HANDOFF_v3 5-5): 엔진 근거 문구 "설명 · 출처"에서 첫 문장(설명)만. 출처(연구 · 법 조항)는 화면에 내지 않는다.
  */
 fun basisFirst(basis: String?): String? = basis?.substringBefore(" · ")?.trim()?.ifEmpty { null }
+
+/** 정리하지 못함 이유 한 줄의 경과(#118 arrive-unsettled "출발하고 14시간이 지나서 열었어요"): 1시간 이상은 시간만, 미만은 분. 엔진 elapsedMin(도착 − 출발)을 쓴다. */
+fun unsettledElapsedText(r: com.mist.pleos_app.engine.EffortReceipt): String {
+    val m = kotlin.math.floor(r.elapsedMin).toInt().coerceAtLeast(0)
+    return if (m >= 60) "${m / 60}시간" else "${m}분"
+}

@@ -468,8 +468,8 @@ private fun Car(
     val inf = rememberInfiniteTransition(label = "car")
     val spin by inf.animateFloat(0f, 360f, infiniteRepeatable(tween(300, easing = LinearEasing)), label = "wheel")
     val bob by inf.animateFloat(-1f, 1f, infiniteRepeatable(tween(320), RepeatMode.Reverse), label = "bob")
-    // v3 5-4: 가로 창은 1.5배(앞 범퍼 · 바닥 기준), 분할은 그대로
-    val carW = px(105) * (if (g.vertical) 1f else 1.5f); val carH = carW * 70f / 170f
+    // v97: 가로 창 1.275배(1.5배에서 15% 줄임, 앞 범퍼 · 바닥 기준) · 분할 0.85배
+    val carW = px(105) * (if (g.vertical) .85f else 1.275f); val carH = carW * 70f / 170f
     Canvas(Modifier.fillMaxSize()) {
         // 위치: 체크포인트 p의 원 앞(가로: 원 왼쪽 36px, 세로: 원 위 28px). 시작 자리(-1)는 첫 원 앞보다 60px 뒤(가로만)
         val p = pos.value

@@ -56,7 +56,8 @@ internal fun EffortMidwayScreen(ui: EffortUi, onPick: (String) -> Unit, onClose:
     val r = m.receipt
     val showPaper = r != null && !isUnsettled(r)
     var open by rememberSaveable(m.at) { mutableStateOf<String?>(null) }
-    val since = stringResource(R.string.effort_mid_receipt_sub, clockText(trip.departedAt))
+    val since = stringResource(R.string.effort_mid_receipt_sub, clockText(trip.departedAt), trip.n)   // "14:20 출발 · 아직 가는 중 · 4명"
+    val cap = stringResource(R.string.effort_mid_cap, clockText(trip.departedAt))                 // 카드 캡션 "14:20 출발 · 지금까지"
     Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(if (narrow) 16.gpx else 24.gpx)) {
         CgTitleBar(
             stringResource(R.string.effort_mid_title), compact = narrow,
@@ -70,7 +71,7 @@ internal fun EffortMidwayScreen(ui: EffortUi, onPick: (String) -> Unit, onClose:
                 midwaySub = since,
             )
         }
-        val card: @Composable (Modifier) -> Unit = { mod -> MidwayCard(m, since, ui.items, narrow, onPick, onClose, mod) }
+        val card: @Composable (Modifier) -> Unit = { mod -> MidwayCard(m, cap, ui.items, narrow, onPick, onClose, mod) }
         if (narrow) {
             Column(Modifier.weight(1f).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(16.gpx)) {
                 receipt(Modifier.fillMaxWidth())
@@ -118,8 +119,9 @@ private fun MidwayCard(m: MidwayUi, since: String, items: List<EffortItem>, narr
                 Filler(narrow)
                 keep(true)
             }
-            m.choice != null -> DoneMid(m, view, items, narrow) { keep(true) }
+            m.choice != null -> { Text(since, style = why, color = c.textTertiary); DoneMid(m, view, items, narrow) { keep(true) } }
             view is ProposalView.A -> {
+                Text(since, style = why, color = c.textTertiary)   // v104 mid-a: 캡션
                 Text(stringResource(R.string.effort_mid_a_title), style = head, color = c.textPrimary)
                 Text(view.screen.mainText, style = big, color = c.textPrimary, maxLines = 1)
                 Column(verticalArrangement = Arrangement.spacedBy(4.gpx)) {
