@@ -28,3 +28,8 @@ fun recordReceiptOf(r: EffortRecord, c: EffortConstants?): EffortReceipt? =
 
 /** 정리하지 못한 주행의 목록·카드 표기(명준 #75 11/9: 목록과 상세에 "정리하지 못함"). */
 const val UNSETTLED_LABEL = "정리하지 못함"
+
+/**
+ * 영수증 줄 근거 펼침에 보이는 글(#118 HANDOFF_v3 5-5): 엔진 근거 문구 "설명 · 출처"에서 첫 문장(설명)만. 출처(연구 · 법 조항)는 화면에 내지 않는다.
+ */
+fun basisFirst(basis: String?): String? = basis?.substringBefore(" · ")?.trim()?.ifEmpty { null }

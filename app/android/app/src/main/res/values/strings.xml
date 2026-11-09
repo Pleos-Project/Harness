@@ -175,13 +175,14 @@
     <string name="effort_arrive_people">함께 탄 사람 %1$d명</string>
     <string name="effort_arrive_solo">혼자 운전</string>
     <string name="effort_receipt_title">오늘 주행 영수증</string>
-    <string name="effort_receipt_sub">%1$s · %2$s</string>
+    <string name="effort_receipt_sub_people">%1$s · %2$s · %3$d명</string>
+    <string name="effort_receipt_sub_solo">%1$s · %2$s · 혼자</string>
     <string name="effort_receipt_col_item">항목</string>
     <string name="effort_receipt_col_add">더한 몫</string>
     <string name="effort_receipt_plain">비·정체·밤길 없이 달렸어요</string>
     <string name="effort_receipt_drive">운전 시간</string>
     <string name="effort_receipt_rest">중간에 쉰 시간</string>
-    <string name="effort_receipt_rest_change">바꾸기</string>
+    <string name="effort_receipt_rest_change_label">중간에 쉰 시간 바꾸기</string>
     <string name="effort_receipt_distance">거리</string>
     <string name="effort_receipt_total">합계</string>
     <string name="effort_rest_sheet_title">중간에 쉰 시간이 있었나요?</string>

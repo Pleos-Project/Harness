@@ -81,6 +81,8 @@ import androidx.compose.ui.zIndex
 import com.mist.pleos_app.R
 import com.mist.pleos_app.ui.theme.Chagok
 import com.mist.pleos_app.ui.theme.gpx
+import androidx.compose.ui.text.TextLayoutResult
+import androidx.compose.runtime.mutableStateOf
 import com.mist.pleos_app.ui.theme.gsp
 import kotlinx.coroutines.delay
 
@@ -636,26 +638,27 @@ fun CgOptionButton(words: List<String>, isDefault: Boolean, onClick: () -> Unit,
 @Composable
 fun CgReceipt(modifier: Modifier = Modifier, compact: Boolean = false, shift: Float = 0f, fill: Boolean = true, scroll: Boolean = true, content: @Composable ColumnScope.() -> Unit) {
     val c = Chagok.colors
-    val slotH = if (compact) 40.gpx else 60.gpx
-    val slotShape = RoundedCornerShape(if (compact) 14.gpx else 20.gpx)
+    val slotH = if (compact) 40.gpx else 68.gpx
+    val slotShape = RoundedCornerShape(if (compact) 14.gpx else 22.gpx)
     Column(modifier) {
         Box(
+            // v3: 출력구 = Satin Silver(금속은 여기만) + 어두운 슬롯
             Modifier.fillMaxWidth().height(slotH).zIndex(2f).shadow(6.gpx, slotShape)
-                .background(c.btnBasic, slotShape).background(c.bgPrimary.copy(alpha = 0.6f), slotShape)
-                .border(2.gpx, c.lineStrong, slotShape).padding(horizontal = if (compact) 28.gpx else 44.gpx),
+                .background(Brush.verticalGradient(0f to c.receiptPrinterHighlight, .18f to c.receiptPrinterMidtone, .7f to c.receiptPrinterShade, 1f to c.receiptPrinterMidtone), slotShape)
+                .border(1.gpx, c.receiptPrinterShade, slotShape).padding(horizontal = if (compact) 28.gpx else 44.gpx),
             contentAlignment = Alignment.Center,
-        ) { Box(Modifier.fillMaxWidth().height(if (compact) 6.gpx else 8.gpx).background(c.textPrimary, RoundedCornerShape(4.gpx))) }
+        ) { Box(Modifier.fillMaxWidth().height(if (compact) 6.gpx else 8.gpx).background(Color(0xFF171B22), RoundedCornerShape(4.gpx))) }
         Box(
             Modifier.then(if (fill) Modifier.weight(1f) else Modifier).padding(horizontal = if (compact) 16.gpx else 36.gpx)
                 .offset(y = -slotH / 2).clipToBounds(),
         ) {
             Column(Modifier.graphicsLayer { translationY = shift * size.height }.then(if (scroll) Modifier.verticalScroll(rememberScrollState()) else Modifier)) {
                 Column(
-                    Modifier.fillMaxWidth().background(c.surfaceCard)
+                    Modifier.fillMaxWidth().background(c.receiptPaper)
                         .padding(start = if (compact) 28.gpx else 56.gpx, end = if (compact) 28.gpx else 56.gpx, top = if (compact) 24.gpx else 48.gpx, bottom = if (compact) 10.gpx else 24.gpx),
                     content = content,
                 )
-                CgZigzag(Modifier.fillMaxWidth().height(12.gpx), c.surfaceCard)
+                CgZigzag(Modifier.fillMaxWidth().height(12.gpx), c.receiptPaper)
             }
         }
     }
@@ -669,15 +672,15 @@ fun CgReceiptRow(
 ) {
     val c = Chagok.colors
     val t = Chagok.type
-    val plain = if (compact) t.bodyM else t.bodyL.copy(fontWeight = FontWeight.Normal)
+    val plain = receiptPlain(compact)
     Column(Modifier.fillMaxWidth().background(c.placeholderStrong.copy(alpha = c.placeholderStrong.alpha * hi), RoundedCornerShape(8.gpx))) {
         Row(
-            Modifier.fillMaxWidth().heightIn(min = if (compact) 54.gpx else 64.gpx).then(if (basis != null) Modifier.clickable(role = Role.Button, onClick = onClick) else Modifier),
+            Modifier.fillMaxWidth().heightIn(min = if (compact) 56.gpx else 70.gpx).then(if (basis != null) Modifier.clickable(role = Role.Button, onClick = onClick) else Modifier),
             verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.gpx),
         ) {
-            Text(label, Modifier.width(if (compact) 140.gpx else 230.gpx), style = plain, color = c.textPrimary)
+            Text(label, Modifier.width(if (compact) 150.gpx else 240.gpx), style = plain, color = c.textPrimary)
             Text(detail, Modifier.weight(1f), style = plain, color = c.textSecondary)
-            Text(pct, Modifier.width(if (compact) 84.gpx else 120.gpx), style = if (compact) t.bodyL else t.titleS, color = c.textPrimary, textAlign = TextAlign.End, maxLines = 1)
+            Text(pct, Modifier.width(if (compact) 90.gpx else 130.gpx), style = receiptStrong(compact), color = c.textPrimary, textAlign = TextAlign.End, maxLines = 1)
             Box(Modifier.size(if (compact) 18.gpx else 26.gpx), contentAlignment = Alignment.Center) {
                 if (basis != null) CgIconMark(CgIcon.Chevron, if (compact) 12.gpx else 14.gpx, c.textTertiary, Modifier.graphicsLayer { rotationZ = if (expanded) 180f else 0f })
             }
@@ -694,21 +697,63 @@ fun CgReceiptRow(
     }
 }
 
-/** 영수증 소계·합계 줄. trailing = [바꾸기] 같은 작은 버튼. */
+/**
+ * 영수증 소계 · 합계 줄. onValue = 값을 누르면(쉰 시간: 시트 다시 열기, 값 아래 점선) · valueLabel = 그 접근성 이름.
+ * 합계(v3 A안): "합계"는 기본 글자, 결과 문장만 800 + 글자 아래 40%에 라임 마커. 줄이 바뀌어도 줄마다 마커가 글자를 따라간다.
+ */
 @Composable
-fun CgReceiptSum(label: String, value: String, compact: Boolean = false, total: Boolean = false, hi: Float = 0f, trailing: @Composable () -> Unit = {}) {
+fun CgReceiptSum(
+    label: String, value: String, compact: Boolean = false, total: Boolean = false, hi: Float = 0f,
+    onValue: (() -> Unit)? = null, valueLabel: String? = null, trailing: @Composable () -> Unit = {},
+) {
     val c = Chagok.colors
-    val t = Chagok.type
-    val plain = if (compact) t.bodyM else t.bodyL.copy(fontWeight = FontWeight.Normal)
+    val plain = receiptPlain(compact)
     Row(
-        Modifier.fillMaxWidth().heightIn(min = if (compact) 46.gpx else 52.gpx).background(c.placeholderStrong.copy(alpha = c.placeholderStrong.alpha * hi), RoundedCornerShape(8.gpx)),
+        Modifier.fillMaxWidth().heightIn(min = if (compact) 50.gpx else 60.gpx).padding(top = if (total && !compact) 6.gpx else 0.gpx)
+            .background(c.placeholderStrong.copy(alpha = c.placeholderStrong.alpha * hi), RoundedCornerShape(8.gpx)),
         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.gpx),
     ) {
-        Text(label, Modifier.weight(1f), style = if (total) (if (compact) t.bodyL else t.titleS) else plain, color = c.textPrimary)
-        Text(value, style = if (total) (if (compact) t.titleS else t.titleM) else (if (compact) t.bodyL else t.titleS), color = c.textPrimary, maxLines = 1)
+        Text(label, if (total) Modifier else Modifier.weight(1f), style = if (total) receiptStrong(compact) else plain, color = c.textPrimary)
+        if (total) {
+            var layout by remember { mutableStateOf<TextLayoutResult?>(null) }
+            val pad = if (compact) 4.gpx else 6.gpx
+            Text(
+                value,
+                Modifier.weight(1f).drawBehind {
+                    val l = layout ?: return@drawBehind
+                    for (i in 0 until l.lineCount) {
+                        val top = l.getLineTop(i); val bottom = l.getLineBottom(i)
+                        val y = top + (bottom - top) * .6f
+                        drawRect(c.receiptMarker, Offset(l.getLineLeft(i) - pad.toPx(), y), Size(l.getLineRight(i) - l.getLineLeft(i) + pad.toPx() * 2, bottom - y))
+                    }
+                },
+                style = if (compact) TextStyle(fontSize = 32.gsp, lineHeight = 40.gsp, fontWeight = FontWeight.ExtraBold) else TextStyle(fontSize = 38.gsp, lineHeight = 48.gsp, fontWeight = FontWeight.ExtraBold),
+                color = c.textPrimary, textAlign = TextAlign.End, onTextLayout = { layout = it },
+            )
+        } else Text(
+            value,
+            if (onValue == null) Modifier else Modifier
+                .clickable(role = Role.Button, onClickLabel = valueLabel, onClick = onValue)
+                .drawBehind {   // 누를 수 있는 값 = 아래 점선
+                    drawLine(c.lineStrong, Offset(0f, size.height), Offset(size.width, size.height), strokeWidth = 1.5f.gpxPx(this), pathEffect = PathEffect.dashPathEffect(floatArrayOf(6f, 4f)))
+                }.padding(bottom = 2.gpx),
+            style = receiptStrong(compact), color = c.textPrimary, maxLines = 1,
+        )
         trailing()
     }
 }
+
+/** 영수증 기본 글자(v3: 32/40, 분할 30/38, 보통 굵기). */
+@Composable
+private fun receiptPlain(compact: Boolean) = if (compact) TextStyle(fontSize = 30.gsp, lineHeight = 38.gsp, fontWeight = FontWeight.Normal)
+else TextStyle(fontSize = 32.gsp, lineHeight = 40.gsp, fontWeight = FontWeight.Normal)
+
+/** 영수증 굵은 값(v3: 700 34/42, 분할 700 30/38). */
+@Composable
+private fun receiptStrong(compact: Boolean) = if (compact) TextStyle(fontSize = 30.gsp, lineHeight = 38.gsp, fontWeight = FontWeight.Bold)
+else TextStyle(fontSize = 34.gsp, lineHeight = 42.gsp, fontWeight = FontWeight.Bold)
+
+private fun Float.gpxPx(d: androidx.compose.ui.unit.Density) = this * d.density
 
 /** 영수증 이중선. */
 @Composable
