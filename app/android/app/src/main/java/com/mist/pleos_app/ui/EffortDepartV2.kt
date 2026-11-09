@@ -111,7 +111,9 @@ internal fun EffortDepartScreen(
                 leading = { CgIconButton(stringResource(R.string.back), CgIcon.Back, onBack, plain = true) },
                 trailing = {
                     CgPill(
-                        if (seats <= 0) stringResource(R.string.effort_depart_people_check) else stringResource(R.string.effort_depart_people_pill, people),
+                        // v104 depart-people: 인원 알림이 떠 있는 동안 "확인 중", 좌석 센서를 못 읽으면 "인원 확인 필요"
+                        if (askPayers || peopleOpen) stringResource(R.string.effort_depart_people_checking)
+                        else if (seats <= 0) stringResource(R.string.effort_depart_people_check) else stringResource(R.string.effort_depart_people_pill, people),
                         onClick = { peopleOpen = true }, compact = narrow,
                     )
                 },
@@ -153,7 +155,7 @@ internal fun EffortDepartScreen(
                             )
                         }.orEmpty(),
                         // Q-08-03(명준 11/8): 미리보기를 못 받아도 출발은 막지 않고, 무엇 없이 정리하는지 한 줄로 알린다
-                        note = stringResource(if (state == CgPreviewState.Failed) R.string.effort_preview_fail_note else R.string.effort_preview_note, people),
+                        note = stringResource(if (state == CgPreviewState.Failed) R.string.effort_preview_fail_note else R.string.effort_preview_note),
                         emptyText = stringResource(R.string.effort_preview_empty),
                         failText = stringResource(R.string.effort_preview_failed),
                         retryLabel = stringResource(R.string.effort_route_retry),
@@ -173,13 +175,16 @@ internal fun EffortDepartScreen(
             }
         }
         // 인원 확인 알림 바(위 바 줄에 겹침)
-        if ((askPayers || peopleOpen) && seats >= 1) {
-            var n by rememberSaveable(seats) { mutableIntStateOf((if (peopleOpen) payers else seats).coerceIn(PayerFlow.MIN, PayerFlow.MAX)) }
+        // depart-sensor: 좌석 센서를 못 읽으면 감지 인원 없이 "몇 명이 함께 타나요?"로 직접 고르게
+        if ((askPayers || peopleOpen) && (seats >= 1 || peopleOpen)) {
+            var n by rememberSaveable(seats) { mutableIntStateOf((if (peopleOpen || seats <= 0) payers else seats).coerceIn(PayerFlow.MIN, PayerFlow.MAX)) }
             // v39(명준 11/8): 감지 인원과 다르게 바꾸면 "N명이 낼게요" + "감지는 S명 · N명으로 나눠요", 되돌리면 원래 문구
             CgPeopleAlert(
-                if (n == seats) stringResource(R.string.payer_bar_title, seats) else stringResource(R.string.payer_bar_title_manual, n),
+                if (seats <= 0) stringResource(R.string.payer_bar_title_unknown)
+                else if (n == seats) stringResource(R.string.payer_bar_title, seats) else stringResource(R.string.payer_bar_title_manual, n),
                 when {
                     n <= 1 -> stringResource(R.string.payer_bar_solo)
+                    seats <= 0 -> stringResource(R.string.payer_bar_hint_unknown)
                     n != seats -> stringResource(R.string.payer_bar_hint_manual, seats, n)
                     else -> stringResource(R.string.payer_bar_hint)
                 },
