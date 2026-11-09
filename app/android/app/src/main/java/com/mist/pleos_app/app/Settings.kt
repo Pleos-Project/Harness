@@ -20,6 +20,8 @@ data class Settings(
     val demoFixed: Boolean = true,
     /** 노고 제안 방식(명세 v0.5 S20, A/B 테스트용 개발자 설정): A 금액 / B 한 번 빼 주기. 두 화면은 서로 넘어가지 않는다. */
     val proposalMethod: String = METHOD_A,
+    /** 앰비언트 라이트(명세 v0.5 F28 · S20, 기본 켜짐): 앱을 켤 때·정산할 때 실내 조명을 잠깐 브랜드 색으로. 끄면 조명을 부르지 않는다. */
+    val ambientLight: Boolean = true,
 ) {
     /** 잔고·카드·정산에 쓰는 단가. EV는 집 충전 단가(엔진 기본값과 같은 기준), 급속은 F9 충전 카드에서. */
     fun priceFor(c: Constants?): Double? =
@@ -59,6 +61,7 @@ class PrefsSettingsStore(context: Context) : SettingsStore {
         seatInvert = p.getBoolean("seat_invert", true),
         demoFixed = p.getBoolean("demo_fixed_mode", true),
         proposalMethod = p.getString("proposal_method", null)?.takeIf { it == Settings.METHOD_B } ?: Settings.METHOD_A,
+        ambientLight = p.getBoolean("ambient_light", true),
     )
 
     override fun save(s: Settings) {
@@ -71,6 +74,7 @@ class PrefsSettingsStore(context: Context) : SettingsStore {
             .putBoolean("seat_invert", s.seatInvert)
             .putBoolean("demo_fixed_mode", s.demoFixed)
             .putString("proposal_method", s.proposalMethod)
+            .putBoolean("ambient_light", s.ambientLight)
             .apply()
     }
 }

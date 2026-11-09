@@ -60,6 +60,11 @@ class PleosVehicleRepository(context: Context) : VehicleRepository, DefaultLifec
     private var gateOn = false
     private var dataOn = false
 
+    /** 앰비언트 라이트(F28). 설정 '앰비언트 라이트'(S20)를 [ambientEnabled]로 받는다. 보이는 동안·정차일 때만 켠다. */
+    @Volatile var ambientEnabled = true
+        set(v) { field = v; if (!v) ambient.restoreAll("setting") }
+    val ambient = AmbientLight(PleosAmbientLightPort { vehicle }, PrefsAmbientStore(app), allowed = { ambientEnabled && started && !isDriving(flow.value) })
+
     override fun onCreate(owner: LifecycleOwner) {
         vehicle = runCatching { Vehicle(app).also { it.initialize() } }
             .onFailure { ChagokLog.event("vehicle_init_failed", "err" to it.javaClass.simpleName) }.getOrNull()
@@ -74,10 +79,12 @@ class PleosVehicleRepository(context: Context) : VehicleRepository, DefaultLifec
         readGate()
         registerGate()
         onGateChanged()
+        ambient.recover()                                 // 지난번에 되돌리지 못하고 끝났으면 먼저 되돌림(F28)
     }
 
     @Synchronized
     override fun onStop(owner: LifecycleOwner) {
+        ambient.restoreAll("stop")                        // 가려지면 그 자리에서 되돌리고 그 뒤로는 부르지 않음(AC-F28-3·AC-C-2)
         started = false
         unregisterData()
         unregisterGate()
@@ -117,6 +124,7 @@ class PleosVehicleRepository(context: Context) : VehicleRepository, DefaultLifec
         val s = flow.value
         val driving = isDriving(s)
         ChagokLog.event("gate", "gear" to s.gear.name, "restricted" to s.uxRestricted, "driving" to driving)
+        if (driving) ambient.restoreAll("driving")         // 주행 차단은 onStop이 오지 않아 X1에서 따로 되돌림(AC-F28-3)
         if (driving && dataOn) {
             unregisterData()
             ChagokLog.event("driving", "on" to true)

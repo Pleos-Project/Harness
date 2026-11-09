@@ -7,6 +7,7 @@ import androidx.activity.viewModels
 import androidx.compose.runtime.getValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.mist.pleos_app.effort.DepartNavi
+import com.mist.pleos_app.effort.EffortAmbient
 import com.mist.pleos_app.effort.EffortViewModel
 import com.mist.pleos_app.navi.Destination
 import com.mist.pleos_app.navi.NaviPlace
@@ -50,6 +51,12 @@ class MainActivity : ComponentActivity() {
             override fun route(d: Destination) = n.depart(d)
             override fun guide(done: (GuideState?) -> Unit) = n.fetchGuide(done)
         }
+        // F28 앰비언트 라이트: 정산할 때 켜고 놓기(뷰모델) → 차량 쪽 AmbientLight
+        val amb = vehicle.ambient
+        vm.ambient = object : EffortAmbient {
+            override fun acquire(reason: String) = amb.acquire(reason)
+            override fun release(reason: String) = amb.release(reason)
+        }
         // 다시 보일 때마다 도착 여부를 1번 본다(기본 배치에서는 도착 순간 차곡이 멈춰 있음, 명세 F22)
         lifecycle.addObserver(object : DefaultLifecycleObserver {
             override fun onStart(owner: LifecycleOwner) = vm.onShown()
@@ -59,6 +66,7 @@ class MainActivity : ComponentActivity() {
             val snapshot by vehicle.state.collectAsStateWithLifecycle()
             val settings by vm.settings.collectAsStateWithLifecycle()
             val route by n.state.collectAsStateWithLifecycle()
+            androidx.compose.runtime.LaunchedEffect(settings.ambientLight) { vehicle.ambientEnabled = settings.ambientLight }   // S20(AC-F28-5)
             ChagokTheme {
                 EffortApp(
                     vm, driving = isDriving(snapshot), parked = isParked(snapshot), doorOpen = snapshot.driverDoorOpen,
