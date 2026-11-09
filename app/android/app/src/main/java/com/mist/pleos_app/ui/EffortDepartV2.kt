@@ -38,11 +38,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import com.mist.pleos_app.R
 import com.mist.pleos_app.app.PayerFlow
-import com.mist.pleos_app.effort.DemoScene
 import com.mist.pleos_app.effort.DepartUi
 import com.mist.pleos_app.effort.DestOption
-import com.mist.pleos_app.engine.DeparturePreview
-import com.mist.pleos_app.navi.Destination
 import com.mist.pleos_app.net.PlacesStatus
 import com.mist.pleos_app.ui.components.CgBanner
 import com.mist.pleos_app.ui.components.CgCta
@@ -75,8 +72,6 @@ private val EaseIn = CubicBezierEasing(.32f, .72f, 0f, 1f)
 @Composable
 internal fun EffortDepartScreen(
     ui: DepartUi,
-    demo: DemoScene?,
-    demoPreview: DeparturePreview?,
     demoMissing: Boolean,
     seats: Int,
     payers: Int,
@@ -100,10 +95,9 @@ internal fun EffortDepartScreen(
     var sending by remember { mutableStateOf(false) }
     if (sending) LaunchedEffect(Unit) { delay(700); onGo(); sending = false }   // "내비로 보내는 중" 0.7초(프로토타입)
 
-    // 시연: 정해 둔 목적지 하나를 고른 상태로
-    val demoOption = demo?.let { DestOption(Destination("demo", it.destName, 0.0, 0.0, null), DestOption.Kind.RECENT) }
-    val selected = demoOption ?: ui.selected
-    val searchMode = demo == null && (ui.query.isNotBlank() && (ui.searching || ui.searchStatus != null))
+    // 시연 모드도 화면 · 기능은 같다. 데이터만 ViewModel이 시연 목록으로 채운다(DemoPlaces.kt)
+    val selected = ui.selected
+    val searchMode = ui.query.isNotBlank() && (ui.searching || ui.searchStatus != null)
 
     // 들어올 때: 아래 24px → 제자리 + 투명 → 보임 0.7초
     val enter = remember { Animatable(0f) }
@@ -111,20 +105,18 @@ internal fun EffortDepartScreen(
 
     Box(Modifier.fillMaxSize()) {
         Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(if (narrow) 16.gpx else 24.gpx)) {
-            val people = demo?.n ?: payers
+            val people = payers
             CgTitleBar(
                 stringResource(R.string.effort_depart_title), centered = true, compact = narrow,
                 leading = { CgIconButton(stringResource(R.string.back), CgIcon.Back, onBack, plain = true) },
                 trailing = {
                     CgPill(
-                        if (demo == null && seats <= 0) stringResource(R.string.effort_depart_people_check) else stringResource(R.string.effort_depart_people_pill, people),
-                        onClick = { if (demo == null) peopleOpen = true }, compact = narrow,
+                        if (seats <= 0) stringResource(R.string.effort_depart_people_check) else stringResource(R.string.effort_depart_people_pill, people),
+                        onClick = { peopleOpen = true }, compact = narrow,
                     )
                 },
             )
-            if (demo == null) {
-                CgSearchField(ui.query, stringResource(R.string.effort_search_hint), stringResource(R.string.effort_search_clear), onQuery, search, onClearSearch, compact = narrow)
-            }
+            CgSearchField(ui.query, stringResource(R.string.effort_search_hint), stringResource(R.string.effort_search_clear), onQuery, search, onClearSearch, compact = narrow)
             if (demoMissing) CgBanner(stringResource(R.string.effort_depart_no_demo))
             if (searchMode) {
                 SearchResults(ui, onPick = { keyboard?.hide(); focus.clearFocus(); onSelect(it); onClearSearch() }, recent = ui.naviOptions.take(2))
@@ -135,19 +127,19 @@ internal fun EffortDepartScreen(
                 ) {
                     if (ui.searchStatus == PlacesStatus.UNAVAILABLE) CgBanner(stringResource(R.string.effort_search_unavailable))
                     Text(stringResource(R.string.effort_navi_places), style = Chagok.type.bodyS, color = c.textTertiary)
-                    val options = demoOption?.let { listOf(it) } ?: ui.naviOptions.take(4)
+                    val options = ui.naviOptions.take(4)
                     when {
-                        demo == null && ui.naviLoading -> Text(stringResource(R.string.effort_navi_loading), style = Chagok.type.bodyM, color = c.textTertiary)
+                        ui.naviLoading -> Text(stringResource(R.string.effort_navi_loading), style = Chagok.type.bodyM, color = c.textTertiary)
                         options.isEmpty() -> CgEmpty(
                             stringResource(R.string.effort_navi_empty_title), stringResource(R.string.effort_navi_empty_hint),
                             Modifier.fillMaxWidth().height(if (narrow) 200.gpx else 300.gpx),
                         )
-                        else -> DestCards(options, selected, narrow, onClick = { o -> if (demo == null) { if (ui.selected == o) onUnselect() else onSelect(o) } })
+                        else -> DestCards(options, selected, narrow, onClick = { o -> if (ui.selected == o) onUnselect() else onSelect(o) })
                     }
-                    val text = if (demo != null) demoPreview else ui.previewText
+                    val text = ui.previewText
                     val state = when {
                         selected == null -> CgPreviewState.Empty
-                        demo == null && ui.previewing -> CgPreviewState.Loading
+                        ui.previewing -> CgPreviewState.Loading
                         text == null -> CgPreviewState.Failed
                         else -> CgPreviewState.Ready
                     }
@@ -174,14 +166,14 @@ internal fun EffortDepartScreen(
                         CgCta(
                             stringResource(if (sending) R.string.effort_depart_sending else R.string.effort_depart_go),
                             onClick = { if (!sending) sending = true }, modifier = m, compact = narrow,
-                            enabled = demo != null || ui.canDepart, busy = sending, fill = narrow,
+                            enabled = ui.canDepart, busy = sending, fill = narrow,
                         )
                     }
                 }
             }
         }
         // 인원 확인 알림 바(위 바 줄에 겹침)
-        if (demo == null && (askPayers || peopleOpen) && seats >= 1) {
+        if ((askPayers || peopleOpen) && seats >= 1) {
             var n by rememberSaveable(seats) { mutableIntStateOf((if (peopleOpen) payers else seats).coerceIn(PayerFlow.MIN, PayerFlow.MAX)) }
             // v39(명준 11/8): 감지 인원과 다르게 바꾸면 "N명이 낼게요" + "감지는 S명 · N명으로 나눠요", 되돌리면 원래 문구
             CgPeopleAlert(
