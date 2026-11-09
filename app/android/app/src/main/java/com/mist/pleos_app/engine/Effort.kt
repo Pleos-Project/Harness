@@ -131,6 +131,13 @@ data class HourPrecip(val hour: String, val precip: String)
 /** GET /v1/weather/trip 응답의 dep·arr(#63). 같은 조각을 같은 순서로 담는다. 앱은 응답을 그대로 넘기면 된다(status는 안 씀). */
 data class WeatherTrip(val dep: List<HourPrecip>, val arr: List<HourPrecip>)
 
+/** 중간 정산(명준 Q-08-02, 효성 계산 규칙 11/9). 가는 중 '출발~지금'을 도착과 같은 영수증으로 센다.
+ *  앱은 arrivedAt에 지금을 넣고 아래 두 값을 그대로 넘긴다. 지금까지 거리 = routeM − remainM은 엔진이 만든다. */
+data class EffortMidway(
+    val routeM: Double,                     // 출발 때 경로 거리(requestTrip)
+    val remainM: Double,                    // 지금 내비 남은 거리(remainDistance)
+)
+
 data class EffortInput(
     val departedAt: String,                 // ISO 8601 + 오프셋
     val arrivedAt: String,
@@ -149,6 +156,12 @@ data class EffortInput(
     val distanceKm: Double? = null,         // 표시만
     // 시간대별 강수(#63, GET /v1/weather/trip). 없거나 겹친 조각이 모두 unknown이면 weatherDep·weatherArr 절반씩
     val weatherTrip: WeatherTrip? = null,
+    // 중간 정산(Q-08-02). 있으면 '출발~지금(arrivedAt)'을 센다: 예상보다 더의 기준 ETA = ETA × 지금까지 거리 ÷ 경로 거리,
+    // 정체 km = 비율 × 지금까지 거리, 거리 표시 = 지금까지 거리(distanceKm는 안 씀). 나머지 줄은 도착과 같은 규칙
+    val midway: EffortMidway? = null,
+    // 앞서 정산한 금액의 원 단위 합(어림 전). 정산할 때마다 그 영수증의 proposal.remainKrw를 더한다.
+    // 있으면 제안(1인 몫·운전자 몫·B 항목)은 남은 금액 = 금액 − 이 값으로 한다. 영수증 줄·금액은 그대로
+    val settledKrw: Double? = null,
 )
 
 data class EffortLine(
@@ -177,15 +190,18 @@ data class EffortScreenB(
 )
 
 data class EffortProposal(
-    val amountKrw: Double,              // 노고 금액(어림 전)
+    val amountKrw: Double,              // 노고 금액(어림 전). 중간 정산 뒤 도착이어도 출발~도착 전체
     val amountApprox: Int,
     val amountText: String,             // "약 3만 6천 원"
-    val perPersonKrw: Double,           // 금액 ÷ n
+    val perPersonKrw: Double,           // 남은 금액 ÷ n (정산 입력이 없으면 남은 금액 = 금액)
     val perPersonApprox: Int,
     val perPersonText: String,          // "약 9천 원"
-    val driverShareKrw: Double,         // 운전자 몫 G = 금액 × (n − 1) ÷ n
+    val driverShareKrw: Double,         // 운전자 몫 G = 남은 금액 × (n − 1) ÷ n
     val a: EffortScreenA,
     val b: EffortScreenB?,              // null = 방식 B 제안 없음(영수증만)
+    // 중간 정산(Q-08-02). 입력에 midway·settledKrw가 둘 다 없으면 null이고 JSON에도 키를 쓰지 않는다
+    val settledKrw: Double? = null,     // 앞서 정산한 원 단위 합(입력 그대로, 중간 정산이 처음이면 0)
+    val remainKrw: Double? = null,      // 남은 금액 = max(0, 금액 − settledKrw), 어림 전. 이번에 정산하면 이 값을 기록에 더함
 )
 
 data class EffortReceipt(
@@ -399,7 +415,18 @@ fun effort(inp: EffortInput, c: EffortConstants): EffortReceipt {
         inp.congestionRatio != null -> max(0.0, min(inp.congestionRatio * drive, drive))   // 기본: 정체 비율 × T
         else -> 0.0
     }
-    val eta = inp.etaS
+    var eta = inp.etaS   // 예상보다 더의 기준 ETA
+    var congestionM = inp.congestionM
+    var distanceM = inp.distanceKm?.let { it * 1000 }
+    if (inp.midway != null) {
+        // 중간 정산(Q-08-02): 지금까지 거리 = 경로 거리 − 내비 남은 거리(0~경로 거리로 자름).
+        // 도착 상한(#68)은 위에서 출발 때 ETA 그대로 봤다(효성 11/9). 경로 거리를 모르면 예상보다 더는 0
+        val route = inp.midway.routeM
+        val soFar = max(0.0, min(route, route - inp.midway.remainM))
+        eta = if (route > 0) eta * soFar / route else 0.0
+        congestionM = inp.congestionRatio?.let { it * soFar }
+        distanceM = soFar
+    }
     var delay = if (eta > 0) max(0.0, drive - eta) else 0.0
     if (delay * 100 < c.delayThresholdPct * eta) delay = 0.0
     val hp = inp.weatherTrip?.let { hourlyPrecip(dep, arr, it) }
@@ -450,7 +477,7 @@ fun effort(inp: EffortInput, c: EffortConstants): EffortReceipt {
             val pct = roundHalfUp(a / drive)
             val detail = when (k) {
                 "rain", "snow" -> weatherDetail(k, if (k == "rain") rainWhole else snowWhole, c)
-                "congestion" -> congestionText(inp.congestionM, inp.congestionRatio, c)
+                "congestion" -> congestionText(congestionM, inp.congestionRatio, c)
                 "delay" -> timeDetail("delay_text", delay, c)
                 "night" -> timeDetail("night_text", night, c)
                 else -> timeDetail("fatigue_text", excess, c)   // 구간이 여러 개면 넘긴 시간의 합
@@ -466,6 +493,8 @@ fun effort(inp: EffortInput, c: EffortConstants): EffortReceipt {
 
     val dt = driveText(drive)
     val mt = multiplierText(m100, c)
+    // 정산 입력: 앞서 정산한 합이 있으면 그 값, 처음 하는 중간 정산이면 0, 둘 다 아니면 null(지금과 같은 출력)
+    val settled = inp.settledKrw ?: if (inp.midway != null) 0.0 else null
     return EffortReceipt(
         status = "ok", statusText = null, elapsedLimitMin = limit / 60,
         elapsedMin = elapsed / 60, driveMin = drive / 60, restMin = (elapsed - drive) / 60,
@@ -476,24 +505,29 @@ fun effort(inp: EffortInput, c: EffortConstants): EffortReceipt {
         footnoteText = if (lines.any { it.key == "congestion" }) c.copy.text.getValue("footnote_congestion_text") else null,
         driveText = dt, multiplierText = mt,
         headlineText = fill(c.copy.text.getValue("headline_text"), "drive" to dt, "multiplier" to mt),
-        distanceText = inp.distanceKm?.let { kmText(it * 1000) },   // 0km 대신 "1km 미만"
-        proposal = if (inp.n >= 2) effortProposal(total, inp.n, c) else null,
+        distanceText = distanceM?.let { kmText(it) },   // 0km 대신 "1km 미만"
+        proposal = if (inp.n >= 2) effortProposal(total, inp.n, c, settled) else null,
     )
 }
 
 /** 1분 단가(원, 표기용) = 시급 ÷ 60을 원 단위로. 금액 계산은 반올림 전 시급을 그대로 쓴다. */
 fun wagePerMin(c: EffortConstants): Int = roundHalfUp(c.wagePerHour / 60)
 
-/** F24 금액(방식 A)과 F25 한 번 빼 주기(방식 B). 같은 노고 금액을 보여 주는 방식만 다르고, 두 화면은 따로다. */
-fun effortProposal(effortPctS: Double, n: Int, c: EffortConstants): EffortProposal {
+/** F24 금액(방식 A)과 F25 한 번 빼 주기(방식 B). 같은 노고 금액을 보여 주는 방식만 다르고, 두 화면은 따로다.
+ *  중간 정산(Q-08-02, 효성 11/9): 앞서 정산한 원 단위 합을 뺀 남은 금액(어림 전)으로 1인 몫·운전자 몫·B 항목을 정하고,
+ *  천 원 어림은 마지막에 한 번만 한다. 어림한 값끼리 빼지 않는다. */
+fun effortProposal(effortPctS: Double, n: Int, c: EffortConstants, settledKrw: Double? = null): EffortProposal {
     val amount = effortPctS * c.wagePerHour / 360_000
-    val per = amount / n
-    val share = amount * (n - 1) / n
+    val remain = if (settledKrw != null) max(0.0, amount - settledKrw) else amount
+    val per = remain / n
+    val share = remain * (n - 1) / n
     val (aV, aT) = approxText(amount)
     val (pV, pT) = approxText(per)
-    val item = bItem(share, c.items)
+    val item = bItem(share, c.items)   // 남은 몫이 0이거나 커피 1인분 절반보다 작으면 null(제안 없음)
     val perMin = wagePerMin(c)
     val t = c.copy.text
+    // 앞서 정산한 몫이 있으면 근거도 '뺀 나머지'(임시 문구, 명준 확정 대기)
+    val basis = t.getValue(if (settledKrw != null && settledKrw > 0) "a_basis_remain_text" else "a_basis_text")
     return EffortProposal(
         amountKrw = amount, amountApprox = aV, amountText = aT,
         perPersonKrw = per, perPersonApprox = pV, perPersonText = pT,
@@ -501,10 +535,12 @@ fun effortProposal(effortPctS: Double, n: Int, c: EffortConstants): EffortPropos
         a = EffortScreenA(
             titleText = t.getValue("a_title_text"),
             mainText = fill(t.getValue("a_main_text"), "per_person" to pT),
-            basisText = fill(t.getValue("a_basis_text"), "amount" to aT, "n" to n.toString()),
+            basisText = fill(basis, "amount" to aT, "n" to n.toString()),
             wageText = fill(t.getValue("a_wage_text"), "wage_label" to c.wageLabel, "wage_per_min" to perMin.toString()),
         ),
         b = item?.let { EffortScreenB(it.key, fill(t.getValue("b_text"), "phrase" to it.phraseText), it.examples) },
+        settledKrw = settledKrw,
+        remainKrw = if (settledKrw != null) remain else null,
     )
 }
 
@@ -584,6 +620,8 @@ fun parseEffortInput(o: JsonObject): EffortInput = EffortInput(
     congestionS = o.dblOrNull("congestion_s"),
     distanceKm = o.dblOrNull("distance_km"),
     weatherTrip = o["weather_trip"]?.takeIf { it !is JsonNull }?.jsonObject?.let { parseWeatherTrip(it) },
+    midway = o.objOrNull("midway")?.let { EffortMidway(it.dbl("route_m"), it.dbl("remain_m")) },
+    settledKrw = o.dblOrNull("settled_krw"),
 )
 
 private fun parseHours(a: JsonElement): List<HourPrecip> =
@@ -603,11 +641,17 @@ fun EffortScreenA.toJson(): JsonObject = obj(
 
 fun EffortScreenB.toJson(): JsonObject = obj("item" to item, "text" to text, "item_examples" to itemExamples)
 
-fun EffortProposal.toJson(): JsonObject = obj(
-    "amount_krw" to amountKrw, "amount_approx" to amountApprox, "amount_text" to amountText,
-    "per_person_krw" to perPersonKrw, "per_person_approx" to perPersonApprox, "per_person_text" to perPersonText,
-    "driver_share_krw" to driverShareKrw, "a" to a.toJson(), "b" to b?.toJson(),
-)
+fun EffortProposal.toJson(): JsonObject {
+    val base: List<Pair<String, Any?>> = listOf(
+        "amount_krw" to amountKrw, "amount_approx" to amountApprox, "amount_text" to amountText,
+        "per_person_krw" to perPersonKrw, "per_person_approx" to perPersonApprox, "per_person_text" to perPersonText,
+        "driver_share_krw" to driverShareKrw, "a" to a.toJson(), "b" to b?.toJson(),
+    )
+    // 정산 입력이 없으면 키도 없음(Python Receipt.to_json과 같음)
+    val settle: List<Pair<String, Any?>> =
+        if (settledKrw != null) listOf("settled_krw" to settledKrw, "remain_krw" to remainKrw) else emptyList()
+    return obj(*(base + settle).toTypedArray())
+}
 
 fun EffortReceipt.toJson(): JsonObject = obj(
     "status" to status, "status_text" to statusText, "elapsed_limit_min" to elapsedLimitMin,

@@ -274,6 +274,41 @@ class FixturesTest {
         assertEquals("rain", wt.dep[0].precip)
     }
 
+    /** 중간 정산(명준 Q-08-02, 효성 계산 규칙 11/9): 시안 예시, 남은 금액을 마지막에 한 번 어림, B 경계 다시 고르기, 두 번 정산. */
+    @Test
+    fun effortMidway() {
+        fun run(id: String) =
+            effort(parseEffortInput(load(File(root, "effort/$id.json")).getValue("input").jsonObject), effortConstants)
+        // 시안: 65분·52km → 1.55배, 정체 19km, 예상보다 더 +13분(기준 ETA = 105분 × 52 ÷ 104.3), 한 사람 약 4천 원
+        val r27 = run("R27")
+        assertEquals("오늘 운전 1시간 5분 · 평소보다 1.55배 힘든 길", r27.headlineText)
+        assertEquals(listOf("비, 주행 내내", "19km (경로의 36%)", "+13분"), r27.lines.map { it.detailText })
+        assertEquals("52km", r27.distanceText)
+        val p27 = r27.proposal!!
+        assertEquals("약 1만 8천 원", p27.amountText)
+        assertEquals("한 사람 약 4천 원", p27.a.mainText)
+        assertEquals(0.0, p27.settledKrw!!, 0.0)
+        assertEquals(p27.amountKrw, p27.remainKrw!!, 0.0)
+        // 도착: 영수증은 전체(R1 그대로), 제안은 남은 금액(원 단위) ÷ n을 한 번만 어림 → 약 5천 원
+        val r1 = run("R1")
+        val r28 = run("R28")
+        assertEquals(r1.copy(proposal = null), r28.copy(proposal = null))
+        val p28 = r28.proposal!!
+        assertEquals(p27.remainKrw!!, p28.settledKrw!!, 0.0)
+        assertEquals(p28.amountKrw - p27.remainKrw!!, p28.remainKrw!!, 0.0)
+        assertEquals("한 사람 약 5천 원", p28.a.mainText)
+        assertEquals("운전 노고 약 3만 6천 원에서 중간에 챙긴 몫을 뺀 나머지를 운전자 포함 4명이 나눈 값", p28.a.basisText)
+        // B는 남은 금액의 운전자 몫으로 경계를 다시 고른다(2,350 같음 → 커피, 1원 아래·0 → 제안 없음)
+        assertEquals("coffee", run("R29").proposal!!.b?.item)
+        assertEquals(null, run("R30").proposal!!.b)
+        assertEquals(null, run("R31").proposal!!.b)
+        assertEquals(0.0, run("R31").proposal!!.remainKrw!!, 0.0)
+        // 두 번 정산: 기록할 합 = 정산마다의 remainKrw 합
+        assertEquals(p27.remainKrw!! + run("R32").proposal!!.remainKrw!!, run("R33").proposal!!.settledKrw!!, 0.0)
+        // 정산 입력이 없으면 출력에 키도 없다(기존 R* 그대로)
+        assertTrue("settled_krw" !in r1.proposal!!.toJson())
+    }
+
     /** 명세 9절 경계표: 2,350 미만 제안 없음 / 7,715.5 이상 밥 / 39,865.5 이상 공동 경비. */
     @Test
     fun effortBBoundaries() {
