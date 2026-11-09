@@ -30,6 +30,7 @@ import androidx.compose.ui.unit.coerceAtLeast
 import com.mist.pleos_app.ui.theme.Chagok
 import com.mist.pleos_app.ui.theme.MinTouch
 import com.mist.pleos_app.ui.theme.gpx
+import com.mist.pleos_app.ui.theme.gsp
 
 /*
  * Pleos Connect UI Design Guide(Foundations·Basic button)를 따르는 공통 부품.
@@ -49,7 +50,7 @@ private fun Modifier.pressScale(pressed: Boolean): Modifier = graphicsLayer {
 enum class CgButtonKind { Filled, Basic }
 
 /** 버튼 크기(Design v2 components/button): S 64 · M 80 · L 100. */
-enum class CgSize { S, M, L }
+enum class CgSize { S, M, L, XL, XLC }   // XL · XLC = v104 가는 중 홈 [도착했어요]·[그만두기](112 · 분할 96)
 
 /**
  * Basic Button(Design v2 `components/button`): 기본 = 회색 면, 채움 = 진한 면. 누름 배경 0.12초, 비활성은 옅은 면 + 선.
@@ -76,6 +77,8 @@ fun CgButton(
         CgSize.S -> Triple(64, 16, Chagok.type.bodyS)
         CgSize.M -> Triple(80, 24, Chagok.type.bodyL)
         CgSize.L -> Triple(100, 32, Chagok.type.titleS)
+        CgSize.XL -> Triple(112, 32, androidx.compose.ui.text.TextStyle(fontSize = 36.gsp, lineHeight = 44.gsp, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold))
+        CgSize.XLC -> Triple(96, 28, androidx.compose.ui.text.TextStyle(fontSize = 32.gsp, lineHeight = 40.gsp, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold))
     }
     val shape = RoundedCornerShape(r.gpx)
     Box(
@@ -84,7 +87,7 @@ fun CgButton(
             .background(bg, shape)
             .then(if (!enabled) Modifier.border(2.gpx, c.line, shape) else Modifier)
             .clickable(source, indication = null, enabled = enabled, role = Role.Button, onClick = onClick)
-            .padding(horizontal = (if (size == CgSize.L) 38 else if (size == CgSize.M) 30 else 22).gpx),
+            .padding(horizontal = (when (size) { CgSize.XL -> 40; CgSize.XLC -> 32; CgSize.L -> 38; CgSize.M -> 30; else -> 22 }).gpx),
         contentAlignment = Alignment.Center,
     ) {
         Text(text, style = style, color = fg, textAlign = TextAlign.Center, maxLines = 1)

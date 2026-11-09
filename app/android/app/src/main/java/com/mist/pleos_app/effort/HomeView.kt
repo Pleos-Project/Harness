@@ -39,39 +39,3 @@ fun etaClock(trip: OpenTrip): String? {
         OffsetDateTime.parse(trip.departedAt).plusSeconds(roundHalfUp(trip.etaS).toLong()).format(DateTimeFormatter.ofPattern("HH:mm"))
     }.getOrNull()
 }
-
-/**
- * 홈 기록 카드(#118 Design v3 HANDOFF_v3 5-2). 배수 = 저장된 영수증 배수, 길 조건 칩 = 그날 영수증에서 더해진 항목(정보 없음 제외)을
- * 더한 몫이 큰 순서로 최대 3개 + 남은 수. 하나도 없으면 "맑은 길". 값은 엔진 결과(기록에 남긴 입력으로 다시 계산)만 쓴다.
- */
-data class RecordCardView(
-    val multiplier: String?,      // "1.57"(뒤에 "배"는 화면이 붙임). null이면 [flatText]만
-    val flatText: String?,        // "평소와 같은 길" · "정리하지 못함"
-    val chips: List<String>,      // 영수증 줄 key(rain · snow · congestion · delay · night · fatigue) 또는 CHIP_CLEAR
-    val more: Int,
-    val meta: String,             // "2시간 10분 · 4명"
-)
-
-const val CHIP_CLEAR = "clear"
-private const val CHIPS_MAX = 3
-
-fun recordCardOf(r: EffortRecord, c: EffortConstants?): RecordCardView {
-    val people = r.n?.let { if (it >= 2) "${it}명" else "혼자" }
-    if (r.choice == CHOICE_UNSETTLED) return RecordCardView(null, UNSETTLED_LABEL, emptyList(), 0, listOfNotNull(people).joinToString(" · "))
-    val m100 = roundHalfUp(r.multiplier * 100)
-    val flat = m100 == 100
-    val receipt = recordReceiptOf(r, c)
-    val keys = receipt?.lines.orEmpty().filter { it.addMin > 0 }.sortedByDescending { it.addMin }.map { it.key }
-    val chips = when {
-        receipt == null -> emptyList()               // 예전 기록(입력 없음): 칩 없이
-        keys.isEmpty() -> listOf(CHIP_CLEAR)
-        else -> keys.take(CHIPS_MAX)
-    }
-    return RecordCardView(
-        multiplier = if (flat) null else String.format(Locale.ROOT, "%d.%02d", m100 / 100, m100 % 100),
-        flatText = if (flat) c?.copy?.text?.get("multiplier_same_text") ?: "평소와 같은 길" else null,
-        chips = chips,
-        more = (keys.size - CHIPS_MAX).coerceAtLeast(0),
-        meta = listOfNotNull(driveText(r.driveMin * 60), people).joinToString(" · "),
-    )
-}

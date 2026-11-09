@@ -77,7 +77,10 @@ data class EffortUi(
     val items: List<com.mist.pleos_app.engine.EffortItem> = emptyList(),   // 방식 B 항목(공동 경비 예시 포함)
     val done: ArriveDone? = null,                       // 고른 뒤: 기록은 남겼고 같은 화면에 "남겼어요"를 보여 주는 중
     val calcItems: List<CalcItem> = emptyList(),        // 계산 연출 체크포인트 6개(도착 뒤, 정리하지 못함이 아닐 때)
-    val justFinished: String? = null,                   // 방금 끝난 기록 trip_id(홈 맨 위 굵은 테두리, 메모리만)
+    val justFinished: String? = null,                   // 방금 끝난 기록 trip_id(알림 "방금", 메모리만)
+    val notiDot: Boolean = false,                       // v93 알림 종 빨간 점: 기록이 저장되면 켜고 창을 열면 끔
+    val notiOpen: Boolean = false,                      // 알림 창 열림
+    val notiFresh: Set<String> = emptySet(),            // 아직 안 읽은 알림(trip_id). 창을 닫으면 읽음
     val constants: com.mist.pleos_app.engine.EffortConstants? = null,
     val recordCount: Int = 0,                           // 남은 기록 수(설정 › 기록 초기화 "N건을 지워요")
     val midway: MidwayUi? = null,                       // 중간 정산 화면(F27)
@@ -138,6 +141,23 @@ class EffortViewModel(app: Application, private val saved: SavedStateHandle) : A
     }
     /** 방금 끝난 기록(홈 "방금" 표시). 다음 출발 화면에 들어가면 지운다. */
     private var justFinished: String? = null
+    // 알림(#118 v93~v96, HANDOFF_v3 5-7 · 8절): 메모리에만 둔다. 앱을 다시 켜도 남길지는 기획 확인
+    private var notiDot = false
+    private var notiOpen = false
+    private var notiFresh: Set<String> = emptySet()
+
+    /** 기록이 저장됐을 때: 종에 빨간 점, 그 기록은 새 알림. */
+    private fun notifySaved(tripId: String) { notiDot = true; notiFresh = notiFresh + tripId }
+
+    /** 종: 창을 열면 점을 끄고, 닫으면 새 알림을 읽음으로. */
+    fun toggleNoti() {
+        if (notiOpen) closeNoti() else { notiOpen = true; notiDot = false; refresh() }
+    }
+
+    fun closeNoti() {
+        if (!notiOpen) return
+        notiOpen = false; notiFresh = emptySet(); refresh()
+    }
 
     private val ui = MutableStateFlow(uiOf())
     val state: StateFlow<EffortUi> = ui.asStateFlow()
@@ -166,6 +186,7 @@ class EffortViewModel(app: Application, private val saved: SavedStateHandle) : A
             items = effortConstants?.items.orEmpty(),
             done = d,
             justFinished = justFinished,
+            notiDot = notiDot, notiOpen = notiOpen, notiFresh = notiFresh,
             constants = effortConstants,
             midway = midway,
             // 실제 주행이고 경로 거리를 알 때만(지금까지 거리 = 경로 − 내비 남은 거리). 시연 데이터에는 중간 정산 장면이 없다
@@ -521,6 +542,7 @@ class EffortViewModel(app: Application, private val saved: SavedStateHandle) : A
         val view = ui.value.proposal
         val method = settingsFlow.value.proposalMethod
         if (!flow.finish(recordOf(trip, r, view, method, choice))) return
+        notifySaved(trip.tripId)
         done = ArriveDone(trip, r, view, choice)
         refresh()
     }
@@ -536,7 +558,7 @@ class EffortViewModel(app: Application, private val saved: SavedStateHandle) : A
             else -> {
                 val trip = flow.state.openTrip
                 val r = receiptOf(trip, effortConstants)
-                if (trip != null && r != null && flow.finish(recordOf(trip, r, ui.value.proposal, settingsFlow.value.proposalMethod, CHOICE_CLOSE))) justFinished = trip.tripId
+                if (trip != null && r != null && flow.finish(recordOf(trip, r, ui.value.proposal, settingsFlow.value.proposalMethod, CHOICE_CLOSE))) { justFinished = trip.tripId; notifySaved(trip.tripId) }
                 refresh(); home()
             }
         }
@@ -546,7 +568,7 @@ class EffortViewModel(app: Application, private val saved: SavedStateHandle) : A
     private fun closeUnsettled() {
         val trip = flow.state.openTrip
         val r = receiptOf(trip, effortConstants)
-        if (trip != null && r != null && flow.finish(recordOf(trip, r, null, settingsFlow.value.proposalMethod, CHOICE_UNSETTLED))) justFinished = trip.tripId
+        if (trip != null && r != null && flow.finish(recordOf(trip, r, null, settingsFlow.value.proposalMethod, CHOICE_UNSETTLED))) { justFinished = trip.tripId; notifySaved(trip.tripId) }
         else flow.discardTrip()
         refresh(); home()
         ChagokLog.event("effort_unsettled_close")
