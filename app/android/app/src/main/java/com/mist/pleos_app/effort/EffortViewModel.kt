@@ -329,19 +329,25 @@ class EffortViewModel(app: Application, private val saved: SavedStateHandle) : A
         resumeCheck = false
         val c = cue ?: (if (resume) ArrivalCue.RESUME else return)
         if (!autoArrivalAllowed(trip, c, isoNow())) { ChagokLog.event("effort_auto_arrive_skip", "cue" to c.name, "eta" to (trip.etaS > 0)); return }
-        checkArrival(c.name.lowercase())
+        checkArrival(c)
     }
 
-    private fun checkArrival(reason: String) {
+    private fun checkArrival(cue: ArrivalCue, retried: Boolean = false) {
+        val reason = cue.name.lowercase()
         if (checking) return
         val trip = flow.state.openTrip ?: return
         if (trip.demo) { arrive(reason); return }                 // 시연: 내비 안내가 없다
-        val n = navi ?: run { arrive(reason); return }
+        val n = navi ?: run { if (cue == ArrivalCue.DOOR) arrive(reason); return }
         checking = true
         n.guide { g ->
             checking = false
-            if (isMidStop(g)) ChagokLog.event("effort_mid_stop", "reason" to reason)   // 휴게소 정차: 도착 아님(PRD 8장)
-            else arrive(reason)
+            when {
+                isMidStop(g) -> ChagokLog.event("effort_mid_stop", "reason" to reason)   // 휴게소 정차: 도착 아님(PRD 8장)
+                arrivalByGuide(g, cue) -> arrive(reason)
+                // 다시 보인 직후 내비 연결이 늦어 못 읽음 → 한 번만 다시 묻는다(연결은 이제 맺어짐). 그래도 모르면 도착으로 보지 않음
+                !retried -> checkArrival(cue, retried = true)
+                else -> ChagokLog.event("effort_auto_arrive_skip", "cue" to cue.name, "guide" to false)
+            }
         }
     }
 
