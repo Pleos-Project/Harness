@@ -268,6 +268,27 @@ private val LocalChagokColors = staticCompositionLocalOf { DarkColors }
 private val LocalChagokType = staticCompositionLocalOf<ChagokType?> { null }
 
 /** 화면 코드에서 색·글자를 꺼내는 곳: `Chagok.colors.textPrimary`, `Chagok.type.bodyS`. */
+/**
+ * 사진(또는 딥 잉크) 위 칸의 색(#118 HANDOFF_v3 4-2, 주간·야간 같음): 글자 흰색 · [출발] 라임 + 잉크 글자 ·
+ * 꺼짐 #FFFFFF2E 면 + #FFFFFFA6 글자 · 불러오는 막대 #FFFFFF33 · 오류 #FFADAD · 안내 #A9CFFF.
+ */
+@Composable
+fun ChagokOnPhoto(content: @Composable () -> Unit) {
+    val c = LocalChagokColors.current
+    val white = Color(0xFFFFFFFF)
+    CompositionLocalProvider(
+        LocalChagokColors provides c.copy(
+            textPrimary = white, textSecondary = Color(0xE0FFFFFF), textTertiary = Color(0xB8FFFFFF), textDisabled = Color(0xA6FFFFFF),
+            btnFilled = Color(0xFFD9F77A), btnFilledPressed = Color(0xFFBFD95F), btnFilledText = Color(0xFF242033),
+            btnDisabled = Color(0x2EFFFFFF), btnDisabledText = Color(0xA6FFFFFF), line = Color(0x00FFFFFF),
+            btnBasic = Color(0x2EFFFFFF), btnBasicPressed = Color(0x47FFFFFF), btnBasicText = white,
+            placeholderStrong = Color(0x33FFFFFF),
+            statusErrorForeground = Color(0xFFFFADAD), statusInfoForeground = Color(0xFFA9CFFF),
+        ),
+        content = content,
+    )
+}
+
 object Chagok {
     val colors: ChagokColors
         @Composable @ReadOnlyComposable get() = LocalChagokColors.current

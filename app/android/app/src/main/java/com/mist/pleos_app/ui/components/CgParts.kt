@@ -53,7 +53,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.CornerRadius
@@ -382,6 +384,51 @@ enum class CgPreviewState { Empty, Loading, Ready, Failed }
 fun CgPreviewPanel(
     state: CgPreviewState, name: String?, stats: List<Pair<String, String>>, note: String, emptyText: String,
     failText: String, retryLabel: String, onRetry: () -> Unit, modifier: Modifier = Modifier, compact: Boolean = false,
+    photo: Int? = null,          // 목적지 사진(res). null이면 딥 잉크 바탕
+    onPhoto: Boolean = false,    // v3: 고른 목적지 미리보기 = 사진/딥 잉크 바탕 + 흰 글자(HANDOFF_v3 4-2)
+    cta: @Composable (Modifier) -> Unit,
+) {
+    if (onPhoto && state != CgPreviewState.Empty && name != null) {
+        CgPhotoPanel(photo, modifier, compact) {
+            com.mist.pleos_app.ui.theme.ChagokOnPhoto {
+                CgPreviewPanel(state, name, stats, note, emptyText, failText, retryLabel, onRetry, Modifier.fillMaxSize(), compact, onPhoto = false, bare = true, cta = cta)
+            }
+        }
+        return
+    }
+    PreviewPanelBody(state, name, stats, note, emptyText, failText, retryLabel, onRetry, modifier, compact, bare = false, cta = cta)
+}
+
+/** 같은 이름으로 다시 부르는 사진 위 안쪽 칸(면 · 테두리 · 그림자 없음). */
+@Composable
+private fun CgPreviewPanel(
+    state: CgPreviewState, name: String?, stats: List<Pair<String, String>>, note: String, emptyText: String,
+    failText: String, retryLabel: String, onRetry: () -> Unit, modifier: Modifier, compact: Boolean,
+    onPhoto: Boolean, bare: Boolean, cta: @Composable (Modifier) -> Unit,
+) = PreviewPanelBody(state, name, stats, note, emptyText, failText, retryLabel, onRetry, modifier, compact, bare, cta)
+
+/** 사진 배경 + 그늘(가로: 왼쪽 → 오른쪽, 분할: 위 → 아래). 사진은 칸을 꽉 채우고 세로 기준점 60%. */
+@Composable
+private fun CgPhotoPanel(photo: Int?, modifier: Modifier, compact: Boolean, content: @Composable () -> Unit) {
+    val shape = RoundedCornerShape(40.gpx)
+    val shade = if (compact) Brush.verticalGradient(0f to Color(0x80242033), .45f to Color(0xCC242033), 1f to Color(0xF2242033))
+    else Brush.horizontalGradient(0f to Color(0xF2242033), .34f to Color(0xD9242033), .62f to Color(0x80242033), 1f to Color(0x26242033))
+    Box(modifier.shadow(18.gpx, shape, ambientColor = Color(0x33242033), spotColor = Color(0x33242033)).clip(shape).background(Color(0xFF242033))) {
+        photo?.let {
+            androidx.compose.foundation.Image(
+                androidx.compose.ui.res.painterResource(it), contentDescription = null, modifier = Modifier.matchParentSize(),
+                contentScale = androidx.compose.ui.layout.ContentScale.Crop, alignment = androidx.compose.ui.BiasAlignment(0f, .2f),
+            )
+            Box(Modifier.matchParentSize().background(shade))
+        }
+        content()
+    }
+}
+
+@Composable
+private fun PreviewPanelBody(
+    state: CgPreviewState, name: String?, stats: List<Pair<String, String>>, note: String, emptyText: String,
+    failText: String, retryLabel: String, onRetry: () -> Unit, modifier: Modifier, compact: Boolean, bare: Boolean,
     cta: @Composable (Modifier) -> Unit,
 ) {
     val c = Chagok.colors
@@ -414,14 +461,14 @@ fun CgPreviewPanel(
     }
     if (!compact) {
         Row(
-            modifier.shadow(6.gpx, shape).background(c.surfaceCard, shape).border(2.gpx, c.line, shape).padding(start = 44.gpx, end = 28.gpx, top = 28.gpx, bottom = 28.gpx),
+            (if (bare) modifier else modifier.shadow(6.gpx, shape).background(c.surfaceCard, shape).border(2.gpx, c.line, shape)).padding(start = 44.gpx, end = 28.gpx, top = 28.gpx, bottom = 28.gpx),
             verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(32.gpx),
         ) {
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(14.gpx), content = body)
             cta(Modifier)
         }
     } else {
-        Column(modifier.shadow(6.gpx, shape).background(c.surfaceCard, shape).border(2.gpx, c.line, shape).padding(24.gpx), verticalArrangement = Arrangement.spacedBy(10.gpx)) {
+        Column((if (bare) modifier else modifier.shadow(6.gpx, shape).background(c.surfaceCard, shape).border(2.gpx, c.line, shape)).padding(24.gpx), verticalArrangement = Arrangement.spacedBy(10.gpx)) {
             body()
             Spacer(Modifier.height(12.gpx))
             cta(Modifier.fillMaxWidth())
