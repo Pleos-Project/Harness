@@ -111,6 +111,19 @@ class ArriveTest {
     }
 
     @Test
+    fun unknownGuideArrivesOnlyByDoor() {
+        // 에뮬 11/9: 다시 보인 직후 내비 연결이 늦어 상태를 못 읽으면(null) 다시 보임으로는 도착하지 않음. 문이 열린 순간은 도착
+        assertFalse(arrivalByGuide(null, ArrivalCue.RESUME))
+        assertFalse(arrivalByGuide(null, ArrivalCue.DOOR_ON_SHOW))
+        assertTrue(arrivalByGuide(null, ArrivalCue.DOOR))
+        val guiding = GuideState(14000, true)
+        ArrivalCue.entries.forEach { assertFalse(arrivalByGuide(guiding, it)) }          // 안내 중 + 남은 거리 → 중간 정차
+        val done = GuideState(0, false)
+        ArrivalCue.entries.forEach { assertTrue(arrivalByGuide(done, it)) }              // 안내가 끝났으면 도착
+        assertTrue(arrivalByGuide(GuideState(null, false), ArrivalCue.RESUME))          // 한쪽만 읽어도 안내 아님이면 도착
+    }
+
+    @Test
     fun noAutoArrivalOnResumeRightAfterDeparture() {
         // 출발 직후 다시 열면 내비 안내 시작 전이라 "안내 안 함"으로 답한다 → 1분 안에는 다시 보임으로 도착하지 않음(에뮬 11/9)
         val t = OpenTrip("t1", "2026-11-17T16:00:00+09:00", "서울식물원", 1, 2000.0)
