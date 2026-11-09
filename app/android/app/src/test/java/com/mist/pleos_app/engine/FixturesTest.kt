@@ -181,6 +181,25 @@ class FixturesTest {
             effortConstants,
         )
         assertJson(scene.getValue("departure_preview"), preview.toJson(), "demo departure_preview")
+
+        // 휴게소 중간 정산 장면(효성 11/9): 17:05 중간 정산 = R27, [좋아요]로 정산한 뒤 18:10 도착 = R28
+        val mid = fx.getValue("midway").jsonObject
+        val after = fx.getValue("midway_arrival").jsonObject
+        for ((part, id) in listOf(mid to "R27", after to "R28")) {
+            val r = load(File(root, "effort/$id.json"))
+            assertJson(r.getValue("input"), part.getValue("input"), "demo $id input")
+            assertJson(r.getValue("expected"), part.getValue("expected"), "demo $id expected")
+            val actual = effort(parseEffortInput(part.getValue("input").jsonObject), effortConstants).toJson()
+            assertJson(part.getValue("expected"), actual, "demo $id 엔진")
+        }
+        val midIn = parseEffortInput(mid.getValue("input").jsonObject)
+        assertEquals(mid.str("at"), midIn.arrivedAt)
+        assertEquals(mid.dbl("remain_m"), midIn.midway!!.remainM, 0.0)
+        // 정산 뒤 도착 입력 = 시연 입력(R1) + settlements 한 줄 {정산 시각, 중간 정산 영수증의 remainKrw}
+        val afterIn = parseEffortInput(after.getValue("input").jsonObject)
+        val midRemain = effort(midIn, effortConstants).proposal!!.remainKrw!!
+        assertEquals(listOf(EffortSettlement(mid.str("at"), midRemain)), afterIn.settlements)
+        assertEquals(parseEffortInput(input).copy(settlements = afterIn.settlements), afterIn)
     }
 
     /** 명세 AC 숫자·문구를 fixture와 따로 확인(AC-F23-1·AC-F24-1·AC-F25-1). */
@@ -289,10 +308,23 @@ class FixturesTest {
         assertEquals("한 사람 약 4천 원", p27.a.mainText)
         assertEquals(0.0, p27.settledKrw!!, 0.0)
         assertEquals(p27.amountKrw, p27.remainKrw!!, 0.0)
-        // 도착: 영수증은 전체(R1 그대로), 제안은 남은 금액(원 단위) ÷ n을 한 번만 어림 → 약 5천 원
+        // 도착: 영수증은 출발~도착 전체, 제안은 남은 금액(원 단위) ÷ n을 한 번만 어림 → 약 5천 원
         val r1 = run("R1")
         val r28 = run("R28")
-        assertEquals(r1.copy(proposal = null), r28.copy(proposal = null))
+        // 17:05 정산에서 장시간이 끊겨 65 + 65분 → 장시간 줄 없음, 1.56배(효성 11/9). 장시간 말고는 R1과 같다
+        assertEquals(listOf(65.0, 65.0), r28.fatigueSegmentsMin)
+        assertEquals("오늘 운전 2시간 10분 · 평소보다 1.56배 힘든 길", r28.headlineText)
+        assertEquals(r1.lines.dropLast(1), r28.lines)
+        assertEquals(203.386, r28.effortMin, 1e-9)
+        assertEquals(36_270.50, r28.proposal!!.amountKrw, 0.005)
+        assertEquals(
+            r1.copy(
+                proposal = null, fatigueSegmentsMin = r28.fatigueSegmentsMin, fatigueExcessMin = 0.0,
+                effortMin = r28.effortMin, multiplier = r28.multiplier, lines = r28.lines,
+                multiplierText = r28.multiplierText, headlineText = r28.headlineText,
+            ),
+            r28.copy(proposal = null),
+        )
         val p28 = r28.proposal!!
         assertEquals(p27.remainKrw!!, p28.settledKrw!!, 0.0)
         assertEquals(p28.amountKrw - p27.remainKrw!!, p28.remainKrw!!, 0.0)
@@ -307,6 +339,33 @@ class FixturesTest {
         assertEquals(p27.remainKrw!! + run("R32").proposal!!.remainKrw!!, run("R33").proposal!!.settledKrw!!, 0.0)
         // 정산 입력이 없으면 출력에 키도 없다(기존 R* 그대로)
         assertTrue("settled_krw" !in r1.proposal!!.toJson())
+    }
+
+    /** 중간 정산 시각에서 장시간 끊기(효성 11/9): 정산이 있으면 그 시각에서만 끊고(Q로 가운데 끊지 않음), 구간 = 벽시계 × (T ÷ E). */
+    @Test
+    fun effortFatigueSplit() {
+        fun input(id: String) = parseEffortInput(load(File(root, "effort/$id.json")).getValue("input").jsonObject)
+        fun run(id: String) = effort(input(id), effortConstants)
+        assertEquals(listOf(105.0, 105.0), run("R34").fatigueSegmentsMin)        // 정산 없음 + 답 30분 → 가운데
+        val r35 = run("R35")
+        assertEquals(listOf(52.5, 157.5), r35.fatigueSegmentsMin)                // 같은 주행 + 11:00 정산 → 그 시각에서만
+        assertEquals(37.5, r35.fatigueExcessMin, 0.0)
+        assertEquals(listOf("2시간 넘긴 38분"), r35.lines.map { it.detailText })
+        assertEquals(listOf(150.0, 60.0), run("R36").fatigueSegmentsMin)         // 늦은 정산 → 앞 구간만 장시간
+        assertEquals(90.0, effort(input("R36").copy(settlements = emptyList()), effortConstants).fatigueExcessMin, 0.0)
+        assertEquals(listOf(65.0, 35.0), run("R32").fatigueSegmentsMin)          // 중간 정산 영수증도 앞 정산 시각에서
+        assertEquals(listOf(60.0, 150.0), run("R37").fatigueSegmentsMin)
+        // 정산 시각은 시각 순으로 보고 [출발, 도착]으로 자르며, 길이 0인 구간은 넣지 않는다
+        val r33 = input("R33")
+        assertEquals(
+            listOf(65.0, 35.0, 30.0),
+            effort(r33.copy(settlements = r33.settlements.reversed()), effortConstants).fatigueSegmentsMin,
+        )
+        val out = listOf(
+            EffortSettlement("2026-11-17T15:00:00+09:00", 0.0), EffortSettlement("2026-11-17T19:00:00+09:00", 0.0),
+        )
+        assertEquals(listOf(130.0), effort(input("R1").copy(settlements = out), effortConstants).fatigueSegmentsMin)
+        assertEquals(listOf(65.0), run("R31").fatigueSegmentsMin)                // 정산 시각 = 지금 → 길이 0 구간 없음
     }
 
     /** 명세 9절 경계표: 2,350 미만 제안 없음 / 7,715.5 이상 밥 / 39,865.5 이상 공동 경비. */

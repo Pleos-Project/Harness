@@ -1,0 +1,67 @@
+{
+  "id": "R34",
+  "title": "쉰 시간 답만(중간 정산 없음): 10:00→14:00, 답 30분, ETA 200분, 맑음·낮, 2명",
+  "note": "T = 240 − 30 = 210. 언제 쉬었는지 모르니 가운데에서 105 + 105로 끊음(지금 규칙) → 장시간 0, 평소와 같은 길. 예상보다 더 10분 < ETA의 10% → 0. 금액 37,450 → 약 3만 7천. R35와 같은 주행",
+  "input": {
+    "departed_at": "2026-11-17T10:00:00+09:00",
+    "arrived_at": "2026-11-17T14:00:00+09:00",
+    "rest_answer_min": 30,
+    "eta_s": 12000,
+    "congestion_ratio": 0.0,
+    "congestion_m": 0.0,
+    "congestion_s": null,
+    "weather_dep": "none",
+    "weather_arr": "none",
+    "sunrise": "07:13",
+    "sunset": "17:20",
+    "n": 2,
+    "distance_km": null
+  },
+  "expected": {
+    "status": "ok",
+    "status_text": null,
+    "elapsed_limit_min": 400.0,
+    "elapsed_min": 240.0,
+    "drive_min": 210.0,
+    "rest_min": 30.0,
+    "fatigue_segments_min": [
+      105.0,
+      105.0
+    ],
+    "congestion_min": 0.0,
+    "delay_min": 0.0,
+    "night_min": 0.0,
+    "rain_min": 0.0,
+    "snow_min": 0.0,
+    "fatigue_excess_min": 0.0,
+    "effort_min": 210.0,
+    "multiplier": 1.0,
+    "lines": [],
+    "notes": [],
+    "footnote_text": null,
+    "drive_text": "3시간 30분",
+    "multiplier_text": "평소와 같은 길",
+    "headline_text": "오늘 운전 3시간 30분 · 평소와 같은 길",
+    "distance_text": null,
+    "proposal": {
+      "amount_krw": 37450.0,
+      "amount_approx": 37000,
+      "amount_text": "약 3만 7천 원",
+      "per_person_krw": 18725.0,
+      "per_person_approx": 19000,
+      "per_person_text": "약 1만 9천 원",
+      "driver_share_krw": 18725.0,
+      "a": {
+        "title_text": "오늘 운전을 챙긴다면",
+        "main_text": "한 사람 약 1만 9천 원",
+        "basis_text": "운전 노고 약 3만 7천 원을 운전자 포함 2명이 나눈 값",
+        "wage_text": "최저임금 1분 178원 기준"
+      },
+      "b": {
+        "item": "meal",
+        "text": "오늘은 밥값에서 운전자 빼고 나누는 게 어때요",
+        "item_examples": []
+      }
+    }
+  }
+}

@@ -9,7 +9,8 @@ fixture 종류
 - settle/T*.json  E4 정산 경계 케이스
 - ledger/L*.json  F8·F10·F17 로컬 장부(출발·도착·다시 열기·핀·월 합계) 이벤트 순서
 - effort/R*.json  운전 노고(명세 v0.5 F23~F25) input → expected(영수증·제안). R1~R8 = 명세 12절 표(R2·R4는 #62에서 지움),
-                  R9 = AC-F21-1, R10~ = 하네스 추가(R16~R21 도착 상한, R22~R26 시간대별 강수, R27~R33 중간 정산)
+                  R9 = AC-F21-1, R10~ = 하네스 추가(R16~R21 도착 상한, R22~R26 시간대별 강수, R27~R33 중간 정산,
+                  R34~R37 중간 정산 시각에서 장시간 끊기)
 - effort/sun.json 일출·일몰 계산값(엔진 두 벌 대조) + 한국천문연구원 출몰시각(참고, pytest가 ±1분 대조)
 
 계약 샘플(contract/samples)
@@ -214,13 +215,16 @@ KASI_SEOUL: dict = {
 
 def demo_fixture(r1: dict) -> None:
     """시연 데이터(명세 v0.5 12절): R1 입력 그대로 + 화면용 scene. 목업·영상·PT 앱이 같은 숫자를 쓴다.
-    앱은 데모 고정 모드에서 assets/data/effort/demo.json을 읽는다(syncChagokData)."""
+    앱은 데모 고정 모드에서 assets/data/effort/demo.json을 읽는다(syncChagokData).
+    midway·midway_arrival = 휴게소 중간 정산 장면(효성 11/9): 17:05 중간 정산(R27) → [좋아요]로 정산 → 18:10 도착(R28)."""
     r = EF.effort(EF.input_from_json(r1), EFFORT_CONST)
+    mid = r1_midway(r1, "17:05", 52_000)
+    after = dict(r1, settlements=[settled(mid)])
     preview = EF.departure_preview(r1["eta_s"], R1_ROUTE_M, r1["congestion_ratio"], r1["congestion_m"], EFFORT_CONST)
     rest_label = dict(EFFORT_CONST.copy.rest_answers)[r1["rest_answer_min"]]   # 도착 때 질문의 선택지(copy)
     write(ROOT / "fixtures/effort/demo.json", {
-        "id": "demo", "title": "시연 데이터: R1(PRD 대표 장면)",
-        "note": "명세 v0.5 12절. gen_fixtures.py가 R1 정의로 만든다(손으로 고치지 않음). "
+        "id": "demo", "title": "시연 데이터: R1(PRD 대표 장면) + 휴게소 중간 정산(R27 → R28)",
+        "note": "명세 v0.5 12절. gen_fixtures.py가 R1·R27·R28 정의로 만든다(손으로 고치지 않음). "
                 "목적지 이름·경로 거리는 바꿔도 배수·금액이 그대로(정체 km 표시만 바뀜). "
                 "목적지 이름은 명준 #60. 화면 문구는 constants effort.copy의 임시 값(디자인 확정 대기)",
         "scene": {
@@ -230,7 +234,20 @@ def demo_fixture(r1: dict) -> None:
             "rest_answer_label": rest_label,
             "departure_preview": dataclasses.asdict(preview),
         },
-        "input": r1, "expected": r.to_json()})
+        "input": r1, "expected": r.to_json(),
+        # 휴게소에서 운전자 교대 → 지금까지의 노고 보기. 시연 모드는 지금 시각·내비 남은 거리·시간대별 날씨 대신 이 값을 쓴다
+        "midway": {
+            "note": "휴게소 17:05 중간 정산(= R27). at = 정산 시각(input.arrived_at), remain_m = 그때 내비 남은 거리"
+                    "(input.midway.remain_m). 정산하면 출발 기록 settlements에 {at, remain_krw = expected.proposal.remain_krw}",
+            "at": mid["arrived_at"],
+            "remain_m": mid["midway"]["remain_m"],
+            "input": mid, "expected": EF.effort(EF.input_from_json(mid), EFFORT_CONST).to_json(),
+        },
+        "midway_arrival": {
+            "note": "midway를 [좋아요]로 정산한 뒤 18:10 도착(= R28). input = 위 input(R1) + settlements 한 줄. "
+                    "장시간이 17:05에서 끊겨 1.56배(중간 정산 없는 위 expected는 1.57배)",
+            "input": after, "expected": EF.effort(EF.input_from_json(after), EFFORT_CONST).to_json(),
+        }})
 
 
 def remain_of(inp: dict) -> float:
@@ -238,19 +255,27 @@ def remain_of(inp: dict) -> float:
     return EF.effort(EF.input_from_json(inp), EFFORT_CONST).proposal.remain_krw
 
 
+def settled(inp: dict) -> dict:
+    """중간 정산 영수증 → 앱 출발 기록 settlements에 쌓일 한 줄 중 엔진이 받는 값(at = 그 영수증의 arrived_at)."""
+    return {"at": inp["arrived_at"], "remain_krw": remain_of(inp)}
+
+
+def r1_midway(r1: dict, now: str, so_far_m: int, **kw) -> dict:
+    """R1 장면을 가는 중에 정산. 앱이 넘기는 값: arrived_at = 지금, midway = {경로 거리, 내비 남은 거리},
+    weather_trip = 출발 좌표~현재 위치·to=지금(16:00·17:00 조각, 두 지점 모두 비)."""
+    hours = trip_hours(16, ["rain"] * 2, ["rain"] * 2)
+    return dict(r1, arrived_at=at(now), distance_km=None,
+                midway={"route_m": R1_ROUTE_M, "remain_m": R1_ROUTE_M - so_far_m}, weather_trip=hours, **kw)
+
+
 def midway_cases(r1: dict) -> list[tuple[str, str, str, dict]]:
     """중간 정산(명준 Q-08-02, 효성 계산 규칙 11/9, PR #94 댓글). 가는 중 '출발~지금'을 도착과 같은 영수증으로 세고
-    A·B로 실제 정산한다. 앞 영수증의 remain_krw(원 단위, 어림 전)를 다음 입력의 settled_krw에 더해 잇는다.
-    앱이 넘기는 값: arrived_at = 지금, midway = {경로 거리, 내비 남은 거리}, weather_trip = 출발 좌표~현재 위치·to=지금."""
-    def midway(now: str, so_far_m: int, **kw) -> dict:
-        hours = trip_hours(16, ["rain"] * 2, ["rain"] * 2)   # 16:00·17:00 조각, 두 지점 모두 비
-        return dict(r1, arrived_at=at(now), distance_km=None,
-                    midway={"route_m": R1_ROUTE_M, "remain_m": R1_ROUTE_M - so_far_m}, weather_trip=hours, **kw)
-
-    mid1 = midway("17:05", 52_000)
-    s1 = remain_of(mid1)
-    mid2 = midway("17:40", 80_000, settled_krw=s1)
-    s2 = remain_of(mid2)
+    A·B로 실제 정산한다. 앞서 한 정산은 settlements = [{at, remain_krw}]로 넘긴다(앱 출발 기록 settlements의 두 값).
+    엔진이 remain_krw 합(남은 금액에서 뺌)과 정산 시각(장시간 구간 경계, 효성 11/9 #97 뒤)을 둘 다 만든다."""
+    mid1 = r1_midway(r1, "17:05", 52_000)
+    st1 = settled(mid1)
+    mid2 = r1_midway(r1, "17:40", 80_000, settlements=[st1])
+    st2 = settled(mid2)
     plain = effort_input("10:00", "12:00", eta_min=120, n=2)   # 2시간 맑음·낮, 가산 0 → 금액 21,400원
     return [
         ("R27", "중간 정산(시안 예시): R1 장면을 출발 65분(17:05)·지금까지 52km에서 정산. 경로 104.3km, 내비 남은 52.3km, 4명",
@@ -260,26 +285,68 @@ def midway_cases(r1: dict) -> list[tuple[str, str, str, dict]]:
          "약 4천, 운전자 몫 13,473.14 → 밥. 거리 표시 52km. 도착 상한은 출발 때 ETA 105분 그대로(210분). "
          "처음 정산이라 settled_krw 0, remain_krw = 금액(정산하면 이 값을 기록에 더함). "
          "시안 예시의 17,967.08은 어림한 배수 1.55 × 65분으로 낸 값이라 원 단위만 다름(효성 확인 11/9)", mid1),
-        ("R28", "R27에서 정산한 뒤 도착: R1과 같은 주행, settled_krw = R27 remain_krw",
-         "영수증은 출발~도착 전체(R1과 같음, 1.57배·약 3만 6천). 제안은 남은 금액 36,493.42 − 17,964.19 = 18,529.23으로 "
-         "한 사람 4,632.31 → 약 5천(어림은 마지막에 한 번, 어림끼리 빼지 않음). 운전자 몫 13,896.92 → 밥. "
-         "A 근거는 '중간에 챙긴 몫을 뺀 나머지'(effort.copy.a_basis_remain_text 임시)", dict(r1, settled_krw=s1)),
+        ("R28", "R27에서 정산한 뒤 도착: R1과 같은 주행, settlements = [R27 정산(17:05)]",
+         "장시간은 정산 시각 17:05에서 끊겨 65분 + 65분 → 장시간 줄 없음(R1은 130분 한 구간이라 '2시간 넘긴 10분'). "
+         "노고 203.386 → 1.56배, 금액 36,270.50 → 약 3만 6천. 제안은 남은 금액 36,270.50 − 17,964.19 = 18,306.31로 "
+         "한 사람 4,576.58 → 약 5천(어림은 마지막에 한 번, 어림끼리 빼지 않음). 운전자 몫 13,729.74 → 밥. "
+         "A 근거는 '중간에 챙긴 몫을 뺀 나머지'(effort.copy.a_basis_remain_text 임시)", dict(r1, settlements=[st1])),
         ("R29", "남은 몫 B 경계(같음 → 제안): 10:00→12:00 맑음·낮, 2명, 앞서 정산 16,700원",
-         "금액 21,400(정산 없으면 운전자 몫 10,700 → 밥). 남은 4,700 → 운전자 몫 2,350 = 커피 1인분 절반 → 커피(경계 '이상')",
-         dict(plain, settled_krw=16_700.0)),
+         "금액 21,400(정산 없으면 운전자 몫 10,700 → 밥). 남은 4,700 → 운전자 몫 2,350 = 커피 1인분 절반 → 커피(경계 '이상'). "
+         "정산 시각은 도착과 같은 12:00이라 장시간 구간은 120분 한 구간 그대로(이 사례는 금액 경계만 봄)",
+         dict(plain, settlements=[{"at": at("12:00"), "remain_krw": 16_700.0}])),
         ("R30", "남은 몫 B 경계(1원 아래 → 제안 없음): R29에서 앞서 정산 16,701원",
          "남은 4,699 → 운전자 몫 2,349.5 < 2,350 → B 제안 없음(b null). 앱은 A도 같은 기준으로 기록만(Q-07-04)",
-         dict(plain, settled_krw=16_701.0)),
-        ("R31", "남은 몫 0: R27 정산 직후 같은 자리에서 다시 중간 정산",
-         "영수증은 R27과 같고 남은 금액 = 17,964.19 − 17,964.19 = 0 → 한 사람 '1천 원 미만', B 제안 없음. "
-         "정산한 합이 금액보다 커도 남은 금액은 0(음수 없음)", dict(mid1, settled_krw=s1)),
-        ("R32", "두 번째 중간 정산: R27 정산 뒤 출발 100분(17:40)·지금까지 80km, settled_krw = R27 remain_krw",
+         dict(plain, settlements=[{"at": at("12:00"), "remain_krw": 16_701.0}])),
+        ("R31", "남은 몫 0: R27 정산 직후 같은 자리(17:05)에서 다시 중간 정산",
+         "영수증은 R27과 같고(정산 시각 = 지금이라 길이 0인 구간은 넣지 않음 → 65분 한 구간) 남은 금액 = "
+         "17,964.19 − 17,964.19 = 0 → 한 사람 '1천 원 미만', B 제안 없음. 정산한 합이 금액보다 커도 남은 금액은 0(음수 없음)",
+         dict(mid1, settlements=[st1])),
+        ("R32", "두 번째 중간 정산: R27 정산 뒤 출발 100분(17:40)·지금까지 80km, settlements = [R27 정산(17:05)]",
          "기준 ETA = 105 × 80,000 ÷ 104,300 = 80.54분 → '+19분' +5%. 비 100분 +40%, 정체 '29km (경로의 36%)' +10%, "
-         "밤길 17:20~17:40 '20분' +1% → 1.56배, 금액 27,779.88 → 약 2만 8천. 남은 27,779.88 − 17,964.19 = 9,815.69 → "
-         "한 사람 2,453.92 → 약 2천, 운전자 몫 7,361.77 → 커피", mid2),
-        ("R33", "두 번 정산한 뒤 도착: R1과 같은 주행, settled_krw = R27 + R32 remain_krw",
-         "정산한 합 17,964.19 + 9,815.69 = 27,779.88(= R32 금액). 남은 36,493.42 − 27,779.88 = 8,713.54 → "
-         "한 사람 2,178.38 → 약 2천, 운전자 몫 6,535.15 → 커피", dict(r1, settled_krw=s1 + s2)),
+         "밤길 17:20~17:40 '20분' +1% → 1.56배, 금액 27,779.88 → 약 2만 8천. 장시간은 앞 정산 17:05에서 끊겨 65 + 35분(둘 다 0). "
+         "남은 27,779.88 − 17,964.19 = 9,815.69 → 한 사람 2,453.92 → 약 2천, 운전자 몫 7,361.77 → 커피", mid2),
+        ("R33", "두 번 정산한 뒤 도착: R1과 같은 주행, settlements = [R27 정산(17:05), R32 정산(17:40)]",
+         "장시간은 65 + 35 + 30분 → 줄 없음, 1.56배·금액 36,270.50(R28과 같음). 정산한 합 17,964.19 + 9,815.69 = 27,779.88"
+         "(= R32 금액). 남은 36,270.50 − 27,779.88 = 8,490.62 → 한 사람 2,122.66 → 약 2천, 운전자 몫 6,367.97 → 커피",
+         dict(r1, settlements=[st1, st2])),
+    ]
+
+
+# R34~R37의 긴 길: 10:00 출발, ETA 200분, 경로 200km, 맑음·낮, 2명, 정체 0
+LONG_ROUTE_M = 200_000
+
+
+def fatigue_split_cases() -> list[tuple[str, str, str, dict]]:
+    """중간 정산 시각에서 장시간(피로) 구간을 끊기(효성 11/9, #97 뒤). 영수증 줄 중 운전하는 사람에 따라 달라지는 건 장시간뿐이라
+    교대·휴게로 정산한 시각을 구간 경계로 본다. 중간 정산이 있으면 쉰 시간 답 Q는 T에서 빼기만 하고 가운데에서 끊지 않는다."""
+    long = effort_input("10:00", "14:00", answer=30, eta_min=200, n=2)
+
+    def long_midway(now: str, so_far_m: int, **kw) -> dict:
+        return dict(long, arrived_at=at(now), rest_answer_min=0,
+                    midway={"route_m": LONG_ROUTE_M, "remain_m": LONG_ROUTE_M - so_far_m}, **kw)
+
+    st_11 = settled(long_midway("11:00", 60_000))     # 60분·60km → 가산 0, 금액 10,700
+    st_1230 = settled(long_midway("12:30", 150_000))  # 150분 한 구간 → 장시간 30분, 금액 27,418.75
+    late = dict(long, arrived_at=at("13:30"), rest_answer_min=0)
+    return [
+        ("R34", "쉰 시간 답만(중간 정산 없음): 10:00→14:00, 답 30분, ETA 200분, 맑음·낮, 2명",
+         "T = 240 − 30 = 210. 언제 쉬었는지 모르니 가운데에서 105 + 105로 끊음(지금 규칙) → 장시간 0, 평소와 같은 길. "
+         "예상보다 더 10분 < ETA의 10% → 0. 금액 37,450 → 약 3만 7천. R35와 같은 주행", long),
+        ("R35", "R34와 같은 주행 + 11:00 중간 정산(답 30분): 정산 시각에서만 끊음",
+         "중간 정산이 있으면 Q는 T에서 빼기만(쉰 곳 = 그 휴게소). 구간 = 벽시계 × (T ÷ E) = 60 × 210/240 = 52.5, "
+         "180 × 210/240 = 157.5 → 장시간 37.5분 '2시간 넘긴 38분' +2% → 214.6875 → 1.02배. 금액 38,285.94 → 약 3만 8천, "
+         "남은 38,285.94 − 10,700(11:00 정산, 60분·60km 영수증) = 27,585.94 → 한 사람 약 1만 4천, 운전자 몫 → 밥",
+         dict(long, settlements=[st_11])),
+        ("R36", "정산이 늦어 앞 구간만 장시간: 10:00→13:30, 쉰 시간 없음, 12:30 중간 정산",
+         "구간 150 + 60분 → 앞 구간만 넘김 '2시간 넘긴 30분' +2% → 213.75 → 1.02배(끊지 않으면 210분 한 구간, 90분 넘김 1.05배). "
+         "금액 38,118.75. 12:30 중간 정산 영수증도 150분 한 구간이라 장시간 30분(1.03배, 27,418.75) → "
+         "남은 10,700 → 한 사람 5,350 → 약 5천, 운전자 몫 5,350 → 커피",
+         dict(late, settlements=[st_1230])),
+        ("R37", "두 번째 중간 정산도 앞 정산 시각에서 끊김: R35의 11:00 정산 뒤 13:30·지금까지 195km에서 다시 정산",
+         "구간 60 + 150분 → 장시간 30분 +2% → 213.75 → 1.02배(끊지 않으면 210분 한 구간, 90분 넘김 1.05배). "
+         "기준 ETA = 200 × 195 ÷ 200 = 195분 → 15분 < 10% → 예상보다 더 0. 거리 표시 195km. "
+         "금액 38,118.75, 남은 38,118.75 − 10,700 = 27,418.75 → 한 사람 약 1만 4천",
+         long_midway("13:30", 195_000, settlements=[st_11])),
     ]
 
 
@@ -386,6 +453,7 @@ def effort_fixtures() -> None:
                       trip=trip_hours(14, ["unknown"] * 3, ["unknown"] * 3))),
     ]
     cases += midway_cases(r1)
+    cases += fatigue_split_cases()
     for fid, title, note, inp in cases:
         write(ROOT / "fixtures/effort" / f"{fid}.json", effort_fixture(fid, title, note, inp))
 
