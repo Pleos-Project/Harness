@@ -40,8 +40,8 @@
     "notes": [],
     "footnote_text": null,
     "drive_text": "2시간 10분",
-    "multiplier_text": "평소와 같은 길",
-    "headline_text": "오늘 운전 2시간 10분 · 평소와 같은 길",
+    "multiplier_text": "평소 같은 길",
+    "headline_text": "오늘 운전 2시간 10분 · 평소 같은 길",
     "distance_text": null,
     "proposal": {
       "amount_krw": 23183.333333333332,
@@ -59,7 +59,7 @@
       },
       "b": {
         "item": "meal",
-        "text": "오늘은 밥값에서 운전자 빼고 나누는 게 어때요",
+        "text": "오늘은 밥값에서 운전자 빼는 게 어때요",
         "item_examples": []
       }
     }

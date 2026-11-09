@@ -43,7 +43,7 @@
         "pct": 40,
         "pct_text": "+40%",
         "detail_text": "비, 주행 내내",
-        "basis_text": "비 오는 날은 맑은 날보다 운전 부담이 40% 커요 · 시뮬레이터 30명 연구(Frontiers in Neuroscience 2026)"
+        "basis_text": "비 오는 날은 운전 부담이 40% 늘어요 · 시뮬레이터 30명 연구(Frontiers in Neuroscience 2026)"
       },
       {
         "key": "congestion",
@@ -52,7 +52,7 @@
         "pct": 10,
         "pct_text": "+10%",
         "detail_text": "38km (경로의 36%)",
-        "basis_text": "차가 몰린 길은 한산한 길보다 운전 부담이 27% 커요 · 시뮬레이터 연구(Shakouri, LSU 2015)"
+        "basis_text": "차가 붐비는 길은 운전 부담이 27% 늘어요 · 시뮬레이터 연구(Shakouri, LSU 2015)"
       },
       {
         "key": "delay",
@@ -70,7 +70,7 @@
         "pct": 2,
         "pct_text": "+2%",
         "detail_text": "50분",
-        "basis_text": "밤에는 낮보다 운전 부담이 4% 커요 · 트럭 운전자 50명 시뮬레이터 연구(Fitri 2025)"
+        "basis_text": "밤 운전은 부담이 4% 늘어요 · 트럭 운전자 50명 시뮬레이터 연구(Fitri 2025)"
       },
       {
         "key": "fatigue",
@@ -83,7 +83,7 @@
       }
     ],
     "notes": [],
-    "footnote_text": "정체 구간은 내비 안내 경로 기준",
+    "footnote_text": "출발 때 내비가 안내한 경로의 36%가 붐볐어요",
     "drive_text": "2시간 10분",
     "multiplier_text": "평소보다 1.57배 힘든 길",
     "headline_text": "오늘 운전 2시간 10분 · 평소보다 1.57배 힘든 길",
@@ -104,7 +104,7 @@
       },
       "b": {
         "item": "meal",
-        "text": "오늘은 밥값에서 운전자 빼고 나누는 게 어때요",
+        "text": "오늘은 밥값에서 운전자 빼는 게 어때요",
         "item_examples": []
       }
     }

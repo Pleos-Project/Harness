@@ -88,8 +88,11 @@ def test_ac_f23_1_r1_headline_and_lines():
     # 줄 값 = 노고 PRD v1.3 5-1 영수증 예시 그대로
     assert [l.detail_text for l in r.lines] == [
         "비, 주행 내내", "38km (경로의 36%)", "+25분", "50분", "2시간 넘긴 10분"]
-    assert r.footnote_text == "정체 구간은 내비 안내 경로 기준"
+    assert r.footnote_text == "출발 때 내비가 안내한 경로의 36%가 붐볐어요"   # 시안 v104 정체 줄 펼침 첫 줄
     assert run("R3").footnote_text is None                 # 정체 줄이 없으면 주석도 없음
+    # 구간 목록만 있고 비율을 모르면 정체 줄은 있어도 비율 문장은 없음
+    seg_only = run("R1", congestion_ratio=None, congestion_m=None, congestion_s=2400)
+    assert any(l.key == "congestion" for l in seg_only.lines) and seg_only.footnote_text is None
     assert (r.congestion_min, r.delay_min, r.night_min, r.rain_min, r.fatigue_excess_min) == (46.8, 25, 50, 130, 10)
     assert r.distance_text == "104km"
 
@@ -122,10 +125,10 @@ def test_distance_text_never_zero(km, want):
 
 
 BASIS_R1 = {
-    "rain": "비 오는 날은 맑은 날보다 운전 부담이 40% 커요 · 시뮬레이터 30명 연구(Frontiers in Neuroscience 2026)",
-    "congestion": "차가 몰린 길은 한산한 길보다 운전 부담이 27% 커요 · 시뮬레이터 연구(Shakouri, LSU 2015)",
+    "rain": "비 오는 날은 운전 부담이 40% 늘어요 · 시뮬레이터 30명 연구(Frontiers in Neuroscience 2026)",
+    "congestion": "차가 붐비는 길은 운전 부담이 27% 늘어요 · 시뮬레이터 연구(Shakouri, LSU 2015)",
     "delay": "예상보다 늦어진 시간은 정체와 같은 값으로 쳐요 · 예상 못 한 지연이 더 힘들다는 통근 연구(Wener·Evans 2011)",
-    "night": "밤에는 낮보다 운전 부담이 4% 커요 · 트럭 운전자 50명 시뮬레이터 연구(Fitri 2025)",
+    "night": "밤 운전은 부담이 4% 늘어요 · 트럭 운전자 50명 시뮬레이터 연구(Fitri 2025)",
     "fatigue": "2시간을 넘겨 이어서 운전한 시간에 더해요 · 2시간 운전하면 15분 쉬도록 한 법령 기준(화물자동차 운수사업법 시행규칙)",
 }
 
@@ -134,13 +137,13 @@ def test_ac_f23_4_basis_line_per_shown_line():
     """줄을 탭하면 근거 한 줄(AC-F23-4). 보이는 줄마다 있고, 숫자는 rates_pct에서 채운다."""
     assert {l.key: l.basis_text for l in run("R1").lines} == BASIS_R1
     assert run("R5").lines[0].basis_text == (
-        "눈 오는 날은 맑은 날보다 운전 부담이 49% 커요 · 시뮬레이터 30명 연구(Frontiers in Neuroscience 2026)")
+        "눈 오는 날은 운전 부담이 49% 늘어요 · 시뮬레이터 30명 연구(Frontiers in Neuroscience 2026)")
 
 
 def test_basis_follows_rate_constant():
     """가산율을 바꾸면 근거 문구의 숫자도 같이 바뀐다(상수 하나만 고치면 되게)."""
     c2 = dataclasses.replace(C, rates_pct=dict(C.rates_pct, rain=45))
-    assert "운전 부담이 45% 커요" in EF.basis_text("rain", c2)
+    assert "운전 부담이 45% 늘어요" in EF.basis_text("rain", c2)
     assert EF.basis_text("distance", C) is None          # 거리는 표시만, 근거 없음
 
 
@@ -214,8 +217,8 @@ def test_ac_f25_1_b_suggestion():
     assert run("R1").proposal.b.item == "meal"
     p = simple(30).proposal                       # 30분 카풀, 2명
     assert p.amount_krw == pytest.approx(5_350) and p.driver_share_krw == pytest.approx(2_675)
-    assert p.b.item == "coffee" and p.b.text == "오늘은 커피값에서 운전자 빼고 나누는 게 어때요"
-    assert run("R1").proposal.b.text == "오늘은 밥값에서 운전자 빼고 나누는 게 어때요"
+    assert p.b.item == "coffee" and p.b.text == "오늘은 커피값에서 운전자 빼는 게 어때요"
+    assert run("R1").proposal.b.text == "오늘은 밥값에서 운전자 빼는 게 어때요"
     p6 = run("R6").proposal
     assert p6.driver_share_krw == pytest.approx(891.67, abs=0.01) and p6.b is None
 
@@ -223,7 +226,7 @@ def test_ac_f25_1_b_suggestion():
 def test_f25_shared_phrase_and_examples():
     """공동 경비는 '공동 경비에서'('값' 없음, 명준 결정), 그 자리 예시 목록을 함께 낸다. 커피·밥은 빈 목록."""
     b = run("R15").proposal.b
-    assert b.item == "shared" and b.text == "오늘은 공동 경비에서 운전자 빼고 나누는 게 어때요"
+    assert b.item == "shared" and b.text == "오늘은 공동 경비에서 운전자 빼는 게 어때요"
     assert b.item_examples == ["공동 경비", "장 본 값", "펜션비", "바베큐장 이용료", "입장료", "물품 구매비"]
     assert b.item_examples[0] in b.text                 # 첫 값 = 문장 안의 말(화면은 이 자리를 바꿔 보여 줌)
     assert run("R1").proposal.b.item_examples == [] and simple(30).proposal.b.item_examples == []
@@ -437,7 +440,8 @@ def test_midway_design_example():
     r = run("R27")
     assert r.headline_text == "오늘 운전 1시간 5분 · 평소보다 1.55배 힘든 길"
     assert [(l.key, l.pct_text, l.detail_text) for l in r.lines] == [
-        ("rain", "+40%", "비, 주행 내내"), ("congestion", "+10%", "19km (경로의 36%)"), ("delay", "+5%", "+13분")]
+        ("rain", "+40%", "비, 지금까지 내내"), ("congestion", "+10%", "19km (경로의 36%)"), ("delay", "+5%", "+13분")]
+    assert r.footnote_text == "출발 때 내비가 안내한 경로의 36%가 붐볐어요"
     assert r.distance_text == "52km"
     assert r.delay_min == pytest.approx(65 - 105 * 52_000 / 104_300)   # 기준 ETA = ETA × 지금까지 거리 ÷ 경로 거리
     p = r.proposal
@@ -476,7 +480,8 @@ def test_arrival_after_midway_rounds_once():
     assert p.per_person_krw == pytest.approx(4_576.58, abs=0.005)
     assert p.driver_share_krw == p.remain_krw * 3 / 4 and p.b.item == "meal"
     assert p.a.main_text == "한 사람 약 5천 원"
-    assert p.a.basis_text == "운전 노고 약 3만 6천 원에서 중간에 챙긴 몫을 뺀 나머지를 운전자 포함 4명이 나눈 값"
+    # 시안 v104: 남은 금액(원 단위 18,306.31)을 한 번만 어림해 보여 준다. 어림한 값끼리 빼지 않음
+    assert p.a.basis_text == "남은 운전 노고 약 1만 8천 원을 운전자 포함 4명이 나눈 값"
 
 
 R1_ARR = "2026-11-17T18:10:00+09:00"
@@ -600,18 +605,26 @@ def test_midway_input_made_by_engine():
 DEMO = load(ROOT / "fixtures/effort/demo.json")
 
 
+def undate(inp: dict) -> dict:
+    """시연 입력의 날짜(2026-11-10)를 R1 날짜(2026-11-17)로 되돌린다. 날짜 말고는 R1·R27·R28 입력과 같다."""
+    return json.loads(json.dumps(inp, ensure_ascii=False).replace("2026-11-10", "2026-11-17"))
+
+
 def test_demo_is_r1_scene():
     """시연 데이터 = R1 입력 그대로 + 화면용 scene. 목업·영상·PT가 같은 숫자(1.57배·한 사람 약 9천 원·밥)를 쓴다."""
-    assert DEMO["input"] == fx("R1")["input"]
+    assert undate(DEMO["input"]) == fx("R1")["input"]          # 날짜만 시연 날짜(11/10)
+    assert DEMO["input"]["departed_at"] == "2026-11-10T16:00:00+09:00"
+    assert (DEMO["input"]["sunrise"], DEMO["input"]["sunset"]) == ("07:13", "17:20")   # R1 그대로(시연용 값)
+    assert DEMO["expected"] == fx("R1")["expected"]
     e = DEMO["expected"]
     assert e["headline_text"] == "오늘 운전 2시간 10분 · 평소보다 1.57배 힘든 길"
     assert [l["pct_text"] for l in e["lines"]] == ["+40%", "+10%", "+5%", "+2%", "+1%"]
     assert e["proposal"]["a"]["main_text"] == "한 사람 약 9천 원"
-    assert e["proposal"]["b"]["text"] == "오늘은 밥값에서 운전자 빼고 나누는 게 어때요"
+    assert e["proposal"]["b"]["text"] == "오늘은 밥값에서 운전자 빼는 게 어때요"
     sc = DEMO["scene"]
     assert (sc["dest_name"], sc["route_m"], sc["n"], sc["rest_answer_label"]) == ("태안 꽃지해수욕장", 104_300, 4, "없음")
     assert sc["departure_preview"] == {"eta_text": "1시간 45분", "route_text": "104km",
-                                       "congestion_text": "38km (경로의 36%)"}
+                                       "congestion_text": "경로의 36%"}
     # 정체 km = 비율 × 경로 거리(명세 F20), 거리 표시도 같은 경로
     assert DEMO["input"]["congestion_m"] == DEMO["input"]["congestion_ratio"] * sc["route_m"]
     assert DEMO["input"]["distance_km"] * 1000 == sc["route_m"]
@@ -620,9 +633,9 @@ def test_demo_is_r1_scene():
 def test_demo_midway_scene():
     """시연 데이터 중간 정산 장면(효성 11/9): 휴게소 17:05·남은 52.3km → R27 영수증, [좋아요]로 정산 뒤 18:10 도착 → R28."""
     m, a = DEMO["midway"], DEMO["midway_arrival"]
-    assert (m["input"], m["expected"]) == (fx("R27")["input"], fx("R27")["expected"])
-    assert (a["input"], a["expected"]) == (fx("R28")["input"], fx("R28")["expected"])
-    assert m["at"] == m["input"]["arrived_at"] == "2026-11-17T17:05:00+09:00"
+    assert (undate(m["input"]), m["expected"]) == (fx("R27")["input"], fx("R27")["expected"])
+    assert (undate(a["input"]), a["expected"]) == (fx("R28")["input"], fx("R28")["expected"])
+    assert m["at"] == m["input"]["arrived_at"] == "2026-11-10T17:05:00+09:00"
     assert m["remain_m"] == m["input"]["midway"]["remain_m"] == 52_300
     assert m["input"]["midway"]["route_m"] == DEMO["scene"]["route_m"]
     # 정산 뒤 도착 입력 = 시연 입력(R1) + settlements 한 줄 {정산 시각, 중간 정산 영수증의 remain_krw}
@@ -643,7 +656,7 @@ def test_demo_fixture():
 
 
 @pytest.mark.parametrize("eta_s,route_m,ratio,cm,want", [
-    (6300, 104_300, 0.36, 37_548, ("1시간 45분", "104km", "38km (경로의 36%)")),
+    (6300, 104_300, 0.36, 37_548, ("1시간 45분", "104km", "경로의 36%")),
     (600, 400, 0.0, 0, ("10분", "1km 미만", None)),                 # 정체 0이면 정체 표시 없음
     (7200, 80_000, None, None, ("2시간", "80km", None)),              # 정체 정보 없음
 ])
@@ -677,15 +690,16 @@ def test_sun_fixture():
 
 
 # ---------------------------------------------------------------- 3부: 표기 불변식 (명세 2절)
-MULT = re.compile(r"^(평소와 같은 길|평소보다 \d+\.\d\d배 힘든 길)$")
+MULT = re.compile(r"^(평소 같은 길|평소보다 \d+\.\d\d배 힘든 길)$")
+FOOT = re.compile(r"^출발 때 내비가 안내한 경로의 \d+%가 붐볐어요$")
 PCT = re.compile(r"^(\+[1-9]\d*%|\+1% 미만)$")
 KRW = re.compile(r"^(약 (\d+만)?( ?\d천)? 원|1천 원 미만)$")
 DETAIL = re.compile(r"^(\d+km|1km 미만) \(경로의 (\d+%|1% 미만)\)$")
 DRIVE = re.compile(r"^(\d+시간( \d+분)?|\d+분|1분 미만)$")
 TIME = r"(\d+시간( \d+분)?|\d+분|1분 미만)"
 LINE_DETAIL = {   # 줄 값 형식(노고 PRD v1.3 5-1)
-    "rain": re.compile(r"^비(, 주행 내내)?$"),
-    "snow": re.compile(r"^눈(, 주행 내내)?$"),
+    "rain": re.compile(r"^비(, (주행|지금까지) 내내)?$"),   # 중간 정산이면 '지금까지 내내'(시안 v104)
+    "snow": re.compile(r"^눈(, (주행|지금까지) 내내)?$"),
     "delay": re.compile(rf"^\+{TIME}$"),
     "night": re.compile(rf"^{TIME}$"),
     "fatigue": re.compile(rf"^2시간 넘긴 {TIME}$"),
@@ -738,21 +752,24 @@ def test_copy_rules_hold_everywhere():
         assert DRIVE.match(r.drive_text), r.drive_text
         assert MULT.match(r.multiplier_text), r.multiplier_text
         assert r.headline_text == f"오늘 운전 {r.drive_text} · {r.multiplier_text}"
-        assert (r.multiplier == 1.0) == (r.multiplier_text == "평소와 같은 길")
+        assert (r.multiplier == 1.0) == (r.multiplier_text == "평소 같은 길")
         for l in r.lines:
             assert PCT.match(l.pct_text) and l.add_min > 0, l
             if l.key == "congestion":
                 assert l.detail_text is None or DETAIL.match(l.detail_text), l
             else:
                 assert LINE_DETAIL[l.key].match(l.detail_text), l
-        assert (r.footnote_text is not None) == any(l.key == "congestion" for l in r.lines)
+        # 비율 문장은 정체 줄이 있고 비율을 알 때만(줄 값 km·비율이 있을 때와 같음)
+        assert (r.footnote_text is not None) == any(l.key == "congestion" and l.detail_text for l in r.lines)
+        assert r.footnote_text is None or FOOT.match(r.footnote_text), r.footnote_text
         if r.proposal:
             assert KRW.match(r.proposal.amount_text) and KRW.match(r.proposal.per_person_text), r.proposal
             a = r.proposal.a
             assert a.title_text == "오늘 운전을 챙긴다면"
             assert a.main_text == f"한 사람 {r.proposal.per_person_text}"
-            if r.proposal.settled_krw:   # 앞서 정산한 몫이 있으면 '뺀 나머지'(중간 정산)
-                assert a.basis_text.startswith(f"운전 노고 {r.proposal.amount_text}에서 중간에 챙긴 몫을 뺀 나머지를 운전자 포함 ")
+            if r.proposal.settled_krw:   # 앞서 정산한 몫이 있으면 '남은 운전 노고'(중간 정산, 시안 v104)
+                remain_text = EF.approx_text(r.proposal.remain_krw)[1]
+                assert a.basis_text.startswith(f"남은 운전 노고 {remain_text}을 운전자 포함 ")
             else:
                 assert a.basis_text.startswith(f"운전 노고 {r.proposal.amount_text}을 운전자 포함 ")
         for s in texts(r):

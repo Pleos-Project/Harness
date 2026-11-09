@@ -21,10 +21,10 @@ class HomeViewTest {
 
     @Test
     fun recordSummaryLikeDesign() {
-        // 시안: "2시간 10분 · 1.57배 · 4명", "1시간 · 평소와 같은 길 · 2명"(배수 1.00은 엔진 문구)
+        // 시안: "2시간 10분 · 1.57배 · 4명", "1시간 · 평소 같은 길 · 2명"(배수 1.00은 엔진 문구)
         val r = EffortRecord("t1", "2026-11-17", "태안 꽃지해수욕장", 130.0, 1.57, 204.0, "A", "한 사람 약 9천 원", "accept", "", n = 4)
         assertEquals("2시간 10분 · 1.57배 · 4명", recordSummary(r, c))
-        assertEquals("1시간 · 평소와 같은 길 · 2명", recordSummary(r.copy(driveMin = 60.0, multiplier = 1.0, n = 2), c))
+        assertEquals("1시간 · 평소 같은 길 · 2명", recordSummary(r.copy(driveMin = 60.0, multiplier = 1.0, n = 2), c))
         assertEquals("55분 · 1.20배", recordSummary(r.copy(driveMin = 55.0, multiplier = 1.2, n = null), c))   // 예전 기록(인원 없음)
     }
 

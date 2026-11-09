@@ -227,9 +227,9 @@ class Receipt:
     multiplier: float                # 부담 배수, 소수 둘째 자리 반올림
     lines: list[Line]                # 가산이 0인 줄은 생략
     notes: list[str]                 # "날씨 정보 없음", "정체 정보 없음"
-    footnote_text: str | None        # 정체 줄이 있으면 "정체 구간은 내비 안내 경로 기준"
+    footnote_text: str | None        # 정체 줄이 있고 비율을 알면 "출발 때 내비가 안내한 경로의 36%가 붐볐어요"(시안 v104 정체 줄 펼침 첫 줄)
     drive_text: str                  # "2시간 10분"
-    multiplier_text: str             # "평소보다 1.56배 힘든 길" | "평소와 같은 길"
+    multiplier_text: str             # "평소보다 1.56배 힘든 길" | "평소 같은 길"
     headline_text: str               # "오늘 운전 2시간 10분 · 평소보다 1.56배 힘든 길"
     distance_text: str | None        # "104km"
     proposal: Proposal | None        # n = 1이면 None(영수증만)
@@ -308,7 +308,7 @@ def drive_text(drive_s: float) -> str:
 
 
 def multiplier_text(m100: int, c: EffortConstants) -> str:
-    """배수 x.xx(명세 2절). 1.00이면 '평소와 같은 길' 문구."""
+    """배수 x.xx(명세 2절). 1.00이면 multiplier_same_text("평소 같은 길", 시안 v104)."""
     if m100 <= 100:
         return c.copy.text["multiplier_same_text"]
     return fill(c.copy.text["multiplier_more_text"], x=f"{m100 // 100}.{m100 % 100:02d}")
@@ -342,22 +342,23 @@ class DeparturePreview:
     """출발 화면 미리보기(명세 v0.5 F20·12절 시연 순서 2). requestTrip 값으로 만든다."""
     eta_text: str                    # "1시간 45분"
     route_text: str                  # "104km"
-    congestion_text: str | None      # "38km (경로의 36%)". 비율을 모르거나 0이면 None(정체 표시 없음)
+    congestion_text: str | None      # "경로의 36%"(preview_congestion_text, 시안 v104). 비율을 모르거나 0이면 None(정체 표시 없음)
 
 
 def departure_preview(eta_s: float, route_m: float, congestion_ratio: float | None,
                       congestion_m: float | None, c: EffortConstants) -> DeparturePreview:
+    # 미리보기 정체는 비율만 보여 준다(시안 v104 "경로의 36%"). congestion_m은 앱 호출 모양을 바꾸지 않으려고 남겨 둠
     has = congestion_ratio is not None and congestion_ratio > 0
     return DeparturePreview(
         eta_text=drive_text(float(eta_s)),
         route_text=km_text(float(route_m)),
-        congestion_text=congestion_text(congestion_m, congestion_ratio, c) if has else None,
+        congestion_text=fill(c.copy.text["preview_congestion_text"], pct=ratio_text(congestion_ratio)) if has else None,
     )
 
 
-def weather_detail(key: str, whole: bool, c: EffortConstants) -> str:
-    """날씨 줄 값: 주행 내내면 "비, 주행 내내", 일부면 "비"(임시 문구, 디자인 확정 대기)."""
-    t = c.copy.line_detail["weather_all_text" if whole else "weather_part_text"]
+def weather_detail(key: str, whole: bool, c: EffortConstants, midway: bool = False) -> str:
+    """날씨 줄 값: 주행 내내면 "비, 주행 내내"(중간 정산이면 "비, 지금까지 내내", 시안 v104), 일부면 "비"."""
+    t = c.copy.line_detail[("weather_all_midway_text" if midway else "weather_all_text") if whole else "weather_part_text"]
     return fill(t, precip=c.copy.precip_words[key])
 
 
@@ -537,7 +538,7 @@ def effort(inp: EffortInput, c: EffortConstants) -> Receipt:
         if adds[k] > 0:
             pct = round_half_up(adds[k] / drive)
             if k == "rain" or k == "snow":
-                detail = weather_detail(k, rain_whole if k == "rain" else snow_whole, c)
+                detail = weather_detail(k, rain_whole if k == "rain" else snow_whole, c, inp.midway is not None)
             elif k == "congestion":
                 detail = congestion_text(congestion_m, inp.congestion_ratio, c)
             elif k == "delay":
@@ -573,7 +574,8 @@ def effort(inp: EffortInput, c: EffortConstants) -> Receipt:
         congestion_min=congestion / 60, delay_min=delay / 60, night_min=night / 60,
         rain_min=rain / 60, snow_min=snow / 60, fatigue_excess_min=excess / 60,
         effort_min=total / 6000, multiplier=m100 / 100, lines=lines, notes=notes,
-        footnote_text=c.copy.text["footnote_congestion_text"] if any(l.key == "congestion" for l in lines) else None,
+        footnote_text=fill(c.copy.text["footnote_congestion_text"], pct=ratio_text(inp.congestion_ratio))
+        if inp.congestion_ratio is not None and any(l.key == "congestion" for l in lines) else None,
         drive_text=dt, multiplier_text=mt, headline_text=fill(c.copy.text["headline_text"], drive=dt, multiplier=mt),
         distance_text=km_text(distance_m) if distance_m is not None else None,   # 0km 대신 "1km 미만"
         proposal=proposal(total, inp.n, c, settled) if inp.n >= 2 else None,
@@ -590,9 +592,10 @@ def proposal(effort_pct_s: float, n: int, c: EffortConstants, settled_krw: float
     share = remain * (n - 1) / n
     a_v, a_t = approx_text(amount)
     p_v, p_t = approx_text(per)
+    _, r_t = approx_text(remain)   # 남은 금액도 원 단위에서 한 번만 어림(어림한 값끼리 빼지 않음)
     item = b_item(share, c.items)   # 남은 몫이 0이거나 커피 1인분 절반보다 작으면 None(제안 없음)
     t = c.copy.text
-    # 앞서 정산한 몫이 있으면 근거도 '뺀 나머지'(임시 문구, 명준 확정 대기)
+    # 앞서 정산한 몫이 있으면 근거는 '남은 운전 노고'(시안 v104)
     basis = t["a_basis_remain_text"] if settled_krw is not None and settled_krw > 0 else t["a_basis_text"]
     return Proposal(
         amount_krw=amount, amount_approx=a_v, amount_text=a_t,
@@ -601,7 +604,7 @@ def proposal(effort_pct_s: float, n: int, c: EffortConstants, settled_krw: float
         a=ScreenA(
             title_text=t["a_title_text"],
             main_text=fill(t["a_main_text"], per_person=p_t),
-            basis_text=fill(basis, amount=a_t, n=str(n)),
+            basis_text=fill(basis, amount=a_t, remain=r_t, n=str(n)),
             wage_text=fill(t["a_wage_text"], wage_label=c.wage_label,
                            wage_per_min=str(round_half_up(c.wage_per_hour / 60))),
         ),

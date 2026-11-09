@@ -45,7 +45,7 @@ class ProposalTest {
         // AC-F25-1: R1 → 밥. AC-F25-2: 세 항목이 항상 선택지. AC-F25-3: 금액 없음
         val v = proposalViewOf(receiptOf(r1Trip(), c), Settings.METHOD_B, c.items) as ProposalView.B
         assertEquals("meal", v.screen.item)
-        assertEquals("오늘은 밥값에서 운전자 빼고 나누는 게 어때요", v.screen.text)
+        assertEquals("오늘은 밥값에서 운전자 빼는 게 어때요", v.screen.text)
         assertEquals(listOf("coffee", "meal", "shared"), v.items.map { it.key })
         assertFalse(v.screen.text.contains("원"))
     }
@@ -66,11 +66,11 @@ class ProposalTest {
     fun sharedExpenseExamplesRotateInPlace() {
         // 공동 경비 회전(디자인 기본값): 문장 속 말만 예시로 바뀌고 처음으로 돌아온다
         val ex = c.items.first { it.key == "shared" }.examples
-        val b = EffortScreenB("shared", "오늘은 공동 경비에서 운전자 빼고 나누는 게 어때요", ex)
+        val b = EffortScreenB("shared", "오늘은 공동 경비에서 운전자 빼는 게 어때요", ex)
         assertEquals(b.text, bTextAt(b, 0))
-        assertEquals("오늘은 ${ex[1]}에서 운전자 빼고 나누는 게 어때요", bTextAt(b, 1))
+        assertEquals("오늘은 ${ex[1]}에서 운전자 빼는 게 어때요", bTextAt(b, 1))
         assertEquals(b.text, bTextAt(b, ex.size))
-        val meal = EffortScreenB("meal", "오늘은 밥값에서 운전자 빼고 나누는 게 어때요", emptyList())
+        val meal = EffortScreenB("meal", "오늘은 밥값에서 운전자 빼는 게 어때요", emptyList())
         assertEquals(meal.text, bTextAt(meal, 3))
     }
 

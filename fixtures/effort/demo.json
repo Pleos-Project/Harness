@@ -1,7 +1,7 @@
 {
   "id": "demo",
   "title": "시연 데이터: R1(PRD 대표 장면) + 휴게소 중간 정산(R27 → R28)",
-  "note": "명세 v0.5 12절. gen_fixtures.py가 R1·R27·R28 정의로 만든다(손으로 고치지 않음). 목적지 이름·경로 거리는 바꿔도 배수·금액이 그대로(정체 km 표시만 바뀜). 목적지 이름은 명준 #60. 화면 문구는 constants effort.copy의 임시 값(디자인 확정 대기)",
+  "note": "명세 v0.5 12절. gen_fixtures.py가 R1·R27·R28 정의로 만든다(손으로 고치지 않음). 목적지 이름·경로 거리는 바꿔도 배수·금액이 그대로(정체 km 표시만 바뀜). 목적지 이름은 명준 #60. 화면 문구는 constants effort.copy(시안 v104 반영). 날짜는 시연 날짜 2026-11-10(시안 v104)으로 옮겼고 일출·일몰은 R1 입력(07:13·17:20) 그대로라 숫자가 R1·R27·R28과 같다(11/10 서울 실제 일몰 17:25, 시연용 값)",
   "scene": {
     "dest_name": "태안 꽃지해수욕장",
     "route_m": 104300,
@@ -10,10 +10,10 @@
     "departure_preview": {
       "eta_text": "1시간 45분",
       "route_text": "104km",
-      "congestion_text": "38km (경로의 36%)"
+      "congestion_text": "경로의 36%"
     },
     "route_preview": {
-      "note": "출발 미리보기 정체 구간 막대(#116). 실제 모드의 requestTrip TrafficInfo(congestionType·startRatio·endRatio, 경로의 % 정수)와 같은 뜻. 실제 모드는 경로 전체가 4% 칸으로 오고 FAST·MODERATE도 섞이지만 시연 데이터는 SLOW·HEAVY 구간만 둔다. 앱은 목록에 없는 구간을 원활로 칠해 둘이 같은 그림이 된다(June #117 실측). 구간 위치는 시연용으로 지어낸 값이고 4% 칸에 맞추지 않는다(합 36%를 휴게소 앞뒤 18%씩 나누려고). SLOW·HEAVY 합 = 미리보기 정체 비율 36%('38km (경로의 36%)'), 앱이 엔진 정체 입력으로 쓰는 기준과 같다. 휴게소(경로의 약 50%) 앞뒤 18%씩: 엔진은 정체를 고르게 세서 중간 정산(R27) 정체가 전체의 절반(23.4분 · 19km)이라 막대와 맞춘다. 출발지 이름: 실제 requestTrip의 routePoints에 출발 지점이 없어 앱이 '현재 위치'로 쓴다(June #117 실측)",
+      "note": "출발 미리보기 정체 구간 막대(#116). 실제 모드의 requestTrip TrafficInfo(congestionType·startRatio·endRatio, 경로의 % 정수)와 같은 뜻. 실제 모드는 경로 전체가 4% 칸으로 오고 FAST·MODERATE도 섞이지만 시연 데이터는 SLOW·HEAVY 구간만 둔다. 앱은 목록에 없는 구간을 원활로 칠해 둘이 같은 그림이 된다(June #117 실측). 구간 위치는 시연용으로 지어낸 값이고 4% 칸에 맞추지 않는다(합 36%를 휴게소 앞뒤 18%씩 나누려고). SLOW·HEAVY 합 = 미리보기 정체 비율 36%(미리보기 '경로의 36%', 영수증 정체 줄 '38km (경로의 36%)'), 앱이 엔진 정체 입력으로 쓰는 기준과 같다. 휴게소(경로의 약 50%) 앞뒤 18%씩: 엔진은 정체를 고르게 세서 중간 정산(R27) 정체가 전체의 절반(23.4분 · 19km)이라 막대와 맞춘다. 출발지 이름: 실제 requestTrip의 routePoints에 출발 지점이 없어 앱이 '현재 위치'로 쓴다(June #117 실측)",
       "origin_name": "현재 위치",
       "traffic": [
         {
@@ -40,8 +40,8 @@
     }
   },
   "input": {
-    "departed_at": "2026-11-17T16:00:00+09:00",
-    "arrived_at": "2026-11-17T18:10:00+09:00",
+    "departed_at": "2026-11-10T16:00:00+09:00",
+    "arrived_at": "2026-11-10T18:10:00+09:00",
     "rest_answer_min": 0,
     "eta_s": 6300,
     "congestion_ratio": 0.36,
@@ -80,7 +80,7 @@
         "pct": 40,
         "pct_text": "+40%",
         "detail_text": "비, 주행 내내",
-        "basis_text": "비 오는 날은 맑은 날보다 운전 부담이 40% 커요 · 시뮬레이터 30명 연구(Frontiers in Neuroscience 2026)"
+        "basis_text": "비 오는 날은 운전 부담이 40% 늘어요 · 시뮬레이터 30명 연구(Frontiers in Neuroscience 2026)"
       },
       {
         "key": "congestion",
@@ -89,7 +89,7 @@
         "pct": 10,
         "pct_text": "+10%",
         "detail_text": "38km (경로의 36%)",
-        "basis_text": "차가 몰린 길은 한산한 길보다 운전 부담이 27% 커요 · 시뮬레이터 연구(Shakouri, LSU 2015)"
+        "basis_text": "차가 붐비는 길은 운전 부담이 27% 늘어요 · 시뮬레이터 연구(Shakouri, LSU 2015)"
       },
       {
         "key": "delay",
@@ -107,7 +107,7 @@
         "pct": 2,
         "pct_text": "+2%",
         "detail_text": "50분",
-        "basis_text": "밤에는 낮보다 운전 부담이 4% 커요 · 트럭 운전자 50명 시뮬레이터 연구(Fitri 2025)"
+        "basis_text": "밤 운전은 부담이 4% 늘어요 · 트럭 운전자 50명 시뮬레이터 연구(Fitri 2025)"
       },
       {
         "key": "fatigue",
@@ -120,7 +120,7 @@
       }
     ],
     "notes": [],
-    "footnote_text": "정체 구간은 내비 안내 경로 기준",
+    "footnote_text": "출발 때 내비가 안내한 경로의 36%가 붐볐어요",
     "drive_text": "2시간 10분",
     "multiplier_text": "평소보다 1.57배 힘든 길",
     "headline_text": "오늘 운전 2시간 10분 · 평소보다 1.57배 힘든 길",
@@ -141,18 +141,18 @@
       },
       "b": {
         "item": "meal",
-        "text": "오늘은 밥값에서 운전자 빼고 나누는 게 어때요",
+        "text": "오늘은 밥값에서 운전자 빼는 게 어때요",
         "item_examples": []
       }
     }
   },
   "midway": {
     "note": "휴게소 17:05 중간 정산(= R27). at = 정산 시각(input.arrived_at), remain_m = 그때 내비 남은 거리(input.midway.remain_m). 정산하면 출발 기록 settlements에 {at, remain_krw = expected.proposal.remain_krw}",
-    "at": "2026-11-17T17:05:00+09:00",
+    "at": "2026-11-10T17:05:00+09:00",
     "remain_m": 52300,
     "input": {
-      "departed_at": "2026-11-17T16:00:00+09:00",
-      "arrived_at": "2026-11-17T17:05:00+09:00",
+      "departed_at": "2026-11-10T16:00:00+09:00",
+      "arrived_at": "2026-11-10T17:05:00+09:00",
       "rest_answer_min": 0,
       "eta_s": 6300,
       "congestion_ratio": 0.36,
@@ -172,21 +172,21 @@
         "status": "ok",
         "dep": [
           {
-            "hour": "2026-11-17T16:00:00+09:00",
+            "hour": "2026-11-10T16:00:00+09:00",
             "precip": "rain"
           },
           {
-            "hour": "2026-11-17T17:00:00+09:00",
+            "hour": "2026-11-10T17:00:00+09:00",
             "precip": "rain"
           }
         ],
         "arr": [
           {
-            "hour": "2026-11-17T16:00:00+09:00",
+            "hour": "2026-11-10T16:00:00+09:00",
             "precip": "rain"
           },
           {
-            "hour": "2026-11-17T17:00:00+09:00",
+            "hour": "2026-11-10T17:00:00+09:00",
             "precip": "rain"
           }
         ]
@@ -217,8 +217,8 @@
           "add_min": 26.0,
           "pct": 40,
           "pct_text": "+40%",
-          "detail_text": "비, 주행 내내",
-          "basis_text": "비 오는 날은 맑은 날보다 운전 부담이 40% 커요 · 시뮬레이터 30명 연구(Frontiers in Neuroscience 2026)"
+          "detail_text": "비, 지금까지 내내",
+          "basis_text": "비 오는 날은 운전 부담이 40% 늘어요 · 시뮬레이터 30명 연구(Frontiers in Neuroscience 2026)"
         },
         {
           "key": "congestion",
@@ -227,7 +227,7 @@
           "pct": 10,
           "pct_text": "+10%",
           "detail_text": "19km (경로의 36%)",
-          "basis_text": "차가 몰린 길은 한산한 길보다 운전 부담이 27% 커요 · 시뮬레이터 연구(Shakouri, LSU 2015)"
+          "basis_text": "차가 붐비는 길은 운전 부담이 27% 늘어요 · 시뮬레이터 연구(Shakouri, LSU 2015)"
         },
         {
           "key": "delay",
@@ -240,7 +240,7 @@
         }
       ],
       "notes": [],
-      "footnote_text": "정체 구간은 내비 안내 경로 기준",
+      "footnote_text": "출발 때 내비가 안내한 경로의 36%가 붐볐어요",
       "drive_text": "1시간 5분",
       "multiplier_text": "평소보다 1.55배 힘든 길",
       "headline_text": "오늘 운전 1시간 5분 · 평소보다 1.55배 힘든 길",
@@ -261,7 +261,7 @@
         },
         "b": {
           "item": "meal",
-          "text": "오늘은 밥값에서 운전자 빼고 나누는 게 어때요",
+          "text": "오늘은 밥값에서 운전자 빼는 게 어때요",
           "item_examples": []
         },
         "settled_krw": 0.0,
@@ -272,8 +272,8 @@
   "midway_arrival": {
     "note": "midway를 [좋아요]로 정산한 뒤 18:10 도착(= R28). input = 위 input(R1) + settlements 한 줄. 장시간이 17:05에서 끊겨 1.56배(중간 정산 없는 위 expected는 1.57배)",
     "input": {
-      "departed_at": "2026-11-17T16:00:00+09:00",
-      "arrived_at": "2026-11-17T18:10:00+09:00",
+      "departed_at": "2026-11-10T16:00:00+09:00",
+      "arrived_at": "2026-11-10T18:10:00+09:00",
       "rest_answer_min": 0,
       "eta_s": 6300,
       "congestion_ratio": 0.36,
@@ -287,7 +287,7 @@
       "distance_km": 104.3,
       "settlements": [
         {
-          "at": "2026-11-17T17:05:00+09:00",
+          "at": "2026-11-10T17:05:00+09:00",
           "remain_krw": 17964.189306487697
         }
       ]
@@ -319,7 +319,7 @@
           "pct": 40,
           "pct_text": "+40%",
           "detail_text": "비, 주행 내내",
-          "basis_text": "비 오는 날은 맑은 날보다 운전 부담이 40% 커요 · 시뮬레이터 30명 연구(Frontiers in Neuroscience 2026)"
+          "basis_text": "비 오는 날은 운전 부담이 40% 늘어요 · 시뮬레이터 30명 연구(Frontiers in Neuroscience 2026)"
         },
         {
           "key": "congestion",
@@ -328,7 +328,7 @@
           "pct": 10,
           "pct_text": "+10%",
           "detail_text": "38km (경로의 36%)",
-          "basis_text": "차가 몰린 길은 한산한 길보다 운전 부담이 27% 커요 · 시뮬레이터 연구(Shakouri, LSU 2015)"
+          "basis_text": "차가 붐비는 길은 운전 부담이 27% 늘어요 · 시뮬레이터 연구(Shakouri, LSU 2015)"
         },
         {
           "key": "delay",
@@ -346,11 +346,11 @@
           "pct": 2,
           "pct_text": "+2%",
           "detail_text": "50분",
-          "basis_text": "밤에는 낮보다 운전 부담이 4% 커요 · 트럭 운전자 50명 시뮬레이터 연구(Fitri 2025)"
+          "basis_text": "밤 운전은 부담이 4% 늘어요 · 트럭 운전자 50명 시뮬레이터 연구(Fitri 2025)"
         }
       ],
       "notes": [],
-      "footnote_text": "정체 구간은 내비 안내 경로 기준",
+      "footnote_text": "출발 때 내비가 안내한 경로의 36%가 붐볐어요",
       "drive_text": "2시간 10분",
       "multiplier_text": "평소보다 1.56배 힘든 길",
       "headline_text": "오늘 운전 2시간 10분 · 평소보다 1.56배 힘든 길",
@@ -366,12 +366,12 @@
         "a": {
           "title_text": "오늘 운전을 챙긴다면",
           "main_text": "한 사람 약 5천 원",
-          "basis_text": "운전 노고 약 3만 6천 원에서 중간에 챙긴 몫을 뺀 나머지를 운전자 포함 4명이 나눈 값",
+          "basis_text": "남은 운전 노고 약 1만 8천 원을 운전자 포함 4명이 나눈 값",
           "wage_text": "최저임금 1분 178원 기준"
         },
         "b": {
           "item": "meal",
-          "text": "오늘은 밥값에서 운전자 빼고 나누는 게 어때요",
+          "text": "오늘은 밥값에서 운전자 빼는 게 어때요",
           "item_examples": []
         },
         "settled_krw": 17964.189306487697,

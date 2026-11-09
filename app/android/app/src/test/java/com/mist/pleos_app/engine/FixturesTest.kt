@@ -168,12 +168,13 @@ class FixturesTest {
         }
     }
 
-    /** 시연 데이터(명세 v0.5 12절): R1 입력 그대로, 엔진 출력과 출발 화면 미리보기가 서버와 같다. */
+    /** 시연 데이터(명세 v0.5 12절): R1 입력에서 날짜만 시연 날짜(11/10), 엔진 출력과 출발 화면 미리보기가 서버와 같다. */
     @Test
     fun effortDemo() {
         val fx = load(File(root, "effort/demo.json"))
         val input = fx.getValue("input").jsonObject
-        assertJson(load(File(root, "effort/R1.json")).getValue("input"), input, "demo input = R1 input")
+        assertJson(load(File(root, "effort/R1.json")).getValue("input"), undate(input), "demo input = R1 input(날짜만 다름)")
+        assertEquals("2026-11-10T16:00:00+09:00", input.str("departed_at"))
         assertJson(fx.getValue("expected"), effort(parseEffortInput(input), effortConstants).toJson(), "demo expected")
         val scene = fx.getValue("scene").jsonObject
         val preview = departurePreview(
@@ -187,7 +188,7 @@ class FixturesTest {
         val after = fx.getValue("midway_arrival").jsonObject
         for ((part, id) in listOf(mid to "R27", after to "R28")) {
             val r = load(File(root, "effort/$id.json"))
-            assertJson(r.getValue("input"), part.getValue("input"), "demo $id input")
+            assertJson(r.getValue("input"), undate(part.getValue("input")), "demo $id input(날짜만 다름)")
             assertJson(r.getValue("expected"), part.getValue("expected"), "demo $id expected")
             val actual = effort(parseEffortInput(part.getValue("input").jsonObject), effortConstants).toJson()
             assertJson(part.getValue("expected"), actual, "demo $id 엔진")
@@ -215,10 +216,10 @@ class FixturesTest {
             listOf("비, 주행 내내", "38km (경로의 36%)", "+25분", "50분", "2시간 넘긴 10분"),
             r.lines.map { it.detailText },
         )
-        assertEquals("정체 구간은 내비 안내 경로 기준", r.footnoteText)
+        assertEquals("출발 때 내비가 안내한 경로의 36%가 붐볐어요", r.footnoteText)   // 시안 v104 정체 줄 펼침 첫 줄
         // AC-F23-4: 줄마다 근거 한 줄, {pct}는 rates_pct 값
         assertEquals(
-            "비 오는 날은 맑은 날보다 운전 부담이 40% 커요 · 시뮬레이터 30명 연구(Frontiers in Neuroscience 2026)",
+            "비 오는 날은 운전 부담이 40% 늘어요 · 시뮬레이터 30명 연구(Frontiers in Neuroscience 2026)",
             r.lines[0].basisText,
         )
         assertTrue(r.lines.all { it.basisText != null && "{pct}" !in it.basisText!! })
@@ -234,7 +235,7 @@ class FixturesTest {
         assertEquals("운전 노고 약 3만 6천 원을 운전자 포함 4명이 나눈 값", p.a.basisText)
         assertEquals("최저임금 1분 178원 기준", p.a.wageText)
         assertEquals("meal", p.b?.item)
-        assertEquals("오늘은 밥값에서 운전자 빼고 나누는 게 어때요", p.b?.text)
+        assertEquals("오늘은 밥값에서 운전자 빼는 게 어때요", p.b?.text)
         assertEquals(emptyList<String>(), p.b?.itemExamples)
         val r8 = effort(parseEffortInput(load(File(root, "effort/R8.json")).getValue("input").jsonObject), effortConstants)
         assertEquals(null, r8.proposal)
@@ -251,7 +252,7 @@ class FixturesTest {
         // 공동 경비: "값" 없이 "공동 경비에서", 그 자리 예시 목록(R15)
         val b15 = effort(parseEffortInput(load(File(root, "effort/R15.json")).getValue("input").jsonObject), effortConstants)
             .proposal!!.b!!
-        assertEquals("오늘은 공동 경비에서 운전자 빼고 나누는 게 어때요", b15.text)
+        assertEquals("오늘은 공동 경비에서 운전자 빼는 게 어때요", b15.text)
         assertEquals(listOf("공동 경비", "장 본 값", "펜션비", "바베큐장 이용료", "입장료", "물품 구매비"), b15.itemExamples)
     }
 
@@ -301,7 +302,8 @@ class FixturesTest {
         // 시안: 65분·52km → 1.55배, 정체 19km, 예상보다 더 +13분(기준 ETA = 105분 × 52 ÷ 104.3), 한 사람 약 4천 원
         val r27 = run("R27")
         assertEquals("오늘 운전 1시간 5분 · 평소보다 1.55배 힘든 길", r27.headlineText)
-        assertEquals(listOf("비, 주행 내내", "19km (경로의 36%)", "+13분"), r27.lines.map { it.detailText })
+        assertEquals(listOf("비, 지금까지 내내", "19km (경로의 36%)", "+13분"), r27.lines.map { it.detailText })   // 중간 정산 날씨(시안 v104)
+        assertEquals("출발 때 내비가 안내한 경로의 36%가 붐볐어요", r27.footnoteText)
         assertEquals("52km", r27.distanceText)
         val p27 = r27.proposal!!
         assertEquals("약 1만 8천 원", p27.amountText)
@@ -329,7 +331,8 @@ class FixturesTest {
         assertEquals(p27.remainKrw!!, p28.settledKrw!!, 0.0)
         assertEquals(p28.amountKrw - p27.remainKrw!!, p28.remainKrw!!, 0.0)
         assertEquals("한 사람 약 5천 원", p28.a.mainText)
-        assertEquals("운전 노고 약 3만 6천 원에서 중간에 챙긴 몫을 뺀 나머지를 운전자 포함 4명이 나눈 값", p28.a.basisText)
+        // 시안 v104: 남은 금액(원 단위 18,306.31)을 한 번만 어림해 보여 준다. 어림한 값끼리 빼지 않음
+        assertEquals("남은 운전 노고 약 1만 8천 원을 운전자 포함 4명이 나눈 값", p28.a.basisText)
         // B는 남은 금액의 운전자 몫으로 경계를 다시 고른다(2,350 같음 → 커피, 1원 아래·0 → 제안 없음)
         assertEquals("coffee", run("R29").proposal!!.b?.item)
         assertEquals(null, run("R30").proposal!!.b)
@@ -417,6 +420,9 @@ class FixturesTest {
 
     // ------------------------------------------------------------ helpers
     private fun load(f: File): JsonObject = parseObject(f.readText())
+
+    /** 시연 입력의 날짜(2026-11-10)를 R1 날짜(2026-11-17)로 되돌린다. 날짜 말고는 R1·R27·R28 입력과 같다. */
+    private fun undate(e: JsonElement): JsonObject = parseObject(e.toString().replace("2026-11-10", "2026-11-17"))
 
     private fun fixtures(dir: String, prefix: String): List<File> =
         (File(root, dir).listFiles() ?: emptyArray())

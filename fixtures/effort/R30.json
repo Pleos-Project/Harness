@@ -45,8 +45,8 @@
     "notes": [],
     "footnote_text": null,
     "drive_text": "2시간",
-    "multiplier_text": "평소와 같은 길",
-    "headline_text": "오늘 운전 2시간 · 평소와 같은 길",
+    "multiplier_text": "평소 같은 길",
+    "headline_text": "오늘 운전 2시간 · 평소 같은 길",
     "distance_text": null,
     "proposal": {
       "amount_krw": 21400.0,
@@ -59,7 +59,7 @@
       "a": {
         "title_text": "오늘 운전을 챙긴다면",
         "main_text": "한 사람 약 2천 원",
-        "basis_text": "운전 노고 약 2만 1천 원에서 중간에 챙긴 몫을 뺀 나머지를 운전자 포함 2명이 나눈 값",
+        "basis_text": "남은 운전 노고 약 5천 원을 운전자 포함 2명이 나눈 값",
         "wage_text": "최저임금 1분 178원 기준"
       },
       "b": null,

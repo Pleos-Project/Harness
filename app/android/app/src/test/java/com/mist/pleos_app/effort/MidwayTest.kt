@@ -136,7 +136,7 @@ class MidwayTest {
 
     @Test
     fun midwayBTextSwapsToday() {
-        assertEquals("여기까지는 밥값에서 운전자 빼고 나누는 게 어때요", midwayBText("오늘은 밥값에서 운전자 빼고 나누는 게 어때요"))
+        assertEquals("여기까지는 밥값에서 운전자 빼는 게 어때요", midwayBText("오늘은 밥값에서 운전자 빼는 게 어때요"))
         assertEquals("다른 문장", midwayBText("다른 문장"))
     }
 

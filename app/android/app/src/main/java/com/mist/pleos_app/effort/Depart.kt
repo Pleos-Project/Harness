@@ -44,7 +44,7 @@ data class DepartUi(
     val selected: DestOption? = null,
     val preview: TripPreview? = null,
     val previewing: Boolean = false,
-    /** 미리보기 문구(엔진 departurePreview: "1시간 45분"·"104km"·"38km (경로의 36%)"). 화면에서 계산하지 않는다. */
+    /** 미리보기 문구(엔진 departurePreview: "1시간 45분"·"104km"·"경로의 36%"). 화면에서 계산하지 않는다. */
     val previewText: DeparturePreview? = null,
 ) {
     /** 목적지를 골랐고 미리보기를 기다리는 중이 아니면 [출발]을 누를 수 있다(미리보기가 실패해도 출발은 막지 않음). */

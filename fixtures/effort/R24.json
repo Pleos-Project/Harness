@@ -74,7 +74,7 @@
         "pct": 14,
         "pct_text": "+14%",
         "detail_text": "눈",
-        "basis_text": "눈 오는 날은 맑은 날보다 운전 부담이 49% 커요 · 시뮬레이터 30명 연구(Frontiers in Neuroscience 2026)"
+        "basis_text": "눈 오는 날은 운전 부담이 49% 늘어요 · 시뮬레이터 30명 연구(Frontiers in Neuroscience 2026)"
       },
       {
         "key": "fatigue",
@@ -110,7 +110,7 @@
       },
       "b": {
         "item": "meal",
-        "text": "오늘은 밥값에서 운전자 빼고 나누는 게 어때요",
+        "text": "오늘은 밥값에서 운전자 빼는 게 어때요",
         "item_examples": []
       }
     }
