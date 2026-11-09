@@ -424,9 +424,12 @@ class EffortViewModel(app: Application, private val saved: SavedStateHandle) : A
         }
     }
 
-    /** 정리하지 못함(#68·#71 June): 선택 기록(F26) 없이 출발 기록만 닫는다. 최근 기록에는 영수증만 남긴다. */
+    /** 정리하지 못함(#68): 영수증·제안 없이 "정리하지 못함" 기록 1건을 남기고 닫는다(명준 #75 11/9, #71의 '기록 없음'을 바꿈). */
     private fun closeUnsettled() {
-        flow.discardTrip()
+        val trip = flow.state.openTrip
+        val r = receiptOf(trip, effortConstants)
+        if (trip != null && r != null && flow.finish(recordOf(trip, r, null, settingsFlow.value.proposalMethod, CHOICE_UNSETTLED))) justFinished = trip.tripId
+        else flow.discardTrip()
         refresh(); home()
         ChagokLog.event("effort_unsettled_close")
     }

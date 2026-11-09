@@ -143,15 +143,17 @@ class ArriveTest {
     }
 
     @Test
-    fun unsettledCloseLeavesNoRecord() {
-        // #71 June: 정리하지 못함은 선택 기록 없이 출발 기록만 닫는다
+    fun unsettledCloseLeavesUnsettledRecord() {
+        // 명준 #75 11/9(#71 바꿈): 정리하지 못함도 영수증·제안 없이 "정리하지 못함" 기록 1건을 남기고 닫는다
         val f = EffortFlow(MemoryEffortStore())
         f.depart(OpenTrip("t1", "2026-11-17T16:00:00+09:00", "태안 꽃지해수욕장", 4, 6300.0))
         f.arrive("2026-11-18T09:00:00+09:00", "none")
-        assertTrue(isUnsettled(receiptOf(f.state.openTrip, c)))
-        f.discardTrip()
+        val trip = f.state.openTrip!!
+        val r = receiptOf(trip, c)!!
+        assertTrue(isUnsettled(r))
+        assertTrue(f.finish(recordOf(trip, r, null, "A", CHOICE_UNSETTLED)))
         assertEquals(EffortPhase.IDLE, f.phase)
-        assertTrue(f.recent().isEmpty())
+        assertEquals(CHOICE_UNSETTLED, f.recent().single().choice)
     }
 
     private fun locate(rel: String): File {
