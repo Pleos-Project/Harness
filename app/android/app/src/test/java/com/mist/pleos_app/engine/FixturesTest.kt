@@ -368,12 +368,12 @@ class FixturesTest {
         assertEquals(listOf(65.0), run("R31").fatigueSegmentsMin)                // 정산 시각 = 지금 → 길이 0 구간 없음
     }
 
-    /** 명세 9절 경계표: 2,350 미만 제안 없음 / 7,715.5 이상 밥 / 39,865.5 이상 공동 경비. */
+    /** 명세 9절 경계표(밥 10,711원, DECISIONS 11/9): 2,350 미만 제안 없음 / 7,705.5 이상 밥 / 39,855.5 이상 공동 경비. */
     @Test
     fun effortBBoundaries() {
         val cases = listOf(
-            2_349.99 to null, 2_350.0 to "coffee", 7_715.49 to "coffee", 7_715.5 to "meal",
-            39_865.49 to "meal", 39_865.5 to "shared",
+            2_349.99 to null, 2_350.0 to "coffee", 7_705.49 to "coffee", 7_705.5 to "meal",
+            39_855.49 to "meal", 39_855.5 to "shared",
         )
         for ((share, want) in cases) assertEquals("G=$share", want, bItem(share, effortConstants.items)?.key)
     }
