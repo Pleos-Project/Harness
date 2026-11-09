@@ -1,18 +1,23 @@
 """노고 시연 리플레이 — Virtual Console로 차량 신호를, adb로 앱 화면을 확인하며 시연 순서를 한 바퀴 돈다.
 
 명세 v0.5 12절 '시연 순서'를 지금 앱(Design v2, 정차는 도착 때 한 번 묻기 #58)에 맞춘 순서다.
-DECISIONS 11/8 '시연 순서' 참고. 휴게소 기어 P·D 단계는 지금 앱에서 화면 변화가 없어 뺐다.
+12/3 PT 순서는 휴게소 중간 정산(운전자 교대)을 넣는다(명준 11/9 #86, 효성 제안). 11/10 공유회 순서는 --no-midway.
 
   0 준비      콘솔: 기어 P · 운전석 문 닫힘 · 4석 착석 / 앱: 데모 고정 모드 켜기
   1 출발      앱: 출발하기 → 미리보기(태안 꽃지해수욕장 · 104km · 정체 38km) → [출발]
   2 주행      콘솔: 기어 D → 1초 안에 화면 가림(AC-C-1) → 기어 P → 홈 복귀
-  3 도착      콘솔: 운전석 문 열기 → 계산 연출 → 영수증(2시간 10분 · 1.57배) + 제안
-  4 선택      앱: [좋아요](방식 A) 또는 첫 항목(방식 B) → 기록 → [닫기] → 홈 최근 기록
+  2+ 휴게소   앱: [지금까지의 노고 보기] → 지금까지 영수증(1시간 5분 · 52km · 1.55배, 한 사람 약 4천 원)
+              → [좋아요]로 여기까지 정산 → [계속 가기] → 홈 "17:05까지 정산함"
+              콘솔: 기어 D(가림) → 기어 P(같은 주행을 이어 감, [출발]을 다시 누르지 않음)
+  3 도착      콘솔: 운전석 문 열기 → 계산 연출 → 영수증(2시간 10분 · 1.56배, 휴게소에서 장시간이 끊김)
+              --no-midway면 1.57배(R1)
+  4 선택      앱: [좋아요](방식 A, 남은 몫 한 사람 약 5천 원) 또는 첫 항목(방식 B) → 기록 → [닫기] → 홈 최근 기록
 
 사용
   python -I scripts/demo_replay.py            # 리허설: 단계마다 엔터, 앱은 사람이 누른다
   python -I scripts/demo_replay.py --auto     # 점검: 앱도 adb로 누르고 화면 글자를 확인(실패하면 종료 코드 1)
   python -I scripts/demo_replay.py --auto --reset   # 시작 전에 기록 초기화
+  python -I scripts/demo_replay.py --no-midway      # 휴게소 중간 정산 없이(11/10 공유회 순서, 1.57배)
 
 필요한 것
   - 에뮬레이터(Pleos_Connect_v2.1.0)에 앱 설치(사용자 10), Virtual Console 페이지(http://127.0.0.1:8088/)가 열려 있어 bridge_ready
@@ -45,7 +50,12 @@ DEST = "태안 꽃지해수욕장"
 EXPECT_PREVIEW = ["104km", "38km (경로의 36%)"]
 EXPECT_DRIVING_HOME = f"{DEST}으로 가는 중"          # v32 홈: "○○으로 가는 중 · 16:00 출발 · 함께 4명"
 EXPECT_ARRIVE = f"{DEST}에 도착했어요"
-EXPECT_RECEIPT = ["2시간 10분", "1.57배"]
+EXPECT_RECEIPT = ["2시간 10분", "1.57배"]                 # 중간 정산 없음(R1)
+EXPECT_RECEIPT_MIDWAY = ["2시간 10분", "1.56배"]          # 휴게소 17:05 정산 뒤(demo.json midway_arrival = R28)
+EXPECT_MIDWAY = ["지금까지 영수증", "1시간 5분", "52km", "1.55배", "한 사람 약 4천 원"]   # demo.json midway = R27
+EXPECT_MIDWAY_DONE = "도착하면 전체를 다시 세고, 이 몫은 빼고 알려 드려요"
+EXPECT_MIDWAY_SETTLED = "17:05까지 정산함"
+EXPECT_REMAIN = "한 사람 약 5천 원"                       # 정산 뒤 남은 몫(방식 A)
 
 
 # ------------------------------------------------------------ 콘솔
@@ -313,14 +323,47 @@ def step2(r: Run) -> None:
     r.expect("기어 P → 홈 복귀", EXPECT_DRIVING_HOME, timeout=6)
 
 
-def step3(r: Run) -> None:
+def step_midway(r: Run) -> None:
+    """휴게소 중간 정산(F27, 명준 11/9 #86): 운전자 교대로 쉬는 휴게소에서 출발~지금을 정산하고 같은 주행을 이어 간다."""
+    print("\n2+ 휴게소 중간 정산 (F27)")
+    if r.auto:
+        r.check("[지금까지의 노고 보기]", tap("지금까지의 노고 보기"))
+    else:
+        r.person("휴게소 — 홈 내 차 그림 [지금까지의 노고 보기]")
+    r.expect("지금까지 영수증", EXPECT_MIDWAY)
+    if r.auto:
+        ts = texts()
+        if has("좋아요", ts):
+            r.check("방식 A [좋아요]", tap("좋아요"))
+        else:                                        # 방식 B: 기본 항목
+            item = next((t for t, _, _ in ts if t in ("커피", "밥", "공동 경비")), None)
+            r.check("방식 B 항목", item is not None and tap(item), item or "항목 없음")
+    else:
+        r.person("[좋아요](A) 또는 항목(B)")
+    r.expect("여기까지 기록", EXPECT_MIDWAY_DONE)
+    if r.auto:
+        r.check("[계속 가기]", tap("계속 가기"))
+    else:
+        r.person("[계속 가기]")
+    r.expect("홈 정산함 표시", EXPECT_MIDWAY_SETTLED)
+    r.person("다시 출발 — 콘솔 기어 D를 넣어요(운전자 교대, [출발]은 다시 누르지 않음)")
+    gear("Drive")
+    if r.auto:
+        r.check("기어 D → 화면 가림", wait_for(EXPECT_DRIVING_HOME, timeout=4, gone=True))
+    time.sleep(1.5)
+    r.person("정차 — 콘솔 기어 P를 넣어요")
+    gear("Park")
+    r.expect("기어 P → 홈(가는 중 · 정산함)", [EXPECT_DRIVING_HOME, EXPECT_MIDWAY_SETTLED], timeout=6)
+
+
+def step3(r: Run, midway: bool = False) -> None:
     print("\n3 도착")
     r.person("도착 — 콘솔 운전석 문을 열어요")
     door(True)
     r.expect("문 열림 → 도착 화면", EXPECT_ARRIVE, timeout=10)
     time.sleep(0.5)
     door(False)
-    r.expect("영수증(계산 연출 뒤)", EXPECT_RECEIPT, timeout=15)
+    r.expect("영수증(계산 연출 뒤)", EXPECT_RECEIPT_MIDWAY if midway else EXPECT_RECEIPT, timeout=15)
     # 계산 연출 뒤 '중간에 쉰 시간' 시트(F21). R1은 쉬지 않은 주행이라 '없음'
     r.expect("쉰 시간 질문", "중간에 쉰 시간이 있었나요?", timeout=8)
     if r.auto:
@@ -330,7 +373,7 @@ def step3(r: Run) -> None:
         r.person("쉰 시간 [없음]")
 
 
-def step4(r: Run) -> None:
+def step4(r: Run, midway: bool = False) -> None:
     print("\n4 선택")
     if not r.auto:
         r.person("[좋아요](A) 또는 항목(B) → [닫기]")
@@ -338,6 +381,8 @@ def step4(r: Run) -> None:
         return
     ts = texts()
     if has("좋아요", ts):
+        if midway:
+            r.check("남은 몫(방식 A)", has(EXPECT_REMAIN, ts), EXPECT_REMAIN)
         r.check("방식 A [좋아요]", tap("좋아요"))
         r.expect("기록 남김", "오늘 기록에 남겼어요")
     else:
@@ -354,11 +399,16 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--auto", action="store_true", help="앱도 adb로 누르고 화면 글자를 확인한다")
     ap.add_argument("--reset", action="store_true", help="시작 전에 기록 초기화")
+    ap.add_argument("--no-midway", action="store_true", help="휴게소 중간 정산 없이(11/10 공유회 순서, 1.57배)")
     a = ap.parse_args()
     threading.Thread(target=heartbeat_forever, daemon=True).start()
     r = Run(a.auto)
     t = time.time()
-    step0(r, a.reset); step1(r); step2(r); step3(r); step4(r)
+    midway = not a.no_midway
+    step0(r, a.reset); step1(r); step2(r)
+    if midway:
+        step_midway(r)
+    step3(r, midway); step4(r, midway)
     if not a.auto:
         print(f"\n리허설 끝 ({time.time() - t:.0f}초)")
         return

@@ -150,7 +150,7 @@ class EffortViewModel(app: Application, private val saved: SavedStateHandle) : A
             constants = effortConstants,
             midway = midway,
             // 실제 주행이고 경로 거리를 알 때만(지금까지 거리 = 경로 − 내비 남은 거리). 시연 데이터에는 중간 정산 장면이 없다
-            midwayAvailable = trip != null && !trip.arrived && !trip.demo && (trip.routeM ?: 0.0) > 0 && effortConstants != null,
+            midwayAvailable = trip != null && !trip.arrived && (!trip.demo || demoScene?.midway != null) && (trip.routeM ?: 0.0) > 0 && effortConstants != null,
             calcItems = if (trip?.arrived == true && receipt != null && !isUnsettled(receipt) && effortConstants != null)
                 calcItems(trip, receipt, effortConstants, getApplication<Application>().getString(com.mist.pleos_app.R.string.effort_receipt_distance)) else emptyList(),
         )
@@ -403,7 +403,8 @@ class EffortViewModel(app: Application, private val saved: SavedStateHandle) : A
      */
     fun startMidway() {
         val trip = flow.state.openTrip ?: return
-        if (trip.arrived || trip.demo) return
+        if (trip.arrived) return
+        if (trip.demo) { startDemoMidway(trip); return }
         val now = isoNow()
         midway = MidwayUi(now)
         refresh(); open(EffortScreen.MIDWAY)
@@ -426,6 +427,16 @@ class EffortViewModel(app: Application, private val saved: SavedStateHandle) : A
                 }
             }
         }
+    }
+
+    /** 시연(#105 demo.json midway): 17:05 · 남은 52.3km · 그 시간대 날씨로 R27과 같은 영수증. 내비·서버를 부르지 않는다(AC-C-3). */
+    private fun startDemoMidway(trip: OpenTrip) {
+        val m = demoScene?.midway ?: return
+        val r = midwayReceiptOf(trip, m.at, m.remainM, m.weatherTrip, effortConstants) ?: return
+        val view = if (trip.n >= 2 && !isUnsettled(r)) proposalViewOf(r, settingsFlow.value.proposalMethod, effortConstants?.items.orEmpty()) else null
+        midway = MidwayUi(m.at, pending = false, receipt = r, proposal = view)
+        refresh(); open(EffortScreen.MIDWAY)
+        ChagokLog.event("effort_midway", "demo" to true, "offer" to (view != null), "count" to trip.settlements.size)
     }
 
     private fun midwayFailed(at: String, reason: String) {

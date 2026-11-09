@@ -140,6 +140,13 @@ data class EffortMidway(
     val remainM: Double,                    // 지금 내비 남은 거리(remainDistance)
 )
 
+/** 앞서 한 중간 정산 한 건(효성 11/9). 앱 출발 기록 settlements의 한 줄에서 at·remainKrw만 넘긴다(method·choice는 안 씀).
+ *  엔진이 이 목록으로 정산한 합(남은 금액을 낼 때 뺌)과 장시간 구간의 경계(정산 시각)를 둘 다 만든다. */
+data class EffortSettlement(
+    val at: String,                         // 정산한 시각(ISO 8601 + 오프셋) = 그 중간 정산 영수증의 arrivedAt
+    val remainKrw: Double,                  // 그 영수증의 proposal.remainKrw(원 단위, 어림 전)
+)
+
 data class EffortInput(
     val departedAt: String,                 // ISO 8601 + 오프셋
     val arrivedAt: String,
@@ -161,9 +168,10 @@ data class EffortInput(
     // 중간 정산(Q-08-02). 있으면 '출발~지금(arrivedAt)'을 센다: 예상보다 더의 기준 ETA = ETA × 지금까지 거리 ÷ 경로 거리,
     // 정체 km = 비율 × 지금까지 거리, 거리 표시 = 지금까지 거리(distanceKm는 안 씀). 나머지 줄은 도착과 같은 규칙
     val midway: EffortMidway? = null,
-    // 앞서 정산한 금액의 원 단위 합(어림 전). 정산할 때마다 그 영수증의 proposal.remainKrw를 더한다.
-    // 있으면 제안(1인 몫·운전자 몫·B 항목)은 남은 금액 = 금액 − 이 값으로 한다. 영수증 줄·금액은 그대로
-    val settledKrw: Double? = null,
+    // 앞서 한 중간 정산들(앱 settlements의 at·remainKrw, 정산한 순서). 있으면
+    // ① 제안(1인 몫·운전자 몫·B 항목)은 남은 금액 = 금액 − Σ remainKrw로 한다(영수증 금액은 출발~도착 전체)
+    // ② 장시간은 정산 시각에서 끊는다(쉰 시간 답으로 가운데에서 끊지 않음). 다른 줄은 그대로
+    val settlements: List<EffortSettlement> = emptyList(),
 )
 
 data class EffortLine(
@@ -201,8 +209,8 @@ data class EffortProposal(
     val driverShareKrw: Double,         // 운전자 몫 G = 남은 금액 × (n − 1) ÷ n
     val a: EffortScreenA,
     val b: EffortScreenB?,              // null = 방식 B 제안 없음(영수증만)
-    // 중간 정산(Q-08-02). 입력에 midway·settledKrw가 둘 다 없으면 null이고 JSON에도 키를 쓰지 않는다
-    val settledKrw: Double? = null,     // 앞서 정산한 원 단위 합(입력 그대로, 중간 정산이 처음이면 0)
+    // 중간 정산(Q-08-02). 입력에 midway·settlements가 둘 다 없으면 null이고 JSON에도 키를 쓰지 않는다
+    val settledKrw: Double? = null,     // 앞서 정산한 원 단위 합(settlements의 remainKrw 합, 중간 정산이 처음이면 0)
     val remainKrw: Double? = null,      // 남은 금액 = max(0, 금액 − settledKrw), 어림 전. 이번에 정산하면 이 값을 기록에 더함
 )
 
@@ -394,6 +402,25 @@ fun unsettled(elapsed: Double, limit: Double, c: EffortConstants): EffortReceipt
     )
 }
 
+// ------------------------------------------------------------ F23 장시간 구간
+/**
+ * 중간 정산 시각에서 연속 운전을 끊는다(효성 11/9). [출발, 정산1], [정산1, 정산2], …, [정산k, 도착(또는 지금)].
+ * 구간 = 벽시계 길이 × (T ÷ E)(밤길·날씨처럼 비례). 쉰 곳은 정산한 휴게소라고 보고 Q로 따로 끊지 않는다.
+ * 정산 시각은 [출발, 도착]으로 자르고 시각 순으로 본다. 길이 0인 구간(같은 시각에 다시 정산 등)은 넣지 않는다.
+ */
+fun settlementGroups(dep: Double, arr: Double, drive: Double, settlements: List<EffortSettlement>): List<Double> {
+    val cuts = settlements.map { min(arr, max(dep, epochS(it.at).toDouble())) }.sorted()
+    val groups = mutableListOf<Double>()
+    var prev = dep
+    for (b in cuts + arr) {
+        if (b > prev) {
+            groups.add((b - prev) * drive / (arr - dep))
+            prev = b
+        }
+    }
+    return groups.ifEmpty { listOf(drive) }
+}
+
 // ------------------------------------------------------------ F23 노고 · F24 금액 · F25 방식 B
 fun effort(inp: EffortInput, c: EffortConstants): EffortReceipt {
     val dep = epochS(inp.departedAt).toDouble()
@@ -404,10 +431,15 @@ fun effort(inp: EffortInput, c: EffortConstants): EffortReceipt {
     val nights = nightIntervals(inp.departedAt, arr, inp.sunriseMin, inp.sunsetMin)
 
     // 정차는 도착 때 답한 쉰 시간 Q만 안다(#62). 언제 쉬었는지 모르니 Q ≥ 15분이면 "중간쯤 한 번 쉬었다"고 보고
-    // 운전 시간을 반으로 나눈다(#47). 밤길은 [출발, 도착]과 밤이 겹친 분 × (T ÷ E).
+    // 운전 시간을 반으로 나눈다(#47). 중간 정산이 있으면 그 시각에서만 끊는다(효성 11/9, Q는 T에서 빼기만).
+    // 밤길은 [출발, 도착]과 밤이 겹친 분 × (T ÷ E).
     val q = inp.restAnswerMin.toDouble()
     val drive = max(0.0, elapsed - q * 60)
-    val groups = if (q >= c.fatigueResetRestMin) listOf(drive / 2, drive / 2) else listOf(drive)
+    val groups = when {
+        inp.settlements.isNotEmpty() -> settlementGroups(dep, arr, drive, inp.settlements)
+        q >= c.fatigueResetRestMin -> listOf(drive / 2, drive / 2)
+        else -> listOf(drive)
+    }
     var nightAll = 0.0
     for ((a, b) in nights) nightAll += overlap(dep, arr, a, b)
     val night = if (elapsed > 0) nightAll * drive / elapsed else 0.0
@@ -495,8 +527,17 @@ fun effort(inp: EffortInput, c: EffortConstants): EffortReceipt {
 
     val dt = driveText(drive)
     val mt = multiplierText(m100, c)
-    // 정산 입력: 앞서 정산한 합이 있으면 그 값, 처음 하는 중간 정산이면 0, 둘 다 아니면 null(지금과 같은 출력)
-    val settled = inp.settledKrw ?: if (inp.midway != null) 0.0 else null
+    // 정산 입력: 앞서 정산한 합(정산한 순서대로 더함, 엔진 두 벌 같은 순서), 처음 하는 중간 정산이면 0,
+    // 둘 다 아니면 null(지금과 같은 출력)
+    val settled: Double? = when {
+        inp.settlements.isNotEmpty() -> {
+            var sum = 0.0
+            for (s in inp.settlements) sum += s.remainKrw
+            sum
+        }
+        inp.midway != null -> 0.0
+        else -> null
+    }
     return EffortReceipt(
         status = "ok", statusText = null, elapsedLimitMin = limit / 60,
         elapsedMin = elapsed / 60, driveMin = drive / 60, restMin = (elapsed - drive) / 60,
@@ -623,7 +664,9 @@ fun parseEffortInput(o: JsonObject): EffortInput = EffortInput(
     distanceKm = o.dblOrNull("distance_km"),
     weatherTrip = o["weather_trip"]?.takeIf { it !is JsonNull }?.jsonObject?.let { parseWeatherTrip(it) },
     midway = o.objOrNull("midway")?.let { EffortMidway(it.dbl("route_m"), it.dbl("remain_m")) },
-    settledKrw = o.dblOrNull("settled_krw"),
+    settlements = o["settlements"]?.takeIf { it !is JsonNull }?.jsonArray
+        ?.map { val s = it.jsonObject; EffortSettlement(s.str("at"), s.dbl("remain_krw")) }
+        .orEmpty(),
 )
 
 private fun parseHours(a: JsonElement): List<HourPrecip> =
