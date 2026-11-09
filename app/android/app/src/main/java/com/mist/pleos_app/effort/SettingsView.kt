@@ -18,6 +18,7 @@ data class WageSource(
     val perMinText: String,         // "178원"
     val hourlyManText: String = "", // "1만 700원"(설정 단가 출처 펼침, #75 v41)
     val perMinExactText: String = "",   // "178.33원"(표시만, 금액 계산은 시급 그대로)
+    val wageYearLabel: String = wageLabel,  // "2027년 최저임금"(펼침 줄, 상수 wage_year가 있을 때만 연도, #96)
     val items: List<ItemSource>,    // 한 번 빼 주기(B) 항목, 가격 오름차순
 )
 
@@ -62,6 +63,7 @@ fun wageSourceOf(c: EffortConstants): WageSource {
         perMinText = "${perMin}원",
         hourlyManText = manWonText(c.wagePerHour),
         perMinExactText = perMinExactText(c),
+        wageYearLabel = c.wageYear?.let { "${it}년 ${c.wageLabel}" } ?: c.wageLabel,
         items = c.items.map { ItemSource(it.label, wonText(it.priceKrw), it.source) },
     )
 }
