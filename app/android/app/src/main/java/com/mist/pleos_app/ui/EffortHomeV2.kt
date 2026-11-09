@@ -60,6 +60,8 @@ import com.mist.pleos_app.ui.components.CgSize
 import com.mist.pleos_app.ui.components.CgCta
 import com.mist.pleos_app.ui.components.CgEmpty
 import com.mist.pleos_app.ui.components.CgIcon
+import com.mist.pleos_app.ui.components.CgAppIcon
+import com.mist.pleos_app.ui.components.CgWordmark
 import com.mist.pleos_app.ui.components.CgIconButton
 import com.mist.pleos_app.ui.components.CgIllustrationCircle
 import com.mist.pleos_app.ui.components.CgLoadingDots
@@ -107,8 +109,9 @@ internal fun EffortHomeScreen(
             CgTitleBar(
                 stringResource(R.string.effort_home_logo), centered = true,
                 titleStyle = (if (narrow) t.titleM else t.titleL).copy(fontWeight = FontWeight.ExtraBold, letterSpacing = t.titleL.fontSize * .08f),
-                leading = { CgIconButton(stringResource(R.string.effort_log_open), CgIcon.Placeholder, onLog) },
-                trailing = { CgIconButton(stringResource(R.string.screen_settings), CgIcon.Placeholder, onSettings) },
+                leading = { CgIconButton(stringResource(R.string.effort_log_open), CgIcon.Receipt, onLog) },
+                titleContent = { CgWordmark(if (narrow) 128.gpx else 152.gpx, label = stringResource(R.string.effort_home_logo)) },   // v3 위 바 워드마크
+                trailing = { CgIconButton(stringResource(R.string.screen_settings), CgIcon.Gear, onSettings) },
             )
             // 인사 + 내 차 그림 + 출발하기 / 진행 중
             val first = ui.recent.isEmpty() && trip == null
@@ -243,8 +246,9 @@ internal fun EffortSplash(onDone: () -> Unit) {
     val c = Chagok.colors
     LaunchedEffect(Unit) { delay(1600); onDone() }
     Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(24.gpx, Alignment.CenterVertically)) {
-        CarIllustration(240.gpx)
-        Text(stringResource(R.string.effort_home_logo), style = Chagok.type.headlineL.copy(fontWeight = FontWeight.ExtraBold, letterSpacing = Chagok.type.headlineL.fontSize * .08f), color = c.textPrimary)
+        // v3 시작 화면: 앱 아이콘 192 + 워드마크 228 × 72 + 준비 중(HANDOFF_v3 2절)
+        CgAppIcon(192.gpx)
+        CgWordmark(228.gpx, label = stringResource(R.string.effort_home_logo))
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.gpx)) {
             Text(stringResource(R.string.effort_home_loading), style = Chagok.type.bodyM, color = c.textTertiary)
             CgLoadingDots(c.textTertiary)

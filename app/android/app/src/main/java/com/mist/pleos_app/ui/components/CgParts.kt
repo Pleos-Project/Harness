@@ -76,6 +76,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.zIndex
+import com.mist.pleos_app.R
 import com.mist.pleos_app.ui.theme.Chagok
 import com.mist.pleos_app.ui.theme.gpx
 import kotlinx.coroutines.delay
@@ -90,12 +91,50 @@ private val EaseRise = CubicBezierEasing(.2f, .7f, .2f, 1f)
 private val EaseIn = CubicBezierEasing(.32f, .72f, 0f, 1f)
 private val EaseRot = CubicBezierEasing(.65f, 0f, .35f, 1f)
 
-// ------------------------------------------------------------ 아이콘(에셋 4종: 뒤로 · + · − · 화살표) + 자리
-enum class CgIcon { Back, Arrow, Plus, Minus, Chevron, Placeholder }
+// ------------------------------------------------------------ 아이콘
+/**
+ * 선으로 그리는 Pleos 에셋 4종(뒤로 · + · − · 화살표) + 펼침 · 자리, 그리고 Phosphor Bold 23종(#118 design/icons/phosphor, MIT).
+ * Phosphor는 res/drawable/ic_ph_*.xml 벡터이고 색은 쓰는 자리 글자색으로 칠한다(HANDOFF_v3 3절).
+ */
+/** 워드마크 Nogo(`design/brand/nogo_wordmark_deepink.svg`, 152 × 48 기준). 색 = brandWordmark(주간 딥 잉크 · 야간 라임). */
+@Composable
+fun CgWordmark(width: Dp, modifier: Modifier = Modifier, label: String? = null) {
+    androidx.compose.foundation.Image(
+        androidx.compose.ui.res.painterResource(R.drawable.nogo_wordmark), contentDescription = label,
+        modifier = modifier.size(width, width * 48f / 152f),
+        colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(Chagok.colors.brandWordmark),
+    )
+}
+
+/** 앱 아이콘 타일(`design/brand/nogo_icon_*-gradient.svg`): 주간 라임 · 야간 잉크 그라디언트. 시작 화면 192. */
+@Composable
+fun CgAppIcon(size: Dp, modifier: Modifier = Modifier) {
+    androidx.compose.foundation.Image(
+        androidx.compose.ui.res.painterResource(if (Chagok.colors.isDark) R.drawable.nogo_icon_ink_gradient else R.drawable.nogo_icon_lime_gradient),
+        contentDescription = null,
+        modifier = modifier.size(size).shadow(8.gpx, RoundedCornerShape(size * 44f / 144f), ambientColor = Color(0x24242033), spotColor = Color(0x24242033)),
+    )
+}
+
+enum class CgIcon(@androidx.annotation.DrawableRes val res: Int? = null) {
+    Back, Arrow, Plus, Minus, Chevron, Placeholder,
+    Receipt(R.drawable.ic_ph_receipt), Gear(R.drawable.ic_ph_gear_six), Users(R.drawable.ic_ph_users_three),
+    Search(R.drawable.ic_ph_magnifying_glass), Mic(R.drawable.ic_ph_microphone),
+    House(R.drawable.ic_ph_house), Briefcase(R.drawable.ic_ph_briefcase), Recent(R.drawable.ic_ph_clock_counter_clockwise),
+    WifiSlash(R.drawable.ic_ph_wifi_slash), Warning(R.drawable.ic_ph_warning_circle), Map(R.drawable.ic_ph_map_trifold),
+    Steering(R.drawable.ic_ph_steering_wheel), TurnRight(R.drawable.ic_ph_arrow_bend_up_right),
+    Rain(R.drawable.ic_ph_cloud_rain), Snow(R.drawable.ic_ph_snowflake), Traffic(R.drawable.ic_ph_traffic_cone),
+    Delay(R.drawable.ic_ph_clock_countdown), Moon(R.drawable.ic_ph_moon), Hourglass(R.drawable.ic_ph_hourglass_medium), Sun(R.drawable.ic_ph_sun),
+    Check(R.drawable.ic_ph_check_circle), Info(R.drawable.ic_ph_info), Star(R.drawable.ic_ph_star),
+}
 
 /** 에셋 아이콘을 선으로 그린다(design/icons/pleos). 에셋에 없는 아이콘은 점선 자리(Placeholder). */
 @Composable
 fun CgIconMark(icon: CgIcon, size: Dp, color: Color, modifier: Modifier = Modifier) {
+    icon.res?.let { r ->
+        androidx.compose.material3.Icon(androidx.compose.ui.res.painterResource(r), contentDescription = null, modifier = modifier.size(size), tint = color)
+        return
+    }
     Canvas(modifier.size(size).graphicsLayer { if (icon == CgIcon.Placeholder) alpha = .45f }) {
         val w = this.size.width
         val sw = w * .1f
@@ -118,6 +157,7 @@ fun CgIconMark(icon: CgIcon, size: Dp, color: Color, modifier: Modifier = Modifi
                 drawLine(color, Offset(w * .5f, w * .8f), Offset(w, w * .3f), w * .25f, StrokeCap.Round)
             }
             CgIcon.Placeholder -> drawRoundRect(color, cornerRadius = CornerRadius(w * .3f), style = Stroke(w * .075f, pathEffect = PathEffect.dashPathEffect(floatArrayOf(6f, 5f))))
+            else -> Unit                                    // 벡터 아이콘은 위에서 그림
         }
     }
 }
@@ -194,12 +234,14 @@ fun CgTitleBar(
     titleStyle: TextStyle? = null,
     leading: (@Composable () -> Unit)? = null,
     trailing: (@Composable () -> Unit)? = null,
+    titleContent: (@Composable () -> Unit)? = null,   // 글자 대신 그림(홈 워드마크)
 ) {
     val t = Chagok.type
     Box(modifier.fillMaxWidth().height(80.gpx)) {
         if (centered) {
             leading?.let { Box(Modifier.align(Alignment.CenterStart)) { it() } }
-            Text(title, Modifier.align(Alignment.Center), style = titleStyle ?: (if (compact) t.titleM else t.titleL), color = Chagok.colors.textPrimary, maxLines = 1)
+            if (titleContent != null) Box(Modifier.align(Alignment.Center)) { titleContent() }
+            else Text(title, Modifier.align(Alignment.Center), style = titleStyle ?: (if (compact) t.titleM else t.titleL), color = Chagok.colors.textPrimary, maxLines = 1)
             trailing?.let { Box(Modifier.align(Alignment.CenterEnd)) { it() } }
         } else {
             Row(Modifier.fillMaxSize(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(24.gpx)) {
@@ -254,8 +296,8 @@ fun CgSearchField(query: String, hint: String, clearLabel: String, onQuery: (Str
         Row(
             (if (compact) Modifier.fillMaxWidth() else Modifier.width(1040.gpx))
                 .height(if (compact) 88.gpx else 100.gpx)
-                .shadow(6.gpx, shape).background(c.surfaceCard, shape)
-                .border(if (active) 3.gpx else 2.gpx, if (active) c.textPrimary else c.line, shape)
+                .shadow(6.gpx, shape).background(c.fieldBackground, shape)
+                .border(if (active) 3.gpx else 2.gpx, if (active) c.fieldCaret else c.fieldBorder, shape)
                 .padding(start = if (compact) 26.gpx else 32.gpx, end = 14.gpx),
             verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.gpx),
         ) {
@@ -263,7 +305,7 @@ fun CgSearchField(query: String, hint: String, clearLabel: String, onQuery: (Str
                 if (query.isEmpty()) Text(hint, style = Chagok.type.bodyL.copy(fontWeight = FontWeight.Normal), color = c.textTertiary)
                 BasicTextField(
                     value = query, onValueChange = { onQuery(it.take(100)) }, singleLine = true,
-                    textStyle = Chagok.type.bodyL.copy(color = c.textPrimary), cursorBrush = SolidColor(c.textPrimary),
+                    textStyle = Chagok.type.bodyL.copy(color = c.textPrimary), cursorBrush = SolidColor(c.fieldCaret),
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search), keyboardActions = KeyboardActions(onSearch = { onSearch() }),
                     modifier = Modifier.fillMaxWidth().semantics { contentDescription = hint },
                 )
@@ -287,17 +329,19 @@ fun CgDestCard(tag: String, name: String, meta: String?, selected: Boolean, onCl
     ) {
         Column(
             Modifier.fillMaxSize().graphicsLayer { val k = if (pressed) .985f else 1f; scaleX = k; scaleY = k }
-                .shadow(4.gpx, inner).background(c.surfaceCard, inner)
+                .shadow(4.gpx, inner).background(if (selected) c.selectionBackground else c.surfaceCard, inner)
+                .then(if (selected) Modifier.border(2.gpx, c.selectionBorder, inner) else Modifier)
                 .padding(start = 28.gpx, end = 28.gpx, top = if (compact) 18.gpx else 28.gpx, bottom = if (compact) 14.gpx else 22.gpx),
             verticalArrangement = Arrangement.spacedBy(6.gpx),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.gpx)) {
-                CgIconMark(CgIcon.Placeholder, 28.gpx, c.textTertiary)
-                Text(tag, style = Chagok.type.bodyS.copy(fontWeight = FontWeight.Normal), color = c.textTertiary, maxLines = 1)
+                val tagIcon = when { tag.contains("집") -> CgIcon.House; tag.contains("회사") -> CgIcon.Briefcase; else -> CgIcon.Recent }
+                CgIconMark(tagIcon, 28.gpx, if (selected) c.selectionForeground else c.textTertiary)
+                Text(tag, style = Chagok.type.bodyS.copy(fontWeight = FontWeight.Normal), color = if (selected) c.selectionForeground else c.textTertiary, maxLines = 1)
             }
             Spacer(Modifier.weight(1f))
-            Text(name, style = if (compact) Chagok.type.titleS else Chagok.type.titleL, color = c.textPrimary, maxLines = 2, overflow = TextOverflow.Ellipsis)
-            meta?.let { Text(it, style = Chagok.type.bodyM, color = c.textSecondary, maxLines = 1, overflow = TextOverflow.Ellipsis) }
+            Text(name, style = if (compact) Chagok.type.titleS else Chagok.type.titleL, color = if (selected) c.selectionForeground else c.textPrimary, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            meta?.let { Text(it, style = Chagok.type.bodyM, color = if (selected) c.selectionForeground else c.textSecondary, maxLines = 1, overflow = TextOverflow.Ellipsis) }
         }
     }
 }
@@ -313,11 +357,13 @@ fun CgRecordCard(tag: String, title: String, summary: String, note: String, modi
     Column(
         modifier.graphicsLayer { alpha = rise.value; translationY = (1f - rise.value) * 24f * density }
             .shadow(6.gpx, shape).background(c.surfaceCard, shape)
-            .border(if (fresh) 3.gpx else 2.gpx, if (fresh) c.textPrimary else c.line, shape)
+            .border(if (fresh) 3.gpx else 2.gpx, if (fresh) c.selectionBorder else c.line, shape)
             .padding(horizontal = if (compact) 28.gpx else 30.gpx, vertical = if (compact) 18.gpx else 26.gpx),
         verticalArrangement = Arrangement.spacedBy(if (compact) 6.gpx else 4.gpx),
     ) {
-        Text(tag, style = t.bodyS.copy(fontWeight = if (fresh) FontWeight.ExtraBold else FontWeight.Normal), color = if (fresh) c.textPrimary else c.textTertiary)
+        // 방금 기록 꼬리표 = 선택 면 알약(v3.1)
+        Text(tag, if (fresh) Modifier.background(c.selectionBackground, CircleShape).padding(horizontal = 14.gpx) else Modifier,
+            style = t.bodyS.copy(fontWeight = if (fresh) FontWeight.ExtraBold else FontWeight.Normal), color = if (fresh) c.selectionForeground else c.textTertiary)
         if (!compact) Spacer(Modifier.weight(1f))
         Text(title, style = if (compact) t.titleS else t.titleM, color = c.textPrimary, maxLines = 1, overflow = TextOverflow.Ellipsis)
         Text(summary, style = t.bodyM, color = c.textSecondary, maxLines = 1)
@@ -465,12 +511,15 @@ fun CgOptionButton(words: List<String>, isDefault: Boolean, onClick: () -> Unit,
     val c = Chagok.colors
     val src = remember { MutableInteractionSource() }
     val pressed by src.collectIsPressedAsState()
-    val bg = if (isDefault) (if (pressed) c.btnFilledPressed else c.btnFilled) else (if (pressed) c.btnBasicPressed else c.btnBasic)
-    val fg = if (isDefault) c.btnFilledText else c.textPrimary
+    // 기본 항목 = 선택 면(v3.1 selection-*: 라임 면 + 잉크 글자 + 테두리 2)
+    val bg = if (isDefault) (if (pressed) c.selectionPressed else c.selectionBackground) else (if (pressed) c.btnBasicPressed else c.btnBasic)
+    val fg = if (isDefault) c.selectionForeground else c.btnBasicText
+    val optShape = RoundedCornerShape(if (compact) 24.gpx else 32.gpx)
     var i by remember(words) { mutableIntStateOf(0) }
     if (words.size > 1) LaunchedEffect(words) { while (true) { delay(2000); i = (i + 1) % words.size } }
     Box(
-        modifier.heightIn(min = if (compact) 96.gpx else 100.gpx).background(bg, RoundedCornerShape(if (compact) 24.gpx else 32.gpx))
+        modifier.heightIn(min = if (compact) 96.gpx else 100.gpx).background(bg, optShape)
+            .then(if (isDefault) Modifier.border(2.gpx, c.selectionBorder, optShape) else Modifier)
             .clickable(src, indication = null, role = Role.Button, onClick = onClick)
             .padding(horizontal = if (compact) 20.gpx else 36.gpx, vertical = 8.gpx),
         contentAlignment = Alignment.CenterStart,
@@ -681,28 +730,28 @@ fun CgSegmented(options: List<String>, selected: Int, onSelect: (Int) -> Unit, m
             val on = i == selected
             Box(
                 Modifier.then(if (compact) Modifier.weight(1f) else Modifier).height(if (compact) 64.gpx else 76.gpx)
-                    .then(if (on) Modifier.shadow(2.gpx, CircleShape).background(c.surfaceCard, CircleShape) else Modifier)
+                    .then(if (on) Modifier.shadow(2.gpx, CircleShape).background(c.selectionBackground, CircleShape).border(2.gpx, c.selectionBorder, CircleShape) else Modifier)
                     .clickable(role = Role.RadioButton) { onSelect(i) }.padding(horizontal = if (compact) 12.gpx else 30.gpx),
                 contentAlignment = Alignment.Center,
             ) {
                 val st = if (compact) Chagok.type.bodyM else Chagok.type.bodyL
-                Text(label, style = st.copy(fontWeight = if (on) FontWeight.Bold else FontWeight.Normal), color = if (on) c.textPrimary else c.textTertiary, maxLines = 1)
+                Text(label, style = st.copy(fontWeight = if (on) FontWeight.Bold else FontWeight.Normal), color = if (on) c.selectionForeground else c.textTertiary, maxLines = 1)
             }
         }
     }
 }
 
-/** 스위치 116 × 68(`components/switch`): 켜짐 = 검은 바탕 + 동그라미 오른쪽. */
+/** 스위치 116 × 68(`components/switch`): 켜짐 = 라임 트랙 + 잉크 손잡이 오른쪽(v3.1 switch-*). */
 @Composable
 fun CgSwitch(checked: Boolean, onToggle: (Boolean) -> Unit, label: String, modifier: Modifier = Modifier) {
     val c = Chagok.colors
     val x by animateFloatAsState(if (checked) 1f else 0f, tween(320, easing = EaseRise), label = "sw")
     Box(
-        modifier.size(116.gpx, 68.gpx).background(if (checked) c.textPrimary else c.lineStrong, RoundedCornerShape(34.gpx))
+        modifier.size(116.gpx, 68.gpx).background(if (checked) c.switchTrackOn else c.switchTrackOff, RoundedCornerShape(34.gpx))
             .semantics { contentDescription = label }
             .toggleable(checked, role = Role.Switch, onValueChange = onToggle).padding(6.gpx),
     ) {
         val shift = 48.gpx
-        Box(Modifier.graphicsLayer { translationX = x * shift.toPx() }.size(56.gpx).shadow(2.gpx, CircleShape).background(c.surfaceCard, CircleShape))
+        Box(Modifier.graphicsLayer { translationX = x * shift.toPx() }.size(56.gpx).shadow(2.gpx, CircleShape).background(if (checked) c.switchThumbOn else c.switchThumbOff, CircleShape))
     }
 }
