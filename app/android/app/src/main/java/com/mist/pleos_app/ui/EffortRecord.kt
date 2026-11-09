@@ -120,6 +120,12 @@ internal fun EffortRecordScreen(ui: EffortUi, onBack: () -> Unit) {
                 Box(Modifier.fillMaxWidth().padding(vertical = 8.gpx).height(1.gpx).background(c.line))
                 Text(stringResource(R.string.effort_record_choice_cap), style = t.labelM, color = c.textTertiary)
                 Text(choiceLine(r, ui), style = t.bodyM, color = c.textSecondary)
+                // 중간 정산(F27): "중간 정산 15:25 · 한 사람 약 4천 원" / "… · 밥값에서 운전자 빼기"
+                r.trip?.settlements.orEmpty().forEach { s ->
+                    val what = if (s.method == Settings.METHOD_B) stringResource(R.string.effort_home_rec_item, ui.items.firstOrNull { it.key == s.choice }?.phraseText ?: s.choice)
+                    else s.suggestion.orEmpty()
+                    Text(stringResource(R.string.effort_record_midway, com.mist.pleos_app.effort.clockText(s.at), what), style = t.bodyM, color = c.textSecondary)
+                }
                 Text(stringResource(R.string.effort_record_note), style = t.labelM, color = c.textTertiary)
                 if (!narrow) Spacer(Modifier.weight(1f))
                 CgButton(stringResource(R.string.close), onBack, Modifier.fillMaxWidth(), kind = CgButtonKind.Basic, size = if (narrow) CgSize.M else CgSize.L)
