@@ -272,7 +272,7 @@
     <string name="effort_mid_open">지금까지의 노고 보기</string>
     <string name="effort_mid_title">지금까지의 노고</string>
     <string name="effort_mid_people">가는 중 · 함께 %1$d명</string>
-    <string name="effort_mid_receipt_title">지금까지 영수증</string>
+    <string name="effort_mid_receipt_title">오늘 주행 영수증</string>
     <string name="effort_mid_receipt_sub">%1$s 출발 · 아직 가는 중</string>
     <string name="effort_mid_a_title">지금까지를 챙긴다면</string>
     <string name="effort_mid_note">좋아요를 누르면 여기까지 기록해 두고, 도착하면 이 몫은 빼고 알려 드려요</string>
