@@ -11,7 +11,7 @@
               콘솔: 기어 D(가림) → 기어 P(같은 주행을 이어 감, [출발]을 다시 누르지 않음)
   3 도착      콘솔: 운전석 문 열기 → 계산 연출 → 영수증(2시간 10분 · 1.56배, 휴게소에서 장시간이 끊김)
               --no-midway면 1.57배(R1)
-  4 선택      앱: 영수증 하단 '중간 정산 있음' → [좋아요](방식 A, 남은 몫 한 사람 약 5천 원) 또는 첫 항목(방식 B) → 기록 → [닫기] → 홈 최근 기록
+  4 선택      앱: 영수증 하단 '중간 정산 있음' → [좋아요](방식 A, 남은 몫 한 사람 약 5천 원) 또는 첫 항목(방식 B) → 기록 → [닫기] → 홈 알림 종 → 알림 창 "○○ 기록을 남겼어요"
 
 사용
   python -I scripts/demo_replay.py            # 리허설: 단계마다 엔터, 앱은 사람이 누른다
@@ -378,8 +378,8 @@ def step3(r: Run, midway: bool = False) -> None:
 def step4(r: Run, midway: bool = False) -> None:
     print("\n4 선택")
     if not r.auto:
-        r.person("[좋아요](A) 또는 항목(B) → [닫기]")
-        r.expect("홈 최근 기록", DEST)
+        r.person("[좋아요](A) 또는 항목(B) → [닫기] → 홈 알림 종")
+        r.expect("알림 창 기록 저장", f"{DEST} 기록을 남겼어요")
         return
     ts = texts()
     if has("좋아요", ts):
@@ -395,7 +395,11 @@ def step4(r: Run, midway: bool = False) -> None:
         r.check("방식 B 항목", item is not None and tap(item), item or "항목 없음")
         r.expect("기록 남김", "오늘 기록에 남겼어요")
     r.check("[닫기]", tap("닫기"))
-    r.expect("홈 최근 기록", DEST)
+    # v104: 홈에 최근 기록 카드가 없다. 알림 종 → 알림 창 "○○ 기록을 남겼어요"로 확인
+    time.sleep(1.0)
+    r.check("알림 종", tap("알림"))
+    r.expect("알림 창 기록 저장", f"{DEST} 기록을 남겼어요")
+    adb("shell", "input", "tap", str(FOCUS[0]), str(FOCUS[1] - 400))   # 바깥을 눌러 접기
     r.check("진행 중 없음", not has(EXPECT_DRIVING_HOME))
 
 

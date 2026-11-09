@@ -82,6 +82,11 @@ data class ChagokColors(
     val receiptPaper: Color,
     val receiptRule: Color,
     val receiptMarker: Color,
+    val notificationDot: Color,           // v93 알림 종 빨간 점
+    val surfaceRaised: Color,             // 알림 창 판
+    val iconSecondary: Color,
+    val dividerDefault: Color,
+    val bgSubtle: Color,
     val receiptPrinterHighlight: Color,   // Satin Silver(출력구 · 시동 버튼 테)
     val receiptPrinterMidtone: Color,
     val receiptPrinterShade: Color,
@@ -138,6 +143,8 @@ private val DarkColors = ChagokColors(
     receiptPaper = Color(0xFF312C40),
     receiptRule = Color(0xFF464055),
     receiptMarker = Color(0xFF445616),
+    notificationDot = Color(0xFFFF6B6B), surfaceRaised = Color(0xFF3A354A), iconSecondary = Color(0xFFAFA8BD),
+    dividerDefault = Color(0xFF464055), bgSubtle = Color(0xFF292538),
     receiptPrinterHighlight = Color(0xFFA5AFBC),
     receiptPrinterMidtone = Color(0xFF626D7D),
     receiptPrinterShade = Color(0xFF3E4754),
@@ -193,6 +200,8 @@ private val LightColors = ChagokColors(
     receiptPaper = Color(0xFFFFFFFF),
     receiptRule = Color(0xFFDEDAE8),
     receiptMarker = Color(0xFFD9F77A),
+    notificationDot = Color(0xFFE5484D), surfaceRaised = Color(0xFFFFFFFF), iconSecondary = Color(0xFF6B637B),
+    dividerDefault = Color(0xFFDEDAE8), bgSubtle = Color(0xFFEFEDF5),
     receiptPrinterHighlight = Color(0xFFEDF1F6),
     receiptPrinterMidtone = Color(0xFFCBD2DB),
     receiptPrinterShade = Color(0xFF8994A3),
