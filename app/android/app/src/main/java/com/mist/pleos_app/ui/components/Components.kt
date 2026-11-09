@@ -24,6 +24,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.coerceAtLeast
 import com.mist.pleos_app.ui.theme.Chagok
@@ -67,9 +68,9 @@ fun CgButton(
     val source = remember { MutableInteractionSource() }
     val pressed by source.collectIsPressedAsState()
     val (bg, fg) = when {
-        !enabled -> c.btnDisabled to c.textTertiary
+        !enabled -> c.btnDisabled to c.btnDisabledText
         kind == CgButtonKind.Filled -> (if (pressed) c.btnFilledPressed else c.btnFilled) to c.btnFilledText
-        else -> (if (pressed) c.btnBasicPressed else c.btnBasic) to c.textPrimary
+        else -> (if (pressed) c.btnBasicPressed else c.btnBasic) to c.btnBasicText
     }
     val (h, r, style) = when (size) {
         CgSize.S -> Triple(64, 16, Chagok.type.bodyS)
@@ -110,20 +111,22 @@ fun CgChip(
     val shape = RoundedCornerShape((if (m) 24 else 16).gpx)
     val bg = when {
         !enabled -> c.btnDisabled
-        selected -> c.surfaceCard
+        selected -> if (pressed) c.selectionPressed else c.selectionBackground   // v3.1 선택 면
         else -> if (pressed) c.btnBasicPressed else c.btnBasic
     }
     Box(
         modifier
             .defaultMinSize(minWidth = (if (m) 120 else 48).gpx, minHeight = (if (m) 80 else 64).gpx.coerceAtLeast(MinTouch))
             .background(bg, shape)
-            .then(if (selected && enabled) Modifier.border(3.gpx, c.textPrimary, shape) else Modifier)
+            .then(if (selected && enabled) Modifier.border(2.gpx, c.selectionBorder, shape) else Modifier)
             .semantics { this.selected = selected }
             .clickable(source, indication = null, enabled = enabled, role = Role.Tab, onClick = onClick)
             .padding(horizontal = (if (m) 32 else 24).gpx, vertical = 8.gpx),
         contentAlignment = Alignment.Center,
     ) {
-        Text(text, style = if (m) Chagok.type.bodyL else Chagok.type.bodyS, color = if (enabled) c.textPrimary else c.textTertiary, maxLines = 1)
+        val st = if (m) Chagok.type.bodyL else Chagok.type.bodyS
+        Text(text, style = if (selected) st.copy(fontWeight = FontWeight.ExtraBold) else st,
+            color = if (!enabled) c.btnDisabledText else if (selected) c.selectionForeground else c.textPrimary, maxLines = 1)
     }
 }
 
