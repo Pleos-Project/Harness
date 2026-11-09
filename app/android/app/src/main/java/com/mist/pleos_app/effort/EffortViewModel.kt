@@ -71,6 +71,8 @@ data class EffortUi(
     val restQuestion: String? = null,                   // effort.copy rest_question_text("중간에 쉰 시간")
     val restAnswers: List<Pair<Int, String>> = emptyList(),   // (분, 문구): 없음·15분·30분·1시간 이상
     val proposal: ProposalView? = null,                 // 설정 방식(A/B)의 제안 화면. null이면 영수증만(F25 '제안 없음'·혼자 탄 주행)
+    val settleFold: SettleFoldView? = null,             // 최종 영수증 하단 중간 정산 줄(#118). null = 중간 정산 안 한 주행
+    val settleIncluded: Boolean = false,                // 중간 정산 포함 모드(제안 = 남은 몫). 처음은 전체 모드
     val unsettled: Boolean = false,                     // 정리하지 못함(#68): 영수증 대신 안내 문구(receipt.statusText)와 [닫기]만
     val items: List<com.mist.pleos_app.engine.EffortItem> = emptyList(),   // 방식 B 항목(공동 경비 예시 포함)
     val done: ArriveDone? = null,                       // 고른 뒤: 기록은 남겼고 같은 화면에 "남겼어요"를 보여 주는 중
@@ -125,6 +127,15 @@ class EffortViewModel(app: Application, private val saved: SavedStateHandle) : A
     // ------------------------------------------------------------ 상태
     /** 고른 뒤 [닫기] 전까지 보여 줄 영수증·제안(메모리만, 기록은 이미 저장됨). */
     private var done: ArriveDone? = null
+    /** 최종 영수증 하단 중간 정산 줄의 모드(#118). 새 출발 · 도착마다 전체 모드로 돌아간다. */
+    private var settleIncluded = false
+
+    /** 영수증 하단 "중간 정산 있음 ⇅" / "운전 노고 전체 ⇅": 전체 ↔ 포함 모드. 고른 뒤에는 바꾸지 않는다. */
+    fun toggleSettle() {
+        if (done != null) return
+        settleIncluded = !settleIncluded
+        refresh()
+    }
     /** 방금 끝난 기록(홈 "방금" 표시). 다음 출발 화면에 들어가면 지운다. */
     private var justFinished: String? = null
 
@@ -148,7 +159,9 @@ class EffortViewModel(app: Application, private val saved: SavedStateHandle) : A
             weatherPending = trip?.arrived == true && trip.weatherArr == null,
             restQuestion = effortConstants?.copy?.text?.get("rest_question_text"),
             restAnswers = effortConstants?.copy?.restAnswers.orEmpty(),
-            proposal = d?.proposal ?: proposalViewOf(receipt, settingsFlow.value.proposalMethod, effortConstants?.items.orEmpty()),
+            proposal = d?.proposal ?: proposalViewOf(receipt?.let { r -> trip?.let { t -> receiptForSettleMode(r, settleIncluded, t.n, effortConstants) } ?: r }, settingsFlow.value.proposalMethod, effortConstants?.items.orEmpty()),
+            settleFold = settleFoldOf(receipt, settingsFlow.value.proposalMethod),
+            settleIncluded = settleIncluded,
             unsettled = isUnsettled(receipt),
             items = effortConstants?.items.orEmpty(),
             done = d,
@@ -217,6 +230,7 @@ class EffortViewModel(app: Application, private val saved: SavedStateHandle) : A
     /** 홈 [동승 출발] → 출발 화면. 실제 모드면 내비 후보·현재 위치·출발 날씨를 1번씩 읽는다(폴링 없음). */
     fun openDepart() {
         justFinished = null
+        settleIncluded = false
         open(EffortScreen.DEPART)
         departFlow.value = DepartUi()
         here = null; weatherDep = null

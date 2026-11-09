@@ -263,6 +263,15 @@
     <!-- F24 방식 A 버튼: PRD 5-2 "[받아들이기] 글자는 디자인 확인" → 시안 [좋아요] -->
     <string name="effort_offer_like">좋아요</string>
     <string name="effort_offer_a_done">좋아요, 오늘 기록에 남겼어요</string>
+    <!-- 최종 영수증 하단 중간 정산 줄(#118 arrive-mid-*, 명준 11/9 시안 문구) -->
+    <string name="effort_settle_all_a">운전 노고 전체</string>
+    <string name="effort_settle_inc_a">중간 정산 포함 노고</string>
+    <string name="effort_settle_all_b">운전 시간 전체</string>
+    <string name="effort_settle_inc_b">중간 정산 포함 운전</string>
+    <string name="effort_settle_has">중간 정산 있음</string>
+    <string name="effort_settle_to_inc">중간 정산 포함으로 보기</string>
+    <string name="effort_settle_to_all">운전 노고 전체로 보기</string>
+    <string name="effort_settle_b_note"> · 중간 정산 몫은 빼고 골랐어요</string>
     <string name="effort_offer_b_sub">기본은 %1$s. 고른 항목을 나눌 때 운전자는 한 번 빠져요</string>
     <string name="effort_offer_b_done_head">오늘은</string>
     <string name="effort_offer_b_done">%1$s에서 운전자 빼기로 했어요</string>

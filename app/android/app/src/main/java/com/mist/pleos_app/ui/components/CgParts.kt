@@ -81,6 +81,8 @@ import androidx.compose.ui.zIndex
 import com.mist.pleos_app.R
 import com.mist.pleos_app.ui.theme.Chagok
 import com.mist.pleos_app.ui.theme.gpx
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.runtime.mutableStateOf
 import com.mist.pleos_app.ui.theme.gsp
@@ -740,6 +742,51 @@ fun CgReceiptSum(
             style = receiptStrong(compact), color = c.textPrimary, maxLines = 1,
         )
         trailing()
+    }
+}
+
+/**
+ * 최종 영수증 하단 중간 정산 줄(#118 `receipt.css` cg-sfold): 위 점선 · 왼쪽 이름(크게) + 아래 작은 줄(점선 밑줄 · ⇅) · 오른쪽 값.
+ * 작은 줄을 누르면 위 · 아래 이름이 0.38초 동안 엇갈려 자리를 바꾸고 값이 다시 올라온다(움직임 줄이기면 바로 바뀜).
+ */
+@Composable
+fun CgSettleFold(
+    main: String, alt: String, altLabel: String, value: String, swapKey: Boolean, onSwap: () -> Unit,
+    compact: Boolean = false, reduce: Boolean = false, enabled: Boolean = true,
+) {
+    val c = Chagok.colors
+    val line = c.lineStrong
+    val ease = CubicBezierEasing(.32f, .72f, 0f, 1f)
+    val dur = if (reduce) 0 else 380
+    Row(
+        Modifier.fillMaxWidth().padding(top = if (compact) 16.gpx else 28.gpx)
+            .drawBehind { drawLine(line, Offset(0f, 0f), Offset(size.width, 0f), strokeWidth = 2f.gpxPx(this), pathEffect = PathEffect.dashPathEffect(floatArrayOf(8f, 6f))) }
+            .padding(top = 10.gpx),
+        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.gpx),
+    ) {
+        AnimatedContent(
+            swapKey, Modifier.weight(1f),
+            transitionSpec = { (slideInVertically(tween(dur, easing = ease)) { it / 2 } + fadeIn(tween(dur))) togetherWith (slideOutVertically(tween(dur, easing = ease)) { -it / 2 } + fadeOut(tween(dur))) },
+            label = "fold",
+        ) { _ ->
+            Column(verticalArrangement = Arrangement.spacedBy(2.gpx)) {
+                Text(main, style = receiptPlain(compact).copy(fontWeight = if (compact) FontWeight.Bold else FontWeight.Bold), color = c.textPrimary, maxLines = 1)
+                Row(
+                    Modifier.then(if (enabled) Modifier.clickable(role = Role.Button, onClickLabel = altLabel, onClick = onSwap) else Modifier)
+                        .drawBehind { drawLine(line, Offset(0f, size.height), Offset(size.width, size.height), strokeWidth = 1.5f.gpxPx(this), pathEffect = PathEffect.dashPathEffect(floatArrayOf(6f, 4f))) }
+                        .padding(vertical = 4.gpx),
+                    verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.gpx),
+                ) {
+                    Text(alt, style = if (compact) Chagok.type.labelS else Chagok.type.labelM, color = c.textTertiary, maxLines = 1)
+                    Text("⇅", style = if (compact) Chagok.type.labelS else Chagok.type.labelM, color = c.textTertiary)
+                }
+            }
+        }
+        AnimatedContent(
+            value,
+            transitionSpec = { (slideInVertically(tween(if (reduce) 0 else 340)) { it / 3 } + fadeIn(tween(if (reduce) 0 else 340))) togetherWith fadeOut(tween(if (reduce) 0 else 120)) },
+            label = "foldValue",
+        ) { v -> Text(v, style = receiptStrong(compact), color = c.textPrimary, maxLines = 1) }
     }
 }
 

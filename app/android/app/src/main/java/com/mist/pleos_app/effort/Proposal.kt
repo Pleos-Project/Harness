@@ -1,5 +1,9 @@
 package com.mist.pleos_app.effort
 
+import com.mist.pleos_app.engine.EffortConstants
+import com.mist.pleos_app.engine.effortProposal
+import com.mist.pleos_app.engine.driveText
+import com.mist.pleos_app.engine.approxText
 import com.mist.pleos_app.app.Settings
 import com.mist.pleos_app.engine.EffortItem
 import com.mist.pleos_app.engine.EffortReceipt
@@ -68,3 +72,31 @@ fun recordOf(trip: OpenTrip, r: EffortReceipt, view: ProposalView?, method: Stri
         n = trip.n,
         trip = trip.copy(depLat = null, depLng = null),   // 기록 상세 영수증용 엔진 입력. 좌표는 남기지 않는다
     )
+
+/**
+ * 최종 영수증 하단 중간 정산 줄(#118 arrive-mid-a · arrive-mid-a-open · arrive-mid-b-open, 명준 11/9).
+ * 가는 길에 중간 정산을 했을 때만 있다. 처음은 전체 모드(출발 → 도착 전부), 아래 작은 줄을 누르면 포함 모드(정산 몫을 뺀 남은 몫).
+ * 값은 모두 엔진 결과다. A: 전체 = 노고 금액, 포함 = 남은 금액(천 원 어림은 엔진 approxText 한 번).
+ * B: 전체 = 운전 시간, 포함 = 마지막 정산 뒤 운전 시간(엔진 fatigueSegmentsMin의 마지막 구간, 정산 시각으로 끊음).
+ */
+data class SettleFoldView(val amount: Boolean, val allValue: String, val incValue: String)
+
+fun settleFoldOf(r: EffortReceipt?, method: String): SettleFoldView? {
+    val p = r?.proposal ?: return null
+    val settled = p.settledKrw ?: return null
+    if (settled <= 0.0) return null
+    val remain = p.remainKrw ?: return null
+    return if (method == Settings.METHOD_B) {
+        val last = r.fatigueSegmentsMin.lastOrNull() ?: return null
+        SettleFoldView(false, r.driveText, driveText(last * 60))
+    } else SettleFoldView(true, p.amountText, approxText(remain).second)
+}
+
+/**
+ * 전체 모드의 제안: 같은 영수증 노고로 정산 몫을 빼지 않은 제안(엔진 effortProposal, settledKrw 없음).
+ * 노고 %·초는 영수증 effortMin(= 노고 ÷ 6000)에서 되돌린다. 포함 모드는 엔진 영수증의 제안 그대로.
+ */
+fun receiptForSettleMode(r: EffortReceipt, included: Boolean, n: Int, c: EffortConstants?): EffortReceipt {
+    if (included || c == null || settleFoldOf(r, Settings.METHOD_A) == null) return r
+    return r.copy(proposal = effortProposal(r.effortMin * 6000, n, c, null))
+}
