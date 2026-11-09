@@ -98,6 +98,15 @@ class EffortFlow(private val store: EffortStore) {
         return true
     }
 
+    /** 중간 정산 한 번을 출발 기록에 더한다(F27). 도착 전 진행 중일 때만. */
+    fun settle(s: Settlement): Boolean {
+        val cur = state.openTrip ?: return false
+        if (cur.arrived) return false
+        put(state.copy(openTrip = cur.copy(settlements = cur.settlements + s)))
+        ChagokLog.event("effort_settle", "method" to s.method, "choice" to s.choice, "count" to cur.settlements.size + 1)
+        return true
+    }
+
     /** 열린 출발 기록을 버린다(기록 초기화·출발 취소). 선택 기록은 그대로. */
     fun discardTrip() { if (state.openTrip != null) put(state.copy(openTrip = null)) }
 
