@@ -269,7 +269,6 @@
     <string name="effort_offer_done_note">더 할 일은 없어요</string>
     <!-- 중간 정산(F27, Design v2 v41 screens/midway.html). 문구는 시안 그대로(임시, 명준) -->
     <string name="effort_mid_open">지금까지의 노고 보기</string>
-    <string name="effort_mid_settled">%1$s까지 정산함</string>
     <string name="effort_mid_title">지금까지의 노고</string>
     <string name="effort_mid_people">가는 중 · 함께 %1$d명</string>
     <string name="effort_mid_receipt_title">지금까지 영수증</string>

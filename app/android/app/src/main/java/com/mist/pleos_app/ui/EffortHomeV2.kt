@@ -1,8 +1,17 @@
 package com.mist.pleos_app.ui
 
 import androidx.compose.foundation.clickable
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.keyframes
+import androidx.compose.foundation.border
+import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.Role
-import com.mist.pleos_app.ui.components.CgPill
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.background
 import androidx.compose.animation.core.Animatable
@@ -121,11 +130,9 @@ internal fun EffortHomeScreen(
                 // v32 home-pending: 고르기 전에 나간 도착 — "○○에 도착했어요 · 16:30" / "오늘 운전 영수증이 여기 있어요"
                 trip != null && trip.arrived -> stringResource(R.string.effort_home_arrived_sub, trip.destName, clockText(trip.arrivedAt ?: trip.departedAt)) to stringResource(R.string.effort_home_arrived_head)
                 // v32 home-progress: "○○으로 가는 중 · 14:20 출발 · 함께 4명". 머리글은 중간 정산(지금까지의 노고 보기)이 붙을 때 시안 문구로 바꾼다
-                // 중간 정산을 했으면 "· 15:25까지 정산함"을 붙인다(v41 HANDOFF '휴게소에서 다시 연 홈')
-                trip != null -> listOfNotNull(
-                    stringResource(R.string.effort_home_progress_sub, euro(trip.destName), clockText(trip.departedAt), trip.n),
-                    trip.settlements.lastOrNull()?.let { stringResource(R.string.effort_mid_settled, clockText(it.at)) },
-                ).joinToString(" · ") to stringResource(R.string.effort_home_progress_head)
+                // v3 5-3: "~까지 정산함" 표시는 없앰
+                trip != null -> stringResource(R.string.effort_home_progress_sub, euro(trip.destName), clockText(trip.departedAt), trip.n) to
+                    stringResource(R.string.effort_home_progress_head)
                 first -> stringResource(R.string.effort_home_first_sub) to stringResource(R.string.effort_home_first_head)
                 else -> stringResource(R.string.effort_home_sub) to stringResource(R.string.effort_home_head)
             }
@@ -135,13 +142,9 @@ internal fun EffortHomeScreen(
                 horizontalArrangement = Arrangement.spacedBy(if (narrow) 28.gpx else 64.gpx, Alignment.CenterHorizontally),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                // v32 home-progress: 가는 중이면 내 차 그림 = 중간 정산 버튼 + 아래 알약 "지금까지의 노고 보기 ›"(F27)
-                if (ui.midwayAvailable) Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.gpx)) {
-                    Box(Modifier.clickable(role = Role.Button, onClickLabel = stringResource(R.string.effort_mid_open), onClick = onMidway)) {
-                        CarIllustration(if (narrow) 150.gpx else 260.gpx)
-                    }
-                    CgPill(stringResource(R.string.effort_mid_open), onMidway, compact = narrow)
-                } else LogoSymbol(if (narrow) 180.gpx else 300.gpx, pin = if (trip?.arrived == true) stringResource(R.string.effort_home_arrived_pin) else null)
+                // v3 5-3: 가는 중이면 시동 버튼 = 중간 정산(F27). 아래 글자 없음, 접근성 이름 "지금까지의 노고 보기"
+                if (ui.midwayAvailable) StartButton(if (narrow) 200.gpx else 360.gpx, stringResource(R.string.effort_mid_open), onMidway)
+                else LogoSymbol(if (narrow) 180.gpx else 300.gpx, pin = if (trip?.arrived == true) stringResource(R.string.effort_home_arrived_pin) else null)
                 Column(Modifier.widthIn(max = 820.gpx), verticalArrangement = Arrangement.spacedBy(14.gpx)) {
                     Text(sub, style = if (narrow) t.labelM else t.bodyM, color = c.textTertiary)
                     Text(head, style = if (narrow) t.headlineS else t.headlineL, color = c.textPrimary)
@@ -279,6 +282,81 @@ internal fun LogoSymbol(size: Dp, pin: String? = null) {
         pin?.let {
             Text(it, Modifier.align(Alignment.TopEnd).background(c.textPrimary, RoundedCornerShape(24.gpx)).padding(horizontal = 20.gpx, vertical = 6.gpx),
                 style = Chagok.type.labelM.copy(fontWeight = FontWeight.Bold), color = c.surfaceCard)
+        }
+    }
+}
+
+/**
+ * 중간 정산 시동 버튼(v3 5-3, `components/mid-button`): Satin Silver 테 + 라임 대각 면 + 로고 심볼(58%).
+ * 운전대가 2초마다 한 바퀴(0.9초 돌고 1.1초 쉼), 라임 고리 두 겹이 1.2초 간격으로 퍼짐(2.4초), 누르면 0.985로 눌리고 면이 2 내려감.
+ * 움직임 줄이기면 돌기 · 고리를 멈춘다.
+ */
+@Composable
+internal fun StartButton(size: Dp, label: String, onClick: () -> Unit) {
+    val c = Chagok.colors
+    val reduce = rememberReduceMotion()
+    val narrow = size < 300.gpx
+    val bezel = if (narrow) 12.gpx else 22.gpx
+    val ringOut = if (narrow) 7.gpx else 10.gpx
+    val ringW = 3.gpx
+    val ringColor = if (c.isDark) Color(0xFFD9F77A) else Color(0xFF8FA930)
+    val src = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
+    val pressed by src.collectIsPressedAsState()
+    val press by animateFloatAsState(if (pressed) 1f else 0f, tween(220, easing = CubicBezierEasing(.32f, .72f, 0f, 1f)), label = "press")
+    val inf = rememberInfiniteTransition(label = "start")
+    val turn by inf.animateFloat(0f, 360f, infiniteRepeatable(keyframes {
+        durationMillis = 2000
+        0f at 0 using CubicBezierEasing(.65f, 0f, .35f, 1f)
+        360f at 900
+        360f at 2000
+    }), label = "wheel")
+    val ring by inf.animateFloat(0f, 1f, infiniteRepeatable(tween(2400, easing = LinearEasing)), label = "ring")
+    val lift = 2.gpx
+    Box(
+        Modifier.size(size + ringOut * 2 + ringW * 2)
+            .clickable(src, indication = null, role = Role.Button, onClick = onClick)
+            .semantics { contentDescription = label },
+        contentAlignment = Alignment.Center,
+    ) {
+        // 울림: 고리 두 겹(1.2초 차이) · 크기 0.96 → 1.14 · 투명도 0.85 → 0
+        if (!reduce) Canvas(Modifier.size(size + ringOut * 2)) {
+            val ease = CubicBezierEasing(.22f, .7f, .3f, 1f)
+            for (off in floatArrayOf(0f, .5f)) {
+                val e = ease.transform((ring + off) % 1f)
+                val r = this.size.minDimension / 2f * (.96f + .18f * e)
+                val a = .85f * (1f - e)
+                drawCircle(ringColor.copy(alpha = a * .25f), r, style = Stroke(ringW.toPx() * 5))   // 번짐
+                drawCircle(ringColor.copy(alpha = a), r, style = Stroke(ringW.toPx()))
+            }
+        }
+        // 테(Satin Silver, 위 → 아래)
+        Box(
+            Modifier.size(size).graphicsLayer { val s = 1f - .015f * press; scaleX = s; scaleY = s }
+                .shadow(26.gpx * (1f - .6f * press), CircleShape, ambientColor = Color(0x33242033), spotColor = Color(0x33242033))
+                .background(Brush.verticalGradient(0f to c.receiptPrinterHighlight, .18f to c.receiptPrinterMidtone, .7f to c.receiptPrinterShade, 1f to c.receiptPrinterMidtone), CircleShape)
+                .padding(bezel),
+            contentAlignment = Alignment.Center,
+        ) {
+            // 면: 대각 135° 라임 세 단(로고 lime-gradient와 같음) + 바깥 3px 테두리
+            Box(
+                Modifier.fillMaxSize().graphicsLayer { translationY = lift.toPx() * press }
+                    .shadow(12.gpx * (1f - .7f * press), CircleShape, ambientColor = Color(0x38242033), spotColor = Color(0x38242033))
+                    .background(Brush.linearGradient(listOf(Color(0xFFF5FFD2), Color(0xFFD9F77A), Color(0xFFA9C640))), CircleShape)
+                    .border(3.gpx, Color(0x38171B22), CircleShape),
+                contentAlignment = Alignment.Center,
+            ) {
+                // 심볼(viewBox 14 12 116 120): 손은 그대로, 운전대만 제 중심(95.4, 42.2)을 축으로 돎
+                Box(Modifier.fillMaxSize(.58f).padding(top = 0.gpx)) {
+                    androidx.compose.foundation.Image(
+                        androidx.compose.ui.res.painterResource(R.drawable.nogo_startbtn_wheel), null,
+                        Modifier.matchParentSize().graphicsLayer {
+                            transformOrigin = androidx.compose.ui.graphics.TransformOrigin(.702f, .252f)
+                            rotationZ = if (reduce) 0f else turn
+                        },
+                    )
+                    androidx.compose.foundation.Image(androidx.compose.ui.res.painterResource(R.drawable.nogo_startbtn_hand), null, Modifier.matchParentSize())
+                }
+            }
         }
     }
 }
