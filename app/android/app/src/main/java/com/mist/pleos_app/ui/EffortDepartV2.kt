@@ -114,7 +114,7 @@ internal fun EffortDepartScreen(
                         // v104 depart-people: 인원 알림이 떠 있는 동안 "확인 중", 좌석 센서를 못 읽으면 "인원 확인 필요"
                         if (askPayers || peopleOpen) stringResource(R.string.effort_depart_people_checking)
                         else if (seats <= 0) stringResource(R.string.effort_depart_people_check) else stringResource(R.string.effort_depart_people_pill, people),
-                        onClick = { peopleOpen = true }, compact = narrow,
+                        onClick = { peopleOpen = true }, compact = narrow, icon = CgIcon.Users,
                     )
                 },
             )

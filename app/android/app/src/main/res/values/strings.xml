@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- 화면 문구는 여기에. scripts/lint_copy.py가 PRD 5-3 표기·AC-C-8 금지 문구를 검사한다. -->
 <resources>
-    <string name="app_name">차곡</string>
+    <string name="app_name">노고</string>
 
     <!-- 공통 -->
     <string name="back">뒤로</string>
@@ -197,8 +197,6 @@
     <string name="effort_home_loading">준비하고 있어요</string>
     <string name="effort_home_sub">도착하면 운전한 만큼 계산해 알려 드릴게요</string>
     <string name="effort_home_head">오늘도 함께\n달려 볼까요?</string>
-    <string name="effort_home_first_sub">처음 오셨네요</string>
-    <string name="effort_home_first_head">함께 타고 떠나면\n운전한 만큼 세어 둘게요</string>
     <string name="effort_home_go">출발하기</string>
     <string name="effort_home_progress_sub">%1$s 가는 중 · %2$s 출발 · 함께 %3$d명</string>
     <string name="effort_home_progress_head">잠깐 멈췄네요\n여기까지 운전을 세어 볼까요?</string>

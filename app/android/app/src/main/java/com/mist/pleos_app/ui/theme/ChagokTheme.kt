@@ -67,6 +67,7 @@ data class ChagokColors(
     val selectionForeground: Color,
     val selectionBorder: Color,
     val selectionPressed: Color,
+    val selectionHalo: Color,          // 고른 목적지 카드 바깥 자리(아티팩트 --color-selection-halo)
     val switchTrackOn: Color,
     val switchThumbOn: Color,
     val switchTrackOff: Color,
@@ -128,6 +129,7 @@ private val DarkColors = ChagokColors(
     selectionForeground = Color(0xFF242033),
     selectionBorder = Color(0xFFD9F77A),
     selectionPressed = Color(0xFFCDEA6D),
+    selectionHalo = Color(0x40D9F77A),
     switchTrackOn = Color(0xFFCDEA6D),
     switchThumbOn = Color(0xFF242033),
     switchTrackOff = Color(0xFF8B849C),
@@ -185,6 +187,7 @@ private val LightColors = ChagokColors(
     selectionForeground = Color(0xFF242033),
     selectionBorder = Color(0xFFD9F77A),   // 11/9 명준: 주간 선택 테두리도 야간처럼 라임
     selectionPressed = Color(0xFFCDEA6D),
+    selectionHalo = Color(0x80D9F77A),
     switchTrackOn = Color(0xFFD9F77A),
     switchThumbOn = Color(0xFF242033),
     switchTrackOff = Color(0xFF797187),

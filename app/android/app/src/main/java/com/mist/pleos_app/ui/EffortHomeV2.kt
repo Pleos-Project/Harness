@@ -144,15 +144,13 @@ internal fun EffortHomeScreen(
                 },
             )
             // v87: 최근 기록은 홈에서 뺌. 인사 한 덩어리(심볼 + 작은 줄 → 큰 인사 → 버튼)를 가운데에 크게
-            val first = ui.recent.isEmpty() && trip == null
             val (sub, head) = when {
                 // 고르기 전에 나간 도착: "○○에 도착했어요 · 16:30" / "오늘 운전 영수증이 여기 있어요"
                 trip != null && trip.arrived -> stringResource(R.string.effort_home_arrived_sub, trip.destName, clockText(trip.arrivedAt ?: trip.departedAt)) to stringResource(R.string.effort_home_arrived_head)
                 // 가는 중(정차 때만 보임): "○○으로 가는 중 · 14:20 출발 · 함께 4명" / "잠깐 멈췄네요 여기까지 운전을 세어 볼까요?"
                 trip != null -> stringResource(R.string.effort_home_progress_sub, euro(trip.destName), clockText(trip.departedAt), trip.n) to
                     stringResource(R.string.effort_home_progress_head)
-                // 첫 사용: 작은 줄 없음(큰 인사가 설명)
-                first -> null to stringResource(R.string.effort_home_first_head)
+                // 첫 실행도 기록이 있을 때와 같은 인사(June 11/10)
                 else -> stringResource(R.string.effort_home_sub) to stringResource(R.string.effort_home_head)
             }
             val progress = ui.midwayAvailable

@@ -272,13 +272,16 @@ fun CgTitleBar(
 
 /** 알약(`components/pill`): 인원 "함께 4명 ⌄". */
 @Composable
-fun CgPill(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, compact: Boolean = false) {
+fun CgPill(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, compact: Boolean = false, icon: CgIcon? = null) {
     val c = Chagok.colors
     Row(
         modifier.height(if (compact) 56.gpx else 64.gpx).background(c.btnBasic, RoundedCornerShape(999.gpx))
-            .clickable(role = Role.Button, onClick = onClick).padding(horizontal = if (compact) 16.gpx else 22.gpx),
-        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.gpx),
+            .clickable(role = Role.Button, onClick = onClick)
+            .padding(start = if (icon != null) (if (compact) 12.gpx else 18.gpx) else (if (compact) 16.gpx else 22.gpx), end = if (compact) 16.gpx else 22.gpx),
+        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(if (icon != null) (if (compact) 8.gpx else 12.gpx) else 10.gpx),
     ) {
+        // 아티팩트 .ppl: 앞 아이콘 34(분할 26), 글자와 같은 색
+        icon?.let { CgIconMark(it, if (compact) 26.gpx else 34.gpx, c.textPrimary) }
         Text(text, style = if (compact) Chagok.type.bodyMB else Chagok.type.bodyL, color = c.textPrimary, maxLines = 1)
         CgIconMark(CgIcon.Chevron, 12.gpx, c.textTertiary)
     }
@@ -315,9 +318,11 @@ fun CgSearchField(query: String, hint: String, clearLabel: String, onQuery: (Str
                 .height(if (compact) 88.gpx else 100.gpx)
                 .shadow(6.gpx, shape).background(c.fieldBackground, shape)
                 .border(if (active) 3.gpx else 2.gpx, if (active) c.fieldCaret else c.fieldBorder, shape)
-                .padding(start = if (compact) 26.gpx else 32.gpx, end = 14.gpx),
-            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.gpx),
+                .padding(start = if (compact) 26.gpx else 36.gpx, end = if (compact) 14.gpx else 18.gpx),
+            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(20.gpx),
         ) {
+            // 아티팩트 .hsearch: 돋보기 40(분할 34) · textTertiary
+            CgIconMark(CgIcon.Search, if (compact) 34.gpx else 40.gpx, c.textTertiary)
             Box(Modifier.weight(1f)) {
                 if (query.isEmpty()) Text(hint, style = Chagok.type.bodyL.copy(fontWeight = FontWeight.Normal), color = c.textTertiary)
                 BasicTextField(
@@ -328,12 +333,16 @@ fun CgSearchField(query: String, hint: String, clearLabel: String, onQuery: (Str
                 )
             }
             if (active) CgTextButton(clearLabel, onClear, compact = compact)
+            // 비어 있을 때만 음성 원 64(마이크 32). 음성 입력은 아직 없어 누르는 동작은 두지 않는다
+            else Box(Modifier.size(if (compact) 56.gpx else 64.gpx).background(c.btnBasic, CircleShape), contentAlignment = Alignment.Center) {
+                CgIconMark(CgIcon.Mic, if (compact) 28.gpx else 32.gpx, c.textPrimary)
+            }
         }
     }
 }
 
 // ------------------------------------------------------------ dest-card · record-card · preview-panel
-/** 목적지 카드(`components/dest-card`): 바깥 자리 면 8 + 안쪽 카드. 고르면 바깥이 진해진다. */
+/** 목적지 카드(`components/dest-card`): 바깥 자리 면 8 + 안쪽 카드. 고르면 바깥이 라임 halo(아티팩트 .hcard.on), 안쪽은 라임 면. */
 @Composable
 fun CgDestCard(tag: String, name: String, meta: String?, selected: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier, compact: Boolean = false, icon: CgIcon? = null) {
     val c = Chagok.colors
@@ -341,7 +350,7 @@ fun CgDestCard(tag: String, name: String, meta: String?, selected: Boolean, onCl
     val pressed by src.collectIsPressedAsState()
     val inner = RoundedCornerShape(32.gpx)
     Box(
-        modifier.height(if (compact) 200.gpx else 320.gpx).background(if (selected) c.textPrimary else c.placeholder, RoundedCornerShape(40.gpx))
+        modifier.height(if (compact) 200.gpx else 320.gpx).background(if (selected) c.selectionHalo else c.placeholder, RoundedCornerShape(40.gpx))
             .clickable(src, indication = null, role = Role.Button, onClick = onClick).padding(8.gpx),
     ) {
         Column(
