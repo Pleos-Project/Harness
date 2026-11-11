@@ -77,6 +77,7 @@ import com.mist.pleos_app.effort.clockText
 import com.mist.pleos_app.effort.dayText
 import com.mist.pleos_app.effort.euro
 import com.mist.pleos_app.ui.components.CgBottomSheet
+import com.mist.pleos_app.ui.components.CgSheetButtons
 import com.mist.pleos_app.ui.components.CgButton
 import com.mist.pleos_app.ui.components.CgButtonKind
 import com.mist.pleos_app.ui.components.CgSize
@@ -217,15 +218,16 @@ internal fun EffortHomeScreen(
         // 그만두기 확인(v32 home-progress-quit, 딤 없음): 그만두면 기록 없이 출발이 닫히고 홈 기본으로
         if (quit && trip != null && !trip.arrived) {
             CgBottomSheet(
-                Modifier.align(Alignment.BottomCenter).then(if (narrow) Modifier.fillMaxWidth() else Modifier.width(760.gpx)), compact = narrow,
+                Modifier.align(Alignment.BottomCenter).then(if (narrow) Modifier.fillMaxWidth() else Modifier.width(760.gpx)), compact = narrow, confirm = true,
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(8.gpx)) {
                     Text(stringResource(R.string.effort_quit_title), style = if (narrow) t.bodyL else t.titleM, color = c.textPrimary)
                     Text(stringResource(R.string.effort_quit_sub), style = t.bodyM, color = c.textSecondary)
                 }
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.gpx)) {
-                    CgButton(stringResource(R.string.effort_quit_keep), { quit = false }, Modifier.weight(1f), kind = CgButtonKind.Basic)
-                    CgButton(stringResource(R.string.effort_discard), { quit = false; onDiscard() }, Modifier.weight(1f))
+                // .ibts: 오른쪽 정렬 · 내용 폭 · [그만두기]는 삭제 색(fill danger)
+                CgSheetButtons(narrow) { sz ->
+                    CgButton(stringResource(R.string.effort_quit_keep), { quit = false }, kind = CgButtonKind.Basic, size = sz)
+                    CgButton(stringResource(R.string.effort_discard), { quit = false; onDiscard() }, kind = CgButtonKind.Danger, size = sz)
                 }
             }
         }

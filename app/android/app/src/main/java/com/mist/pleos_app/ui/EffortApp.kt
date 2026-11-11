@@ -2,6 +2,7 @@ package com.mist.pleos_app.ui
 
 import com.mist.pleos_app.ui.components.CgSize
 import com.mist.pleos_app.ui.components.CgBottomSheet
+import com.mist.pleos_app.ui.components.CgSheetButtons
 import com.mist.pleos_app.ui.components.CgSwitch
 import com.mist.pleos_app.ui.components.CgSegmented
 import com.mist.pleos_app.ui.components.CgIcon
@@ -163,11 +164,13 @@ private fun EffortFrame(demoValues: Boolean, driving: Boolean, toast: @Composabl
     BoxWithConstraints(Modifier.fillMaxSize().background(Chagok.colors.bgPrimary)) {
         val narrow = with(LocalDensity.current) { maxWidth.toPx() } <= NARROW_MAX_PX
         CompositionLocalProvider(LocalNarrow provides narrow) {
-            if (driving) DrivingCover() else Box(Modifier.fillMaxSize().padding(horizontal = 40.gpx, vertical = 32.gpx)) {
+            // 아티팩트 .pg · .home: 사방 40
+            if (driving) DrivingCover() else Box(Modifier.fillMaxSize().padding(40.gpx)) {
                 content()
                 Box(Modifier.align(Alignment.TopCenter)) { toast() }
-                if (demoValues) DemoMark(stringResource(R.string.demo_values), Modifier.align(Alignment.BottomEnd))
             }
+            // .demotag: 창 기준 오른쪽 24 · 아래 16, 모든 화면(주행 중 가림 포함) 위
+            if (demoValues) DemoMark(stringResource(R.string.demo_values), Modifier.align(Alignment.BottomEnd).padding(end = 24.gpx, bottom = 16.gpx))
         }
     }
 }
@@ -277,14 +280,14 @@ private fun EffortSettings(
         }
         // 기록 초기화 확인(settings-wipe): 짧은 하단 시트. 지우면 홈이 첫 사용 모양으로
         if (wipe) {
-            CgBottomSheet(Modifier.align(Alignment.BottomCenter).then(if (narrow) Modifier.fillMaxWidth() else Modifier.width(760.gpx)), compact = narrow) {
+            CgBottomSheet(Modifier.align(Alignment.BottomCenter).then(if (narrow) Modifier.fillMaxWidth() else Modifier.width(760.gpx)), compact = narrow, confirm = true) {
                 Column(verticalArrangement = Arrangement.spacedBy(8.gpx)) {
                     Text(stringResource(R.string.effort_settings_wipe_title), style = if (narrow) t.bodyL else t.titleM, color = c.textPrimary)
                     Text(stringResource(R.string.effort_settings_wipe_body), style = t.bodyM, color = c.textSecondary)
                 }
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.gpx)) {
-                    CgButton(stringResource(R.string.cancel), { wipe = false }, Modifier.weight(1f), kind = CgButtonKind.Basic)
-                    CgButton(stringResource(R.string.settings_reset_confirm), { onReset(); wipe = false }, Modifier.weight(1f))
+                CgSheetButtons(narrow) { sz ->
+                    CgButton(stringResource(R.string.cancel), { wipe = false }, kind = CgButtonKind.Basic, size = sz)
+                    CgButton(stringResource(R.string.settings_reset_confirm), { onReset(); wipe = false }, kind = CgButtonKind.Danger, size = sz)
                 }
             }
         }

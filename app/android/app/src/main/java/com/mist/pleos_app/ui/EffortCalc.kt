@@ -450,7 +450,7 @@ private fun DrawScope.drawFx(
             val w = layout.size.width + 48 * u; val h = layout.size.height + 20 * u
             scale(q, q, Offset(90 * u + w / 2, 110 * u + h / 2)) {
                 drawRoundRect(face, Offset(90 * u, 110 * u), Size(w, h), androidx.compose.ui.geometry.CornerRadius(20 * u))
-                drawRoundRect(c.lineStrong, Offset(90 * u, 110 * u), Size(w, h), androidx.compose.ui.geometry.CornerRadius(20 * u),
+                drawRoundRect(c.borderStrong, Offset(90 * u, 110 * u), Size(w, h), androidx.compose.ui.geometry.CornerRadius(20 * u),
                     style = Stroke(3 * u, pathEffect = PathEffect.dashPathEffect(floatArrayOf(8 * u, 6 * u))))
                 drawText(layout, topLeft = Offset(114 * u, 120 * u))
             }

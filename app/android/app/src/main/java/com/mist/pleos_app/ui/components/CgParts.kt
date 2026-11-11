@@ -68,6 +68,7 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -185,11 +186,15 @@ fun CgIconButton(label: String, icon: CgIcon, onClick: () -> Unit, modifier: Mod
     val s = if (small) 64 else 80
     Box(
         modifier.size(s.gpx)
-            .background(if (pressed) c.btnBasicPressed else if (plain) Color.Transparent else c.btnBasic, RoundedCornerShape((if (small) 16 else 20).gpx))
+            .background(if (pressed) (if (plain) c.btnTertiaryPressed else c.btnBasicPressed) else if (plain) Color.Transparent else c.btnBasic, RoundedCornerShape((if (small) 16 else 20).gpx))
             .clickable(src, indication = null, enabled = enabled, role = Role.Button, onClick = onClick)
             .semantics { contentDescription = label },
         contentAlignment = Alignment.Center,
-    ) { CgIconMark(icon, (if (small) 44 else 56).gpx * (if (icon == CgIcon.Placeholder) .7f else 1f), if (enabled) c.textPrimary else c.textTertiary) }
+    ) {
+        // Pleos 선 아이콘(뒤로 · + · −)은 56(작으면 44), Phosphor 벡터는 아티팩트 .btn.ib .ico.pi 48(작으면 40)
+        val px = if (icon.res != null) (if (small) 40 else 48) else (if (small) 44 else 56)
+        CgIconMark(icon, px.gpx * (if (icon == CgIcon.Placeholder) .7f else 1f), if (enabled) c.textPrimary else c.textTertiary)
+    }
 }
 
 // ------------------------------------------------------------ cta · text-button
@@ -201,12 +206,11 @@ fun CgCta(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, comp
     val pressed by src.collectIsPressedAsState()
     val on = enabled && !busy
     val shape = RoundedCornerShape(999.gpx)
-    val fg = if (on) c.btnFilledText else c.textTertiary
+    val fg = if (on) c.btnFilledText else c.btnDisabledText
     Row(
         modifier.graphicsLayer { val k = if (pressed && on) .98f else 1f; scaleX = k; scaleY = k }
             .height(if (hero) (if (compact) 104.gpx else 124.gpx) else if (compact) 80.gpx else 100.gpx)
-            .background(if (!on) c.btnDisabled else if (pressed) c.btnFilledPressed else c.btnFilled, shape)
-            .then(if (!on) Modifier.border(2.gpx, c.line, shape) else Modifier)
+            .background(if (!on) c.btnDisabled else if (pressed) c.btnFilledPressed else c.btnFilled, shape)   // 꺼짐도 테두리 없음(.cta.off)
             .clickable(src, indication = null, enabled = on, role = Role.Button, onClick = onClick)
             .padding(start = if (hero) (if (compact) 44.gpx else 52.gpx) else if (compact) 28.gpx else 40.gpx, end = if (hero) (if (compact) 12.gpx else 16.gpx) else if (compact) 8.gpx else 12.gpx),
         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(if (hero) 26.gpx else 20.gpx),
@@ -215,7 +219,7 @@ fun CgCta(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, comp
         val ts = if (hero) androidx.compose.ui.text.TextStyle(fontSize = (if (compact) 34 else 40).gsp, lineHeight = (if (compact) 44 else 52).gsp, fontWeight = FontWeight.Bold)
         else if (compact) Chagok.type.bodyL else Chagok.type.titleS
         Text(text, Modifier.then(if (fill) Modifier.weight(1f) else Modifier), style = ts, color = fg, maxLines = 1)
-        Box(Modifier.size(if (hero) (if (compact) 80.gpx else 92.gpx) else if (compact) 60.gpx else 76.gpx).background(fg.copy(alpha = .15f), CircleShape), contentAlignment = Alignment.Center) {
+        Box(Modifier.size(if (hero) (if (compact) 80.gpx else 92.gpx) else if (compact) 60.gpx else 76.gpx).background(if (on) Color(0x14242033) else Color.Transparent, CircleShape), contentAlignment = Alignment.Center) {
             CgIconMark(CgIcon.Arrow, (if (hero) (if (compact) 42 else 48) else if (compact) 32 else 40).gpx, fg)
         }
     }
@@ -228,12 +232,12 @@ fun CgTextButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifie
     val src = remember { MutableInteractionSource() }
     val pressed by src.collectIsPressedAsState()
     Box(
-        modifier.heightIn(min = if (compact) 64.gpx else 72.gpx).background(if (pressed) c.btnBasicPressed else Color.Transparent, RoundedCornerShape(36.gpx))
+        modifier.heightIn(min = if (compact) 64.gpx else 72.gpx).background(if (pressed) c.btnTertiaryPressed else Color.Transparent, RoundedCornerShape(36.gpx))
             .clickable(src, indication = null, role = Role.Button, onClick = onClick).padding(horizontal = if (compact) 12.gpx else 22.gpx),
         contentAlignment = Alignment.Center,
     ) {
         Text(text, style = (if (compact) Chagok.type.bodyL else Chagok.type.titleS).copy(fontWeight = if (primary) FontWeight.ExtraBold else FontWeight.Bold),
-            color = if (primary) c.textPrimary else c.textTertiary, maxLines = 1)
+            color = if (primary) c.textPrimary else c.btnTertiaryText, maxLines = 1)
     }
 }
 
@@ -262,8 +266,12 @@ fun CgTitleBar(
             trailing?.let { Box(Modifier.align(Alignment.CenterEnd)) { it() } }
         } else {
             Row(Modifier.fillMaxSize(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(24.gpx)) {
-                leading?.invoke()
-                Text(title, Modifier.weight(1f), style = titleStyle ?: (if (compact) t.titleL else t.headlineS), color = Chagok.colors.textPrimary, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                // 아티팩트 .hd: 뒤로가 있으면 Depth 제목 .ttl(Title L · 분할 Title M), 없으면 큰 이름 .name(Headline S · 분할 Title L).
+                // 면 없는 뒤로 버튼은 왼쪽으로 12 당긴다(.hd > .btn.ib.plain:first-child)
+                val pull = 12.gpx
+                leading?.let { Box(Modifier.layout { m, cs -> val pl = m.measure(cs); val d = pull.roundToPx(); layout(pl.width - d, pl.height) { pl.place(-d, 0) } }) { it() } }
+                val auto = if (leading != null) (if (compact) t.titleM else t.titleL) else (if (compact) t.titleL else t.headlineS)
+                Text(title, Modifier.weight(1f), style = titleStyle ?: auto, color = Chagok.colors.textPrimary, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 trailing?.invoke()
             }
         }
@@ -436,7 +444,7 @@ private fun PreviewPanelBody(
     val t = Chagok.type
     val shape = RoundedCornerShape(40.gpx)
     if (state == CgPreviewState.Empty || name == null) {
-        Box(modifier.heightIn(min = 240.gpx).cgDashed(40.gpx, c.lineStrong).padding(28.gpx), contentAlignment = Alignment.Center) {
+        Box(modifier.heightIn(min = 240.gpx).cgDashed(40.gpx, c.borderStrong).padding(28.gpx), contentAlignment = Alignment.Center) {
             Text(emptyText, style = t.bodyL.copy(fontWeight = FontWeight.Normal), color = c.textTertiary)
         }
         return
@@ -504,13 +512,14 @@ fun CgPeopleAlert(title: String, sub: String?, modifier: Modifier = Modifier, co
         modifier.then(if (compact) Modifier.fillMaxWidth() else Modifier.width(1040.gpx))
             .height(if (compact) 88.gpx else 96.gpx)
             .graphicsLayer { alpha = drop.value; translationY = -(1f - drop.value) * 16f * density; val k = .98f + .02f * drop.value; scaleX = k; scaleY = k }
-            .shadow(16.gpx, shape).background(c.surfaceCard, shape).border(1.gpx, c.lineStrong, shape)
-            .padding(start = if (compact) 26.gpx else 40.gpx, end = 10.gpx),
-        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(if (compact) 12.gpx else 20.gpx),
+            // 아티팩트 .pbar: 면 surface-notification · 테두리 주간 border-subtle / 야간 없음 · 여백 0 20 0 48 · 사이 28(분할 0 10 0 26 · 12)
+            .shadow(16.gpx, shape).background(c.surfaceNotification, shape).border(1.gpx, c.sheetBorder, shape)
+            .padding(start = if (compact) 26.gpx else 48.gpx, end = if (compact) 10.gpx else 20.gpx),
+        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(if (compact) 12.gpx else 28.gpx),
     ) {
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.gpx)) {
-            Text(title, style = if (compact) Chagok.type.bodyL else Chagok.type.titleM.copy(fontWeight = FontWeight.ExtraBold), color = c.textPrimary, maxLines = 1)
-            if (!compact && sub != null) Text(sub, style = Chagok.type.labelS, color = c.textTertiary, maxLines = 1)
+            Text(title, style = if (compact) Chagok.type.titleS else Chagok.type.titleM.copy(fontWeight = FontWeight.ExtraBold), color = c.textPrimary, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            if (!compact && sub != null) Text(sub, style = Chagok.type.labelS, color = c.textTertiary, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
         content()
     }
@@ -521,21 +530,36 @@ fun CgPeopleAlert(title: String, sub: String?, modifier: Modifier = Modifier, co
 fun CgDivider() { Box(Modifier.width(2.gpx).height(56.gpx).background(Chagok.colors.line)) }
 
 // ------------------------------------------------------------ bottom-sheet
-/** 짧은 하단 시트(`components/bottom-sheet`): 딤·끌기 없음, 0.38초 (.2,.7,.2,1) 아래 115% → 제자리. 위에 손잡이. */
+/**
+ * 짧은 하단 시트(`components/bottom-sheet`): 딤·끌기 없음, 0.38초 (.2,.7,.2,1) 아래 115% → 제자리. 위에 손잡이.
+ * 면 surface-modal · 테두리 주간 border-subtle / 야간 없음(아티팩트 1091·1093).
+ * confirm = 확인 시트 .isheet(그만두기 · 기록 지우기): 모서리 40 · 여백 16 40 24 · 사이 8(분할 14 26 18).
+ * 아니면 쉰 시간 시트 .rsheet: 모서리 32 · 여백 16 40 36 · 사이 20(분할 14 24 24 · 14).
+ */
 @Composable
-fun CgBottomSheet(modifier: Modifier = Modifier, compact: Boolean = false, delayMs: Long = 0, content: @Composable ColumnScope.() -> Unit) {
+fun CgBottomSheet(modifier: Modifier = Modifier, compact: Boolean = false, delayMs: Long = 0, confirm: Boolean = false, content: @Composable ColumnScope.() -> Unit) {
     val c = Chagok.colors
     val y = remember { Animatable(1.15f) }
     LaunchedEffect(Unit) { delay(delayMs); y.animateTo(0f, tween(380, easing = EaseRise)) }
-    val shape = RoundedCornerShape(32.gpx)
+    val shape = RoundedCornerShape((if (confirm) 40 else 32).gpx)
+    val side = if (compact) (if (confirm) 26 else 24) else 40
+    val bottom = if (compact) (if (confirm) 18 else 24) else (if (confirm) 24 else 36)
     Column(
         modifier.graphicsLayer { translationY = y.value * size.height }
-            .shadow(20.gpx, shape).background(c.surfaceCard, shape).border(2.gpx, c.lineStrong, shape)
-            .padding(start = if (compact) 24.gpx else 40.gpx, end = if (compact) 24.gpx else 40.gpx, top = if (compact) 14.gpx else 16.gpx, bottom = if (compact) 24.gpx else 32.gpx),
-        verticalArrangement = Arrangement.spacedBy(if (compact) 14.gpx else 16.gpx),
+            .shadow(20.gpx, shape).background(c.surfaceModal, shape).border(2.gpx, c.sheetBorder, shape)
+            .padding(start = side.gpx, end = side.gpx, top = if (compact) 14.gpx else 16.gpx, bottom = bottom.gpx),
+        verticalArrangement = Arrangement.spacedBy((if (confirm) 8 else if (compact) 14 else 20).gpx),
     ) {
-        Box(Modifier.align(Alignment.CenterHorizontally).width(80.gpx).height(6.gpx).background(c.lineStrong, RoundedCornerShape(3.gpx)))
+        Box(Modifier.align(Alignment.CenterHorizontally).padding(bottom = if (confirm) 8.gpx else 0.gpx).width(80.gpx).height(6.gpx).background(c.lineStrong, RoundedCornerShape(3.gpx)))
         content()
+    }
+}
+
+/** 확인 시트 버튼 줄(.isheet .ibts): 오른쪽 정렬 · 내용 폭 · 사이 12 · 위 8. 분할은 S 64. */
+@Composable
+fun CgSheetButtons(compact: Boolean, content: @Composable RowScope.(CgSize) -> Unit) {
+    Row(Modifier.fillMaxWidth().padding(top = 8.gpx), horizontalArrangement = Arrangement.spacedBy(12.gpx, Alignment.End)) {
+        content(if (compact) CgSize.S else CgSize.M)
     }
 }
 
@@ -588,7 +612,7 @@ fun CgBasisList(lines: List<String>, compact: Boolean = false, underlineDelay: I
                             drawRect(c.textPrimary, Offset(x0, y), Size((x1 - x0) * p, 2f.gpxPx(this)))
                         }
                     },
-                    style = style, color = if (i == 0) c.textSecondary else c.textTertiary, onTextLayout = { layout = it },
+                    style = style, color = c.textSecondary, onTextLayout = { layout = it },   // .why 모든 줄 txt2(별표만 txt3)
                 )
             }
         }
@@ -738,7 +762,7 @@ fun CgReceiptRow(
         }
         if (expanded && basis != null) {
             Column(
-                Modifier.fillMaxWidth().padding(bottom = 10.gpx).background(c.placeholder, RoundedCornerShape(16.gpx)).padding(horizontal = 20.gpx, vertical = 14.gpx),
+                Modifier.fillMaxWidth().padding(bottom = 10.gpx).background(c.receiptDetailBackground, RoundedCornerShape(16.gpx)).padding(horizontal = 20.gpx, vertical = 14.gpx),
                 verticalArrangement = Arrangement.spacedBy(4.gpx),
             ) {
                 extra?.let { Text(it, style = if (compact) t.bodyMB else t.bodyL, color = c.textPrimary) }
@@ -890,8 +914,8 @@ private fun Float.gpxPx(d: androidx.compose.ui.unit.Density) = this * d.density
 fun CgDoubleRule(modifier: Modifier = Modifier) {
     val c = Chagok.colors
     Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(4.gpx)) {
-        Box(Modifier.fillMaxWidth().height(2.gpx).background(c.textPrimary))
-        Box(Modifier.fillMaxWidth().height(2.gpx).background(c.textPrimary))
+        Box(Modifier.fillMaxWidth().height(2.gpx).background(c.textSecondary))   // .paper .rule2 = text-secondary
+        Box(Modifier.fillMaxWidth().height(2.gpx).background(c.textSecondary))
     }
 }
 
@@ -933,17 +957,20 @@ fun CgBarcode(code: String, modifier: Modifier = Modifier) {
                 x += 23f * unit
             }
         }
-        Text(code, style = Chagok.type.labelM.copy(letterSpacing = Chagok.type.labelM.fontSize * 0.1f), color = c.textPrimary)
+        // 바코드 번호: 400 26/30 · 자간 .1em · text-secondary
+        Text(code, style = TextStyle(fontSize = 26.gsp, lineHeight = 30.gsp, fontWeight = FontWeight.Normal, letterSpacing = 26.gsp * 0.1f), color = c.textSecondary)
     }
 }
 
 // ------------------------------------------------------------ loading · empty · notice
-/** 기다림 회색 막대(1.1초 깜빡, 투명 .45 ↔ 1). */
+/** 기다림 막대: skeleton-base ↔ highlight 1.1초 번갈아(모서리 11). 사진 위(ChagokOnPhoto)는 #FFFFFF33 고정. */
 @Composable
-fun CgSkeleton(modifier: Modifier) {
+fun CgSkeleton(modifier: Modifier, onPhoto: Boolean = false) {
+    val c = Chagok.colors
+    if (onPhoto) { Box(modifier.background(c.placeholderStrong, RoundedCornerShape(11.gpx))); return }
     val inf = rememberInfiniteTransition(label = "skel")
-    val a by inf.animateFloat(.45f, 1f, infiniteRepeatable(tween(1100), RepeatMode.Reverse), label = "a")
-    Box(modifier.graphicsLayer { alpha = a }.background(Chagok.colors.placeholderStrong, RoundedCornerShape(8.gpx)))
+    val a by inf.animateFloat(0f, 1f, infiniteRepeatable(tween(1100), RepeatMode.Reverse), label = "a")
+    Box(modifier.drawBehind { drawRoundRect(androidx.compose.ui.graphics.lerp(c.skeletonBase, c.skeletonHighlight, a), cornerRadius = CornerRadius(11f * density)) })
 }
 
 /** 기다림 점 세 개(1초, 0.15초씩 지연). */
@@ -953,7 +980,7 @@ fun CgLoadingDots(color: Color = Chagok.colors.textSecondary) {
     Row(horizontalArrangement = Arrangement.spacedBy(6.gpx), verticalAlignment = Alignment.CenterVertically) {
         repeat(3) { i ->
             val a by inf.animateFloat(.25f, 1f, infiniteRepeatable(keyframes { durationMillis = 1000; .25f at 0; 1f at 300 + i * 150; .25f at 1000 }), label = "d$i")
-            Box(Modifier.size(10.gpx).graphicsLayer { alpha = a }.background(color, CircleShape))
+            Box(Modifier.size(8.gpx).graphicsLayer { alpha = a }.background(color, CircleShape))
         }
     }
 }
@@ -963,7 +990,7 @@ fun CgLoadingDots(color: Color = Chagok.colors.textSecondary) {
 fun CgEmpty(title: String, hint: String, modifier: Modifier = Modifier) {
     val c = Chagok.colors
     Column(
-        modifier.cgDashed(32.gpx, c.lineStrong).padding(horizontal = 32.gpx),
+        modifier.cgDashed(32.gpx, c.borderStrong).padding(horizontal = 32.gpx),
         horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.gpx, Alignment.CenterVertically),
     ) {
         Text(title, style = Chagok.type.titleS, color = c.textPrimary, textAlign = TextAlign.Center)
@@ -971,12 +998,18 @@ fun CgEmpty(title: String, hint: String, modifier: Modifier = Modifier) {
     }
 }
 
-/** 알약 배너(`components/notice`): 에러·안내 한 줄. */
+/** 알약 배너(`components/notice`): 에러·안내 한 줄. warn = 경고색(.offl · .notice.warn) + 앞 아이콘. */
 @Composable
-fun CgBanner(text: String, modifier: Modifier = Modifier) {
+fun CgBanner(text: String, modifier: Modifier = Modifier, warn: Boolean = false, icon: CgIcon? = null) {
     val c = Chagok.colors
-    Box(modifier.fillMaxWidth().background(c.btnBasic, RoundedCornerShape(999.gpx)).padding(horizontal = 28.gpx, vertical = 16.gpx)) {
-        Text(text, style = Chagok.type.bodyM, color = c.textSecondary)
+    val bg = if (warn) c.statusWarningBackground else c.btnBasic
+    val fg = if (warn) c.statusWarningForeground else c.textSecondary
+    Row(
+        modifier.fillMaxWidth().heightIn(min = 64.gpx).background(bg, RoundedCornerShape(999.gpx)).padding(horizontal = 28.gpx, vertical = 12.gpx),
+        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.gpx),
+    ) {
+        icon?.let { CgIconMark(it, 32.gpx, fg) }
+        Text(text, style = if (warn) Chagok.type.bodyMB else Chagok.type.bodyM, color = fg)
     }
 }
 
@@ -1001,12 +1034,12 @@ fun CgSegmented(options: List<String>, selected: Int, onSelect: (Int) -> Unit, m
             val on = i == selected
             Box(
                 Modifier.then(if (compact) Modifier.weight(1f) else Modifier).height(if (compact) 64.gpx else 76.gpx)
-                    .then(if (on) Modifier.shadow(2.gpx, CircleShape).background(c.selectionBackground, CircleShape).border(2.gpx, c.selectionBorder, CircleShape) else Modifier)
+                    .then(if (on) Modifier.shadow(6.gpx, CircleShape).background(c.selectionBackground, CircleShape).border(2.gpx, c.selectionBorder, CircleShape) else Modifier)
                     .clickable(role = Role.RadioButton) { onSelect(i) }.padding(horizontal = if (compact) 12.gpx else 30.gpx),
                 contentAlignment = Alignment.Center,
             ) {
                 val st = if (compact) Chagok.type.bodyM else Chagok.type.bodyL
-                Text(label, style = st.copy(fontWeight = if (on) FontWeight.Bold else FontWeight.Normal), color = if (on) c.selectionForeground else c.textTertiary, maxLines = 1)
+                Text(label, style = st.copy(fontWeight = FontWeight.Bold), color = if (on) c.selectionForeground else c.textTertiary, maxLines = 1)   // .sg body-l 700 양쪽
             }
         }
     }
@@ -1071,10 +1104,11 @@ fun CgBell(label: String, dot: Boolean, open: Boolean, onClick: () -> Unit, comp
                 // cg-ring-bell: 15% 14° · 30% -12° · 45% 8° · 60% -5° · 75% 2° · 100% 0, 기준점 50% 12%
                 transformOrigin = androidx.compose.ui.graphics.TransformOrigin(.5f, .12f)
                 rotationZ = bellAngle(ring.value)
-            }) { CgIconMark(if (dot) CgIcon.BellRinging else CgIcon.Bell, 56.gpx, c.textPrimary) }
+            }) { CgIconMark(if (dot) CgIcon.BellRinging else CgIcon.Bell, 48.gpx, c.textPrimary) }   // .btn.ib .ico.pi 48
         }
         if (dot) Box(
-            Modifier.align(Alignment.TopEnd).padding(top = if (compact) 12.gpx else 14.gpx, end = if (compact) 14.gpx else 16.gpx)
+            // 점 18은 top 14 · right 16, 링 4는 바깥(box-shadow)이라 링 포함 상자는 4씩 바깥으로
+            Modifier.align(Alignment.TopEnd).padding(top = if (compact) 8.gpx else 10.gpx, end = if (compact) 10.gpx else 12.gpx)
                 .graphicsLayer { scaleX = pop.value; scaleY = pop.value }
                 .size(if (compact) 24.gpx else 26.gpx).background(c.bgPrimary, CircleShape).padding(4.gpx)
                 .background(c.notificationDot, CircleShape),
@@ -1105,9 +1139,11 @@ fun BoxScope.CgNotiPanel(
     val outer = RoundedCornerShape(if (compact) 34.gpx else 40.gpx)
     val inner = RoundedCornerShape(if (compact) 28.gpx else 32.gpx)
     val w = if (compact) 520.gpx else 600.gpx
-    val caretRight = 120.gpx
+    // 꼬리 가운데 = 창 오른쪽에서 132(종 가운데: 설정 80 + 사이 12 + 종 반 40). .ncaret right 120 + 폭 24의 반
+    val caretRight = 132.gpx
+    // 아티팩트 .npanel top 132 · right 40은 화면 기준. 이 창은 바깥 여백 40 안에 있으므로 위 92 · 오른쪽 0
     Box(
-        Modifier.align(Alignment.TopEnd).padding(top = if (compact) 128.gpx else 132.gpx, end = if (compact) 32.gpx else 40.gpx).width(w)
+        Modifier.align(Alignment.TopEnd).padding(top = 92.gpx).width(w)
             .graphicsLayer {
                 alpha = k
                 // 펼침: 위 -14 · 세로 .78 · 가로 .96 → 제자리(기준점 = 꼬리) / 접기: 위 -10 · 세로 .9
@@ -1120,12 +1156,13 @@ fun BoxScope.CgNotiPanel(
             .clickable(remember { MutableInteractionSource() }, indication = null) {},   // 창 안을 눌러도 접히지 않게
     ) {
         // 꼬리(24 마름모, 종 가운데)
+        val rim = if (c.isDark) Color(0x0DFFFFFF) else c.surfaceRaised.copy(alpha = .62f)   // 야간 .npanel 바깥 테 #FFFFFF0D
         Box(Modifier.align(Alignment.TopEnd).offset(x = -caretRight + 12.gpx, y = (-9).gpx).size(24.gpx).graphicsLayer { rotationZ = 45f }
-            .background(c.surfaceRaised.copy(alpha = .62f), RoundedCornerShape(5.gpx)))
+            .background(rim, RoundedCornerShape(5.gpx)))
         Column(
             Modifier.fillMaxWidth()
                 .shadow(28.gpx, outer, ambientColor = if (c.isDark) Color(0xA6000000) else Color(0x4D242033), spotColor = if (c.isDark) Color(0x66000000) else Color(0x24242033))
-                .background(c.surfaceRaised.copy(alpha = .62f), outer)
+                .background(rim, outer)
                 .border(1.gpx, if (c.isDark) Color(0x17FFFFFF) else Color(0x0F242033), outer)
                 .padding(if (compact) 6.gpx else 8.gpx),
         ) {
