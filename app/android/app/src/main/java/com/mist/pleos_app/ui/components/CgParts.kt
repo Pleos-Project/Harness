@@ -219,7 +219,9 @@ fun CgCta(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, comp
         val ts = if (hero) androidx.compose.ui.text.TextStyle(fontSize = (if (compact) 34 else 40).gsp, lineHeight = (if (compact) 44 else 52).gsp, fontWeight = FontWeight.Bold)
         else if (compact) Chagok.type.bodyL else Chagok.type.titleS
         Text(text, Modifier.then(if (fill) Modifier.weight(1f) else Modifier), style = ts, color = fg, maxLines = 1)
-        Box(Modifier.size(if (hero) (if (compact) 80.gpx else 92.gpx) else if (compact) 60.gpx else 76.gpx).background(if (on) Color(0x14242033) else Color.Transparent, CircleShape), contentAlignment = Alignment.Center) {
+        // busy("내비로 보내는 중") = 화살표 원 대신 점 세 개(.cta.busy .dots)
+        if (busy) Box(Modifier.padding(end = 20.gpx)) { CgLoadingDots(fg) }
+        else Box(Modifier.size(if (hero) (if (compact) 80.gpx else 92.gpx) else if (compact) 60.gpx else 76.gpx).background(if (on) Color(0x14242033) else Color.Transparent, CircleShape), contentAlignment = Alignment.Center) {
             CgIconMark(CgIcon.Arrow, (if (hero) (if (compact) 42 else 48) else if (compact) 32 else 40).gpx, fg)
         }
     }
@@ -332,10 +334,12 @@ fun CgSearchField(query: String, hint: String, clearLabel: String, onQuery: (Str
             // 아티팩트 .hsearch: 돋보기 40(분할 34) · textTertiary
             CgIconMark(CgIcon.Search, if (compact) 34.gpx else 40.gpx, c.textTertiary)
             Box(Modifier.weight(1f)) {
-                if (query.isEmpty()) Text(hint, style = Chagok.type.bodyL.copy(fontWeight = FontWeight.Normal), color = c.textTertiary)
+                // .hsearch: 안내 · 입력 모두 title-s 700(분할 body-l 700)
+                val fs = if (compact) Chagok.type.bodyL else Chagok.type.titleS
+                if (query.isEmpty()) Text(hint, style = fs, color = c.textTertiary, maxLines = 1)
                 BasicTextField(
                     value = query, onValueChange = { onQuery(it.take(100)) }, singleLine = true,
-                    textStyle = Chagok.type.bodyL.copy(color = c.textPrimary), cursorBrush = SolidColor(c.fieldCaret),
+                    textStyle = fs.copy(color = c.textPrimary), cursorBrush = SolidColor(c.fieldCaret),
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search), keyboardActions = KeyboardActions(onSearch = { onSearch() }),
                     modifier = Modifier.fillMaxWidth().semantics { contentDescription = hint },
                 )
@@ -358,12 +362,12 @@ fun CgDestCard(tag: String, name: String, meta: String?, selected: Boolean, onCl
     val pressed by src.collectIsPressedAsState()
     val inner = RoundedCornerShape(32.gpx)
     Box(
-        modifier.height(if (compact) 200.gpx else 320.gpx).background(if (selected) c.selectionHalo else c.placeholder, RoundedCornerShape(40.gpx))
+        modifier.height(if (compact) 200.gpx else 300.gpx).background(if (selected) c.selectionHalo else c.placeholder, RoundedCornerShape(40.gpx))
             .clickable(src, indication = null, role = Role.Button, onClick = onClick).padding(8.gpx),
     ) {
         Column(
             Modifier.fillMaxSize().graphicsLayer { val k = if (pressed) .985f else 1f; scaleX = k; scaleY = k }
-                .shadow(4.gpx, inner).background(if (selected) c.selectionBackground else c.surfaceCard, inner)
+                .shadow(6.gpx, inner).background(if (selected) c.selectionBackground else c.surfaceCard, inner)
                 .then(if (selected) Modifier.border(2.gpx, c.selectionBorder, inner) else Modifier)
                 .padding(start = 28.gpx, end = 28.gpx, top = if (compact) 18.gpx else 28.gpx, bottom = if (compact) 14.gpx else 22.gpx),
             verticalArrangement = Arrangement.spacedBy(6.gpx),
@@ -371,11 +375,12 @@ fun CgDestCard(tag: String, name: String, meta: String?, selected: Boolean, onCl
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.gpx)) {
                 val tagIcon = icon ?: when { tag.contains("집") -> CgIcon.House; tag.contains("회사") -> CgIcon.Briefcase; else -> CgIcon.Recent }
                 CgIconMark(tagIcon, 28.gpx, if (selected) c.selectionForeground else c.textTertiary)
-                Text(tag, style = Chagok.type.bodyS.copy(fontWeight = FontWeight.Normal), color = if (selected) c.selectionForeground else c.textTertiary, maxLines = 1)
+                Text(tag, style = Chagok.type.bodyS, color = if (selected) c.selectionForeground else c.textTertiary, maxLines = 1)   // .hcard .tag body-s 700
             }
             Spacer(Modifier.weight(1f))
-            Text(name, style = if (compact) Chagok.type.titleS else Chagok.type.titleL, color = if (selected) c.selectionForeground else c.textPrimary, maxLines = 2, overflow = TextOverflow.Ellipsis)
-            meta?.let { Text(it, style = Chagok.type.bodyM, color = if (selected) c.selectionForeground else c.textSecondary, maxLines = 1, overflow = TextOverflow.Ellipsis) }
+            // .hcard .nm: 한 줄 말줄임(긴 이름이 두 줄로 접혀 아래 줄을 밀어내지 않게)
+            Text(name, style = if (compact) Chagok.type.titleS else Chagok.type.titleL, color = if (selected) c.selectionForeground else c.textPrimary, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            meta?.let { Text(it, Modifier.graphicsLayer { alpha = if (selected) .72f else 1f }, style = Chagok.type.bodyM, color = if (selected) c.selectionForeground else c.textSecondary, maxLines = 1, overflow = TextOverflow.Ellipsis) }
         }
     }
 }
@@ -391,7 +396,7 @@ enum class CgPreviewState { Empty, Loading, Ready, Failed }
  */
 @Composable
 fun CgPreviewPanel(
-    state: CgPreviewState, name: String?, stats: List<Pair<String, String>>, note: String, emptyText: String,
+    state: CgPreviewState, name: String?, stats: List<Pair<String, String>>, note: String?, emptyText: String,
     failText: String, retryLabel: String, onRetry: () -> Unit, modifier: Modifier = Modifier, compact: Boolean = false,
     photo: Int? = null,          // 목적지 사진(res). null이면 딥 잉크 바탕
     onPhoto: Boolean = false,    // v3: 고른 목적지 미리보기 = 사진/딥 잉크 바탕 + 흰 글자(HANDOFF_v3 4-2)
@@ -411,7 +416,7 @@ fun CgPreviewPanel(
 /** 같은 이름으로 다시 부르는 사진 위 안쪽 칸(면 · 테두리 · 그림자 없음). */
 @Composable
 private fun CgPreviewPanel(
-    state: CgPreviewState, name: String?, stats: List<Pair<String, String>>, note: String, emptyText: String,
+    state: CgPreviewState, name: String?, stats: List<Pair<String, String>>, note: String?, emptyText: String,
     failText: String, retryLabel: String, onRetry: () -> Unit, modifier: Modifier, compact: Boolean,
     onPhoto: Boolean, bare: Boolean, cta: @Composable (Modifier) -> Unit,
 ) = PreviewPanelBody(state, name, stats, note, emptyText, failText, retryLabel, onRetry, modifier, compact, bare, cta)
@@ -436,7 +441,7 @@ private fun CgPhotoPanel(photo: Int?, modifier: Modifier, compact: Boolean, cont
 
 @Composable
 private fun PreviewPanelBody(
-    state: CgPreviewState, name: String?, stats: List<Pair<String, String>>, note: String, emptyText: String,
+    state: CgPreviewState, name: String?, stats: List<Pair<String, String>>, note: String?, emptyText: String,
     failText: String, retryLabel: String, onRetry: () -> Unit, modifier: Modifier, compact: Boolean, bare: Boolean,
     cta: @Composable (Modifier) -> Unit,
 ) {
@@ -445,17 +450,27 @@ private fun PreviewPanelBody(
     val shape = RoundedCornerShape(40.gpx)
     if (state == CgPreviewState.Empty || name == null) {
         Box(modifier.heightIn(min = 240.gpx).cgDashed(40.gpx, c.borderStrong).padding(28.gpx), contentAlignment = Alignment.Center) {
-            Text(emptyText, style = t.bodyL.copy(fontWeight = FontWeight.Normal), color = c.textTertiary)
+            Text(emptyText, style = t.bodyL, color = c.textTertiary)   // .pv.empty body-l 700
         }
         return
     }
     val body: @Composable ColumnScope.() -> Unit = {
-        Text(name, style = t.titleL, color = c.textPrimary, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Text(name, style = if (compact) t.titleS else t.titleL, color = c.textPrimary, maxLines = 1, overflow = TextOverflow.Ellipsis)
         when (state) {
-            CgPreviewState.Loading -> Row(horizontalArrangement = Arrangement.spacedBy(48.gpx)) { repeat(3) { CgSkeleton(Modifier.width(150.gpx).height(30.gpx)) } }
+            // .pv .skel: 칸마다 이름 막대(18 · 60%) + 값 막대(30 · 80%). 사진 위는 움직임 없이 #FFFFFF33
+            CgPreviewState.Loading -> Row(horizontalArrangement = Arrangement.spacedBy(if (compact) 20.gpx else 48.gpx)) {
+                repeat(3) {
+                    Column(Modifier.width(if (compact) 120.gpx else 150.gpx), verticalArrangement = Arrangement.spacedBy(10.gpx)) {
+                        CgSkeleton(Modifier.fillMaxWidth(.6f).height(18.gpx), onPhoto = bare)
+                        CgSkeleton(Modifier.fillMaxWidth(.8f).height(30.gpx), onPhoto = bare)
+                    }
+                }
+            }
+            // .pvfail: 경고 아이콘 + 오류색 body-l 700 + [다시 시도]
             CgPreviewState.Failed -> Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.gpx)) {
-                Text(failText, style = t.bodyL.copy(fontWeight = FontWeight.Normal), color = c.textSecondary)
-                CgTextButton(retryLabel, onRetry, primary = true)
+                CgIconMark(CgIcon.Warning, if (compact) 30.gpx else 36.gpx, c.statusErrorForeground)
+                Text(failText, Modifier.weight(1f, fill = false), style = t.bodyL, color = c.statusErrorForeground)
+                CgTextButton(retryLabel, onRetry, primary = true, compact = compact)
             }
             else -> Row(horizontalArrangement = Arrangement.spacedBy(if (compact) 20.gpx else 48.gpx)) {
                 stats.forEach { (k, v) ->
@@ -466,7 +481,7 @@ private fun PreviewPanelBody(
                 }
             }
         }
-        Text(note, style = if (compact) t.labelM else t.bodyM, color = c.textTertiary)
+        note?.let { Text(it, style = if (compact) t.labelM else t.bodyM, color = c.textTertiary) }
     }
     if (!compact) {
         Row(

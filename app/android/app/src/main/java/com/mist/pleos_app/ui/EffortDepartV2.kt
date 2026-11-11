@@ -11,6 +11,9 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -54,6 +57,7 @@ import com.mist.pleos_app.ui.components.CgPreviewPanel
 import com.mist.pleos_app.ui.components.CgPreviewState
 import com.mist.pleos_app.ui.components.CgSearchField
 import com.mist.pleos_app.ui.components.CgSkeleton
+import com.mist.pleos_app.ui.components.CgLoadingDots
 import com.mist.pleos_app.ui.components.CgStepper
 import com.mist.pleos_app.ui.components.CgTextButton
 import com.mist.pleos_app.ui.components.CgTitleBar
@@ -111,9 +115,10 @@ internal fun EffortDepartScreen(
                 leading = { CgIconButton(stringResource(R.string.back), CgIcon.Back, onBack, plain = true) },
                 trailing = {
                     CgPill(
-                        // v104 depart-people: 인원 알림이 떠 있는 동안 "확인 중", 좌석 센서를 못 읽으면 "인원 확인 필요"
-                        if (askPayers || peopleOpen) stringResource(R.string.effort_depart_people_checking)
-                        else if (seats <= 0) stringResource(R.string.effort_depart_people_check) else stringResource(R.string.effort_depart_people_pill, people),
+                        // 아티팩트 depart(1942): 알림이 떠 있는 동안 센서를 못 읽었으면 "인원 확인 필요", 읽었으면 "확인 중".
+                        // 닫힌 뒤에는 2명 이상 "함께 N명", 1명 "혼자 운전"
+                        if (askPayers || peopleOpen) stringResource(if (seats <= 0) R.string.effort_depart_people_check else R.string.effort_depart_people_checking)
+                        else if (people > 1) stringResource(R.string.effort_depart_people_pill, people) else stringResource(R.string.effort_depart_people_solo),
                         onClick = { peopleOpen = true }, compact = narrow, icon = CgIcon.Users,
                     )
                 },
@@ -121,14 +126,16 @@ internal fun EffortDepartScreen(
             CgSearchField(ui.query, stringResource(R.string.effort_search_hint), stringResource(R.string.effort_search_clear), onQuery, search, onClearSearch, compact = narrow)
             if (demoMissing) CgBanner(stringResource(R.string.effort_depart_no_demo))
             if (searchMode) {
-                SearchResults(ui, onPick = { keyboard?.hide(); focus.clearFocus(); onSelect(it); onClearSearch() }, recent = ui.naviOptions.take(2))
+                // 검색이 안 될 때는 최근 목적지 2곳(아티팩트 DCARDS.slice(2): 집 · 회사 빼고)
+                val recent = ui.naviOptions.filter { it.kind == DestOption.Kind.RECENT }.ifEmpty { ui.naviOptions }.take(2)
+                SearchResults(ui, onPick = { keyboard?.hide(); focus.clearFocus(); onSelect(it); onClearSearch() }, recent = recent)
             } else {
                 Column(
                     Modifier.fillMaxWidth().weight(1f).graphicsLayer { alpha = enter.value; translationY = (1f - enter.value) * 24f * density },
-                    verticalArrangement = Arrangement.spacedBy(if (narrow) 12.gpx else 16.gpx),
                 ) {
-                    if (ui.searchStatus == PlacesStatus.UNAVAILABLE) CgBanner(stringResource(R.string.effort_search_unavailable))
-                    Text(stringResource(R.string.effort_navi_places), style = Chagok.type.bodyS, color = c.textTertiary)
+                    if (ui.searchStatus == PlacesStatus.UNAVAILABLE) CgBanner(stringResource(R.string.effort_search_unavailable), Modifier.padding(top = 16.gpx), warn = true, icon = CgIcon.Warning)
+                    // .hlabel: 위 40(분할 24) · 아래 14 · 좌우 8
+                    Text(stringResource(R.string.effort_navi_places), Modifier.padding(start = 8.gpx, end = 8.gpx, top = if (narrow) 8.gpx else 16.gpx, bottom = 14.gpx), style = Chagok.type.bodyS, color = c.textTertiary)
                     val options = ui.naviOptions.take(4)
                     when {
                         ui.naviLoading -> Text(stringResource(R.string.effort_navi_loading), style = Chagok.type.bodyM, color = c.textTertiary)
@@ -138,6 +145,7 @@ internal fun EffortDepartScreen(
                         )
                         else -> DestCards(options, selected, narrow, onClick = { o -> if (ui.selected == o) onUnselect() else onSelect(o) })
                     }
+                    Spacer(Modifier.height(if (narrow) 16.gpx else 28.gpx))   // .pv margin-top 28
                     val text = ui.previewText
                     val state = when {
                         selected == null -> CgPreviewState.Empty
@@ -155,7 +163,8 @@ internal fun EffortDepartScreen(
                             )
                         }.orEmpty(),
                         // Q-08-03(명준 11/8): 미리보기를 못 받아도 출발은 막지 않고, 무엇 없이 정리하는지 한 줄로 알린다
-                        note = stringResource(if (state == CgPreviewState.Failed) R.string.effort_preview_fail_note else R.string.effort_preview_note),
+                        // 혼자면 정리 안내 줄을 두지 않는다(아티팩트 s.people>1)
+                        note = if (state == CgPreviewState.Failed) stringResource(R.string.effort_preview_fail_note) else if (payers > 1) stringResource(R.string.effort_preview_note) else null,
                         emptyText = stringResource(R.string.effort_preview_empty),
                         failText = stringResource(R.string.effort_preview_failed),
                         retryLabel = stringResource(R.string.effort_route_retry),
@@ -178,12 +187,15 @@ internal fun EffortDepartScreen(
         // depart-sensor: 좌석 센서를 못 읽으면 감지 인원 없이 "몇 명이 함께 타나요?"로 직접 고르게
         if (askPayers || peopleOpen) {
             var n by rememberSaveable(seats) { mutableIntStateOf((if (peopleOpen || seats <= 0) payers else seats).coerceIn(PayerFlow.MIN, PayerFlow.MAX)) }
-            // v39(명준 11/8): 감지 인원과 다르게 바꾸면 "N명이 낼게요" + "감지는 S명 · N명으로 나눠요", 되돌리면 원래 문구
+            var touched by rememberSaveable(seats) { mutableStateOf(false) }   // 센서를 못 읽은 뒤 −/+를 눌렀는지(아티팩트 splitTouched)
+            // v39(명준 11/8): 감지 인원과 다르게 바꾸면 "N명이 낼게요" + "감지는 S명 · N명으로 나눠요", 되돌리면 원래 문구.
+            // 센서를 못 읽었으면 "몇 명이 함께 타나요?" → 직접 고르면 "N명이 낼게요" + "직접 고른 인원으로 나눠요"
             CgPeopleAlert(
-                if (seats <= 0) stringResource(R.string.payer_bar_title_unknown)
+                if (seats <= 0) (if (touched) stringResource(R.string.payer_bar_title_manual, n) else stringResource(R.string.payer_bar_title_unknown))
                 else if (n == seats) stringResource(R.string.payer_bar_title, seats) else stringResource(R.string.payer_bar_title_manual, n),
                 when {
                     n <= 1 -> stringResource(R.string.payer_bar_solo)
+                    seats <= 0 && touched -> stringResource(R.string.payer_bar_hint_picked)
                     seats <= 0 -> stringResource(R.string.payer_bar_hint_unknown)
                     n != seats -> stringResource(R.string.payer_bar_hint_manual, seats, n)
                     else -> stringResource(R.string.payer_bar_hint)
@@ -191,13 +203,16 @@ internal fun EffortDepartScreen(
                 Modifier.align(Alignment.TopCenter), compact = narrow,
             ) {
                 CgStepper(
-                    stringResource(R.string.payer_bar_value, n), onMinus = { n-- }, onPlus = { n++ },
+                    stringResource(R.string.payer_bar_value, n), onMinus = { n--; touched = true }, onPlus = { n++; touched = true },
                     minusLabel = stringResource(R.string.payer_minus), plusLabel = stringResource(R.string.payer_plus),
                     minusEnabled = n > PayerFlow.MIN, plusEnabled = n < PayerFlow.MAX, compact = narrow,
                 )
                 CgDivider()
-                CgTextButton(stringResource(R.string.confirm), { peopleOpen = false; onConfirmPayers(n) }, primary = true, compact = narrow)
-                CgTextButton(stringResource(R.string.close), { peopleOpen = false; onDismissPayers() }, compact = narrow)
+                // [확인] · [닫기] 사이 8(.tbtn + .tbtn margin-left -20). 센서를 못 읽었을 때 [닫기]는 고른 인원을 그대로 쓴다(아티팩트 act 2457)
+                Row(horizontalArrangement = Arrangement.spacedBy(if (narrow) 0.gpx else 8.gpx), verticalAlignment = Alignment.CenterVertically) {
+                    CgTextButton(stringResource(R.string.confirm), { peopleOpen = false; onConfirmPayers(n) }, primary = true, compact = narrow)
+                    CgTextButton(stringResource(R.string.close), { peopleOpen = false; if (seats <= 0) onConfirmPayers(n) else onDismissPayers() }, compact = narrow)
+                }
             }
         }
     }
@@ -231,54 +246,93 @@ private fun kindText(o: DestOption): String = when (o.kind) {
     DestOption.Kind.SEARCH -> o.category ?: stringResource(R.string.effort_kind_search)
 }
 
-/** 검색 결과(search.html): 결과 목록 · 찾는 중(회색 막대 3줄) · 결과 없음 · 안 됨(최근 목적지로) · 위치 못 받음. */
+/**
+ * 검색 결과(아티팩트 depart 검색 모드): 카드 1040(분할 전체 폭) · 안쪽 12 · 줄 높이 112 · 줄 사이 구분선.
+ * 찾는 중("찾는 중" + 점 · 두 줄 막대 3줄) · 결과 없음 · 안 됨(경고 카드 + 최근 목적지 카드) · 위치 못 받음(머리 대신 안내 한 줄).
+ */
 @Composable
 private fun SearchResults(ui: DepartUi, onPick: (DestOption) -> Unit, recent: List<DestOption>) {
     val c = Chagok.colors
+    val narrow = LocalNarrow.current
     val shape = RoundedCornerShape(32.gpx)
-    Column(
-        Modifier.fillMaxWidth().background(c.surfaceCard, shape).border(2.gpx, c.line, shape).padding(16.gpx)
-            .verticalScroll(rememberScrollState()),
-    ) {
-        when {
-            ui.searching -> {
-                Text(stringResource(R.string.effort_searching), Modifier.padding(horizontal = 12.gpx, vertical = 8.gpx), style = Chagok.type.bodyM, color = c.textTertiary)
-                repeat(3) { CgSkeleton(Modifier.padding(12.gpx).fillMaxWidth(if (it == 0) 1f else if (it == 1) .78f else .64f).height(40.gpx)) }
+    val box = @Composable { content: @Composable ColumnScope.() -> Unit ->
+        Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.TopCenter) {
+            Column(
+                (if (narrow) Modifier.fillMaxWidth() else Modifier.width(1040.gpx)).background(c.surfaceCard, shape).border(2.gpx, c.line, shape).padding(12.gpx)
+                    .verticalScroll(rememberScrollState()),
+                content = content,
+            )
+        }
+    }
+    val head = @Composable { text: String -> Text(text, Modifier.padding(horizontal = 24.gpx, vertical = 12.gpx), style = Chagok.type.bodyS, color = c.textTertiary) }
+    when {
+        ui.searching -> box {
+            Row(Modifier.padding(horizontal = 24.gpx, vertical = 12.gpx), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.gpx)) {
+                Text(stringResource(R.string.effort_searching), style = Chagok.type.bodyS, color = c.textTertiary)
+                CgLoadingDots(c.textTertiary)
             }
-            ui.searchStatus == PlacesStatus.EMPTY -> Column(Modifier.padding(12.gpx), verticalArrangement = Arrangement.spacedBy(6.gpx)) {
-                Text(stringResource(R.string.effort_search_empty_title, ui.query.trim()), style = Chagok.type.titleS, color = c.textPrimary)
+            repeat(3) { i ->
+                if (i > 0) RowDivider()
+                Row(Modifier.fillMaxWidth().heightIn(min = 112.gpx).padding(horizontal = 24.gpx), verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(10.gpx)) {
+                        CgSkeleton(Modifier.fillMaxWidth(.46f).height(30.gpx))
+                        CgSkeleton(Modifier.fillMaxWidth(.28f).height(22.gpx))
+                    }
+                    CgSkeleton(Modifier.fillMaxWidth(.08f).height(26.gpx))
+                }
+            }
+        }
+        ui.searchStatus == PlacesStatus.EMPTY -> box {
+            Column(Modifier.padding(horizontal = 28.gpx, vertical = 24.gpx), verticalArrangement = Arrangement.spacedBy(8.gpx)) {
+                Text(stringResource(R.string.effort_search_empty_title, ui.query.trim()), style = Chagok.type.titleM, color = c.textPrimary, maxLines = 2, overflow = TextOverflow.Ellipsis)
                 Text(stringResource(R.string.effort_search_empty_hint), style = Chagok.type.bodyM, color = c.textTertiary)
             }
-            ui.searchStatus == PlacesStatus.UNAVAILABLE -> Column(Modifier.padding(12.gpx), verticalArrangement = Arrangement.spacedBy(6.gpx)) {
-                Text(stringResource(R.string.effort_search_fail_title), style = Chagok.type.titleS, color = c.textPrimary)
-                Text(stringResource(R.string.effort_search_fail_hint), style = Chagok.type.bodyM, color = c.textTertiary)
-                recent.forEach { ResultRow(it, onPick) }
-            }
-            else -> {
-                Text(stringResource(R.string.effort_search_results), Modifier.padding(horizontal = 12.gpx, vertical = 6.gpx), style = Chagok.type.bodyS.copy(fontWeight = FontWeight.Normal), color = c.textTertiary)
-                if (ui.searchResults.isNotEmpty() && ui.searchResults.all { it.distanceM == null }) {
-                    Text(stringResource(R.string.effort_search_noloc), Modifier.padding(horizontal = 12.gpx, vertical = 4.gpx), style = Chagok.type.labelM, color = c.textTertiary)
+        }
+        ui.searchStatus == PlacesStatus.UNAVAILABLE -> Column(verticalArrangement = Arrangement.spacedBy(16.gpx)) {
+            // .card.notice.warn: 경고색 안내 카드, 그 아래 최근 목적지 카드
+            Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.TopCenter) {
+                Column(
+                    (if (narrow) Modifier.fillMaxWidth() else Modifier.width(1040.gpx)).background(c.statusWarningBackground, shape).padding(horizontal = 36.gpx, vertical = 28.gpx),
+                    verticalArrangement = Arrangement.spacedBy(8.gpx),
+                ) {
+                    Text(stringResource(R.string.effort_search_fail_title), style = Chagok.type.titleM, color = c.statusWarningForeground)
+                    Text(stringResource(R.string.effort_search_fail_hint), style = Chagok.type.bodyM, color = c.statusWarningForeground)
                 }
-                ui.searchResults.forEach { ResultRow(it, onPick) }
             }
+            if (recent.isNotEmpty()) box { recent.forEachIndexed { i, o -> if (i > 0) RowDivider(); ResultRow(o, onPick, meta = listOfNotNull(stringResource(kindRes(o)), o.distanceText).joinToString(" · ")) } }
+        }
+        else -> box {
+            // 위치를 못 받으면 머리 "검색 결과" 대신 안내 한 줄
+            if (ui.searchResults.isNotEmpty() && ui.searchResults.all { it.distanceM == null }) head(stringResource(R.string.effort_search_noloc))
+            else head(stringResource(R.string.effort_search_results))
+            ui.searchResults.forEachIndexed { i, o -> if (i > 0) RowDivider(); ResultRow(o, onPick) }
         }
     }
 }
 
 @Composable
-private fun ResultRow(o: DestOption, onPick: (DestOption) -> Unit) {
+private fun RowDivider() = Box(Modifier.padding(horizontal = 24.gpx).fillMaxWidth().height(1.gpx).background(Chagok.colors.dividerDefault))
+
+private fun kindRes(o: DestOption): Int = when (o.kind) {
+    DestOption.Kind.RECENT -> R.string.effort_kind_recent
+    DestOption.Kind.SEARCH -> R.string.effort_kind_search
+    else -> R.string.effort_kind_bookmark
+}
+
+@Composable
+private fun ResultRow(o: DestOption, onPick: (DestOption) -> Unit, meta: String? = null) {
     val c = Chagok.colors
     Row(
-        Modifier.fillMaxWidth().clickable(role = Role.Button) { onPick(o) }.padding(horizontal = 12.gpx, vertical = 14.gpx),
+        Modifier.fillMaxWidth().heightIn(min = 112.gpx).clickable(role = Role.Button) { onPick(o) }.padding(horizontal = 24.gpx),
         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.gpx),
     ) {
         Column(Modifier.weight(1f)) {
             Text(o.dest.name, style = Chagok.type.bodyL, color = c.textPrimary, maxLines = 1, overflow = TextOverflow.Ellipsis)
             // 내비 최근 목적지는 주소가 이름과 같을 때가 많아 그때는 빼요(검색 안 됨 → 최근 목적지 줄)
-            val sub = listOfNotNull(o.dest.address?.takeIf { it.isNotBlank() && it != o.dest.name }, o.category).joinToString(" · ")
+            val sub = meta ?: listOfNotNull(o.dest.address?.takeIf { it.isNotBlank() && it != o.dest.name }, o.category).joinToString(" · ")
             if (sub.isNotEmpty()) Text(sub, style = Chagok.type.labelM, color = c.textTertiary, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
-        o.distanceText?.let { Text(it, style = Chagok.type.bodyM, color = c.textSecondary) }
+        o.distanceText?.let { Text(it, style = Chagok.type.bodyM, color = c.textSecondary, maxLines = 1) }
     }
 }
 
