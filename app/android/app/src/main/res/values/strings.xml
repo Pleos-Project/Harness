@@ -185,6 +185,13 @@
     <string name="effort_receipt_col_item">항목</string>
     <string name="effort_receipt_col_add">더한 몫</string>
     <string name="effort_receipt_plain">비·정체·밤길 없이 달렸어요</string>
+    <string name="effort_receipt_na_weather_label">날씨</string>
+    <string name="effort_receipt_na_weather">정보 없음</string>
+    <string name="effort_receipt_na_weather_why">날씨를 불러오지 못해 이번에는 더하지 않았어요</string>
+    <string name="effort_receipt_na_jam_label">정체 구간</string>
+    <string name="effort_receipt_na_jam">정체 정보 없음</string>
+    <string name="effort_receipt_na_jam_why">출발 때 내비에서 정체 정보를 받지 못해 이번에는 더하지 않았어요</string>
+    <string name="effort_offer_none_settled">"중간 정산에서 이미 챙겼어요. "</string>
     <string name="effort_receipt_drive">운전 시간</string>
     <string name="effort_receipt_rest">중간에 쉰 시간</string>
     <string name="effort_receipt_rest_change_label">중간에 쉰 시간 바꾸기</string>
@@ -258,6 +265,7 @@
     <string name="effort_calc_total">오늘 운전 %1$s</string>
     <string name="effort_calc_none">없음</string>
     <string name="effort_calc_unknown">정보 없음</string>
+    <string name="effort_calc_clear">맑음</string>
     <string name="effort_calc_honk">빵!</string>
     <string name="effort_calc_zip">쌩</string>
     <string name="effort_calc_say_rain">쏟아지는 비를 뚫고 달린 시간 세는 중…</string>
@@ -297,6 +305,12 @@
     <string name="effort_mid_people">가는 중 · 함께 %1$d명</string>
     <string name="effort_mid_receipt_title">오늘 주행 영수증</string>
     <string name="effort_mid_receipt_sub">%1$s 출발 · 아직 가는 중 · %2$d명</string>
+    <string name="effort_mid_receipt_sub_solo">%1$s 출발 · 아직 가는 중 · 혼자</string>
+    <string name="effort_mid_people_solo">가는 중 · 혼자 운전</string>
+    <string name="effort_mid_cap_short">지금까지</string>
+    <string name="effort_mid_solo_note">혼자 운전이라 영수증만 보여 드려요</string>
+    <string name="effort_mid_short">여기까지도 수고하셨어요</string>
+    <string name="effort_mid_short_note">아직 짧아서 따로 제안하지 않아요</string>
     <string name="effort_mid_cap">%1$s 출발 · 지금까지</string>
     <string name="effort_mid_a_title">지금까지를 챙긴다면</string>
     <string name="effort_mid_note">좋아요를 누르면 여기까지 기록해 두고, 도착하면 이 몫은 빼고 알려 드려요</string>

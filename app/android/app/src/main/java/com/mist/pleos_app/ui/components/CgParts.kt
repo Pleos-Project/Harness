@@ -581,12 +581,12 @@ fun CgSheetButtons(compact: Boolean, content: @Composable RowScope.(CgSize) -> U
 // ------------------------------------------------------------ offer-card
 /** 제안 카드 틀(`components/offer-card`): 카드 면 + 선 2 + 모서리 32. 가로 640 고정은 부르는 쪽이. */
 @Composable
-fun CgOfferCard(modifier: Modifier = Modifier, compact: Boolean = false, content: @Composable ColumnScope.() -> Unit) {
+fun CgOfferCard(modifier: Modifier = Modifier, compact: Boolean = false, pad: Int = 40, content: @Composable ColumnScope.() -> Unit) {
     val c = Chagok.colors
     val shape = RoundedCornerShape(32.gpx)
     Column(
         modifier.background(c.surfaceCard, shape).border(2.gpx, c.lineStrong, shape)
-            .padding(horizontal = if (compact) 24.gpx else 40.gpx, vertical = if (compact) 22.gpx else 40.gpx),
+            .padding(horizontal = if (compact) 24.gpx else pad.gpx, vertical = if (compact) 22.gpx else pad.gpx),
         verticalArrangement = Arrangement.spacedBy(if (compact) 12.gpx else 20.gpx),
         content = content,
     )
