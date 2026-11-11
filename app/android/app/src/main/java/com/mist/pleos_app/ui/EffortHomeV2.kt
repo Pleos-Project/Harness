@@ -136,7 +136,7 @@ internal fun EffortHomeScreen(
                 stringResource(R.string.effort_home_logo), centered = true,
                 titleStyle = (if (narrow) t.titleM else t.titleL).copy(fontWeight = FontWeight.ExtraBold, letterSpacing = t.titleL.fontSize * .08f),
                 leading = { CgIconButton(stringResource(R.string.effort_log_open), CgIcon.Receipt, onLog) },
-                titleContent = { CgWordmark(if (narrow) 128.gpx else 152.gpx, label = stringResource(R.string.effort_home_logo)) },
+                titleContent = { CgWordmark(152.gpx, label = stringResource(R.string.effort_home_logo)) },   // .wm svg 152 × 48(분할도 같음)
                 trailing = {
                     Row(horizontalArrangement = Arrangement.spacedBy(12.gpx), verticalAlignment = Alignment.CenterVertically) {
                         CgBell(stringResource(R.string.effort_noti_open), ui.notiDot, ui.notiOpen, onNoti, compact = narrow, reduce = reduce)
@@ -163,11 +163,10 @@ internal fun EffortHomeScreen(
                 Column(
                     Modifier.widthIn(max = if (narrow) 760.gpx else 1040.gpx),
                     horizontalAlignment = if (narrow) Alignment.CenterHorizontally else Alignment.Start,
-                    verticalArrangement = Arrangement.spacedBy(if (narrow) 14.gpx else 22.gpx),
                 ) {
-                    // 작은 줄은 큰 인사 위 한 줄(500 30/40 · 분할 24/32, textSecondary)
+                    // 작은 줄은 큰 인사 위 한 줄(500 30/40 · 분할 24/32, textSecondary). 큰 인사와 사이 16(분할 10, .hdesc margin -6)
                     sub?.let {
-                        Text(it, style = TextStyle(fontSize = (if (narrow) 24 else 30).gsp, lineHeight = (if (narrow) 32 else 40).gsp, fontWeight = FontWeight.Medium, letterSpacing = (if (narrow) 24 else 30).gsp * -.005f),
+                        Text(it, Modifier.padding(bottom = if (narrow) 10.gpx else 16.gpx), style = TextStyle(fontSize = (if (narrow) 24 else 30).gsp, lineHeight = (if (narrow) 32 else 40).gsp, fontWeight = FontWeight.Medium, letterSpacing = (if (narrow) 24 else 30).gsp * -.005f),
                             color = c.textSecondary, maxLines = 1, softWrap = false, textAlign = if (narrow) TextAlign.Center else TextAlign.Start)
                     }
                     // 큰 인사 800 84/108 · 자간 -1.5%(가는 중 68/88, 분할 56/72)
@@ -175,7 +174,8 @@ internal fun EffortHomeScreen(
                     val hl = if (narrow) 72 else if (progress) 88 else 108
                     Text(head, style = TextStyle(fontSize = hs.gsp, lineHeight = hl.gsp, fontWeight = FontWeight.ExtraBold, letterSpacing = hs.gsp * -.015f),
                         color = c.textPrimary, textAlign = if (narrow) TextAlign.Center else TextAlign.Start)
-                    Box(Modifier.padding(top = if (narrow) 4.gpx else 0.gpx)) {
+                    // 큰 인사와 버튼 사이 44(분할 32): .tx gap 22 + .cta margin-top 22(분할 14 + 18)
+                    Box(Modifier.padding(top = if (narrow) 32.gpx else 44.gpx)) {
                         when {
                             trip == null -> CgCta(stringResource(R.string.effort_home_go), onDepart, compact = narrow, hero = true)
                             trip.arrived -> CgCta(stringResource(R.string.effort_receipt_open), onReceipt, compact = narrow, hero = true)
@@ -253,7 +253,7 @@ internal fun LogoSymbol(size: Dp, pin: String? = null, compact: Boolean = false)
     val reduce = rememberReduceMotion()
     val inf = rememberInfiniteTransition(label = "float")
     // 움직임은 그리기 단계에서만(drawWithContent · Canvas). graphicsLayer로 옮기면 화면 좌표가 매 프레임 바뀌어 uiautomator가 idle을 못 잡는다(시연 스크립트 11/9 실측)
-    val k = inf.animateFloat(0f, 1f, infiniteRepeatable(tween(1600, easing = CubicBezierEasing(.45f, 0f, .55f, 1f)), RepeatMode.Reverse), label = "k")
+    val k = inf.animateFloat(0f, 1f, infiniteRepeatable(tween(3200, easing = CubicBezierEasing(.45f, 0f, .55f, 1f)), RepeatMode.Reverse), label = "k")   // cg-float 3.2s alternate
     fun f() = if (reduce) 0f else k.value
     val lift = 4.gpx
     Box(Modifier.size(size), contentAlignment = Alignment.Center) {
