@@ -1,7 +1,11 @@
 package com.mist.pleos_app.ui
 
 import com.mist.pleos_app.ui.components.CgSize
+import com.mist.pleos_app.ui.components.CgIconMark
+import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.foundation.layout.size
 import com.mist.pleos_app.ui.components.CgBottomSheet
+import com.mist.pleos_app.ui.components.CgSheetButtons
 import com.mist.pleos_app.ui.components.CgSwitch
 import com.mist.pleos_app.ui.components.CgSegmented
 import com.mist.pleos_app.ui.components.CgIcon
@@ -163,11 +167,13 @@ private fun EffortFrame(demoValues: Boolean, driving: Boolean, toast: @Composabl
     BoxWithConstraints(Modifier.fillMaxSize().background(Chagok.colors.bgPrimary)) {
         val narrow = with(LocalDensity.current) { maxWidth.toPx() } <= NARROW_MAX_PX
         CompositionLocalProvider(LocalNarrow provides narrow) {
-            if (driving) DrivingCover() else Box(Modifier.fillMaxSize().padding(horizontal = 40.gpx, vertical = 32.gpx)) {
+            // 아티팩트 .pg · .home: 사방 40
+            if (driving) DrivingCover() else Box(Modifier.fillMaxSize().padding(40.gpx)) {
                 content()
                 Box(Modifier.align(Alignment.TopCenter)) { toast() }
-                if (demoValues) DemoMark(stringResource(R.string.demo_values), Modifier.align(Alignment.BottomEnd))
             }
+            // .demotag: 창 기준 오른쪽 24 · 아래 16, 모든 화면(주행 중 가림 포함) 위
+            if (demoValues) DemoMark(stringResource(R.string.demo_values), Modifier.align(Alignment.BottomEnd).padding(end = 24.gpx, bottom = 16.gpx))
         }
     }
 }
@@ -193,27 +199,48 @@ private fun EffortSettings(
     var photoOpen by rememberSaveable { mutableStateOf(false) }
     val isA = s.proposalMethod != Settings.METHOD_B
     val side = if (narrow) 24.gpx else 40.gpx
+    // .srow: 높이 136 · 여백 20 40 · 사이 32 · 제목 title-s(분할 .pg.p .srow: 112 · 여백 16 24 · 사이 16 · 제목 body-l)
     val row: @Composable (String, String, @Composable () -> Unit) -> Unit = { title, sub, end ->
         Row(
-            Modifier.fillMaxWidth().heightIn(min = if (narrow) 112.gpx else 136.gpx).padding(horizontal = side, vertical = 20.gpx),
-            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(32.gpx),
+            Modifier.fillMaxWidth().heightIn(min = if (narrow) 112.gpx else 136.gpx).padding(horizontal = side, vertical = if (narrow) 16.gpx else 20.gpx),
+            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(if (narrow) 16.gpx else 32.gpx),
         ) {
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.gpx)) {
-                Text(title, style = t.titleS, color = c.textPrimary)
+                Text(title, style = if (narrow) t.bodyL else t.titleS, color = c.textPrimary)
                 Text(sub, style = if (narrow) t.labelM else t.bodyM, color = c.textTertiary)
             }
             end()
         }
     }
-    val line: @Composable () -> Unit = { Box(Modifier.fillMaxWidth().height(1.gpx).background(c.line)) }
+    val line: @Composable () -> Unit = { Box(Modifier.fillMaxWidth().height(1.gpx).background(c.dividerDefault)) }
+    // 펼침 꺾쇠(.schev 80 · 모서리 24, 안 .chev 16 · 선 4 · txt3, 눌림 tertiary-pressed, 0.26초 회전)
+    val chev: @Composable (String, Boolean, () -> Unit) -> Unit = { label, open, onClick ->
+        val src = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
+        val pressed by src.collectIsPressedAsState()
+        val rot by androidx.compose.animation.core.animateFloatAsState(if (open) 180f else 0f, androidx.compose.animation.core.tween(260), label = "chev")
+        Box(
+            Modifier.size(80.gpx).background(if (pressed) c.btnTertiaryPressed else androidx.compose.ui.graphics.Color.Transparent, RoundedCornerShape(24.gpx))
+                .clickable(src, indication = null, role = androidx.compose.ui.semantics.Role.Button, onClick = onClick)
+                .semantics { contentDescription = label },
+            contentAlignment = Alignment.Center,
+        ) { CgIconMark(CgIcon.Chevron, 16.gpx, c.textTertiary, Modifier.graphicsLayer { rotationZ = rot }) }
+    }
+    // 펼친 근거 상자(.swy): --ph 면 · 모서리 16 · 바깥 0 40 24 · 안 16 22 · body-m txt2(분할 0 24 16 · label-m)
+    val swy: @Composable (@Composable () -> Unit) -> Unit = { content ->
+        Column(
+            Modifier.padding(start = side, end = side, bottom = if (narrow) 16.gpx else 24.gpx).fillMaxWidth()
+                .background(c.placeholder, RoundedCornerShape(16.gpx)).padding(horizontal = 22.gpx, vertical = 16.gpx),
+            verticalArrangement = Arrangement.spacedBy(6.gpx),
+        ) { content() }
+    }
     Box(Modifier.fillMaxSize()) {
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(24.gpx)) {
             CgTitleBar(
                 stringResource(R.string.screen_settings), compact = narrow,
                 leading = { CgIconButton(stringResource(R.string.back), CgIcon.Back, onBack, plain = true) },
             )
-            val card = RoundedCornerShape(40.gpx)
-            Column(Modifier.fillMaxWidth().background(c.surfaceCard, card).border(1.gpx, c.line, card)) {
+            val card = RoundedCornerShape(32.gpx)   // .card 모서리 32 · 테두리 2
+            Column(Modifier.fillMaxWidth().background(c.surfaceCard, card).border(2.gpx, c.line, card)) {
                 // 제안 방식(개발·시험용 A/B)
                 val method = stringResource(R.string.effort_settings_method)
                 val methodSub = stringResource(
@@ -226,7 +253,7 @@ private fun EffortSettings(
                         { onChange(s.copy(proposalMethod = if (it == 0) Settings.METHOD_A else Settings.METHOD_B)) }, m, compact = narrow,
                     )
                 }
-                if (narrow) Column(Modifier.padding(bottom = 20.gpx)) {
+                if (narrow) Column(Modifier.padding(bottom = 16.gpx)) {
                     row(method, methodSub) {}
                     seg(Modifier.fillMaxWidth().padding(horizontal = side))
                 } else row(method, methodSub) { seg(Modifier) }
@@ -246,45 +273,39 @@ private fun EffortSettings(
                 if (wage != null) {
                     line()
                     row(stringResource(R.string.effort_settings_wage), wage.wageText) {
-                        CgIconButton(
-                            stringResource(if (wageOpen) R.string.effort_settings_wage_close else R.string.effort_settings_wage_open), CgIcon.Chevron,
-                            { wageOpen = !wageOpen }, Modifier.graphicsLayer { rotationZ = if (wageOpen) 180f else 0f }, plain = true,
-                        )
+                        chev(stringResource(if (wageOpen) R.string.effort_settings_wage_close else R.string.effort_settings_wage_open), wageOpen) { wageOpen = !wageOpen }
                     }
-                    if (wageOpen) Column(Modifier.padding(start = side, end = side, bottom = 28.gpx), verticalArrangement = Arrangement.spacedBy(6.gpx)) {
-                        Text(stringResource(R.string.effort_settings_wage_how, wage.wageYearLabel, wage.hourlyManText, wage.perMinExactText), style = t.bodyM, color = c.textSecondary)
-                        Text(stringResource(R.string.effort_settings_wage_show_only), style = t.bodyM, color = c.textSecondary)
+                    if (wageOpen) swy {
+                        Text(stringResource(R.string.effort_settings_wage_how, wage.wageYearLabel, wage.hourlyManText, wage.perMinExactText), style = if (narrow) t.labelM else t.bodyM, color = c.textSecondary)
+                        Text(stringResource(R.string.effort_settings_wage_show_only), style = if (narrow) t.labelM else t.bodyM, color = c.textSecondary)
                     }
                 }
                 line()
                 // 사진 출처(#118 HANDOFF_v3 4-3, 임시 자리): 출발 미리보기 장소 사진 CC BY-SA 저작자 표기
                 row(stringResource(R.string.effort_settings_photo), stringResource(R.string.effort_settings_photo_sub)) {
-                    CgIconButton(
-                        stringResource(if (photoOpen) R.string.effort_settings_wage_close else R.string.effort_settings_wage_open), CgIcon.Chevron,
-                        { photoOpen = !photoOpen }, Modifier.graphicsLayer { rotationZ = if (photoOpen) 180f else 0f }, plain = true,
-                    )
+                    chev(stringResource(if (photoOpen) R.string.effort_settings_wage_close else R.string.effort_settings_wage_open), photoOpen) { photoOpen = !photoOpen }
                 }
-                if (photoOpen) Column(Modifier.padding(start = side, end = side, bottom = 28.gpx), verticalArrangement = Arrangement.spacedBy(6.gpx)) {
+                if (photoOpen) swy {
                     stringArrayResource(R.array.effort_photo_credits).forEach { Text(it, style = t.labelM, color = c.textSecondary) }
                 }
                 line()
                 // 기록 초기화
-                row(stringResource(R.string.settings_reset), stringResource(R.string.effort_settings_wipe_sub, recordCount)) {
+                row(stringResource(R.string.settings_reset), if (recordCount > 0) stringResource(R.string.effort_settings_wipe_sub, recordCount) else stringResource(R.string.effort_settings_wipe_none)) {
                     CgButton(stringResource(R.string.settings_reset_confirm), { wipe = true }, kind = CgButtonKind.Basic, size = CgSize.S, enabled = recordCount > 0)
                 }
             }
-            Text(stringResource(R.string.effort_settings_note), Modifier.padding(start = 8.gpx), style = t.labelM, color = c.textTertiary)
+            Text(stringResource(R.string.effort_settings_note), style = t.labelM, color = c.textTertiary)
         }
         // 기록 초기화 확인(settings-wipe): 짧은 하단 시트. 지우면 홈이 첫 사용 모양으로
         if (wipe) {
-            CgBottomSheet(Modifier.align(Alignment.BottomCenter).then(if (narrow) Modifier.fillMaxWidth() else Modifier.width(760.gpx)), compact = narrow) {
+            CgBottomSheet(Modifier.align(Alignment.BottomCenter).then(if (narrow) Modifier.fillMaxWidth() else Modifier.width(760.gpx)), compact = narrow, confirm = true) {
                 Column(verticalArrangement = Arrangement.spacedBy(8.gpx)) {
                     Text(stringResource(R.string.effort_settings_wipe_title), style = if (narrow) t.bodyL else t.titleM, color = c.textPrimary)
                     Text(stringResource(R.string.effort_settings_wipe_body), style = t.bodyM, color = c.textSecondary)
                 }
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.gpx)) {
-                    CgButton(stringResource(R.string.cancel), { wipe = false }, Modifier.weight(1f), kind = CgButtonKind.Basic)
-                    CgButton(stringResource(R.string.settings_reset_confirm), { onReset(); wipe = false }, Modifier.weight(1f))
+                CgSheetButtons(narrow) { sz ->
+                    CgButton(stringResource(R.string.cancel), { wipe = false }, kind = CgButtonKind.Basic, size = sz)
+                    CgButton(stringResource(R.string.settings_reset_confirm), { onReset(); wipe = false }, kind = CgButtonKind.Danger, size = sz)
                 }
             }
         }

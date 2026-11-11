@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -17,6 +18,7 @@ import com.mist.pleos_app.ui.components.CgBasisList
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -57,13 +59,17 @@ internal fun EffortMidwayScreen(ui: EffortUi, onPick: (String) -> Unit, onClose:
     val r = m.receipt
     val showPaper = r != null && !isUnsettled(r)
     var open by rememberSaveable(m.at) { mutableStateOf<String?>(null) }
-    val since = stringResource(R.string.effort_mid_receipt_sub, clockText(trip.departedAt), trip.n)   // "14:20 출발 · 아직 가는 중 · 4명"
+    // "14:20 출발 · 아직 가는 중 · 4명"(혼자면 "· 혼자", 아티팩트 receipt 2061)
+    val since = if (trip.n >= 2) stringResource(R.string.effort_mid_receipt_sub, clockText(trip.departedAt), trip.n)
+    else stringResource(R.string.effort_mid_receipt_sub_solo, clockText(trip.departedAt))
     val cap = stringResource(R.string.effort_mid_cap, clockText(trip.departedAt))                 // 카드 캡션 "14:20 출발 · 지금까지"
     Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(if (narrow) 16.gpx else 24.gpx)) {
         CgTitleBar(
             stringResource(R.string.effort_mid_title), compact = narrow,
             leading = { CgIconButton(stringResource(R.string.back), CgIcon.Back, onClose, plain = true) },
-            trailing = if (narrow) null else ({ Text(stringResource(R.string.effort_mid_people, trip.n), style = Chagok.type.labelM, color = Chagok.colors.textTertiary) }),
+            trailing = if (narrow) null else ({
+                Text(if (trip.n >= 2) stringResource(R.string.effort_mid_people, trip.n) else stringResource(R.string.effort_mid_people_solo), style = Chagok.type.labelM, color = Chagok.colors.textTertiary)
+            }),
         )
         val receipt: @Composable (Modifier) -> Unit = { mod ->
             if (r != null && showPaper) ReceiptColumn(
@@ -72,7 +78,7 @@ internal fun EffortMidwayScreen(ui: EffortUi, onPick: (String) -> Unit, onClose:
                 midwaySub = since,
             )
         }
-        val card: @Composable (Modifier) -> Unit = { mod -> MidwayCard(m, cap, ui.items, narrow, onPick, onClose, mod) }
+        val card: @Composable (Modifier) -> Unit = { mod -> MidwayCard(m, cap, ui.items, narrow, onPick, onClose, mod, solo = trip.n < 2, settledBefore = trip.settlements.isNotEmpty()) }
         if (narrow) {
             Column(Modifier.weight(1f).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(16.gpx)) {
                 receipt(Modifier.fillMaxWidth())
@@ -88,12 +94,26 @@ internal fun EffortMidwayScreen(ui: EffortUi, onPick: (String) -> Unit, onClose:
 }
 
 @Composable
-private fun MidwayCard(m: MidwayUi, since: String, items: List<EffortItem>, narrow: Boolean, onPick: (String) -> Unit, onClose: () -> Unit, modifier: Modifier) {
+private fun MidwayCard(
+    m: MidwayUi, since: String, items: List<EffortItem>, narrow: Boolean, onPick: (String) -> Unit, onClose: () -> Unit, modifier: Modifier,
+    solo: Boolean = false, settledBefore: Boolean = false,
+) {
     val c = Chagok.colors
     val t = Chagok.type
-    val head = if (narrow) t.titleL else t.headlineS
+    val head = (if (narrow) t.titleL else t.headlineS).copy(lineBreak = androidx.compose.ui.text.style.LineBreak.Heading)
     val big = if (narrow) t.headlineS else t.headlineL
     val why = if (narrow) t.labelM else t.bodyM
+    val cap = if (narrow) t.labelM else t.bodyM
+    // 작은 머리(.cap2 body-m · txt3) + 제목 한 덩어리(사이 10, 분할 6), 제목과 안내(.note txt3) 사이 14
+    val capHead: @Composable (String?, String, String?) -> Unit = { capT, headT, noteT ->
+        Column(verticalArrangement = Arrangement.spacedBy(if (narrow) 6.gpx else 10.gpx)) {
+            capT?.let { Text(it, style = cap, color = c.textTertiary) }
+            Column(verticalArrangement = Arrangement.spacedBy(if (narrow) 8.gpx else 14.gpx)) {
+                Text(headT, style = head, color = c.textPrimary)
+                noteT?.let { Text(it, style = why.copy(lineBreak = androidx.compose.ui.text.style.LineBreak.Heading), color = c.textTertiary) }
+            }
+        }
+    }
     val btn = if (narrow) CgSize.M else CgSize.L
     val keep: @Composable (Boolean) -> Unit = { filled ->
         CgButton(stringResource(R.string.effort_mid_keep), onClose, Modifier.fillMaxWidth(), kind = if (filled) CgButtonKind.Filled else CgButtonKind.Basic, size = btn)
@@ -120,37 +140,53 @@ private fun MidwayCard(m: MidwayUi, since: String, items: List<EffortItem>, narr
                 Filler(narrow)
                 keep(true)
             }
-            m.choice != null -> { Text(since, style = why, color = c.textTertiary); DoneMid(m, view, items, narrow) { keep(true) } }
+            m.choice != null -> DoneMid(m, view, items, narrow, since) { keep(true) }
             view is ProposalView.A -> {
-                Text(since, style = why, color = c.textTertiary)   // v104 mid-a: 캡션
-                Column {
-                    Text(stringResource(R.string.effort_mid_a_title), style = if (narrow) t.titleS else t.titleM, color = c.textSecondary)
-                    Text(view.screen.mainText, style = big, color = c.textPrimary, maxLines = 1)
+                // v104 mid-a: 캡션 + (묻는 줄 · 큰 숫자 한 덩어리) → 근거 28 → 안내 → 아래로 버튼
+                Column(verticalArrangement = Arrangement.spacedBy(if (narrow) 6.gpx else 10.gpx)) {
+                    Text(since, style = cap, color = c.textTertiary)
+                    Column(verticalArrangement = Arrangement.spacedBy(if (narrow) 4.gpx else 8.gpx)) {
+                        Text(stringResource(R.string.effort_mid_a_title), style = if (narrow) t.bodyL else t.titleM, color = c.textSecondary)
+                        // 1인 몫이 카드 폭을 넘치면 "원"이 잘리지 않게 한 단계 작게
+                        var bigStyle by remember(view.screen.mainText) { mutableStateOf(big) }
+                        Text(view.screen.mainText, style = bigStyle, color = c.textPrimary, maxLines = 1, softWrap = false,
+                            onTextLayout = { if (it.didOverflowWidth && bigStyle == big) bigStyle = if (narrow) t.titleL else t.headlineS })
+                    }
                 }
+                Spacer(Modifier.height(if (narrow) 4.gpx else 8.gpx))
                 CgBasisList(listOf(view.screen.basisText, view.screen.wageText), compact = narrow)
+                Text(stringResource(R.string.effort_mid_note), style = why.copy(lineBreak = androidx.compose.ui.text.style.LineBreak.Heading), color = c.textTertiary)
                 Filler(narrow)
-                Text(stringResource(R.string.effort_mid_note), style = why, color = c.textTertiary)
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.gpx)) {
                     CgButton(stringResource(R.string.effort_offer_like), { onPick(CHOICE_ACCEPT) }, Modifier.weight(1f), size = btn)
                     CgButton(stringResource(R.string.effort_mid_keep), onClose, Modifier.weight(1f), kind = CgButtonKind.Basic, size = btn)
                 }
             }
             view is ProposalView.B -> {
-                Text(midwayBText(view.screen.text), style = head, color = c.textPrimary)
-                view.items.firstOrNull { it.key == view.screen.item }?.let { Text(stringResource(R.string.effort_mid_b_sub, ieyo(it.label)), style = why, color = c.textSecondary) }
-                Filler(narrow)
+                // 제목 + 안내 한 덩어리 → 항목 버튼은 바로 아래 16 → 아래로 [계속 가기]
+                capHead(null, midwayBText(view.screen.text), view.items.firstOrNull { it.key == view.screen.item }?.let { stringResource(R.string.effort_mid_b_sub, ieyo(it.label)) })
                 val opt: @Composable (Modifier, EffortItem) -> Unit = { mod, item ->
                     CgOptionButton(item.examples.ifEmpty { listOf(item.label) }, isDefault = item.key == view.screen.item, onClick = { onPick(item.key) }, modifier = mod, compact = narrow)
                 }
                 if (narrow) Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.gpx)) { view.items.forEach { opt(Modifier.weight(1f), it) } }
                 else Column(verticalArrangement = Arrangement.spacedBy(12.gpx)) { view.items.forEach { opt(Modifier.fillMaxWidth(), it) } }
+                Filler(narrow)
                 keep(false)
             }
+            // 제안 없음 · 혼자(아티팩트 midScr n<=1): "지금까지" + 배수 + "혼자 운전이라 영수증만 보여 드려요"
+            solo -> {
+                capHead(stringResource(R.string.effort_mid_cap_short), r.multiplierText, stringResource(R.string.effort_mid_solo_note))
+                Filler(narrow)
+                keep(true)
+            }
+            // 제안 없음 · 아직 짧음(def<0). 앞서 중간 정산을 해서 남은 몫이 작은 경우는 기존 문구
+            !settledBefore -> {
+                capHead(stringResource(R.string.effort_mid_cap_short), stringResource(R.string.effort_mid_short), stringResource(R.string.effort_mid_short_note))
+                Filler(narrow)
+                keep(true)
+            }
             else -> {
-                // 제안 없음: 혼자 · 남은 몫이 커피 1인분 절반보다 작음(Q-07-04) · 앞서 다 정산함
-                Text(since, style = why, color = c.textTertiary)
-                Text(stringResource(R.string.effort_mid_none), style = head, color = c.textPrimary)
-                Text(stringResource(R.string.effort_mid_none_why), style = why, color = c.textSecondary)
+                capHead(since, stringResource(R.string.effort_mid_none), stringResource(R.string.effort_mid_none_why))
                 Filler(narrow)
                 keep(true)
             }
@@ -160,19 +196,22 @@ private fun MidwayCard(m: MidwayUi, since: String, items: List<EffortItem>, narr
 
 /** 고른 뒤(mid-a-done · mid-b-done): 여기까지 기록해 뒀다 + [계속 가기]. */
 @Composable
-private fun ColumnScope.DoneMid(m: MidwayUi, view: ProposalView?, items: List<EffortItem>, narrow: Boolean, keep: @Composable () -> Unit) {
+private fun ColumnScope.DoneMid(m: MidwayUi, view: ProposalView?, items: List<EffortItem>, narrow: Boolean, since: String, keep: @Composable () -> Unit) {
     val c = Chagok.colors
     val t = Chagok.type
-    val head = if (narrow) t.titleL else t.headlineS
+    val head = (if (narrow) t.titleL else t.headlineS).copy(lineBreak = androidx.compose.ui.text.style.LineBreak.Heading)
     val why = if (narrow) t.labelM else t.bodyM
-    if (view is ProposalView.A) {
-        Text(stringResource(R.string.effort_mid_a_done), style = head, color = c.textPrimary)
-        Text(view.screen.mainText, style = if (narrow) t.titleM else t.titleL, color = c.textSecondary)
-    } else {
-        val phrase = items.firstOrNull { it.key == m.choice }?.phraseText ?: m.choice.orEmpty()
-        Text(stringResource(R.string.effort_mid_b_done, phrase), style = head, color = c.textPrimary)
+    // 캡션 + 제목 한 덩어리 → (A) "한 사람 약 ○"(.why body-m · txt2) → 안내(.note txt3) → 아래로 [계속 가기]
+    Column(verticalArrangement = Arrangement.spacedBy(if (narrow) 6.gpx else 10.gpx)) {
+        Text(since, style = if (narrow) t.labelM else t.bodyM, color = c.textTertiary)
+        if (view is ProposalView.A) Text(stringResource(R.string.effort_mid_a_done), style = head, color = c.textPrimary)
+        else {
+            val phrase = items.firstOrNull { it.key == m.choice }?.phraseText ?: m.choice.orEmpty()
+            Text(stringResource(R.string.effort_mid_b_done, phrase), style = head, color = c.textPrimary)
+        }
     }
-    Text(stringResource(R.string.effort_mid_done_note), style = why, color = c.textSecondary)
+    if (view is ProposalView.A) Text(view.screen.mainText, style = why, color = c.textSecondary)
+    Text(stringResource(R.string.effort_mid_done_note), style = why, color = c.textTertiary)
     Filler(narrow)
     keep()
 }

@@ -136,14 +136,15 @@ internal fun EffortArriveScreen(ui: EffortUi, onRest: (Int) -> Unit, onPick: (St
     val key = trip.tripId
     if (ui.unsettled) { UnsettledArrive(trip, r, ui, narrow, onClose); return }
 
-    // 이 도착에서 처음 열 때만 출력 연출(다시 열거나 화면이 돌아오면 끝 상태로)
-    var played by rememberSaveable(key) { mutableStateOf(reduce || ui.done != null) }
+    // 이 도착에서 처음 열 때만 출력 연출. 홈에서 [영수증 보기]로 다시 열거나 주행 중 가림이 풀려 돌아와도 끝 상태로
+    // (화면을 바꾸면 rememberSaveable이 사라지므로 이 프로세스에서 이미 찍은 주행을 따로 기억)
+    val first = remember(key) { !(reduce || ui.done != null || key in PrintedTrips) }
     val needsRest = !ui.unsettled && ui.done == null && trip.restAnswerMin == null
     var sheet by rememberSaveable(key) { mutableStateOf(false) }
-    val first = remember(key) { !played }
     val seq = rememberPrintSeq(key, play = first) {
-        played = true
-        if (needsRest) { if (first) delay(1300); sheet = true }
+        PrintedTrips += key
+        // 쉰 시간 시트: 처음이면 들어온 뒤 1.3초(.rsheet.late, 종이 1.1초 + 0.2초), 다시 열면 바로(openRcpt)
+        if (needsRest) { if (first) delay(200); sheet = true }
     }
     val paper = seq.paper
     val offer = seq.offer
@@ -238,6 +239,18 @@ internal fun ReceiptColumn(
             Text(stringResource(R.string.effort_receipt_col_item), Modifier.weight(1f), style = TextStyle(fontSize = 32.gsp, lineHeight = 40.gsp, fontWeight = FontWeight.Bold), color = c.textPrimary)
             Text(stringResource(R.string.effort_receipt_col_add), style = TextStyle(fontSize = 32.gsp, lineHeight = 40.gsp), color = c.textSecondary)
         }
+        // 정보 없음(날씨 · 정체): 목록 맨 위, 이름 · 값을 나누고 누르면 더하지 않은 까닭(아티팩트 calc terms.unshift)
+        val cp = ui.constants?.copy?.text
+        r.notes.forEach { note ->
+            val jam = note == cp?.get("congestion_unknown_text")
+            val k = "na:$note"
+            CgReceiptRow(
+                stringResource(if (jam) R.string.effort_receipt_na_jam_label else R.string.effort_receipt_na_weather_label),
+                if (jam) stringResource(R.string.effort_receipt_na_jam) else if (note == cp?.get("weather_unknown_text")) stringResource(R.string.effort_receipt_na_weather) else note,
+                "—", stringResource(if (jam) R.string.effort_receipt_na_jam_why else R.string.effort_receipt_na_weather_why),
+                expanded = open == k, onClick = { onToggle(k) }, compact = narrow,
+            )
+        }
         if (r.lines.isEmpty() && r.notes.isEmpty()) {
             Text(stringResource(R.string.effort_receipt_plain), Modifier.padding(vertical = 14.gpx), style = if (narrow) t.bodyM else t.bodyL.copy(fontWeight = FontWeight.Normal), color = c.textTertiary)
         }
@@ -248,8 +261,6 @@ internal fun ReceiptColumn(
                 extra = if (line.key == "congestion") r.footnoteText else null, hi = hi(line.key),
             )
         }
-        // 정보 없음(날씨·정체) — 더하지 않은 줄(시안 arrive-nodata). 문구는 엔진 notes 그대로
-        r.notes.forEach { note -> CgReceiptRow(note, "", "—", basis = null, expanded = false, onClick = {}, compact = narrow) }
         if (editable && midwaySub == null && ui.weatherPending) Text(stringResource(R.string.effort_weather_pending), Modifier.padding(vertical = 8.gpx), style = t.labelM, color = c.textTertiary)
 
         // 소계: 운전 시간 · 중간에 쉰 시간 [바꾸기] · 거리 → 합계
@@ -282,6 +293,9 @@ internal fun ReceiptColumn(
     }
 }
 
+/** 이 프로세스에서 출력 연출을 이미 보여 준 주행(tripId). */
+private val PrintedTrips = mutableSetOf<String>()
+
 private fun changedKeys(a: EffortReceipt, b: EffortReceipt): Set<String> {
     val keys = mutableSetOf<String>()
     val am = a.lines.associateBy { it.key }
@@ -305,35 +319,49 @@ private fun OfferCard(ui: EffortUi, trip: OpenTrip, narrow: Boolean, onPick: (St
     val head = if (narrow) t.titleL else t.headlineS
     val big = if (narrow) t.headlineS else t.headlineL
     val why = if (narrow) t.labelM else t.bodyM
+    val cap = if (narrow) t.labelM else t.bodyM      // .offer .cap2 body-m · txt3(분할 label-m)
+    val headWrap = head.copy(lineBreak = androidx.compose.ui.text.style.LineBreak.Heading)   // text-wrap:balance · keep-all
     val btn = if (narrow) CgSize.M else CgSize.L
+    // 작은 머리 + 제목은 한 덩어리(.cap2 + .head margin-top -10 → 사이 10, 분할 6), 제목과 안내 사이 14(.head + .note -6)
+    val capHead: @Composable (String, String, String?) -> Unit = { capT, headT, noteT ->
+        Column(verticalArrangement = Arrangement.spacedBy(if (narrow) 6.gpx else 10.gpx)) {
+            Text(capT, style = cap, color = c.textTertiary)
+            Column(verticalArrangement = Arrangement.spacedBy(if (narrow) 8.gpx else 14.gpx)) {
+                Text(headT, style = headWrap, color = c.textPrimary)
+                noteT?.let { Text(it, style = why.copy(lineBreak = androidx.compose.ui.text.style.LineBreak.Heading), color = c.textTertiary) }
+            }
+        }
+    }
     val close: @Composable (Boolean) -> Unit = { filled ->
         // 정리하지 못함은 [홈으로](명세 F22·시안 arrive-unsettled), 그 밖은 [닫기]
         CgButton(stringResource(if (ui.unsettled) R.string.effort_home else R.string.close), onClose, Modifier.fillMaxWidth(), kind = if (filled) CgButtonKind.Filled else CgButtonKind.Basic, size = btn)
     }
-    CgOfferCard(modifier, compact = narrow) {
+    CgOfferCard(modifier, compact = narrow, pad = 48) {   // 도착 .arrpg .offer padding 48
         val done = ui.done
         val view = ui.proposal
         when {
             ui.unsettled -> {
-                Text(stringResource(R.string.effort_offer_plain_head), style = head, color = c.textTertiary)
-                Text(ui.receipt?.statusText ?: "", style = head, color = c.textPrimary)
+                capHead(stringResource(R.string.effort_offer_plain_head), ui.receipt?.statusText ?: "", null)
                 Filler(narrow)
                 close(true)
             }
             done != null -> DoneBody(done, ui.items, narrow) { close(true) }
             trip.n < 2 -> {
-                Text(stringResource(R.string.effort_arrive_solo), style = head, color = c.textTertiary)
-                Text(stringResource(R.string.effort_offer_solo), style = head, color = c.textPrimary)
-                Text(stringResource(R.string.effort_offer_solo_why), style = why, color = c.textSecondary)
+                capHead(stringResource(R.string.effort_arrive_solo), stringResource(R.string.effort_offer_solo), stringResource(R.string.effort_offer_solo_why))
                 Filler(narrow)
                 close(false)
             }
             view is ProposalView.A -> {
                 // 11/9 명준 위계: 묻는 줄(작게, title-m · textSecondary) + 결과 숫자(크게)는 한 덩어리, 근거는 한 칸 띄움
-                Column {
-                    Text(view.screen.titleText, style = if (narrow) t.titleS else t.titleM, color = c.textSecondary)
-                    Text(view.screen.mainText, style = big, color = c.textPrimary, maxLines = 1)
+                // 묻는 줄과 큰 숫자 사이 8(분할 4), 큰 숫자와 근거 사이 28(분할 16)
+                Column(verticalArrangement = Arrangement.spacedBy(if (narrow) 4.gpx else 8.gpx)) {
+                    Text(view.screen.titleText, style = if (narrow) t.bodyL else t.titleM, color = c.textSecondary)
+                    // 1인 몫이 10만 원을 넘어 카드 폭을 넘치면 "원"이 잘리지 않게 한 단계 작게
+                    var bigStyle by remember(view.screen.mainText) { mutableStateOf(big) }
+                    Text(view.screen.mainText, style = bigStyle, color = c.textPrimary, maxLines = 1, softWrap = false,
+                        onTextLayout = { if (it.didOverflowWidth && bigStyle == big) bigStyle = if (narrow) t.titleL else t.headlineS })
                 }
+                Spacer(Modifier.height(if (narrow) 4.gpx else 8.gpx))
                 // 근거 = 별표 글머리 + 운전 노고 금액 밑줄(제안 카드가 올라온 뒤, 출력 연출이면 1.5초)
                 CgBasisList(listOf(view.screen.basisText, view.screen.wageText), compact = narrow, underlineDelay = if (offerPlayed) 500 else 1500, animate = !reduceMotion)
                 Filler(narrow)
@@ -343,25 +371,28 @@ private fun OfferCard(ui: EffortUi, trip: OpenTrip, narrow: Boolean, onPick: (St
                 }
             }
             view is ProposalView.B -> {
-                Text(view.screen.text, style = head, color = c.textPrimary)
-                view.items.firstOrNull { it.key == view.screen.item }?.let {
-                    // #118 arrive-mid-b-open: 포함 모드면 끝에 "· 중간 정산 몫은 빼고 골랐어요"
-                    val sub = stringResource(R.string.effort_offer_b_sub, ieyo(it.label))
-                    Text(if (ui.settleFold != null && ui.settleIncluded) sub + stringResource(R.string.effort_settle_b_note) else sub, style = why, color = c.textSecondary)
+                // 제목 + 안내는 한 덩어리(사이 14), 항목 버튼은 안내 바로 아래 16(.note + .opts), 닫기만 아래로
+                Column(verticalArrangement = Arrangement.spacedBy(if (narrow) 8.gpx else 14.gpx)) {
+                    Text(view.screen.text, style = headWrap, color = c.textPrimary)
+                    view.items.firstOrNull { it.key == view.screen.item }?.let {
+                        // #118 arrive-mid-b-open: 포함 모드면 끝에 "· 중간 정산 몫은 빼고 골랐어요"
+                        val sub = stringResource(R.string.effort_offer_b_sub, ieyo(it.label))
+                        Text(if (ui.settleFold != null && ui.settleIncluded) sub + stringResource(R.string.effort_settle_b_note) else sub,
+                            style = why.copy(lineBreak = androidx.compose.ui.text.style.LineBreak.Heading), color = c.textTertiary)
+                    }
                 }
-                Filler(narrow)
                 val opt: @Composable (Modifier, EffortItem) -> Unit = { m, item ->
                     CgOptionButton(item.examples.ifEmpty { listOf(item.label) }, isDefault = item.key == view.screen.item, onClick = { onPick(item.key) }, modifier = m, compact = narrow)
                 }
                 if (narrow) Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.gpx)) { view.items.forEach { opt(Modifier.weight(1f), it) } }
                 else Column(verticalArrangement = Arrangement.spacedBy(12.gpx)) { view.items.forEach { opt(Modifier.fillMaxWidth(), it) } }
+                Filler(narrow)
                 close(false)
             }
             else -> {
                 // 제안 없음(운전자 몫이 커피 1인분의 절반보다 작음, 명세 F25 · A·B 같음 Q-07-04)
-                Text(stringResource(R.string.effort_offer_plain_head), style = head, color = c.textTertiary)
-                Text(stringResource(R.string.effort_offer_none), style = head, color = c.textPrimary)
-                Text(stringResource(R.string.effort_offer_none_why), style = why, color = c.textSecondary)
+                val pre = if (ui.settleFold != null && ui.settleIncluded) stringResource(R.string.effort_offer_none_settled) else ""
+                capHead(stringResource(R.string.effort_offer_plain_head), stringResource(R.string.effort_offer_none), pre + stringResource(R.string.effort_offer_none_why))
                 Filler(narrow)
                 close(false)
             }
@@ -374,23 +405,24 @@ private fun OfferCard(ui: EffortUi, trip: OpenTrip, narrow: Boolean, onPick: (St
 private fun ColumnScope.DoneBody(done: ArriveDone, items: List<EffortItem>, narrow: Boolean, close: @Composable () -> Unit) {
     val c = Chagok.colors
     val t = Chagok.type
-    val head = if (narrow) t.titleL else t.headlineS
+    val head = (if (narrow) t.titleL else t.headlineS).copy(lineBreak = androidx.compose.ui.text.style.LineBreak.Heading)
     val why = if (narrow) t.labelM else t.bodyM
-    when (val v = done.proposal) {
-        is ProposalView.A -> {
-            Text(v.screen.titleText, style = head, color = c.textTertiary)
-            Text(stringResource(R.string.effort_offer_a_done), style = head, color = c.textPrimary)
-            Text(v.screen.mainText, style = if (narrow) t.titleM else t.titleL, color = c.textSecondary)
-        }
+    val cap = if (narrow) t.labelM else t.bodyM
+    // 작은 머리(.cap2) + 제목 한 덩어리 → .why(txt2) → .note "더 할 일은 없어요"(txt3) → 아래로 [닫기]
+    val (capT, headT, whyT) = when (val v = done.proposal) {
+        is ProposalView.A -> Triple(v.screen.titleText, stringResource(R.string.effort_offer_a_done), v.screen.mainText)
         else -> {
             val phrase = items.firstOrNull { it.key == done.choice }?.phraseText ?: done.choice
-            Text(stringResource(R.string.effort_offer_b_done_head), style = head, color = c.textTertiary)
-            Text(stringResource(R.string.effort_offer_b_done, phrase), style = head, color = c.textPrimary)
-            Text(stringResource(R.string.effort_offer_b_done_sub), style = why, color = c.textSecondary)
+            Triple(stringResource(R.string.effort_offer_b_done_head), stringResource(R.string.effort_offer_b_done, phrase), stringResource(R.string.effort_offer_b_done_sub))
         }
     }
-    Filler(narrow)
+    Column(verticalArrangement = Arrangement.spacedBy(if (narrow) 6.gpx else 10.gpx)) {
+        Text(capT, style = cap, color = c.textTertiary)
+        Text(headT, style = head, color = c.textPrimary)
+    }
+    Text(whyT, style = why, color = c.textSecondary)
     Text(stringResource(R.string.effort_offer_done_note), style = why, color = c.textTertiary)
+    Filler(narrow)
     close()
 }
 

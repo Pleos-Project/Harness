@@ -46,8 +46,8 @@ private fun Modifier.pressScale(pressed: Boolean): Modifier = graphicsLayer {
     scaleX = k; scaleY = k
 }
 
-/** 버튼 종류: 가이드 Basic button의 filled(주요)·basic(보조). */
-enum class CgButtonKind { Filled, Basic }
+/** 버튼 종류: 가이드 Basic button의 filled(주요)·basic(보조)·danger(지우기 · 그만두기 확인, 아티팩트 .btn.fill.danger). */
+enum class CgButtonKind { Filled, Basic, Danger }
 
 /** 버튼 크기(Design v2 components/button): S 64 · M 80 · L 100. */
 enum class CgSize { S, M, L, XL, XLC }   // XL · XLC = v104 가는 중 홈 [도착했어요]·[그만두기](112 · 분할 96)
@@ -71,6 +71,7 @@ fun CgButton(
     val (bg, fg) = when {
         !enabled -> c.btnDisabled to c.btnDisabledText
         kind == CgButtonKind.Filled -> (if (pressed) c.btnFilledPressed else c.btnFilled) to c.btnFilledText
+        kind == CgButtonKind.Danger -> (if (pressed) c.btnDestructivePressed else c.btnDestructive) to c.btnDestructiveText
         else -> (if (pressed) c.btnBasicPressed else c.btnBasic) to c.btnBasicText
     }
     val (h, r, style) = when (size) {
@@ -85,7 +86,7 @@ fun CgButton(
         modifier
             .defaultMinSize(minWidth = (if (size == CgSize.S) 100 else 120).gpx, minHeight = h.gpx.coerceAtLeast(MinTouch))
             .background(bg, shape)
-            .then(if (!enabled) Modifier.border(2.gpx, c.line, shape) else Modifier)
+            // v3 .btn.off: 비활성도 테두리 없이 옅은 면만(아티팩트 대조 11/11)
             .clickable(source, indication = null, enabled = enabled, role = Role.Button, onClick = onClick)
             .padding(horizontal = (when (size) { CgSize.XL -> 40; CgSize.XLC -> 32; CgSize.L -> 38; CgSize.M -> 30; else -> 22 }).gpx),
         contentAlignment = Alignment.Center,
@@ -167,17 +168,17 @@ fun CgNotice(text: String, modifier: Modifier = Modifier) {
     }
 }
 
-/** 화면 구석 "시연용 값"(AC-C-7). 에뮬 임의 값(차종 표·모의 값)을 쓰는 동안 고정 표시. */
+/** 화면 구석 "시연용 값"(AC-C-7). 아티팩트 .demotag: 안내(status-info) 알약 · Label S · 여백 4 14. */
 @Composable
 fun DemoMark(text: String, modifier: Modifier = Modifier) {
     val c = Chagok.colors
     Text(
         text,
         modifier
-            .background(c.surfaceAccent, RoundedCornerShape(8.gpx))
-            .padding(horizontal = 12.gpx, vertical = 4.gpx),
+            .background(c.statusInfoBackground, RoundedCornerShape(50))
+            .padding(horizontal = 14.gpx, vertical = 4.gpx),
         style = Chagok.type.labelS,
-        color = c.textSecondary,
+        color = c.statusInfoForeground,
     )
 }
 

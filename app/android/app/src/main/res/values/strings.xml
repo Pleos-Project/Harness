@@ -150,7 +150,7 @@
     <string name="effort_depart_no_demo">시연 데이터가 없어요. 설정에서 데모 고정 모드를 끄면 실제로 출발할 수 있어요</string>
     <string name="effort_search_hint">목적지 검색</string>
     <string name="effort_search">검색</string>
-    <string name="effort_searching">찾는 중이에요</string>
+    <string name="effort_searching">찾는 중</string>
     <string name="effort_search_empty">검색 결과 없음</string>
     <string name="effort_search_unavailable">지금은 검색이 안 돼요. 아래 최근 목적지·즐겨찾기에서 골라 주세요</string>
     <string name="effort_navi_places">즐겨찾기 · 최근</string>
@@ -185,6 +185,13 @@
     <string name="effort_receipt_col_item">항목</string>
     <string name="effort_receipt_col_add">더한 몫</string>
     <string name="effort_receipt_plain">비·정체·밤길 없이 달렸어요</string>
+    <string name="effort_receipt_na_weather_label">날씨</string>
+    <string name="effort_receipt_na_weather">정보 없음</string>
+    <string name="effort_receipt_na_weather_why">날씨를 불러오지 못해 이번에는 더하지 않았어요</string>
+    <string name="effort_receipt_na_jam_label">정체 구간</string>
+    <string name="effort_receipt_na_jam">정체 정보 없음</string>
+    <string name="effort_receipt_na_jam_why">출발 때 내비에서 정체 정보를 받지 못해 이번에는 더하지 않았어요</string>
+    <string name="effort_offer_none_settled">"중간 정산에서 이미 챙겼어요. "</string>
     <string name="effort_receipt_drive">운전 시간</string>
     <string name="effort_receipt_rest">중간에 쉰 시간</string>
     <string name="effort_receipt_rest_change_label">중간에 쉰 시간 바꾸기</string>
@@ -222,6 +229,7 @@
     <string name="effort_depart_people_pill">함께 %1$d명</string>
     <string name="effort_depart_people_check">인원 확인 필요</string>
     <string name="effort_depart_people_checking">확인 중</string>
+    <string name="effort_depart_people_solo">혼자 운전</string>
     <string name="effort_depart_sending">내비로 보내는 중</string>
     <string name="effort_kind_search">검색</string>
     <string name="effort_navi_empty_title">아직 고를 목적지가 없어요</string>
@@ -245,6 +253,7 @@
     <string name="payer_bar_title_unknown">몇 명이 함께 타나요?</string>
     <string name="payer_bar_hint_unknown">좌석 센서를 읽지 못했어요 · 나눠 낼 인원을 골라 주세요</string>
     <string name="payer_bar_hint_manual">감지는 %1$d명 · %2$d명으로 나눠요</string>
+    <string name="payer_bar_hint_picked">직접 고른 인원으로 나눠요</string>
     <string name="payer_bar_hint">좌석 센서로 감지했어요 · 나눠 낼 인원을 맞춰 주세요</string>
     <string name="payer_bar_solo">혼자 운전하면 제안 없이 영수증만 보여 드려요</string>
     <string name="payer_bar_value">%1$d명</string>
@@ -256,6 +265,7 @@
     <string name="effort_calc_total">오늘 운전 %1$s</string>
     <string name="effort_calc_none">없음</string>
     <string name="effort_calc_unknown">정보 없음</string>
+    <string name="effort_calc_clear">맑음</string>
     <string name="effort_calc_honk">빵!</string>
     <string name="effort_calc_zip">쌩</string>
     <string name="effort_calc_say_rain">쏟아지는 비를 뚫고 달린 시간 세는 중…</string>
@@ -295,6 +305,12 @@
     <string name="effort_mid_people">가는 중 · 함께 %1$d명</string>
     <string name="effort_mid_receipt_title">오늘 주행 영수증</string>
     <string name="effort_mid_receipt_sub">%1$s 출발 · 아직 가는 중 · %2$d명</string>
+    <string name="effort_mid_receipt_sub_solo">%1$s 출발 · 아직 가는 중 · 혼자</string>
+    <string name="effort_mid_people_solo">가는 중 · 혼자 운전</string>
+    <string name="effort_mid_cap_short">지금까지</string>
+    <string name="effort_mid_solo_note">혼자 운전이라 영수증만 보여 드려요</string>
+    <string name="effort_mid_short">여기까지도 수고하셨어요</string>
+    <string name="effort_mid_short_note">아직 짧아서 따로 제안하지 않아요</string>
     <string name="effort_mid_cap">%1$s 출발 · 지금까지</string>
     <string name="effort_mid_a_title">지금까지를 챙긴다면</string>
     <string name="effort_mid_note">좋아요를 누르면 여기까지 기록해 두고, 도착하면 이 몫은 빼고 알려 드려요</string>
@@ -325,6 +341,7 @@
     <string name="effort_settings_wage_open">단가 출처 펼치기</string>
     <string name="effort_settings_wage_close">단가 출처 접기</string>
     <string name="effort_settings_wipe_sub">이 차에 남은 주행 기록 %1$d건을 지워요</string>
+    <string name="effort_settings_wipe_none">남은 기록이 없어요</string>
     <string name="effort_settings_wipe_title">기록을 모두 지울까요?</string>
     <string name="effort_settings_wipe_body">지운 기록은 되돌릴 수 없어요</string>
     <string name="effort_settings_note">개발·시연용 설정이에요 · 좌표 없이 이 차에만 저장돼요</string>
@@ -363,6 +380,7 @@
     <string name="effort_record_choice_none">제안 없이 기록만 남겼어요</string>
     <string name="effort_record_choice_unsettled">도착이 늦게 잡혀 영수증 없이 기록만 남겼어요</string>
     <string name="effort_record_choice_accept">%1$s · %2$s · 좋아요를 눌렀어요</string>
-    <string name="effort_record_choice_close">%1$s · 닫았어요</string>
+    <string name="effort_record_choice_close">%1$s · 제안은 닫았어요</string>
+    <string name="effort_record_choice_solo">%1$s · 혼자 운전해서 제안은 없었어요</string>
     <string name="effort_record_choice_item">%1$s · %2$s에서 운전자 빼기로 했어요</string>
 </resources>

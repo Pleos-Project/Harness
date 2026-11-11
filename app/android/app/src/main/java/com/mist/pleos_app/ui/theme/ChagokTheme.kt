@@ -101,6 +101,16 @@ data class ChagokColors(
     val brandWordmark: Color,
     val drivingLockBackground: Color,
     val drivingLockForeground: Color,
+    // 아티팩트 대조(11/11)로 더한 v3.1 토큰
+    val borderStrong: Color,              // 점선 빈 자리 · 강한 테두리(--color-border-strong). lineStrong은 이름과 달리 border-subtle 값
+    val btnTertiaryText: Color,           // 글자 버튼(--color-button-tertiary-foreground)
+    val btnTertiaryPressed: Color,        // 글자 · 아이콘 버튼 눌림(--color-button-tertiary-pressed)
+    val surfaceModal: Color,              // 하단 시트(--color-surface-modal)
+    val surfaceNotification: Color,       // 인원 알림 바(--color-surface-notification)
+    val sheetBorder: Color,               // 시트 · 알림 바 테두리: 주간 border-subtle, 야간 없음
+    val receiptDetailBackground: Color,   // 영수증 근거 펼침 칸
+    val skeletonBase: Color,
+    val skeletonHighlight: Color,
     /** 야간 테마인지(로고 · 앱 아이콘처럼 주간 · 야간 그림이 따로 있는 곳에서 고름). */
     val isDark: Boolean = false,
 )
@@ -160,6 +170,9 @@ private val DarkColors = ChagokColors(
     brandWordmark = Color(0xFFD9F77A),
     drivingLockBackground = Color(0xFF242033),
     drivingLockForeground = Color(0xFFF7F5FC),
+    borderStrong = Color(0xFF8B849C), btnTertiaryText = Color(0xFFDEDAE8), btnTertiaryPressed = Color(0x1FFFFFFF),
+    surfaceModal = Color(0xFF3A354A), surfaceNotification = Color(0xFF3A354A), sheetBorder = Color(0x00000000),
+    receiptDetailBackground = Color(0xFF292538), skeletonBase = Color(0xFF3A354A), skeletonHighlight = Color(0xFF51495F),
     isDark = true,
 )
 
@@ -218,6 +231,9 @@ private val LightColors = ChagokColors(
     brandWordmark = Color(0xFF242033),
     drivingLockBackground = Color(0xFFEFEDF5),
     drivingLockForeground = Color(0xFF242033),
+    borderStrong = Color(0xFF797187), btnTertiaryText = Color(0xFF51495F), btnTertiaryPressed = Color(0x1F242033),
+    surfaceModal = Color(0xFFFFFFFF), surfaceNotification = Color(0xFFFFFFFF), sheetBorder = Color(0xFFDEDAE8),
+    receiptDetailBackground = Color(0xFFF7F5FC), skeletonBase = Color(0xFFEFEDF5), skeletonHighlight = Color(0xFFDEDAE8),
 )
 
 private val Dark = darkColorScheme(
