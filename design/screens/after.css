@@ -149,6 +149,9 @@
   .cg-arr.cg-print .cg-tflip .cg-t1,.cg-arr.cg-print .cg-tflip .cg-t2{animation:none}
 }
 @media (prefers-reduced-motion:reduce){
+  .cg-play .cg-btn.cg-ib.cg-bell.cg-act .cg-ico.cg-pi{animation:none}
+}
+@media (prefers-reduced-motion:reduce){
   .cg-play .cg-btn.cg-ib.cg-bell .cg-ndot{animation:none}
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .cg-npanel{background:#FFFFFF0D;box-shadow:0 0 0 1px #FFFFFF17,0 48px 96px -24px #000000A6,0 14px 28px -10px #00000066}}

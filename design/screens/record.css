@@ -29,3 +29,5 @@
 .cg-pg.cg-p .cg-logr .cg-ld{grid-area:ld;width:auto;color:var(--color-text-tertiary)}
 .cg-pg.cg-p .cg-logr .cg-lm{grid-area:lm;align-items:flex-start}
 .cg-pg.cg-p .cg-logr .cg-chev{grid-area:ch;align-self:center}
+/* 기록 목록 스크롤(D6) · 분할 방식 B 항목 세로(D8) */
+.cg-pg > .cg-logl{flex:0 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain}

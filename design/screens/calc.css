@@ -132,3 +132,6 @@
 .cg-cn .cg-dot{z-index:1}
 .cg-cn .cg-lb,.cg-cn .cg-vl,.cg-cn .cg-slot{z-index:2}
 .cg-smoke,.cg-tsmoke{display:none!important}
+/* 계산 연출 원 아래 값 두 줄(D1): 시간 / +% · 분할은 한 줄 */
+.cg-cn .cg-vl small{display:block;font:inherit}
+.cg-calc.cg-p .cg-cn .cg-vl small{display:inline;margin-left:10px}

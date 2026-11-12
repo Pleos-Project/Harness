@@ -50,3 +50,7 @@
 .cg-opt.cg-def:active{background:var(--color-selection-pressed)}
 .cg-opt.cg-def small{color:inherit;opacity:.72}
 .cg-offer .cg-head.cg-ok{color:var(--color-text-primary)}
+/* 큰 숫자 길이 규칙(D4): 표시 금액 10만 원 이상 또는 큰 숫자 줄 15자 이상 → 한 단계 작게(가로 Headline M · 분할 Title L) */
+.cg-offer .cg-big.cg-sm{font:var(--cg-headline-m)}
+.cg-p .cg-offer .cg-big.cg-sm{font:var(--cg-title-l)}
+.cg-p .cg-opts{flex-direction:column}

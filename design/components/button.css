@@ -40,6 +40,9 @@
 .cg-ico.cg-pi{border:none;border-radius:0;opacity:1;background:currentColor;-webkit-mask:var(--m) center/contain no-repeat;mask:var(--m) center/contain no-repeat}
 .cg-btn.cg-ib .cg-ico.cg-pi{width:48px;height:48px}
 .cg-dico figure .cg-ico{width:48px;height:48px}
+/* 새 알림 = 활성 종(울리는 종) */
+.cg-btn.cg-ib.cg-bell.cg-act .cg-ico.cg-pi{color:var(--color-text-primary);transform-origin:50% 12%}
+.cg-play .cg-btn.cg-ib.cg-bell.cg-act .cg-ico.cg-pi{animation:cg-ring-bell 1.1s cubic-bezier(.36,.07,.19,.97) .5s both}
 .cg-btn.cg-ib.cg-bell{position:relative}
 .cg-btn.cg-ib.cg-bell .cg-ndot{position:absolute;top:14px;right:16px}
 .cg-p .cg-btn.cg-ib.cg-bell .cg-ndot{top:12px;right:14px;width:16px;height:16px}

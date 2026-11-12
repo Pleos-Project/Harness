@@ -276,7 +276,11 @@ details ul.nav li.g{font-size:11.5px;font-weight:800;color:var(--ink-3);margin-t
 .rrow.km{cursor:default;border-bottom:none}
 .rrow.km .chev{visibility:hidden}
 .rrow .wy{grid-column:1/-1;font:var(--label-m);color:var(--txt2);background:var(--ph);border-radius:16px;padding:12px 18px;margin:0 0 18px}
-.rnone{font:var(--body-m);color:var(--txt3);padding:28px 0;border-bottom:1px dashed var(--div3)}
+.rnone{display:flex;align-items:center;gap:16px;padding:24px 0;border-bottom:1px dashed var(--div3);flex:none}
+.rnone .ico{width:36px;height:36px;flex:none;color:var(--txt2)}
+.rnone > span{display:flex;flex-direction:column;gap:4px;min-width:0}
+.rnone b{font:var(--body-m-b);color:var(--txt)}
+.rnone small{font:var(--label-m);color:var(--txt3)}
 .restq{display:flex;flex-direction:column;gap:14px;padding:0 0 24px;margin-bottom:20px;border-bottom:1px dashed var(--div3)}
 .restq .k{font:var(--body-l)}
 .restq .k small{font:var(--label-m);color:var(--txt3);margin-left:14px}
@@ -295,7 +299,10 @@ details ul.nav li.g{font-size:11.5px;font-weight:800;color:var(--ink-3);margin-t
 .p .rrow .pc{font:var(--body-l)}
 .p .rrow .chev{width:12px;height:12px;border-width:3px}
 .p .rrow .wy{font:var(--label-s);padding:8px 14px;margin:0 0 10px}
-.p .rnone{padding:14px 0;font:var(--label-m)}
+.p .rnone{padding:14px 0;gap:10px}
+.p .rnone .ico{width:24px;height:24px}
+.p .rnone b{font:var(--label-m);font-weight:700}
+.p .rnone small{font:var(--label-s)}
 .p .restq{gap:8px;padding:0 0 14px;margin-bottom:10px}
 .p .restq .k{font:var(--body-m-b)}
 .p .restq .k small{font:var(--label-s)}
@@ -1046,7 +1053,7 @@ details ul.nav li.g{font-size:11.5px;font-weight:800;color:var(--ink-3);margin-t
 /* ═══ Nogo 컬러 시스템 v3.0 (11/9 명준: 확정 로고 · 워드마크 · 컬러 반영) ═══
    출처: Figma hd(tYlusvtRmucgL2OCFAZULv) · Nogo / Color 컬렉션 Light·Dark 78개 역할 + 영수증 A안(22:10230)
    적용 범위: 차곡 앱 창(1700 · 840) 안쪽만. 상태바 · 주행 보조 화면 · 순정 내비 · 시스템 키보드 · GNB는 Pleos 플랫폼 값 그대로 */
-.screen{--color-background-canvas:#F7F5FC;--color-background-subtle:#EFEDF5;--color-surface-default:#FFFFFF;--color-surface-raised:#FFFFFF;--color-surface-modal:#FFFFFF;--color-surface-notification:#FFFFFF;--color-text-primary:#242033;--color-text-secondary:#51495F;--color-text-tertiary:#6B637B;--color-text-disabled:#8B849C;--color-text-link:#445616;--color-icon-primary:#242033;--color-icon-secondary:#6B637B;--color-divider-default:#DEDAE8;--color-border-subtle:#DEDAE8;--color-border-strong:#797187;--color-focus-ring:#242033;--color-button-primary-fill:#D9F77A;--color-button-primary-hover:#CDEA6D;--color-button-primary-pressed:#BFD95F;--color-button-primary-foreground:#242033;--color-button-secondary-fill:#E6E3EF;--color-button-secondary-hover:#DEDAE8;--color-button-secondary-pressed:#D1CCDD;--color-button-secondary-foreground:#242033;--color-button-tertiary-pressed:#2420331F;--color-button-tertiary-foreground:#51495F;--color-button-disabled-fill:#EFEDF5;--color-button-disabled-foreground:#8B849C;--color-button-destructive-fill:#9D303D;--color-button-destructive-pressed:#792532;--color-button-destructive-foreground:#FFFFFF;--color-field-background:#FFFFFF;--color-field-border:#797187;--color-field-foreground:#242033;--color-field-placeholder:#6B637B;--color-field-caret:#242033;--color-selection-background:#D9F77A;--color-selection-foreground:#242033;--color-selection-border:#242033;--color-selection-pressed:#CDEA6D;--color-switch-track-off:#797187;--color-switch-thumb-off:#FFFFFF;--color-switch-track-on:#D9F77A;--color-switch-thumb-on:#242033;--color-progress-track:#9A93AA;--color-progress-indicator:#D9F77A;--color-skeleton-base:#EFEDF5;--color-skeleton-highlight:#DEDAE8;--color-progress-line:#242033;--color-progress-indicator-border:#242033;--color-selection-halo:#D9F77A80;--color-illust-car:#D9F77A;--color-illust-car-shade:#C2DF5C;--color-illust-car-hi:#F3FEC9;--color-illust-car-line:#A6C246;--color-illust-ink-car:#242033;--color-illust-ink-car-shade:#1B1828;--color-illust-ink-car-hi:#4A445C;--color-illust-ink-car-line:#3A354A;--color-illust-ink-glass:#4A4560;--color-illust-ink-trim:#121019;--color-illust-ink-head:#D9F77A;--color-illust-glass:#2E2A3D;--color-illust-glass-hi:#FFFFFF59;--color-illust-trim:#242033;--color-illust-well:#16131F;--color-illust-tire:#242033;--color-illust-tire-edge:#242033;--color-illust-tire-hi:#51495F;--color-illust-rim:#CBD2DB;--color-illust-rim-dark:#3E4754;--color-illust-cap:#D9F77A;--color-illust-tail:#F78F92;--color-illust-head:#FFFFFF;--color-illust-ground:#24203329;--color-illust-other:#FFFFFF;--color-illust-other-shade:#E6E3EF;--color-illust-other-line:#C9C3D6;--color-illust-other-glass:#AFA8BD;--color-illust-rim-hi:#EDF1F6;--color-illust-rim-shade:#8994A3;--color-illust-glass-top:#4A4560;--color-illust-ink-glass-top:#6B637B;--color-illust-tail-hi:#FFADAD;--color-receipt-paper:#FFFFFF;--color-receipt-rule:#DEDAE8;--color-receipt-detail-background:#F7F5FC;--color-receipt-printer-highlight:#EDF1F6;--color-receipt-printer-midtone:#CBD2DB;--color-receipt-printer-shade:#8994A3;--color-receipt-printer-slot:#171B22;--color-receipt-result-text:#242033;--color-receipt-result-marker:#D9F77A;--color-status-neutral-background:#EFEDF5;--color-status-neutral-foreground:#51495F;--color-status-warning-background:#FFF1CC;--color-status-warning-foreground:#6F4908;--color-status-error-background:#FDE9E9;--color-status-error-foreground:#9D303D;--color-status-info-background:#E7F1FD;--color-status-info-foreground:#244D7F;--color-dim-scrim:#2420338F;--color-overlay-hover:#24203314;--color-overlay-pressed:#2420331F;--color-driving-lock-background:#EFEDF5;--color-driving-lock-foreground:#242033;--color-brand-wordmark:#242033;
+.screen{--color-background-canvas:#F7F5FC;--color-background-subtle:#EFEDF5;--color-surface-default:#FFFFFF;--color-surface-raised:#FFFFFF;--color-surface-modal:#FFFFFF;--color-surface-notification:#FFFFFF;--color-text-primary:#242033;--color-text-secondary:#51495F;--color-text-tertiary:#6B637B;--color-text-disabled:#8B849C;--color-text-link:#445616;--color-icon-primary:#242033;--color-icon-secondary:#6B637B;--color-divider-default:#DEDAE8;--color-border-subtle:#DEDAE8;--color-border-strong:#797187;--color-focus-ring:#242033;--color-button-primary-fill:#D9F77A;--color-button-primary-hover:#CDEA6D;--color-button-primary-pressed:#BFD95F;--color-button-primary-foreground:#242033;--color-button-secondary-fill:#E6E3EF;--color-button-secondary-hover:#DEDAE8;--color-button-secondary-pressed:#D1CCDD;--color-button-secondary-foreground:#242033;--color-button-tertiary-pressed:#2420331F;--color-button-tertiary-foreground:#51495F;--color-button-disabled-fill:#EFEDF5;--color-button-disabled-foreground:#8B849C;--color-button-destructive-fill:#9D303D;--color-button-destructive-pressed:#792532;--color-button-destructive-foreground:#FFFFFF;--color-field-background:#FFFFFF;--color-field-border:#797187;--color-field-foreground:#242033;--color-field-placeholder:#6B637B;--color-field-caret:#242033;--color-selection-background:#D9F77A;--color-selection-foreground:#242033;--color-selection-border:#D9F77A;--color-selection-pressed:#CDEA6D;--color-switch-track-off:#797187;--color-switch-thumb-off:#FFFFFF;--color-switch-track-on:#D9F77A;--color-switch-thumb-on:#242033;--color-progress-track:#9A93AA;--color-progress-indicator:#D9F77A;--color-skeleton-base:#EFEDF5;--color-skeleton-highlight:#DEDAE8;--color-progress-line:#242033;--color-progress-indicator-border:#242033;--color-selection-halo:#D9F77A80;--color-illust-car:#D9F77A;--color-illust-car-shade:#C2DF5C;--color-illust-car-hi:#F3FEC9;--color-illust-car-line:#A6C246;--color-illust-ink-car:#242033;--color-illust-ink-car-shade:#1B1828;--color-illust-ink-car-hi:#4A445C;--color-illust-ink-car-line:#3A354A;--color-illust-ink-glass:#4A4560;--color-illust-ink-trim:#121019;--color-illust-ink-head:#D9F77A;--color-illust-glass:#2E2A3D;--color-illust-glass-hi:#FFFFFF59;--color-illust-trim:#242033;--color-illust-well:#16131F;--color-illust-tire:#242033;--color-illust-tire-edge:#242033;--color-illust-tire-hi:#51495F;--color-illust-rim:#CBD2DB;--color-illust-rim-dark:#3E4754;--color-illust-cap:#D9F77A;--color-illust-tail:#F78F92;--color-illust-head:#FFFFFF;--color-illust-ground:#24203329;--color-illust-other:#FFFFFF;--color-illust-other-shade:#E6E3EF;--color-illust-other-line:#C9C3D6;--color-illust-other-glass:#AFA8BD;--color-illust-rim-hi:#EDF1F6;--color-illust-rim-shade:#8994A3;--color-illust-glass-top:#4A4560;--color-illust-ink-glass-top:#6B637B;--color-illust-tail-hi:#FFADAD;--color-receipt-paper:#FFFFFF;--color-receipt-rule:#DEDAE8;--color-receipt-detail-background:#F7F5FC;--color-receipt-printer-highlight:#EDF1F6;--color-receipt-printer-midtone:#CBD2DB;--color-receipt-printer-shade:#8994A3;--color-receipt-printer-slot:#171B22;--color-receipt-result-text:#242033;--color-receipt-result-marker:#D9F77A;--color-status-neutral-background:#EFEDF5;--color-status-neutral-foreground:#51495F;--color-status-warning-background:#FFF1CC;--color-status-warning-foreground:#6F4908;--color-status-error-background:#FDE9E9;--color-status-error-foreground:#9D303D;--color-status-info-background:#E7F1FD;--color-status-info-foreground:#244D7F;--color-dim-scrim:#2420338F;--color-overlay-hover:#24203314;--color-overlay-pressed:#2420331F;--color-driving-lock-background:#EFEDF5;--color-driving-lock-foreground:#242033;--color-brand-wordmark:#242033;
   --pl-win:var(--win);--pl-card:var(--card);--pl-txt:var(--txt);--pl-txt2:var(--txt2);--pl-txt3:var(--txt3);--pl-div2:var(--div2);--pl-div3:var(--div3);--pl-btn-fill:var(--btn-fill);--pl-btn-fill-txt:var(--btn-fill-txt)}
 .screen.dark{--color-background-canvas:#242033;--color-background-subtle:#292538;--color-surface-default:#312C40;--color-surface-raised:#3A354A;--color-surface-modal:#3A354A;--color-surface-notification:#3A354A;--color-text-primary:#F7F5FC;--color-text-secondary:#DEDAE8;--color-text-tertiary:#AFA8BD;--color-text-disabled:#797187;--color-text-link:#D9F77A;--color-icon-primary:#F7F5FC;--color-icon-secondary:#AFA8BD;--color-divider-default:#464055;--color-border-subtle:#464055;--color-border-strong:#8B849C;--color-focus-ring:#D9F77A;--color-button-primary-fill:#CDEA6D;--color-button-primary-hover:#D9F77A;--color-button-primary-pressed:#BFD95F;--color-button-primary-foreground:#242033;--color-button-secondary-fill:#464055;--color-button-secondary-hover:#51495F;--color-button-secondary-pressed:#5C546B;--color-button-secondary-foreground:#F7F5FC;--color-button-tertiary-pressed:#FFFFFF1F;--color-button-tertiary-foreground:#DEDAE8;--color-button-disabled-fill:#3A354A;--color-button-disabled-foreground:#797187;--color-button-destructive-fill:#FFADAD;--color-button-destructive-pressed:#F78F92;--color-button-destructive-foreground:#242033;--color-field-background:#292538;--color-field-border:#8B849C;--color-field-foreground:#F7F5FC;--color-field-placeholder:#AFA8BD;--color-field-caret:#D9F77A;--color-selection-background:#D9F77A;--color-selection-foreground:#242033;--color-selection-border:#D9F77A;--color-selection-pressed:#CDEA6D;--color-switch-track-off:#8B849C;--color-switch-thumb-off:#242033;--color-switch-track-on:#CDEA6D;--color-switch-thumb-on:#242033;--color-progress-track:#6B637B;--color-progress-indicator:#D9F77A;--color-skeleton-base:#3A354A;--color-skeleton-highlight:#51495F;--color-progress-line:#D9F77A;--color-progress-indicator-border:#D9F77A;--color-selection-halo:#D9F77A40;--color-illust-car:#D9F77A;--color-illust-car-shade:#BFD95F;--color-illust-car-hi:#F3FEC9;--color-illust-car-line:#9CB743;--color-illust-ink-car:#242033;--color-illust-ink-car-shade:#1B1828;--color-illust-ink-car-hi:#4A445C;--color-illust-ink-car-line:#3A354A;--color-illust-ink-glass:#4A4560;--color-illust-ink-trim:#121019;--color-illust-ink-head:#D9F77A;--color-illust-glass:#2E2A3D;--color-illust-glass-hi:#FFFFFF59;--color-illust-trim:#242033;--color-illust-well:#0E0C14;--color-illust-tire:#16131F;--color-illust-tire-edge:#5C546B;--color-illust-tire-hi:#5C546B;--color-illust-rim:#A5AFBC;--color-illust-rim-dark:#3E4754;--color-illust-cap:#D9F77A;--color-illust-tail:#F78F92;--color-illust-head:#FFFFFF;--color-illust-ground:#00000066;--color-illust-other:#51495F;--color-illust-other-shade:#464055;--color-illust-other-line:#3A354A;--color-illust-other-glass:#312C40;--color-illust-rim-hi:#EDF1F6;--color-illust-rim-shade:#626D7D;--color-illust-glass-top:#4A4560;--color-illust-ink-glass-top:#6B637B;--color-illust-tail-hi:#FFADAD;--color-receipt-paper:#312C40;--color-receipt-rule:#464055;--color-receipt-detail-background:#292538;--color-receipt-printer-highlight:#A5AFBC;--color-receipt-printer-midtone:#626D7D;--color-receipt-printer-shade:#3E4754;--color-receipt-printer-slot:#171B22;--color-receipt-result-text:#F7F5FC;--color-receipt-result-marker:#445616;--color-status-neutral-background:#3A354A;--color-status-neutral-foreground:#DEDAE8;--color-status-warning-background:#493518;--color-status-warning-foreground:#F9D171;--color-status-error-background:#48272E;--color-status-error-foreground:#FFADAD;--color-status-info-background:#203750;--color-status-info-foreground:#A9CFFF;--color-dim-scrim:#000000B8;--color-overlay-hover:#FFFFFF14;--color-overlay-pressed:#FFFFFF1F;--color-driving-lock-background:#242033;--color-driving-lock-foreground:#F7F5FC;--color-brand-wordmark:#D9F77A}
 /* 와이어 시절 흑백 필터 해제: 도로 · 차량 · GNB는 Pleos 리소스 원래 색 */
@@ -1100,7 +1107,7 @@ details ul.nav li.g{font-size:11.5px;font-weight:800;color:var(--ink-3);margin-t
 .hsearch .q::after,.field .q::after{background:var(--color-field-caret)}
 
 /* 선택: 목적지 · 쉬는 시간 · 제안 항목 · 설정 방식 · 방금 기록 */
-.chip.on{background:var(--color-selection-background);color:var(--color-selection-foreground);box-shadow:inset 0 0 0 2px var(--color-selection-border);font-weight:800}
+.chip.on{background:var(--color-selection-background);color:var(--color-selection-foreground);box-shadow:none;font-weight:800}   /* 11/9 명준: 고른 칩도 다른 라임 버튼처럼 외곽선 없이 */
 .chip.on:active{background:var(--color-selection-pressed)}
 .dst.on{background:var(--color-selection-background);box-shadow:inset 0 0 0 2px var(--color-selection-border)}
 .dst.on .ad{color:var(--color-selection-foreground);opacity:.72}
@@ -1607,6 +1614,11 @@ details ul.nav li.g{font-size:11.5px;font-weight:800;color:var(--ink-3);margin-t
 
 /* ── 알림(11/9 명준): 홈 위 바 설정 왼쪽 종 아이콘 · 기록이 저장되면 빨간 점 · 알림 목록 ── */
 .pi-car-profile{--m:url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNTYgMjU2IiBmaWxsPSJjdXJyZW50Q29sb3IiPjxwYXRoIGQ9Ik0yMzYsMTA4SDIxM0wxNzAuODMsNjUuODZBMTkuODYsMTkuODYsMCwwLDAsMTU2LjY5LDYwSDQ4LjI4YTIwLDIwLDAsMCwwLTE2LjY0LDguOTFMMiwxMTMuMzRBMTIsMTIsMCwwLDAsMCwxMjB2NDhhMjAsMjAsMCwwLDAsMjAsMjBIMzMuNWEzNCwzNCwwLDAsMCw2NSwwaDU5YTM0LDM0LDAsMCwwLDY1LDBIMjM2YTIwLDIwLDAsMCwwLDIwLTIwVjEyOEEyMCwyMCwwLDAsMCwyMzYsMTA4Wk01MC40Miw4NEgxNTVsMjQsMjRIMzQuNDJaTTY2LDE4OGExMCwxMCwwLDEsMSwxMC0xMEExMCwxMCwwLDAsMSw2NiwxODhabTEyNCwwYTEwLDEwLDAsMSwxLDEwLTEwQTEwLDEwLDAsMCwxLDE5MCwxODhabTQyLTI0SDIyMUEzNCwzNCwwLDAsMCwxNTksMTY0SDk3QTM0LDM0LDAsMCwwLDM1LDE2NEgyNFYxMzJIMjMyWiIvPjwvc3ZnPg==")}   /* 알림 줄 아이콘(11/9 명준) */
+.pi-bell-ringing{--m:url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNTYgMjU2IiBmaWxsPSJjdXJyZW50Q29sb3IiPjxwYXRoIGQ9Ik0yMjUuODEsNzQuNjVBMTEuODYsMTEuODYsMCwwLDEsMjIwLjMsNzZhMTIsMTIsMCwwLDEtMTAuNjctNi40Nyw5MC4xLDkwLjEsMCwwLDAtMzItMzUuMzgsMTIsMTIsMCwxLDEsMTIuOC0yMC4yOSwxMTUuMjUsMTE1LjI1LDAsMCwxLDQwLjU0LDQ0LjYyQTEyLDEyLDAsMCwxLDIyNS44MSw3NC42NVpNNDYuMzcsNjkuNTNhOTAuMSw5MC4xLDAsMCwxLDMyLTM1LjM4QTEyLDEyLDAsMSwwLDY1LjYsMTMuODYsMTE1LjI1LDExNS4yNSwwLDAsMCwyNS4wNiw1OC40OGExMiwxMiwwLDAsMCw1LjEzLDE2LjE3QTExLjg2LDExLjg2LDAsMCwwLDM1LjcsNzYsMTIsMTIsMCwwLDAsNDYuMzcsNjkuNTNabTE3My41MSw5OC4zNUEyMCwyMCwwLDAsMSwyMDQsMjAwSDE3MS44MWE0NCw0NCwwLDAsMS04Ny42MiwwSDUyYTIwLDIwLDAsMCwxLTE1LjkxLTMyLjEyYzcuMTctOS4zMywxNS43My0yNi42MiwxNS44OC01NS45NEE3Niw3NiwwLDAsMSwyMDQsMTEyQzIwNC4xNSwxNDEuMjYsMjEyLjcxLDE1OC41NSwyMTkuODgsMTY3Ljg4Wk0xNDcuNiwyMDBIMTA4LjRhMjAsMjAsMCwwLDAsMzkuMiwwWm00OC43NC0yNGMtOC4xNi0xMy0xNi4xOS0zMy41Ny0xNi4zNC02My45NEE1Miw1MiwwLDEsMCw3NiwxMTJjLS4xNSwzMC40Mi04LjE4LDUxLTE2LjM0LDY0WiIvPjwvc3ZnPg==")}   /* 새 알림 = 활성 종(울리는 종) */
+.btn.ib.bell.act .ico.pi{color:var(--color-text-primary);transform-origin:50% 12%}
+.proto-on .btn.ib.bell.act .ico.pi{animation:cg-ring-bell 1.1s cubic-bezier(.36,.07,.19,.97) .5s both}
+@keyframes cg-ring-bell{0%,100%{transform:none}15%{transform:rotate(14deg)}30%{transform:rotate(-12deg)}45%{transform:rotate(8deg)}60%{transform:rotate(-5deg)}75%{transform:rotate(2deg)}}
+@media (prefers-reduced-motion:reduce){.proto-on .btn.ib.bell.act .ico.pi{animation:none}}
 .pi-bell{--m:url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNTYgMjU2IiBmaWxsPSJjdXJyZW50Q29sb3IiPjxwYXRoIGQ9Ik0yMjUuMjksMTY1LjkzQzIxNi42MSwxNTEsMjEyLDEyOS41NywyMTIsMTA0YTg0LDg0LDAsMCwwLTE2OCwwYzAsMjUuNTgtNC41OSw0Ny0xMy4yNyw2MS45M0EyMC4wOCwyMC4wOCwwLDAsMCwzMC42NiwxODYsMTkuNzcsMTkuNzcsMCwwLDAsNDgsMTk2SDg0LjE4YTQ0LDQ0LDAsMCwwLDg3LjY0LDBIMjA4YTE5Ljc3LDE5Ljc3LDAsMCwwLDE3LjMxLTEwQTIwLjA4LDIwLjA4LDAsMCwwLDIyNS4yOSwxNjUuOTNaTTEyOCwyMTJhMjAsMjAsMCwwLDEtMTkuNi0xNmgzOS4yQTIwLDIwLDAsMCwxLDEyOCwyMTJaTTU0LjY2LDE3MkM2My41MSwxNTQsNjgsMTMxLjE0LDY4LDEwNGE2MCw2MCwwLDAsMSwxMjAsMGMwLDI3LjEzLDQuNDgsNTAsMTMuMzMsNjhaIi8+PC9zdmc+")}
 .screen{--color-notification-dot:#E5484D}
 .screen.dark{--color-notification-dot:#FF6B6B}
@@ -1666,11 +1678,60 @@ details ul.nav li.g{font-size:11.5px;font-weight:800;color:var(--ink-3);margin-t
 @keyframes cg-np-out{to{opacity:0;transform:translateY(-10px) scaleY(.9)}}
 @media (prefers-reduced-motion:reduce){.proto-on .npanel,.proto-on .npanel .nit,.proto-on .npanel .nhd,.proto-on .npanel .nft,.proto-on .npanel.out{animation:none}}
 
+/* 기록 상세 그날의 노고(11/9 명준): 금액 밑줄(도착과 같은 .ul) 뒤 줄바꿈 → 아래 줄 운전 시간 · 거리 · 인원. 밑줄과 아래 줄 사이 숨 */
+.why.ldw .ul{display:inline-block;margin-bottom:8px}
+.p .why.ldw .ul{margin-bottom:6px}
+
+/* 11/9 명준: 주간 선택 테두리도 야간처럼 라임(딥 잉크 테두리 없앰) */
+/* 11/9 명준 2차: 검색 입력 중 테두리는 주간 딥 잉크로 되돌림(라임 번짐 없음) */
+
+
+/* ═══ 11/12 June 대조(11/11) 확정 규칙 — 앱에도 같은 규칙 ═══ */
+/* 한글 줄바꿈 kwrap(D3): 어절 안에서 안 끊음(keep-all) · 두 줄 균형(balance) · 한 어절이 줄보다 길 때만 끊음. Compose: 줄 균형 + 어절 단위, 미지원이면 어절 안 글자 사이 U+2060 */
+.kwrap{word-break:keep-all;overflow-wrap:break-word;text-wrap:balance}
+/* 큰 숫자 길이 규칙(D4): 표시 금액 10만 원 이상 또는 큰 숫자 줄 15자 이상 → 한 단계 작게(가로 Headline M · 분할 Title L) */
+.offer .big.sm{font:var(--headline-m)}
+.p .offer .big.sm{font:var(--title-l)}
+/* +1% 미만(D5): 1%가 안 되는 줄은 "+1% 미만"을 작은 글자로, 칸 폭은 그대로 */
+.arrpg:not(.p) .paper .rrow .pc.lt,.paper .rrow .pc.lt{font:var(--label-m)}
+.arrpg.p .paper .rrow .pc.lt,.p .paper .rrow .pc.lt{font:var(--label-s)}
+/* 계산 연출 원 아래 값 두 줄(D1): 시간 / +% · 분할은 한 줄 */
+.cn .vl small{display:block;font:inherit}
+.calc.p .cn .vl small{display:inline;margin-left:10px}
+/* 장소 이름만 말줄임(D2): .pnl > .pn(이름, 줄어듦) + .pr(뒤 문구, 안 줄어듦). 넘치면 JS fitPN이 글자 수를 줄여 …를 붙이고 .fit */
+.pnl{display:inline-flex;max-width:100%;min-width:0;vertical-align:bottom;white-space:nowrap}
+.pnl .pn{min-width:0;overflow:hidden;text-overflow:ellipsis}
+.pnl .pr{flex:none}
+.pnl.fit .pn{flex:none;overflow:visible;text-overflow:clip}
+.hd .name,.hd .ttl{min-width:0;display:flex}
+.home.hm.solo .hero .hdesc{max-width:100%;display:flex;justify-content:center;min-width:0}
+.npanel .nt b{display:flex;min-width:0}
+/* 기록 목록 스크롤(D6) · 분할 방식 B 항목 세로(D8) */
+.pg > .logl{flex:0 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain}
+.p .opts{flex-direction:column}
+
 /* 주석(Pleos 컴포넌트 대응) */
 :where([data-anno]){position:relative}
 .anno [data-anno]{outline:2px solid #ff3d7f99;outline-offset:3px}
 .anno [data-anno]::after{content:attr(data-anno);position:absolute;left:10px;top:-16px;z-index:30;background:#ff3d7f;color:#fff;font:700 17px/22px var(--font);padding:2px 10px;border-radius:7px;white-space:nowrap;pointer-events:none}
 .hot .proto-on [data-go],.hot .proto-on [data-act]{outline:3px solid #00a3ffaa;outline-offset:2px}
+
+/* 디자인 시스템 보기 전용: 한글 줄바꿈 · 큰 숫자 규칙 상자 */
+.kwbox{margin-top:14px;background:var(--ui);border:1px solid var(--line);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:10px}
+.kwbox > b{font-size:14px}
+.kwbox ol{margin:0;padding-left:20px;font-size:12.5px;color:var(--ink-2);display:flex;flex-direction:column;gap:3px}
+.kwbox code{font:600 12px/18px Consolas,monospace;background:var(--line);padding:0 5px;border-radius:5px}
+.kwrow{display:flex;gap:32px;flex-wrap:wrap}
+.kwrow figure{margin:0;display:flex;flex-direction:column;gap:10px}
+.kwrow figcaption{font:var(--label-m);color:var(--txt3)}
+.kwdemo{padding:20px 24px;border-radius:24px;background:var(--card);box-shadow:var(--sh1)}
+.kwdemo span{display:block;font:var(--title-l);line-height:48px;color:var(--txt)}
+.kwdemo span{width:315px;font:700 40px/48px var(--font)}   /* 출발 카드 이름 실제 폭(가로 창) */
+.kwdemo.off span{word-break:normal;overflow-wrap:normal;text-wrap:wrap}
+.kwdemo.on span{word-break:keep-all;overflow-wrap:break-word;text-wrap:balance}
+.kwdemo.bgd span{width:auto;white-space:nowrap}
+.kwdemo.bgd .b1{font:var(--headline-l)}
+.kwdemo.bgd .b2{font:var(--headline-m)}
 </style>
 
 <div class="top">
@@ -1803,6 +1864,8 @@ const ITEMS=[{k:"커피",p:4700,u:"1인분",ex:""},{k:"밥",p:10731,u:"1인분",
 const RESTL=["없음","15분","30분","1시간 이상"],RESTQ=[0,15,30,60];
 const won=n=>{const r=Math.round(n/1000)*1000;if(r<=0)return"1천 원 미만";const m=Math.floor(r/10000),c=(r%10000)/1000;return(m?m+"만 ":"")+(c?c+"천 ":"")+"원"};
 const yak=n=>{const w=won(n);return w==="1천 원 미만"?w:"약 "+w};
+/* 큰 숫자 길이 규칙(11/12 명준 · D4): 표시 금액이 10만 원 이상("약 ○○만 …")이거나 큰 숫자 줄이 15자 이상(띄어쓰기 포함)이면 한 단계 작은 글자 */
+const bigCls=t=>/\d{2,}만/.test(t)||t.length>=15?" sm":"";
 const hm=m=>{m=Math.round(m);const h=Math.floor(m/60),r=m%60;return((h?h+"시간":"")+(h&&r?" ":"")+(r?r+"분":""))||"0분"};
 const jong=w=>{const c=w.charCodeAt(w.length-1)-0xAC00;return c>=0&&c<11172&&c%28!==0};
 const yeyo=w=>jong(w)?"이에요":"예요", gwa=w=>jong(w)?"과":"와", eul=w=>jong(w)?"을":"를";
@@ -1811,11 +1874,15 @@ const TRIPS={
   main: {place:"태안 꽃지해수욕장",km:104,el:130,eta:105,jk:38,cp:36,wx:"비",nE:50,auto:false,date:"11월 10일"},
   rest: {place:"태안 꽃지해수욕장",km:104,el:160,eta:105,jk:38,cp:36,wx:"비",nE:62,auto:false},
   nodata:{place:"태안 꽃지해수욕장",km:104,el:130,eta:105,jk:null,cp:null,wx:"?",nE:50,auto:false},
-  clear:{place:"가평 아침고요수목원",km:52,el:60,eta:60,jk:0,cp:0,wx:null,nE:0,auto:true,date:"11월 2일"},
-  yp:   {place:"양평 두물머리",km:36,el:55,eta:42,jk:4,cp:12,wx:null,nE:55,auto:true,date:"10월 26일"},
-  mid:  {place:"출발부터 지금까지",km:52,el:65,eta:52,jk:19,cp:36,wx:"비",nE:0,auto:true,mid:true},   /* 중간 정산(11/8 명준): 휴게소에서 앱을 열었을 때 지금까지를 도착과 같은 6개 항목으로 셈. eta = 출발 때 ETA 105분 × 지금까지 거리 52/104km */
+  clear:{place:"가평 아침고요수목원",km:52,el:60,eta:60,jk:0,cp:0,wx:null,nE:0,auto:false,date:"11월 2일"},
+  yp:   {place:"양평 두물머리",km:36,el:55,eta:42,jk:4,cp:12,wx:null,nE:55,auto:false,date:"10월 26일"},
+  mid:  {place:"출발부터 지금까지",km:52,el:65,eta:52,jk:19,cp:36,wx:"비",nE:0,auto:false,mid:true},   /* 중간 정산(11/8 명준): 휴게소에서 앱을 열었을 때 지금까지를 도착과 같은 6개 항목으로 셈. eta = 출발 때 ETA 105분 × 지금까지 거리 52/104km */
   snow: {place:"태안 꽃지해수욕장",km:104,el:130,eta:105,jk:38,cp:36,wx:"눈",nE:50,auto:false},
-  short:{place:"동네 마트",km:4,el:10,eta:10,jk:0,cp:0,wx:null,nE:0,auto:true}
+  long: {place:"부산 해운대해수욕장",km:400,el:790,eta:330,jk:120,cp:30,wx:"비",nE:300,auto:false,date:"11월 8일"},   /* 11/11 June 대조 D4: 1인 몫 10만 원 넘는 긴 주행 확인용 */
+  n10:  {place:"태안 꽃지해수욕장",km:104,el:130,eta:105,jk:38,cp:36,wx:"비",nE:10,auto:false,date:"11월 10일"},   /* D5: 밤길 10분 = 1% 미만 확인용 */
+  wxhalf:{place:"태안 꽃지해수욕장",km:104,el:130,eta:105,jk:38,cp:36,wx:"비",wx2:"?",nE:50,auto:false,date:"11월 10일"},   /* D7: 출발 비 · 도착 날씨 못 받음 */
+  lp:   {place:"한화리조트 대천 파로스 오션타워 주차장 B동",km:168,el:150,eta:140,jk:20,cp:22,wx:null,nE:0,auto:false,date:"11월 12일"},   /* D2 확인용 긴 장소 이름 */
+  short:{place:"동네 마트",km:4,el:10,eta:10,jk:0,cp:0,wx:null,nE:0,auto:false}
 };
 function calc(s){
   const t=TRIPS[s.trip];
@@ -1828,17 +1895,17 @@ function calc(s){
   const F=split?2*Math.max(0,T/2-120)*0.125:Math.max(0,T-120)*0.125;
   const wr=t.wx==="눈"?0.49:0.40;
   const terms=[
-    {k:"날씨",v:`${t.wx}, ${t.mid?"지금까지":"주행"} 내내`,a:wr*R,why:`${t.wx} 오는 날은 운전 부담이 ${Math.round(wr*100)}% 늘어요 · 시뮬레이터 30명 연구(2026)`},
-    {k:"정체 구간",v:`${t.jk}km`,det:`출발 때 내비가 안내한 경로의 ${t.cp}%가 막혀 있었어요`,a:0.27*C,why:"차가 붐비는 길은 운전 부담이 27% 늘어요 · 교통 밀도 연구(LSU 2015)"},
-    {k:"예상보다 더",v:`+${D}분`,a:0.27*D,why:t.mid?`출발 때 내비 예상으로는 여기까지 ${hm(t.eta)}였어요(지금까지 거리 비율) · 정체와 같은 27%를 써요`:`출발 때 예상한 ${hm(t.eta)}보다 늘어난 시간이에요 · 정체와 같은 27%를 써요`},
-    {k:"밤길",v:`${N}분`,a:0.04*N,why:"밤 운전은 부담이 4% 늘어요 · 운전자 50명 시뮬레이터 연구(2025)"},
-    {k:"장시간",v:`2시간 넘긴 ${T-120}분`,a:F,why:"2시간 운전하면 15분 쉬게 한 법 기준이에요 · 화물자동차 운수사업법 시행규칙 제21조"}
-  ].filter(x=>x.a>0).map(x=>({...x,pc:Math.max(1,Math.round(x.a/T*100))}));   /* 값이 0인 줄 생략 */
+    {k:"날씨",v:t.wx2==="?"?`출발 ${t.wx} · 도착 정보 없음`:`${t.wx}, ${t.mid?"지금까지":"주행"} 내내`,a:wr*R,why:(t.wx2==="?"?`도착 날씨는 불러오지 못해 출발 때 날씨(${t.wx})로 셌어요 · `:"")+`${t.wx} 오는 날은 운전 부담이 ${Math.round(wr*100)}% 늘어요 · 시뮬레이터 30명 연구(2026)`},
+    {k:"정체 구간",v:`${t.jk}km`,det:`출발 때 내비가 안내한 경로의 ${t.cp}%가 붐볐어요`,a:0.27*C,why:"차가 붐비는 길은 운전 부담이 27% 늘어요 · 교통 밀도 연구(LSU 2015)"},
+    {k:"예상보다 더",v:`+${hm(D)}`,m:D,a:0.27*D,why:t.mid?`출발 때 내비 예상으로는 여기까지 ${hm(t.eta)}였어요(지금까지 거리 비율) · 정체와 같은 27%를 써요`:`출발 때 예상한 ${hm(t.eta)}보다 늘어난 시간이에요 · 정체와 같은 27%를 써요`},
+    {k:"밤길",v:hm(N),m:N,a:0.04*N,why:"밤 운전은 부담이 4% 늘어요 · 운전자 50명 시뮬레이터 연구(2025)"},
+    {k:"장시간",v:`2시간 넘긴 ${hm(T-120)}`,m:T-120,a:F,why:"2시간 운전하면 15분 쉬게 한 법 기준이에요 · 화물자동차 운수사업법 시행규칙 제21조"}
+  ].filter(x=>x.a>0).map(x=>{const lt=x.a/T*100<1,pc=Math.max(1,Math.round(x.a/T*100));return {...x,pc,lt,pt:lt?"+1% 미만":"+"+pc+"%"}});   /* 값이 0인 줄 생략 */
   if(t.cp===null) terms.unshift({k:"정체 구간",v:"정체 정보 없음",a:0,pc:0,na:true,why:"출발 때 내비에서 정체 정보를 받지 못해 이번에는 더하지 않았어요"});
   if(t.wx==="?") terms.unshift({k:"날씨",v:"정보 없음",a:0,pc:0,na:true,why:"날씨를 불러오지 못해 이번에는 더하지 않았어요"});
   const noko=T+terms.reduce((a,x)=>a+x.a,0), amt=noko*UNIT, n=Math.max(1,s.people);
   /* 중간 정산(11/8 명준): 가는 길에 이미 정산했으면 전체 금액은 보여 주되 제안은 남은 몫으로 */
-  const settled=s.midSettled&&!t.mid?(m=>({amt:m.amt,T:m.T,pick:s.midPick}))(calc({...s,trip:"mid",rest:0,midSettled:false})):null;
+  const settled=s.midSettled&&!t.mid?(m=>({amt:m.amt,T:m.T,pick:s.midPick}))(calc({...s,trip:"mid",rest:s.midRest??0,midSettled:false})):null;
   const R1k=x=>Math.round(x/1000)*1000, rem=settled&&s.setIncl?Math.max(0,R1k(amt)-R1k(settled.amt)):amt;   /* 11/9 명준: 영수증 하단 "중간 정산 있음"을 눌러 포함 모드일 때만 뺌 */   /* 화면에 보이는 뺄셈이 맞도록 천 원 단위끼리 뺌 — 반올림 순서는 엔진(효성) 확인 */
   const G=rem*(n-1)/n, def=G<2350?-1:G<7715.5?0:G<39865.5?1:2;                    /* 5-3 경계 */
   return {t,T,noko,mult:noko/T,amt,rem,settled,per:rem/n,G,def,terms};
@@ -1852,6 +1919,8 @@ const valTxt=i=>ITEMS[i].k+(i===2?"에서":"값에서");
 /* o.ic = Pleos 에셋 아이콘(back·plus·minus·arrow), o.ico = 에셋에 없는 아이콘 자리(점선 상자), o.end = 아이콘을 글자 뒤에 */
 const B=(label,o={})=>{const i=o.ic?`<i class="ic ic-${o.ic}"></i>`:o.ico?(typeof o.ico==="string"?`<i class="ico pi pi-${o.ico}" aria-hidden="true"></i>`:`<i class="ico" title="아이콘 자리"></i>`):"";
   return `<span class="btn ${o.cls||""}" ${o.go?`data-go="${o.go}"`:""} ${o.act?`data-act="${o.act}"`:""} ${o.anno?`data-anno="${o.anno}"`:""} ${o.aria?`aria-label="${o.aria}"`:""}>${o.end?"":i}${label}${o.end?i:""}</span>`};
+/* D2(11/12 명준): 문장 속 장소 이름만 말줄임하고 뒤 문구 · 시각 · 인원은 늘 보이게 */
+const PN=(nm,rest)=>`<span class="pnl"><span class="pn">${nm}</span><span class="pr">${rest}</span></span>`;
 const HD=(title,o={})=>`<div class="hd" data-anno="${o.back?"Title · Depth 80":"Title · Main 80"}">${o.back?B("",{cls:"ib plain",act:"back",ic:"back",aria:"뒤로",anno:"Icon Button 80 · Plain · 뒤로"}):""}<span class="${o.back?"ttl":"name"}">${title}</span>${o.right||""}</div>`;
 const STEP=(v,act,anno="Stepper 420 × 100")=>`<div class="stepper" data-anno="${anno}">${B("",{cls:"ib s plain",act:act+"-",ic:"minus",aria:"줄이기"})}<i class="dv2"></i><span class="val">${v}</span><i class="dv2"></i>${B("",{cls:"ib s plain",act:act+"+",ic:"plus",aria:"늘리기"})}</div>`;
 
@@ -1871,7 +1940,7 @@ const RESULTS=[{nm:"소양강 스카이워크",ad:"강원 춘천시 근화동 ·
 /* 11/8 유저 플로우(planning/차곡_운전노고정산_PRD_v1.3_유저플로우.md) 기준: 홈 → [출발하기] → 출발 화면. 앱 이름은 디자인 가칭 Nogo */
 /* 기록(로컬) — 홈 최근 기록 · 기록 목록 · 기록 상세가 같은 값을 쓴다(11/8 명준: 최근 기록 → 목록 → 상세) */
 const RECDATA=[{trip:"main",people:4,ab:"A",res:"accept",rest:0},{trip:"clear",people:2,ab:"A",res:"close"},{trip:"yp",people:3,ab:"B",res:"pick",pick:0}];
-const recCalc=i=>calc({...RECDATA[i]});
+const recCalc=i=>calc({rest:0,...RECDATA[i]});   /* 11/12 S4: 모든 주행이 쉰 시간을 물으므로 기록에는 답한 값(기본 없음) */
 const resTxt=i=>{const r=RECDATA[i],c=recCalc(i);return r.people<=1?"혼자 운전 · 제안 없음":r.res==="accept"?`한 사람 ${yak(c.per)} · 좋아요`:r.res==="pick"?valTxt(r.pick)+" 운전자 빼기":"닫음"};
 const multShort=m=>m<1.005?"평소 같은 길":m.toFixed(2)+"배";
 const RECS=RECDATA.map((r,i)=>{const c=recCalc(i);return {d:c.t.date,nm:c.t.place,t:hm(c.T),m:multShort(c.mult),n:r.people+"명",r:resTxt(i),tk:c.terms.filter(x=>!x.na).sort((a,b)=>b.a-a.a).map(x=>x.k),wx:c.t.wx}});   /* 더한 몫이 큰 순서 */
@@ -1895,11 +1964,11 @@ const WM=(cls="")=>`<span class="logo wm ${cls}" role="img" aria-label="Nogo">${
 const CTA=(label,go,cls="")=>`<span class="cta ${cls}" ${go?`data-go="${go}"`:""} data-anno="Basic Button L 100 · 채움">${label}<i class="ar"><i class="ic ic-arrow"></i></i></span>`;
 const SKEL=(w=100)=>`<i class="skel" style="width:${w}%"></i>`;
 function homeScr(p,s){
-  const hs=s.wiped&&(s.hs||"normal")==="normal"?"first":(s.hs||"normal");
-  const nNew=hs==="after"&&!s.notiSeen;   /* 11/9 명준: 기록이 저장되면 알림 종에 빨간 점 → 알림 목록에 새 기록 */
-  const bell=B("",{cls:"ib bell"+(s.notiOpen?" on":""),ico:"bell",act:"noti",aria:nNew?"알림 · 새 기록 1개":"알림",anno:"Icon Button 80 · 알림(기록 저장 알림 목록)"+(nNew?" · 빨간 점 = 새 기록":"")}).replace(/<\/span>$/,nNew?'<i class="ndot" aria-hidden="true"></i></span>':"</span>");
+  const hs=s.hs==="first"?"normal":(s.hs||"normal");   /* 11/10 명준: 첫 사용 홈 없앰 — 기록이 없어도(초기화 뒤 포함) 기본 홈 하나 */
+  const nNew=hs==="after"&&!s.notiRead;   /* 11/9 명준 2차: 읽기 전(창을 닫기 전)까지 = 활성 아이콘(bell-ringing) + 빨간 점 */   /* 11/9 명준: 기록이 저장되면 알림 종에 빨간 점 → 알림 목록에 새 기록 */
+  const bell=B("",{cls:"ib bell"+(s.notiOpen?" on":"")+(nNew?" act":""),ico:nNew?"bell-ringing":"bell",act:"noti",aria:nNew?"알림 · 새 기록 1개":"알림",anno:"Icon Button 80 · 알림(기록 저장 알림 목록)"+(nNew?" · 빨간 점 = 새 기록":"")}).replace(/<\/span>$/,nNew?'<i class="ndot" aria-hidden="true"></i></span>':"</span>");
   const bar=`<div class="hbar" data-anno="Title · Main 80 · 가운데 Nogo 워드마크(152 × 48)">${B("",{cls:"ib",ico:"receipt",go:"log",aria:"기록 전체",anno:"Icon Button 80 · 기록 전체"})}${WM()}<span class="hbar-rg">${bell}${B("",{cls:"ib",ico:"gear-six",go:"settings",aria:"설정",anno:"Icon Button 80 · 설정(제안 방식 · 시연 고정 · 단가 출처 · 기록 초기화)"})}</span></div>`;
-  const T={first:["","함께 타고 떠나면<br>운전한 만큼 세어 둘게요"],pending:["태안 꽃지해수욕장에 도착했어요 · 16:30","오늘 운전 영수증이<br>여기 있어요"],progress:[`태안 꽃지해수욕장으로 가는 중 · 14:20 출발 · 함께 4명`,"잠깐 멈췄네요<br>여기까지 운전을 세어 볼까요?"]}[hs]||["","오늘도 함께<br>달려 볼까요?","도착하면 운전한 만큼 계산해 알려 드릴게요"];   /* 11/9 명준: 무엇을 하는 앱인지 큰 인사 아래 한 줄(분할에서도 한 줄) */   /* 11/9 v90 명준: 기본 · 첫 사용 홈은 인사 위 작은 줄 없이 큰 인사 + [출발하기]만 가운데 */
+  const T={first:["","함께 타고 떠나면<br>운전한 만큼 세어 둘게요"],pending:[PN(s.plc||"태안 꽃지해수욕장","에 도착했어요 · 16:30"),"오늘 운전 영수증이<br>여기 있어요"],progress:[PN(s.plc||"태안 꽃지해수욕장","으로 가는 중 · 14:20 출발 · 함께 4명"),"잠깐 멈췄네요<br>여기까지 운전을 세어 볼까요?"]}[hs]||["","오늘도 함께<br>달려 볼까요?","도착하면 운전한 만큼 계산해 알려 드릴게요"];   /* 11/9 명준: 무엇을 하는 앱인지 큰 인사 아래 한 줄(분할에서도 한 줄) */   /* 11/9 v90 명준: 기본 · 첫 사용 홈은 인사 위 작은 줄 없이 큰 인사 + [출발하기]만 가운데 */
   const act=hs==="progress"?`<div class="pacts" data-anno="가는 중 · 도착 · 그만두기">${B("도착했어요",{cls:"l fill",act:"arrNow",anno:"Basic Button L · 도착했어요 → 계산 연출"})}${B("그만두기",{cls:"l",act:"quit",anno:"Basic Button L · 이번 출발 그만두기(기록 안 남김)"})}</div>`:hs==="pending"?`<span class="cta" data-act="openRcpt" data-anno="Basic Button L 100 · 영수증 보기 → 도착 화면(고르던 곳 그대로)">영수증 보기<i class="ar"><i class="ic ic-arrow"></i></i></span>`:CTA("출발하기","depart");
   const ill=hs==="pending"?`<div class="ill l3d arrv" aria-hidden="true">${NOGO_SYM3D()}<span class="pin">도착</span></div>`:hs==="progress"?`<div class="midb" data-act="mid" role="button" tabindex="0" aria-label="지금까지의 노고 보기" data-anno="중간 정산 버튼 · 로고 심볼 시동 버튼(누르면 지금까지의 노고) · 11/9 명준"><span class="sbtn" aria-hidden="true"><span class="sface">${NOGO_SYM}</span></span></div>`:`<div class="ill l3d" aria-hidden="true">${NOGO_SYM3D()}</div>`;
   const hero=`<div class="hero${hs==="progress"?" prg":""}" data-anno="인사 · 내 차(공용 세단 1종)">${ill}<div class="tx">${T[2]||T[0]?`<span class="hdesc">${T[2]||T[0]}</span>`:""}<span class="h">${T[1]}</span>${act}</div></div>`;
@@ -1911,7 +1980,7 @@ function homeScr(p,s){
   }
   /* 알림 창(11/9 명준): 기록이 저장될 때 나오던 문구("○○ 기록을 남겼어요")만 쌓임. 페이지 이동 없이 종 아래로 내려오는 작은 창 · 줄은 누르지 않음(확인만) */
   const nList=(hs==="after"?[{nm:s.lastNm||"태안 꽃지해수욕장",when:"방금",nw:!s.notiRead},...RECDATA.slice(1).map((r,i)=>({nm:recCalc(i+1).t.place,when:recCalc(i+1).t.date}))]:RECDATA.map((r,i)=>({nm:recCalc(i).t.place,when:recCalc(i).t.date})));
-  const npanel=s.notiOpen?`<div class="ncatch" data-act="notiClose" aria-hidden="true"></div><div class="npanel" role="dialog" aria-label="알림" data-anno="알림 창 · 종 아래로 내려옴(아코디언) · 저장 문구만 · 확인만(누르지 않음) · 바깥을 누르면 닫힘"><i class="ncaret" aria-hidden="true"></i><div class="nin"><div class="nhd"><b>알림</b>${nList.some(x=>x.nw)?'<span class="nnew">새 알림 1</span>':""}</div><ul class="nul">${nList.map((x,k)=>`<li class="nit${x.nw?" new":""}" style="--i:${k}"><i class="nic" aria-hidden="true"><i class="ico pi pi-car-profile"></i></i><span class="nt"><b>${x.nm} 기록을 남겼어요</b><small>${x.nw?'<i class="ndot" aria-hidden="true"></i>':""}${x.when}</small></span></li>`).join("")}</ul><div class="nft">기록은 왼쪽 위에서 볼 수 있어요</div></div></div>`:"";
+  const npanel=s.notiOpen?`<div class="ncatch" data-act="notiClose" aria-hidden="true"></div><div class="npanel" role="dialog" aria-label="알림" data-anno="알림 창 · 종 아래로 내려옴(아코디언) · 저장 문구만 · 확인만(누르지 않음) · 바깥을 누르면 닫힘"><i class="ncaret" aria-hidden="true"></i><div class="nin"><div class="nhd"><b>알림</b>${nList.some(x=>x.nw)?'<span class="nnew">새 알림 1</span>':""}</div><ul class="nul">${nList.map((x,k)=>`<li class="nit${x.nw?" new":""}" style="--i:${k}"><i class="nic" aria-hidden="true"><i class="ico pi pi-car-profile"></i></i><span class="nt"><b>${PN(x.nm," 기록을 남겼어요")}</b><small>${x.nw?'<i class="ndot" aria-hidden="true"></i>':""}${x.when}</small></span></li>`).join("")}</ul><div class="nft">기록은 왼쪽 위에서 볼 수 있어요</div></div></div>`:"";
   const sheet=s.quit?`<div class="isheet q" data-anno="그만두기 확인 · 짧은 하단 시트(딤 없음)"><span class="grab"></span><b>이번 출발을 그만둘까요?</b><span class="isub">지금까지 운전은 기록에 남지 않아요</span><div class="ibts">${B("계속 가기",{act:"quitNo"})}${B("그만두기",{cls:"fill danger",act:"quitYes"})}</div></div>`:"";
   return `<div class="home hm solo${p?" p":""}">${bar}${hero}${npanel}</div>${sheet}`;   /* 11/9 명준: 최근 기록 빼고 인사만 가운데 크게 (recs는 기록 목록 · 부품 보기용으로 남김) */
 }
@@ -1919,10 +1988,11 @@ function homeScr(p,s){
 const PLACE_IMG=nm=>/태안|꽃지/.test(nm)?"pl-taean":/아침고요|가평/.test(nm)?"pl-gapyeong":/두물머리|양평/.test(nm)?"pl-yangpyeong":nm==="집"?"pl-home":nm==="회사"?"pl-office":"pl-none";
 const DCARDS=[{nm:"집",tag:"즐겨찾기",km:"12km",eta:"25분",cp:8},{nm:"회사",tag:"즐겨찾기",km:"8km",eta:"20분",cp:15},{nm:"태안 꽃지해수욕장",tag:"최근",km:"104km",eta:"1시간 45분",cp:36},{nm:"양평 두물머리",tag:"최근",km:"36km",eta:"42분",cp:12}];
 const RES2=[{nm:"태안 꽃지해수욕장",ad:"충남 태안군 안면읍 · 해수욕장",km:"104km"},{nm:"꽃지 해안공원",ad:"충남 태안군 안면읍 · 공원",km:"104km"},{nm:"꽃지 할미할아비바위",ad:"충남 태안군 안면읍 · 명소",km:"105km"}];
-const dinfo=nm=>DCARDS.find(d=>d.nm===nm)||{nm,km:"104km",eta:"1시간 45분",cp:36};
+const DLONG=[{nm:"남양주 물의정원 북한강 산책로",tag:"최근",km:"31km",eta:"45분",cp:10},{nm:"한화리조트 대천 파로스 오션타워",tag:"최근",km:"168km",eta:"2시간 20분",cp:22}];   /* 11/11 June 대조 D3: 긴 목적지 이름 확인용 */
+const dinfo=nm=>[...DCARDS,...DLONG].find(d=>d.nm===nm)||{nm,km:"104km",eta:"1시간 45분",cp:36};
 function depart(p,s){
-  const ppl=s.toast==="S"?"인원 확인 필요":s.toast?"확인 중":s.people>1?`함께 ${s.people}명`:"혼자 운전";
-  const bar=`<div class="hbar" data-anno="Title · Depth 80">${B("",{cls:"ib plain",ic:"back",act:"back",aria:"뒤로",anno:"Icon Button 80 · 뒤로(홈)"})}<span class="logo t">어디로 갈까요?</span><span class="ppl" data-act="people" data-anno="나눠 낼 인원 · 누르면 인원 확인"><i class="ico pi pi-users-three" aria-hidden="true"></i>${ppl}<i class="chev"></i></span></div>`;
+  const ppl=s.pplLbl!=null?s.pplLbl:(s.toast==="S"||s.pplNeed)?(p?"확인 필요":"인원 확인 필요"):s.toast?"확인 중":s.people>1?`함께 ${s.people}명`:"혼자 운전";
+  const bar=`<div class="hbar" data-anno="Title · Depth 80">${B("",{cls:"ib plain",ic:"back",act:"back",aria:"뒤로",anno:"Icon Button 80 · 뒤로(홈)"})}<span class="logo t">어디로 갈까요?</span><span class="ppl" data-act="people" data-anno="나눠 낼 인원 · 누르면 인원 확인"><i class="ico pi pi-users-three" aria-hidden="true"></i>${ppl}${s.pplWarn?'<i class="rdot" aria-label="확인 필요"></i>':""}<i class="chev"></i></span></div>`;
   const sm=s.search===true?"typing":s.search;
   if(sm){
     const q=sm==="empty"?"꽃지해수옥장":"꽃지";
@@ -1937,7 +2007,7 @@ function depart(p,s){
   const off=s.offline?`<div class="offl" data-anno="에러 · 네트워크 없음"><i class="ico pi pi-wifi-slash" aria-hidden="true"></i>인터넷이 연결되지 않았어요 · 검색 대신 아래 목적지에서 골라 주세요</div>`:"";
   const search=`<div class="hsearch${s.offline?" dis":""}" ${s.offline?"":`data-act="search"`} data-anno="검색 한 줄(필드 100 · 음성)"><i class="ico pi pi-magnifying-glass" aria-hidden="true"></i><span class="ph">목적지 검색</span><span class="mic" aria-label="음성"><i class="ico pi pi-microphone" aria-hidden="true"></i></span></div>`;
   const cards=s.noFav?`<div class="recempty dc" data-anno="빈 상태 · 즐겨찾기·최근 목적지 없음"><b>아직 고를 목적지가 없어요</b><span>위에서 검색하거나, 순정 내비에 집·회사를 등록하면 여기에 보여요</span></div>`:
-    `<div class="hcards">${DCARDS.map((c,i)=>`<div class="hcard${s.dest===c.nm?" on":""}" style="--i:${i}" data-act="hc${i}" data-anno="${i===0?"즐겨찾기 · 최근 목적지 · 누르면 미리보기":""}"><div class="in"><span class="tag"><i class="ico pi pi-${c.nm==="집"?"house":c.nm==="회사"?"briefcase":"clock-counter-clockwise"}" aria-hidden="true"></i>${c.tag}</span><span class="nm">${c.nm}</span><span class="mt">${c.km}</span></div></div>`).join("")}</div>`;
+    `<div class="hcards${s.nmEll?" w1":""}">${(s.longNm?[DCARDS[0],DCARDS[1],...DLONG]:DCARDS).map((c,i)=>`<div class="hcard${s.dest===c.nm?" on":""}" style="--i:${i}" data-act="hc${i}" data-anno="${i===0?"즐겨찾기 · 최근 목적지 · 누르면 미리보기":""}"><div class="in"><span class="tag"><i class="ico pi pi-${c.nm==="집"?"house":c.nm==="회사"?"briefcase":"clock-counter-clockwise"}" aria-hidden="true"></i>${c.tag}</span><span class="nm kwrap">${c.nm}</span><span class="mt">${c.km}</span></div></div>`).join("")}</div>`;
   let pv;
   if(!s.dest) pv=`<div class="pv empty" data-anno="미리보기 자리 · 목적지 고르기 전"><span>목적지를 고르면 도착 예상과 정체를 미리 보여 드려요</span></div>`;
   else{
@@ -1960,7 +2030,7 @@ function logd(p,s){
   const i=s.rec||0,r=RECDATA[i],c=recCalc(i),tot=yak(c.amt);
   const hd=HD(`${c.t.date} · ${c.t.place}`,{back:true});
   const pick=r.people<=1?"혼자 운전해서 제안은 없었어요":r.res==="accept"?`한 사람 ${yak(c.per)} · 좋아요를 눌렀어요`:r.res==="pick"?`${valTxt(r.pick)} 운전자 빼기로 했어요`:"제안은 닫았어요";
-  return `<div class="pg${p?" p":""}">${hd}<div class="arr${s.printFx?" print":""}">${receipt(p,{...s,...r,ask:false,ro:true,why:s.why},c)}<div class="card offer" data-anno="기록 상세 · 그날의 노고 + 고른 것(11/8 명준)"><span class="cap2">그날의 노고</span><span class="head">${multTxt(c.mult)}</span><span class="why">운전 노고 ${tot} · 운전 ${hm(c.T)} · ${c.t.km}km · 함께 ${r.people}명</span><i class="odiv"></i><span class="cap2">그날 고른 것</span><span class="why">방식 ${r.ab} · ${pick}</span><span class="note">좌표 없이 이 차에만 남아요</span><span class="sp"></span><div class="bts">${B("닫기",{cls:"l",act:"back"})}</div></div></div></div>`;
+  return `<div class="pg${p?" p":""}">${hd}<div class="arr${s.printFx?" print":""}">${receipt(p,{...s,...r,ask:false,ro:true,why:s.why},c)}<div class="card offer" data-anno="기록 상세 · 그날의 노고 + 고른 것(11/8 명준)"><span class="cap2">그날의 노고</span><span class="head">${multTxt(c.mult)}</span><span class="why ldw"><i class="ul">운전 노고 ${tot}</i><br>운전 ${hm(c.T)} · ${c.t.km}km · 함께 ${r.people}명</span><i class="odiv"></i><span class="cap2">그날 고른 것</span><span class="why">방식 ${r.ab} · ${pick}</span><span class="note">좌표 없이 이 차에만 남아요</span><span class="sp"></span><div class="bts">${B("닫기",{cls:"l",act:"back"})}</div></div></div></div>`;
 }
 /* 설정(S20 · 11/8): 제안 방식 A/B · 시연 고정 · 단가 출처 · 기록 초기화. 개발·시연용이라 홈 위 바 오른쪽 아이콘에서만 연다 */
 function settingsScr(p,s){
@@ -1979,19 +2049,22 @@ function settingsScr(p,s){
   return `<div class="pg set${p?" p":""}">${HD("설정",{back:true})}<div class="card slist">${rows}</div><span class="note">개발·시연용 설정이에요 · 좌표 없이 이 차에만 저장돼요</span></div>${sheet}`;
 }
 function midScr(p,s){
-  const n=Math.max(1,s.people),c=calc({...s,trip:"mid",rest:0,midSettled:false}),tot=yak(c.amt);
+  /* 11/12 명준: 중간 정산도 도착과 똑같이 영수증 화면에서 쉰 시간을 짧은 하단 시트로 묻는다(S4) */
+  const ms={...s,trip:"mid",rest:s.midRest,midSettled:false};
+  const n=Math.max(1,s.people),c=calc(ms),tot=c.pending?"":yak(c.amt);
   const hd=HD("지금까지의 노고",{back:true,right:`<span class="cap">가는 중 · ${n>1?"함께 "+n+"명":"혼자 운전"}</span>`});
   const go=(fill)=>B("계속 가기",{cls:"l"+(fill?" fill":""),act:"back",anno:"Basic Button L · 계속 가기 → 홈(가는 중)"});
   const after=`<span class="note">도착하면 전체를 다시 세고, 이 몫은 빼고 알려 드려요</span>`;
   let card;
-  if(n<=1) card=`<span class="cap2">지금까지</span><span class="head">${multTxt(c.mult)}</span><span class="note">혼자 운전이라 영수증만 보여 드려요</span><span class="sp"></span><div class="bts">${go(1)}</div>`;
+  if(c.pending) card=`<span class="cap2">지금까지</span><span class="head dim">확인 중</span><span class="sp"></span><div class="bts">${go(0)}</div>`;
+  else if(n<=1) card=`<span class="cap2">지금까지</span><span class="head">${multTxt(c.mult)}</span><span class="note">혼자 운전이라 영수증만 보여 드려요</span><span class="sp"></span><div class="bts">${go(1)}</div>`;
   else if(s.midDone) card=s.ab==="A"?`<span class="cap2">14:20 출발 · 지금까지</span><span class="head ok">좋아요, 여기까지 기록해 뒀어요</span><span class="why">한 사람 ${yak(c.per)}</span>${after}<span class="sp"></span><div class="bts">${go(1)}</div>`:
     `<span class="cap2">14:20 출발 · 지금까지</span><span class="head ok">여기까지는 ${valTxt(s.midPick??c.def)} 운전자 빼기로 했어요</span>${after}<span class="sp"></span><div class="bts">${go(1)}</div>`;
   else if(c.def<0) card=`<span class="cap2">지금까지</span><span class="head">여기까지도 수고하셨어요</span><span class="note">아직 짧아서 따로 제안하지 않아요</span><span class="sp"></span><div class="bts">${go(1)}</div>`;
-  else if(s.ab==="A") card=`<span class="cap2">14:20 출발 · 지금까지</span><span class="head">지금까지를 챙긴다면</span><span class="big" data-anno="큰 숫자 · 지금까지 1인 몫">한 사람 ${yak(c.per)}</span><span class="why wl" data-anno="근거 · 별표 글머리 · 운전 노고 금액 밑줄">${WL(`<i class="ul">운전 노고 ${tot}</i>${eul(tot)} 운전자 포함 ${n}명이 나눈 값`,"최저임금 1분 178원 기준")}</span><span class="note">좋아요를 누르면 여기까지 기록해 두고, 도착하면 이 몫은 빼고 알려 드려요</span><span class="sp"></span><div class="bts">${B("좋아요",{cls:"l fill",act:"accept",anno:"Basic Button L · 중간 정산 받아들이기"})}${go(0)}</div>`;
+  else if(s.ab==="A") card=`<span class="cap2">14:20 출발 · 지금까지</span><span class="head">지금까지를 챙긴다면</span><span class="big${bigCls("한 사람 "+yak(c.per))}" data-anno="큰 숫자 · 지금까지 1인 몫 · 10만 원 이상이면 한 단계 작게">한 사람 ${yak(c.per)}</span><span class="why wl" data-anno="근거 · 별표 글머리 · 운전 노고 금액 밑줄">${WL(`<i class="ul">운전 노고 ${tot}</i>${eul(tot)} 운전자 포함 ${n}명이 나눈 값`,"최저임금 1분 178원 기준")}</span><span class="note">좋아요를 누르면 여기까지 기록해 두고, 도착하면 이 몫은 빼고 알려 드려요</span><span class="sp"></span><div class="bts">${B("좋아요",{cls:"l fill",act:"accept",anno:"Basic Button L · 중간 정산 받아들이기"})}${go(0)}</div>`;
   else { const d=ITEMS[c.def];
     card=`<span class="head">여기까지는 ${valTxt(c.def)} 운전자 빼는 게 어때요</span><span class="note">기본은 ${d.k}${yeyo(d.k)}. 고르면 여기까지 기록해 두고, 도착하면 이 몫은 빼고 알려 드려요</span><div class="opts">${ITEMS.map((it,i)=>`<span class="opt${i===c.def?" def":""}" data-act="pick${i}">${i===2?ROT:`<b>${it.k}</b>`}</span>`).join("")}</div><span class="sp"></span><div class="bts">${go(0)}</div>`; }
-  return `<div class="pg${p?" p":""}">${hd}<div class="arr">${receipt(p,{...s,trip:"mid",ask:false,ro:true,midSettled:false},c)}<div class="card offer" data-anno="중간 정산 · 도착과 같은 6개 항목 · 정산하면 최종에서 뺌(11/8 명준)">${card}</div></div></div>`;
+  return `<div class="pg${p?" p":""}">${hd}<div class="arr">${receipt(p,{...ms,ask:false,ro:false},c)}<div class="card offer" data-anno="중간 정산 · 도착과 같은 6개 항목 · 정산하면 최종에서 뺌(11/8 명준)">${card}</div></div></div>${s.midAsk?restSheet({...s,rest:s.midRest}):""}`;
 }
 function splash(p,s){
   return `<div class="splash" data-anno="로딩 · 앱 시작 · Nogo 앱 아이콘 + 워드마크"><span class="appicon" role="img" aria-label="Nogo 앱 아이콘"><span class="ai-l">${NOGO_LOGO("lime-gradient",192)}</span><span class="ai-d">${NOGO_LOGO("ink-gradient",192)}</span></span>${WM()}<span class="ld">준비하고 있어요<i class="dots"><i></i><i></i><i></i></i></span></div>`;
@@ -2014,7 +2087,7 @@ function driving(p,s){
 /* ───────── 화면: 도착 = 영수증 + 제안 (한 화면, 5-4 "근거가 보인다") ───────── */
 function restRow(s,c){ return ""; }  /* 1안(영수증 위 칩) 삭제 — 11/7 명준: 짧은 하단 시트로 확정 */
 function restSheet(s){
-  const hint=s.restPre==="auto"?"내비와 나란히 두어서 자동으로 쟀어요 · 맞으면 그대로 눌러 주세요":s.restPre==="open"?"휴게소에서 차곡을 열어서 쉰 것으로 골라 뒀어요":"고르면 운전 시간에서 빼고 영수증을 고쳐요";
+  const hint=/* 11/12 S4·S5: 자동 측정 · 미리 채우기 없음, 늘 묻기(DECISIONS 11/7) */"고르면 운전 시간에서 빼고 영수증을 고쳐요";
   return `<div class="rsheet${s.printFx?" late":""}" data-anno="쉰 시간 · 짧은 하단 시트(딤 없음) · 고르면 바로 닫힘"><span class="grab"></span><div class="h"><b>중간에 쉰 시간이 있었나요?</b><small>${hint}</small></div><div class="chips">${RESTL.map((l,i)=>`<span class="chip${s.rest===i?" on":""}" data-act="rest${i}">${l}</span>`).join("")}</div></div>`;
 }
 /* (보관) 조건별 영수증 제목 — 11/8 명준: 기본은 "오늘 주행 영수증"으로 고정, 이 함수는 지금 안 씀. 계산 연출 문구("비를 뚫고 달린 시간")와 같은 결 */
@@ -2037,13 +2110,13 @@ function receipt(p,s,c){
   const cP=s.prevRest!=null&&!c.pending?calc({...s,rest:s.prevRest}):null, pvm=cP?Object.fromEntries(cP.terms.map(x=>[x.k,x.v+x.pc])):null, chg=r=>!!pvm&&pvm[r.k]!==r.v+r.pc;
   /* 영수증 = 프린터 슬롯에서 나온 종이(11/7 명준 레퍼런스). 쉰 시간은 소계 줄 + 짧은 하단 시트 */
   const rq=restRow(s,c), slot=`<div class="prn" aria-hidden="true"><i></i></div>`;
-  if(c.pending) return `<div class="rcol" data-anno="오늘 운전 영수증 · 계산 전">${rq}<div class="prn off" aria-hidden="true"><i></i></div><div class="paperwrap"><div class="paper wait"><span class="cap">${s.restUI==="sheet"?"오늘 운전을 정리하는 중이에요":"쉰 시간을 고르면 영수증이 나와요"}</span></div></div></div>`;
-  const rows=c.terms.map((r,i)=>`<div class="rrow${s.why===i?" unfold":""}${chg(r)?" chg":""}" data-act="why${i}"><span class="k">${r.k}</span><span class="v">${r.v}${r.sub?`<small>${r.sub}</small>`:""}</span><span class="pc">${r.na?"—":"+"+r.pc+"%"}</span><i class="chev"></i>${s.why===i?`<span class="wy" data-anno="% 드롭다운 펼침 · 내용 + 한 줄 설명(출처 · 계산 방식은 화면에 안 보임, 11/9 명준)">${r.det?`<b>${r.det}</b>`:""}<span>${r.why.split(" · ")[0]}</span></span>`:""}</div>`).join("");
+  if(c.pending) return `<div class="rcol" data-anno="오늘 운전 영수증 · 계산 전">${rq}<div class="prn off" aria-hidden="true"><i></i></div><div class="paperwrap"><div class="paper wait"><span class="cap">${s.restUI==="sheet"?(c.t.mid?"지금까지 운전을 정리하는 중이에요":"오늘 운전을 정리하는 중이에요"):"쉰 시간을 고르면 영수증이 나와요"}</span></div></div></div>`;
+  const rows=c.terms.map((r,i)=>`<div class="rrow${s.why===i?" unfold":""}${chg(r)?" chg":""}" data-act="why${i}"><span class="k">${r.k}</span><span class="v">${r.v}${r.sub?`<small>${r.sub}</small>`:""}</span><span class="pc${r.lt?" lt":""}">${r.na?"—":r.pt}</span><i class="chev"></i>${s.why===i?`<span class="wy" data-anno="% 드롭다운 펼침 · 내용 + 한 줄 설명(출처 · 계산 방식은 화면에 안 보임, 11/9 명준)">${r.det?`<b>${r.det}</b>`:""}<span>${r.why.split(" · ")[0]}</span></span>`:""}</div>`).join("");
   return `<div class="rcol" data-anno="오늘 운전 영수증 (5-1) · 출력 종이 형태 · 값이 0인 줄 생략">${rq}${slot}<div class="paperwrap"><div class="paper${s.setOpen&&c.settled?" sopen":""}">
     <div class="ph"><b>오늘 주행 영수증</b><span>${c.t.mid?"14:20 출발 · 아직 가는 중":c.t.place+" · "+(c.t.date||"11월 10일")} · ${s.people>1?s.people+"명":"혼자"}</span></div>
     <i class="rule2"></i>
     <div class="rhd"><span>항목</span><span>더한 몫</span></div>
-    ${rows||`<span class="rnone">비·정체·밤길 없이 달렸어요</span>`}
+    ${rows||`<div class="rnone" data-anno="가산 0개일 때 · 수월한 길이어도 운전한 시간은 센다는 한 줄(11/11 명준, 임시 문구)"><i class="ico pi pi-sun" aria-hidden="true"></i><span><b>비·정체·밤길 없이 달렸어요</b><small>더할 조건은 없고, 운전한 시간만큼 셌어요</small></span></div>`}
     <div class="rsum rs1${cP&&cP.T!==c.T?" chg":""}"><span>운전 시간</span><b>${hm(c.T)}</b></div>
     ${c.t.auto?"":`<div class="rsum"><span>중간에 쉰 시간</span><span class="rr">${s.ro?`<b>${RESTL[s.rest]}</b>`:`<b class="rtap" data-act="restEdit" role="button" aria-label="중간에 쉰 시간 바꾸기" data-anno="값을 누르면 쉰 시간 시트가 다시 뜸(11/9 명준: 바꾸기 버튼 없음)">${RESTL[s.rest]}</b>`}</span></div>`}
     <div class="rsum"><span>거리</span><b>${c.t.km}km</b></div>
@@ -2063,7 +2136,7 @@ function offer(p,s,c){
   if(s.ab==="A"){
     if(s.done) return wrap("방식 A · 좋아요 후 · 로컬 기록만 (5-4)",`<span class="cap2">오늘 운전을 챙긴다면</span><span class="head ok">좋아요, 오늘 기록에 남겼어요</span><span class="why">한 사람 ${yak(c.per)}</span><span class="note">더 할 일은 없어요</span><span class="sp"></span><div class="bts">${close("l fill")}</div>`);
     const tot=yak(c.rem);
-    return wrap("방식 A · 돈으로 환산 (5-2 확정 문구)",`<span class="head">오늘 운전을 챙긴다면</span><span class="big" data-anno="큰 숫자 · 함께 탄 사람 1인 몫${c.settled?" · 영수증 하단 모드에 따라 바뀜":""}">한 사람 ${yak(c.per)}</span><span class="why wl" data-anno="근거 · 총액과 단가 출처 · 별표 글머리 · 운전 노고 금액 밑줄(카드가 뜬 뒤 그어짐)">${WL(`<i class="ul">${c.settled&&s.setIncl?"남은 ":""}운전 노고 ${tot}</i>${eul(tot)} 운전자 포함 ${s.people}명이 나눈 값`,"최저임금 1분 178원 기준")}</span><span class="sp"></span><div class="bts">${B("좋아요",{cls:"l fill",act:"accept",anno:"Basic Button L · 받아들이기"})}${close()}</div>`);
+    return wrap("방식 A · 돈으로 환산 (5-2 확정 문구)",`<span class="head">오늘 운전을 챙긴다면</span><span class="big${bigCls("한 사람 "+yak(c.per))}" data-anno="큰 숫자 · 함께 탄 사람 1인 몫 · 10만 원 이상이면 한 단계 작게(큰 숫자 길이 규칙)${c.settled?" · 영수증 하단 모드에 따라 바뀜":""}">한 사람 ${yak(c.per)}</span><span class="why wl" data-anno="근거 · 총액과 단가 출처 · 별표 글머리 · 운전 노고 금액 밑줄(카드가 뜬 뒤 그어짐)">${WL(`<i class="ul">${c.settled&&s.setIncl?"남은 ":""}운전 노고 ${tot}</i>${eul(tot)} 운전자 포함 ${s.people}명이 나눈 값`,"최저임금 1분 178원 기준")}</span><span class="sp"></span><div class="bts">${B("좋아요",{cls:"l fill",act:"accept",anno:"Basic Button L · 받아들이기"})}${close()}</div>`);
   }
   if(s.done) return wrap("방식 B · 고른 뒤 · 로컬 기록만 (5-4)",`<span class="cap2">오늘은</span><span class="head ok">${valTxt(s.pick)} 운전자 빼기로 했어요</span><span class="why">오늘 기록에 남겼어요</span><span class="note">더 할 일은 없어요</span><span class="sp"></span><div class="bts">${close("l fill")}</div>`);
   const d=ITEMS[c.def];
@@ -2072,7 +2145,7 @@ function offer(p,s,c){
 }
 function arrive(p,s){
   if(s.unsettled){
-    const hd=HD(`${TRIPS.main.place}에 도착했어요`,{right:`<span class="cap">${s.people<=1?"혼자 운전":"함께 탄 사람 "+s.people+"명"}</span>`});
+    const hd=HD(PN(TRIPS.main.place,"에 도착했어요"),{right:`<span class="cap">${s.people<=1?"혼자 운전":"함께 탄 사람 "+s.people+"명"}</span>`});
     return `<div class="pg${p?" p":""}">${hd}<div class="uns" data-anno="정리하지 못함(#68·#71) · 경과가 상한을 넘음 · 숫자·쉰 시간·제안 없음">
       <div class="vpaper"><div class="ph"><b>오늘 주행 영수증</b><span>${TRIPS.main.place} · 11월 10일</span></div><i class="rule2"></i>
         <div class="vmsg"><b data-anno="엔진 문구 effort.copy.unsettled_text">이번 주행은 정리하지 못했어요</b><span>출발하고 14시간이 지나서 열었어요<br>도착한 시간을 알 수 없어 이번에는 세지 않았어요</span></div>
@@ -2081,12 +2154,12 @@ function arrive(p,s){
       <div class="bts">${B("홈으로",{cls:"l fill",go:"homeafter",anno:"Basic Button L · 홈으로(기록은 정리하지 못함으로 남음)"})}</div></div></div>`;
   }
   const c=calc(s);
-  const hd=HD(`${c.t.place}에 도착했어요`,{right:`<span class="cap">${s.people<=1?"혼자 운전":"함께 탄 사람 "+s.people+"명"}</span>`});
+  const hd=HD(PN(c.t.place,"에 도착했어요"),{right:`<span class="cap">${s.people<=1?"혼자 운전":"함께 탄 사람 "+s.people+"명"}</span>`});
   return `<div class="pg arrpg${p?" p":""}"><div class="arr${s.printFx?" print":""}">${receipt(p,s,c)}${offer(p,s,c)}</div></div>${s.ask&&!c.t.auto?restSheet(s):""}`;
 }
 function log(p,s){
-  const rows=RECDATA.map((r,i)=>{const c=recCalc(i);return `<div class="logr" data-act="lrec${i}" data-anno="${i===0?"기록 한 줄 · 누르면 기록 상세":""}"><span class="ld">${c.t.date}</span><span class="lm"><b>${c.t.place}</b><span>${hm(c.T)} · ${c.mult<1.005?"평소 같은 길":"평소보다 "+c.mult.toFixed(2)+"배"} · 함께 ${r.people}명</span></span><i class="chev"></i></div>`}).join("");   /* 11/9 명준: 고른 것(오른쪽 글자)은 상세에서만 */
-  return `<div class="pg${p?" p":""}">${HD("주행 기록",{back:true})}<div class="card logl" data-anno="기록 목록 · 최근 순 · 1차는 이 차에만 저장">${rows}</div><span class="note">좌표 없이 수치와 고른 것만 이 차에 남아요</span></div>`;
+  const rows=(s.manyRec?Array.from({length:12},(_,k)=>k%RECDATA.length):RECDATA.map((_,k)=>k)).map((i)=>{const r=RECDATA[i];const c=recCalc(i);return `<div class="logr" data-act="lrec${i}" data-anno="${i===0?"기록 한 줄 · 누르면 기록 상세":""}"><span class="ld">${c.t.date}</span><span class="lm"><b>${c.t.place}</b><span>${hm(c.T)} · ${c.mult<1.005?"평소 같은 길":"평소보다 "+c.mult.toFixed(2)+"배"} · 함께 ${r.people}명</span></span><i class="chev"></i></div>`}).join("");   /* 11/9 명준: 고른 것(오른쪽 글자)은 상세에서만 */
+  return `<div class="pg${p?" p":""}">${HD("주행 기록",{back:true})}<div class="card logl" data-anno="기록 목록 · 최근 순 · 1차는 이 차에만 저장 · 많으면 목록 안에서 스크롤(D6)">${rows}</div><span class="note">좌표 없이 수치와 고른 것만 이 차에 남아요</span></div>`;
 }
 const otherApp=()=>`<div class="pg" style="justify-content:center;align-items:center;color:var(--txt4);font:var(--title-s)">다른 앱</div>`;
 
@@ -2102,11 +2175,11 @@ function calcItems(s){
   const by=k=>c.terms.find(x=>x.k===k);
   const w0=by("날씨"),j0=by("정체 구간"),w=w0&&!w0.na?w0:null,j=j0&&!j0.na?j0:null,wna=!!(w0&&w0.na),jna=!!(j0&&j0.na),l=by("예상보다 더"),n=by("밤길"),h=by("장시간");
   return {c,items:[
-    {k:"날씨",v:w?`${c.t.wx} +${w.pc}%`:(wna?"정보 없음":"맑음"),zero:!w,fx:w?(c.t.wx==="눈"?"snow":"rain"):(wna?"none":"leaves"),say:w?(c.t.wx==="눈"?"미끄러운 눈길을 조심조심 달린 시간 세는 중…":"쏟아지는 비를 뚫고 달린 시간 세는 중…"):(wna?"날씨는 이번엔 확인하지 못했어요":"맑은 하늘 확인 중… 오늘은 날씨가 도와줬네요")},
-    {k:"정체 구간",v:j?`${c.t.jk}km +${j.pc}%`:(jna?"정보 없음":"없음"),zero:!j,fx:j?"jam":(jna?"none":"zip"),say:j?"꽉 막힌 길에서 지루함을 꾹 참은 시간 세는 중…":"막힘 없이 달렸는지 확인 중…"},
-    {k:"예상보다 더",v:l?`${l.v.replace("+","")} +${l.pc}%`:"없음",zero:!l,fx:l?"late":"none",tag:l?l.v:"",say:l?"예상보다 길어진 운전을 버틴 시간 세는 중…":"예상한 시간 안에 왔는지 확인 중…"},
-    {k:"밤길",v:n?`${n.v} +${n.pc}%`:"없음",zero:!n,fx:n?"night":"sun",say:n?"어두운 밤길에 눈을 부릅뜬 시간 세는 중…":"밤길이 있었는지 확인 중…"},
-    {k:"장시간",v:h?`${c.T-120}분 +${h.pc}%`:"없음",zero:!h,fx:h?"long":"none",say:h?"쉬지 않고 2시간 넘게 핸들을 잡은 시간 세는 중…":"쉬지 않고 오래 달렸는지 확인 중…"},
+    {k:"날씨",v:w?`${c.t.wx}<small>${w.pt}</small>`:(wna?"정보 없음":"맑음"),zero:!w,fx:w?(c.t.wx==="눈"?"snow":"rain"):(wna?"none":"leaves"),say:w?(c.t.wx==="눈"?"미끄러운 눈길을 조심조심 달린 시간 세는 중…":"쏟아지는 비를 뚫고 달린 시간 세는 중…"):(wna?"날씨는 이번엔 확인하지 못했어요":"맑은 하늘 확인 중… 오늘은 날씨가 도와줬네요")},
+    {k:"정체 구간",v:j?`${c.t.jk}km<small>${j.pt}</small>`:(jna?"정보 없음":"없음"),zero:!j,fx:j?"jam":(jna?"none":"zip"),say:j?"꽉 막힌 길에서 지루함을 꾹 참은 시간 세는 중…":"막힘 없이 달렸는지 확인 중…"},
+    {k:"예상보다 더",v:l?`${hm(l.m)}<small>${l.pt}</small>`:"없음",zero:!l,fx:l?"late":"none",tag:l?l.v:"",say:l?"예상보다 길어진 운전을 버틴 시간 세는 중…":"예상한 시간 안에 왔는지 확인 중…"},
+    {k:"밤길",v:n?`${hm(n.m)}<small>${n.pt}</small>`:"없음",zero:!n,fx:n?"night":"sun",say:n?"어두운 밤길에 눈을 부릅뜬 시간 세는 중…":"밤길이 있었는지 확인 중…"},
+    {k:"장시간",v:h?`${hm(h.m)}<small>${h.pt}</small>`:"없음",zero:!h,fx:h?"long":"none",say:h?"쉬지 않고 2시간 넘게 핸들을 잡은 시간 세는 중…":"쉬지 않고 오래 달렸는지 확인 중…"},
     {k:"거리",v:`${c.t.km}km`,zero:false,fx:"dist",say:s.people>1?"오늘 모두를 태우고 달린 거리 세는 중…":"오늘 달린 거리 세는 중…"}
   ]};
 }
@@ -2122,7 +2195,7 @@ function fxHTML(it,c,still){
     case "late": return W(`<div class="clk"><i class="hand"></i></div><span class="tg">${it.tag}</span>`);
     case "night": return W(`<i class="moon"></i>`+[[44,40],[226,30],[70,150],[236,136]].map(([x,y],i)=>`<i class="st" style="left:${x}px;top:${y}px;--d:${(i*0.23).toFixed(2)}"></i>`).join(""));
     case "sun": return W(`<i class="sun"></i>`);
-    case "long": return W(`<svg class="hg" viewBox="0 0 80 124" aria-hidden="true"><path d="M8 4 H72 M8 120 H72 M14 4 C14 40 40 50 40 62 C40 74 14 84 14 120 M66 4 C66 40 40 50 40 62 C40 74 66 84 66 120"/><path class="sand" d="M22 112 Q40 92 58 112 Z"/></svg><span class="tg">+${c.T-120}분</span>`);
+    case "long": return W(`<svg class="hg" viewBox="0 0 80 124" aria-hidden="true"><path d="M8 4 H72 M8 120 H72 M14 4 C14 40 40 50 40 62 C40 74 14 84 14 120 M66 4 C66 40 40 50 40 62 C40 74 66 84 66 120"/><path class="sand" d="M22 112 Q40 92 58 112 Z"/></svg><span class="tg">+${hm(c.T-120)}</span>`);
     case "dist": return W(`<span class="cnt"><b>${still?c.t.km:0}</b><small>km</small></span><div class="road"></div><div class="dc">${CAR_SVG()}</div>`);
     default: return W(`<span class="none">없음</span>`);
   }
@@ -2136,7 +2209,7 @@ function calcScr(p,s){
   const nodes=items.map((it,i)=>{const filled=s.cdone||(started&&(i<k||(i===k&&s.cfx)));
     return `<div class="cn${filled?(it.zero?" zero":" on"):""}" style="--i:${i}"><div class="slot">${started&&s.cfx&&i===k&&!s.cdone?fxHTML(it,c,true):""}</div><i class="dot"></i><span class="lb">${it.k}</span><span class="vl">${it.v}</span></div>`}).join("");
   const prog=s.cload?"도착한 곳의 날씨를 확인하고 있어요<i class=\"dots\"><i></i><i></i><i></i></i>":s.cdone?CDONE:started?items[k].say:CSTART;
-  return `<div class="pg${p?" p":""}">${HD(`${c.t.place}에 도착했어요`,{right:B("건너뛰기",{cls:"s",act:"calcSkip",anno:"Basic Button S · 연출 건너뛰기"})})}<span class="cprog">${prog}</span></div>
+  return `<div class="pg${p?" p":""}">${HD(PN(c.t.place,"에 도착했어요"),{right:B("건너뛰기",{cls:"s",act:"calcSkip",anno:"Basic Button S · 연출 건너뛰기"})})}<span class="cprog">${prog}</span></div>
     <div class="calc${p?" p":""}${s.cdone?" done":""}" style="--n:${n}" data-anno="계산 연출 · 내 차가 체크포인트마다 멈추며 계산">
       <div class="ctrack" style="--k:${k}"><i class="cfill"></i>${nodes}<div class="cc-car${!started&&!s.cdone?" start":""}" style="--k:${k}" data-anno="노고 카 v3.1(코나 실루엣 하이파이 · 주간 딥 잉크 · 야간 라임)"><span class="cc-o">${CAR_SVG()}</span></div></div>
       <div class="ctot"><span class="t1">오늘 운전 ${hm(c.T)}</span><span class="t2">${multTxt(c.mult)}</span></div>
@@ -2177,19 +2250,34 @@ function playCalc(){
 
 /* ───────── 화면 목록 (캔버스 정렬 순서 = 유저 플로우 순서, PRD v1.3 8장) ───────── */
 const R={home:homeScr,depart,navi,driving,arrive,calc:calcScr,log,logd,splash,mid:midScr,settings:settingsScr};
-const BASE={trip:"main",people:4,detected:4,split:4,toast:null,dest:null,search:false,ab:"A",why:null,rest:0,restOpen:false,restPre:null,restUI:"sheet",ask:false,done:false,pick:null,cstep:null,cfx:false,cdone:false,printFx:false,hs:"normal",progOpen:false,pv:null,sending:false,offline:false,noFav:false,sensorFail:false,pvFail:false,pvUns:false,quit:false,rec:0,midSettled:false,midDone:false,midPick:null,setOpen:false,setIncl:false,swapFx:false,unsettled:false,routeFail:false,routeFailNext:false,wageOpen:false,wipe:false,wiped:false,aShort:null,cload:false,prevRest:null,demo:false,ro:false,lastRec:null};
+const BASE={midRest:0,midAsk:false,trip:"main",people:4,detected:4,split:4,toast:null,dest:null,search:false,ab:"A",why:null,rest:0,restOpen:false,restPre:null,restUI:"sheet",ask:false,done:false,pick:null,cstep:null,cfx:false,cdone:false,printFx:false,hs:"normal",progOpen:false,pv:null,sending:false,offline:false,noFav:false,sensorFail:false,pvFail:false,pvUns:false,quit:false,rec:0,midSettled:false,midDone:false,midPick:null,setOpen:false,setIncl:false,swapFx:false,unsettled:false,routeFail:false,routeFailNext:false,wageOpen:false,wipe:false,wiped:false,aShort:null,cload:false,prevRest:null,demo:false,ro:false,lastRec:null};
 const AT=["ok","가산율 = 연구값 + 2차 보정(열린 결정 7 닫힘, 11/7)"];
 const CG=["ok","정체 구간 줄 = km(38km), 펼침에 경로의 36% · 시연값 기준 +10%(Q-08-04, 11/8 명준)"];
 const SCREENS=[
+  {g:"June 대조 · 긴 값 · 예외 확인 (11/11~12 확정)",id:"d3-wrap",r:"depart",tag:"D3 확정 · 긴 이름 두 줄 + 한글 줄바꿈 규칙",s:{longNm:true,dest:"한화리조트 대천 파로스 오션타워",pv:"ok"},desc:"11/12 명준 결정: 출발 카드 이름은 두 줄까지. 한글 줄바꿈 규칙(kwrap)으로 어절 안에서 끊지 않고 두 줄 길이를 고르게 한다(남양주 물의정원 / 북한강 산책로). 시안 크기로는 분할 창 카드 200 안에 이름 두 줄 + 거리 줄이 들어간다.",
+   st:["카드 이름 두 줄까지","시안 크기에서는 거리 줄까지 들어감"],ck:[["ok","D3 확정 · 두 줄 + kwrap(11/12 명준)"],["q","앱은 같은 자리에서 거리 줄이 잘림 → 시안 글자 · 여백 크기로 맞춰야 함(June)"]]},
+  {g:"June 대조 · 긴 값 · 예외 확인 (11/11~12 확정)",id:"d4-shrink",r:"arrive",tag:"D4 확정 · 10만 원 이상이면 한 단계 작게",s:{ab:"A",trip:"long",people:2},desc:"11/12 명준 결정: 큰 숫자 길이 규칙. 1인 몫 표시가 10만 원 이상이거나 큰 숫자 줄이 15자 이상이면 한 단계 작은 글자(가로 Headline L 60 → Headline M 56 · 분할 Headline S 48 → Title L 40). 부산 13시간 · 2명 → 한 사람 약 12만 4천 원.",
+   st:["한 사람 약 12만 원대 · 한 단계 작게"],ck:[["ok","D4 확정(11/12 명준) · 도착 제안 카드 · 중간 정산 큰 숫자에 자동 적용"]]},
+  {g:"June 대조 · 긴 값 · 예외 확인 (11/11~12 확정)",id:"d5-small",r:"arrive",tag:"D5 확정 · '+1% 미만' 작은 글자",s:{ab:"A",trip:"n10"},desc:"11/12 명준 결정: 1%가 안 되는 줄(밤길 10분 등)은 '+1% 미만'을 작은 글자로 쓴다. % 칸 폭은 그대로(가로 130 · 분할 84).",
+   st:["밤길 10분 → +1% 미만(작은 글자)"],ck:[["ok","D5 확정 · 영수증 · 기록 상세 · 중간 정산 영수증 공통"],["ok","명세 2절 '+1% 미만' 표기"]]},
+  {g:"June 대조 · 긴 값 · 예외 확인 (11/11~12 확정)",id:"d1-calc",r:"calc",tag:"D1 확정 · 원 아래 값 두 줄",s:{trip:"long",people:2,cstep:6,cdone:true},desc:"11/12 명준 결정: 계산 연출 원 아래 값은 시간(○시간 ○분) / +% 두 줄. 긴 주행(13시간 10분)에서도 옆 원 값과 겹치지 않는다. 분할 창은 오른쪽 자리가 넓어 한 줄.",
+   st:["예상보다 더: 7시간 40분 / +16%","장시간: 11시간 10분 / +11%"],ck:[["ok","D1 확정 · 시간 표기 '○시간 ○분'(명세 2절)"]]},
+  {g:"June 대조 · 긴 값 · 예외 확인 (11/11~12 확정)",id:"d2-home",r:"home",tag:"D2 확정 · 긴 장소 이름 · 가는 중 홈",s:{hs:"progress",plc:"한화리조트 대천 파로스 오션타워 주차장 B동"},desc:"11/12 명준 결정: 문장 속 장소 이름만 말줄임하고 뒤 문구 · 시각 · 인원은 늘 보이게. 홈 가는 중 · 도착 대기 · 도착 머리 · 알림 줄에 같은 규칙.",
+   st:["장소 이름… + 으로 가는 중 · 14:20 출발 · 함께 4명"],ck:[["ok","D2 확정 · 장소 이름만 …"]]},
+  {g:"June 대조 · 긴 값 · 예외 확인 (11/11~12 확정)",id:"d2-calc",r:"calc",tag:"D2 확정 · 긴 장소 이름 · 도착 머리",s:{trip:"lp",people:4,cstep:0},desc:"도착 머리 '○에 도착했어요'에서도 장소 이름만 줄이고 '에 도착했어요'와 [건너뛰기]는 그대로 둔다.",
+   st:["머리: 장소 이름… + 에 도착했어요"],ck:[["ok","D2 확정"]]},
+  {g:"June 대조 · 긴 값 · 예외 확인 (11/11~12 확정)",id:"d6-log",r:"log",tag:"D6 확정 · 기록 12건 스크롤",s:{manyRec:true},desc:"11/12 명준 결정: 기록이 많으면 목록 카드 안에서 스크롤한다(약 8건이 한 화면). 머리와 아래 안내 줄은 고정.",
+   st:["기록 12건 · 목록 안 스크롤"],ck:[["ok","D6 확정"]]},
+  {g:"June 대조 · 긴 값 · 예외 확인 (11/11~12 확정)",id:"d8-b",r:"arrive",tag:"D8 확정 · 분할 방식 B 항목 세로",s:{ab:"B"},desc:"11/12 명준 결정: 분할 창에서 방식 B 항목 버튼 3개를 세로로 놓아 '바베큐장 이용료'처럼 긴 항목도 다 보이게 한다.",
+   st:["분할: 항목 3개 세로"],ck:[["ok","D8 확정 · 분할 창에서 확인"]]},
+  {g:"June 대조 · 긴 값 · 예외 확인 (11/11~12 확정)",id:"d9-short",r:"depart",tag:"D9 확정 · 분할 알약 '확인 필요'",s:{pplNeed:true},desc:"11/12 명준 결정: 좌석 센서를 못 읽어 인원 확인이 필요할 때 위 바 알약은 가로 '인원 확인 필요', 분할 '확인 필요'. 분할 창에서 제목 '어디로 갈까요?'와 겹치지 않게 줄였다.",
+   st:["가로: 제목 + 알약 '인원 확인 필요'","분할: 제목 + 알약 '확인 필요'"],ck:[["ok","D9 확정(11/12 명준) · 좌석 센서 화면(depart-sensor)에 같이 적용"]]},
   {g:"앱 시작 · 홈",id:"app-splash",r:"splash",tag:"앱 시작(로딩)",s:{},desc:"앱을 열면 잠깐 Nogo와 내 차가 보이고, 준비가 끝나면 홈으로 넘어간다(프로토타입 1.6초).",
    st:["가운데: 원 안의 내 차(천천히 들썩) · Nogo · \"준비하고 있어요\" + 점 세 개"],ck:[["ok","[신규] 유저 플로우 1단계 앞 로딩"],["q","실제 로딩 시간은 앱 시작 속도에 따라 다름 — 1초 안이면 건너뜀 [가정]"]]},
-  {g:"앱 시작 · 홈",id:"home-first",r:"home",tag:"홈 · 첫 사용",s:{hs:"first"},desc:"기록이 하나도 없을 때의 홈. 인사와 [출발하기]만 가운데 크게 둔다(11/9: 홈에는 최근 기록을 두지 않음).",
-   st:["인사: \"함께 타고 떠나면 운전한 만큼 세어 둘게요\"(첫 사용은 설명 줄 없음 — 큰 인사가 설명)","[출발하기 →]"],
-   ck:[["ok","[신규] 빈 상태 · 최근 기록 없음"],["ok","누를 곳 = 출발하기 하나"]]},
   {g:"앱 시작 · 홈",id:"home",r:"home",tag:"홈 · 기본",s:{},desc:"유저 플로우 1단계. 인사(로고 심볼 + 두 줄) + [출발하기]만 가운데 크게(11/9 명준). 기록은 위 바 왼쪽 기록 아이콘 → 주행 기록 목록.",
    st:["위: 기록 전체(아이콘) · 가운데 Nogo(가칭)","큰 인사 위 설명 한 줄: \"도착하면 운전한 만큼 계산해 알려 드릴게요\"(보조 글자색 · 가로 30 · 분할 24 · 줄바꿈 없음, 11/9 명준)","인사: \"오늘도 함께 달려 볼까요?\" + [출발하기 →](높이 124, 화살표 원)","홈에는 최근 기록 없음(11/9 명준) · 기록 아이콘 → 목록"],
    ck:[["ok","11/8 유저 플로우: 홈 → [출발하기] → 출발 화면 (이전 홈의 검색·목적지 카드는 출발 화면으로 옮김)"],["ok","진행 중인 출발 없음 = 이 화면(따로 빈 표시 없음)"],["q","앱 이름 Nogo는 디자인 가칭"]]},
-  {g:"앱 시작 · 홈",id:"home-noti",r:"home",tag:"홈 · 알림 펼침",s:{hs:"after",notiOpen:true,notiSeen:true},desc:"위 바 종을 누르면 페이지가 바뀌지 않고 종 아래로 작은 알림 창이 내려온다. 기록이 저장될 때 나오던 문구(\"○○ 기록을 남겼어요\")와 때만 쌓이고, 줄은 누르지 않는다(확인만). 바깥이나 종을 다시 누르면 접힌다(11/9 명준).",
+  {g:"앱 시작 · 홈",id:"home-noti",r:"home",tag:"홈 · 알림 펼침",s:{hs:"after",notiOpen:true},desc:"위 바 종을 누르면 페이지가 바뀌지 않고 종 아래로 작은 알림 창이 내려온다. 기록이 저장될 때 나오던 문구(\"○○ 기록을 남겼어요\")와 때만 쌓이고, 줄은 누르지 않는다(확인만). 바깥이나 종을 다시 누르면 접힌다(11/9 명준).",
    st:["창: 폭 600(분할 520) · 종 아래 꼬리 · 두 겹 테(바깥 테 + 안쪽 판)","머리: \"알림\" + 새 알림이면 \"새 알림 1\"(라임)","줄: 아이콘 원 · \"태안 꽃지해수욕장 기록을 남겼어요\" · 방금(빨간 점) / 지난 줄은 날짜","아래: \"기록은 왼쪽 위에서 볼 수 있어요\""],
    ck:[["ok","11/9 명준: 기록 상세 같은 새 페이지가 아니라 아코디언처럼 내려오는 창"],["ok","딤 없음 · 소리 · 재촉 없음"],["q","알림을 몇 개까지 · 며칠 남길지 — 기획 확인"]]},
   {g:"앱 시작 · 홈",id:"home-after",r:"home",tag:"홈 · 방금 끝난 기록",s:{hs:"after"},desc:"제안을 고르거나 닫으면 홈으로 돌아온다. 기록이 저장되면 위 바 종 아이콘에 빨간 점이 붙고, 종을 누르면 내려오는 알림 창 맨 위에 저장 문구가 들어간다(11/9 명준, 소리 · 팝업 · 재촉 없음).",
@@ -2207,7 +2295,7 @@ const SCREENS=[
   {g:"출발 화면",id:"depart-people-solo",r:"depart",tag:"인원 1명까지 내림",s:{toast:"B",people:1,split:1},desc:"−로 1명까지 내리면 설명 줄이 \"혼자 운전하면 제안 없이 영수증만 보여 드려요\"로 바뀐다.",
    st:["[−] 1명 [+] · 설명 \"혼자 운전하면 제안 없이 영수증만 보여 드려요\"(세로 창은 설명 줄 숨김)"],ck:[["ok","[신규] 누른 뒤 · −로 1명"],["ok","분기 '혼자 탄 주행'을 출발 전에 미리 알려 줌"]]},
   {g:"출발 화면",id:"depart-sensor",r:"depart",tag:"좌석 센서 못 읽음",s:{toast:"S",people:1,split:1,sensorFail:true},desc:"좌석 센서 값을 못 읽으면 감지 인원 없이 직접 고르게 묻는다.",
-   st:["\"몇 명이 함께 타나요?\" · \"좌석 센서를 읽지 못했어요 · 나눠 낼 인원을 골라 주세요\" · [−] 1명 [+]","인원 알약 \"인원 확인 필요\""],ck:[["ok","[신규] 에러 · 좌석 센서"],["q","닫기를 누르면 1명(혼자)으로 볼지 — 지금 시안은 고른 값 그대로"]]},
+   st:["\"몇 명이 함께 타나요?\" · \"좌석 센서를 읽지 못했어요 · 나눠 낼 인원을 골라 주세요\" · [−] 1명 [+]","인원 알약 \"인원 확인 필요\"(분할 \"확인 필요\", D9)"],ck:[["ok","[신규] 에러 · 좌석 센서"],["q","닫기를 누르면 1명(혼자)으로 볼지 — 지금 시안은 고른 값 그대로"]]},
   {g:"출발 화면",id:"depart-preview-loading",r:"depart",tag:"미리보기 불러오는 중",s:{dest:"태안 꽃지해수욕장",pv:"loading"},desc:"목적지를 고르면 카드에 테두리가 생기고, 미리보기 칸이 도착 예상·거리·정체를 불러오는 동안 회색 막대로 기다린다.",
    st:["미리보기: 목적지 이름 + 회색 막대 3개(은은하게 깜빡) · 출발 꺼짐"],ck:[["ok","[신규] 로딩 · 미리보기(requestTrip)"]]},
   {g:"출발 화면",id:"depart-preview",r:"depart",tag:"미리보기 · 출발 준비",s:{dest:"태안 꽃지해수욕장",pv:"ok"},desc:"미리보기가 오면 도착 예상 · 거리 · 정체 비율과 안내 한 줄이 보이고 출발이 켜진다.",
@@ -2247,6 +2335,8 @@ const SCREENS=[
   {g:"출발 뒤 · 잠깐 멈춤(가는 중)",id:"home-progress-quit",r:"home",tag:"그만두기 확인",s:{hs:"progress",quit:true},desc:"[그만두기]를 누르면 짧은 하단 시트로 한 번 묻는다. 그만두면 기록 없이 출발이 닫히고 홈 기본으로 돌아간다.",
    st:["시트(딤 없음): \"이번 출발을 그만둘까요?\" · \"지금까지 운전은 기록에 남지 않아요\"","[계속 가기](기본) · [그만두기](채움)"],
    ck:[["ok","Q-2026-11-08-02 명준 답: 진행 중 리셋 허용"],["q","그만둔 출발을 기록에 남길지(지금은 안 남김) — 기획 확인"]]},
+  {g:"출발 뒤 · 잠깐 멈춤(가는 중)",id:"mid-rest",r:"mid",tag:"쉰 시간 묻기(도착과 같은 시트)",s:{ab:"A",midRest:null,midAsk:true},desc:"11/12 명준: 중간 정산도 도착과 똑같이 영수증 화면에서 짧은 하단 시트로 쉰 시간을 묻는다. 고르면 시트가 닫히고 지금까지 영수증과 제안이 나온다. 영수증의 \"중간에 쉰 시간\" 값을 누르면 다시 고칠 수 있다.",
+   st:["영수증 자리: 지금까지를 정리하는 중(대기)","오른쪽 제안 자리: \"확인 중\" + [계속 가기]","시트: \"중간에 쉰 시간이 있었나요?\" · 없음 · 15분 · 30분 · 1시간 이상"],ck:[["ok","S4 · DECISIONS 11/7 늘 물음 · 도착 시트와 같은 부품"],["ok","고른 값은 최종 영수증의 중간 정산 몫 계산에도 씀"]]},
   {g:"출발 뒤 · 잠깐 멈춤(가는 중)",id:"mid-a",r:"mid",tag:"지금까지의 노고 · 방식 A",s:{ab:"A"},desc:"내 차 그림을 누르면 출발부터 지금까지를 도착과 같은 6개 항목(날씨 · 정체 · 예상보다 더 · 밤길 · 장시간 · 거리)으로 세어 영수증으로 보여 준다. 운전자 교대나 계획 없이 들른 휴게소에서도 같은 식이다(11/8 명준).",
    st:["영수증 \"오늘 주행 영수증 · 14:20 출발 · 아직 가는 중\" · 날씨 비, 지금까지 내내 +40% · 정체 구간 19km +10% · 예상보다 더 +13분 +5% · 운전 1시간 5분 · 52km · 평소보다 1.55배","값이 0인 밤길 · 장시간 줄은 생략(도착과 같음)","예상보다 더 = 지금까지 걸린 시간 − 출발 때 ETA × 지금까지 거리 비율","오른쪽: \"지금까지를 챙긴다면 · 한 사람 약 4천 원\" + 5-2 근거 · [좋아요](채움) · [계속 가기]"],
    ck:[["ok","도착과 같은 식 · 같은 단가(178원)"],["q","지금 위치 날씨 = 서버에 좌표 1개 더 → 계약(출발·도착 1개씩) 변경 필요, 효성·June 확인"],["q","지금까지 거리 비율로 나눈 ETA는 [가정] — requestTrip 값으로 되는지 June 확인"]]},
@@ -2287,7 +2377,7 @@ const SCREENS=[
    st:["날씨 줄 펼침: \"비 오는 날은 운전 부담이 40% 늘어요 · 시뮬레이터 30명 연구(2026)\"","줄마다 펼침 표시(꺾쇠)","거리 줄은 가산이 없어 펼치지 않음"],
    ck:[["ok","계수의 출처가 보임(6장 납득 조건)"],["ok","\"○시간어치\" 같은 동등 주장 없음"]]},
   {g:"도착 · 방식 A 돈으로 환산",id:"arrive-a-why-jam",r:"arrive",tag:"정체 구간 % 펼침",s:{ab:"A",why:1},desc:"정체 구간의 +10% 드롭다운을 누르면, 줄 아래에 있던 경로 비율과 기준이 펼친 칸 안에 함께 나온다.",
-   st:["줄은 \"정체 구간 · 38km · +10% ⌄\"만 남김(경로 비율 줄 삭제)","펼친 칸 1(굵게): \"출발 때 내비가 안내한 경로의 36%가 막혀 있었어요\" — 경로 비율과 \"내비 안내 경로 기준\"을 한 문장으로","펼친 칸 2: \"차가 붐비는 길은 운전 부담이 27% 늘어요 · 교통 밀도 연구(LSU 2015)\"","펼치면 바코드는 접힘(가로), 세로 창은 다른 줄 간격을 줄임","다시 누르면 접힘(⌄ → ⌃)"],
+   st:["줄은 \"정체 구간 · 38km · +10% ⌄\"만 남김(경로 비율 줄 삭제)","펼친 칸 1(굵게): \"출발 때 내비가 안내한 경로의 36%가 붐볐어요\" — 경로 비율과 \"내비 안내 경로 기준\"을 한 문장으로","펼친 칸 2: \"차가 붐비는 길은 운전 부담이 27% 늘어요 · 교통 밀도 연구(LSU 2015)\"","펼치면 바코드는 접힘(가로), 세로 창은 다른 줄 간격을 줄임","다시 누르면 접힘(⌄ → ⌃)"],
    ck:[["ok","11/7 명준 코멘트: 경로 비율을 % 드롭다운 안으로"],["q","PRD 5-1은 \"정체 구간 줄 아래에 '내비 안내 경로 기준'을 작게 표시\" → 이제 펼쳐야 보임. 기획 확인(Q-2026-11-07-07)"],["q","정체 줄 표기(분/km)는 효성 결정 대기(11장 9)"]]},
   {g:"도착 · 방식 A 돈으로 환산",id:"arrive-a-done",r:"arrive",tag:"좋아요 후",s:{ab:"A",done:true},desc:"좋아요를 누르면 로컬 기록에만 남기고 더 요구하지 않는다.",
    st:["\"좋아요, 오늘 기록에 남겼어요\" · 한 사람 약 9천 원","\"더 할 일은 없어요\" · 닫기"],
@@ -2301,7 +2391,7 @@ const SCREENS=[
    st:["\"밥값에서 운전자 빼기로 했어요\" · 오늘 기록에 남겼어요","\"더 할 일은 없어요\" · 닫기"],
    ck:[["ok","다음 요구 없음(5-4)"]]},
   {g:"도착 · 방식 B 한 번 빼 주기",id:"arrive-b-none",r:"arrive",tag:"제안 없음",s:{ab:"B",trip:"short",people:2},desc:"운전자 몫이 커피 1인분의 절반(2천 350원)보다 작으면 제안 없이 기록만 남긴다. 문구는 A와 같다.",
-   st:["10분 · 4km · 2명 → 운전자 몫 약 900원","영수증: 가산 줄이 없어 \"비·정체·밤길 없이 달렸어요\" + 거리","\"오늘 주행도 수고하셨어요\" · \"이번 주행은 기록만 남겨 둘게요\" · 닫기"],
+   st:["10분 · 4km · 2명 → 운전자 몫 약 900원","영수증: 가산 줄이 없어 \"비·정체·밤길 없이 달렸어요\" + \"운전한 시간만큼 셌어요\" + 거리","\"오늘 주행도 수고하셨어요\" · \"이번 주행은 기록만 남겨 둘게요\" · 닫기"],
    ck:[["ok","5-3 '제안 없음' 규칙"],["ok","A·B 같은 문구(Q-2026-11-07-04 명준 답)"],["q","10분 주행에도 쉰 시간을 물을지 → 시안은 짧은 주행이라 묻지 않음 [가정]"]]},
   {g:"도착 · 중간 정산을 한 주행",id:"arrive-mid-a",r:"arrive",tag:"영수증 하단 · 운전 노고 전체",s:{ab:"A",midSettled:true,midDone:true},desc:"가는 길에 중간 정산을 했으면 영수증 합계 아래에 \"운전 노고 전체\" 줄이 생긴다. 처음에는 출발 → 도착 전체로 보여 주고, 오른쪽 제안도 전체 기준(한 사람 약 9천 원)이다. 아래 작은 줄 \"중간 정산 있음 ⇅\"을 누르면 중간 정산 포함 모드로 바뀐다(11/9 명준).",
    st:["영수증 하단: \"운전 노고 전체 · 약 3만 6천 원\" + 아래 작은 줄 \"중간 정산 있음 ⇅\"(점선 밑줄, 원형 토글 없음)","제안: \"한 사람 약 9천 원\" · 근거 \"* 운전 노고 약 3만 6천 원을 운전자 포함 4명이 나눈 값 · * 최저임금 1분 178원 기준\"(중간 정산 캡션 줄 없음)"],
@@ -2313,8 +2403,10 @@ const SCREENS=[
    st:["\"중간 정산 포함 운전 · 1시간 5분\" + 아래 \"운전 시간 전체 ⇅\"","제안 설명 끝에 \"· 중간 정산 몫은 빼고 골랐어요\"(포함 모드에서만)"],
    ck:[["ok","B 금액 표시 안 함 유지"]]},
   {g:"도착 · 예외 상태",id:"arrive-clear",r:"arrive",tag:"0인 줄 생략",s:{trip:"clear",people:2},desc:"맑은 낮 1시간이면 가산 줄이 모두 0이라 생략하고, 머리줄은 \"평소 같은 길\"로 보여 준다.",
-   st:["오늘 운전 1시간 · 평소 같은 길","\"비·정체·밤길 없이 달렸어요\" + 거리 52km","방식 A: 한 사람 약 5천 원 · 운전 노고 약 1만 1천 원을 운전자 포함 2명이 나눈 값"],
-   ck:[["ok","값이 0인 줄 생략(5-1)"],["ok","5-2 크기 확인 표(맑은 낮 1시간 · 2명 = 약 5천 원)와 같음"],["q","배수 1.00일 때 \"평소 같은 길\"은 디자인 문구"],["q","1시간 주행이라 쉰 시간을 묻지 않은 상태로 그림 [가정]"]]},
+   st:["오늘 운전 1시간 · 평소 같은 길","\"비·정체·밤길 없이 달렸어요\" + \"더할 조건은 없고, 운전한 시간만큼 셌어요\" + 거리 52km","방식 A: 한 사람 약 5천 원 · 운전 노고 약 1만 1천 원을 운전자 포함 2명이 나눈 값"],
+   ck:[["ok","값이 0인 줄 생략(5-1)"],["ok","5-2 크기 확인 표(맑은 낮 1시간 · 2명 = 약 5천 원)와 같음"],["q","배수 1.00일 때 \"평소 같은 길\"은 디자인 문구"],["ok","쉰 시간은 늘 물음(S4 · 11/12) · 영수증에 \"중간에 쉰 시간 없음\" 줄"]]},
+  {g:"도착 · 예외 상태",id:"arrive-wxhalf",r:"arrive",tag:"출발 비 · 도착 날씨 모름",s:{ab:"A",trip:"wxhalf"},desc:"11/12 명준 결정(D7): 출발 때는 비, 도착 날씨를 못 받으면 날씨 줄을 하나로 합쳐 \"출발 비 · 도착 정보 없음\"으로 쓴다. 펼치면 출발 날씨로 셌다는 이유가 나온다.",
+   st:["날씨 줄: 출발 비 · 도착 정보 없음 · +40%","펼침: 도착 날씨는 불러오지 못해 출발 때 날씨(비)로 셌어요"],ck:[["ok","D7 확정 · 날씨 줄 하나"],["q","도착 날씨를 모를 때 출발 날씨로 셀지 · 더하지 않을지 엔진(효성) 확인"]]},
   {g:"도착 · 예외 상태",id:"arrive-solo",r:"arrive",tag:"혼자 탄 주행",s:{people:1},desc:"나눠 낼 인원이 1이면 영수증만 보여 주고 제안은 하지 않는다.",
    st:["영수증 그대로(쉰 시간 · 없음)","\"혼자 운전했어요 · 나눌 사람이 없어 제안은 하지 않아요\" · 닫기"],
    ck:[["q","열린 결정 6: 기본값(영수증만)으로 그림"]]},
@@ -2364,6 +2456,21 @@ function paint(scr,rname,s,mode){
   q(".a-p2").innerHTML=land?"":(rname==="driving"?naviWF(true):otherApp());
   scr.classList.toggle("dark",ui.mode==="dark");scr.classList.toggle("no-guide",!ui.guide);scr.classList.toggle("anno",ui.anno);
   q(".gnb").src="img/gnb_"+(ui.mode==="dark"?"dark":"light")+".png";
+  fitPN(scr);if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>fitPN(scr));
+}
+/* D2 말줄임 빈칸 없애기(11/12 명준): CSS 말줄임은 글자 단위로 잘려 "…"와 뒤 문구 사이에 남는 폭이 빈칸으로 보인다.
+   넘치는 장소 이름만 글자 수를 줄여 "…"를 직접 붙이고, 이름 칸을 내용 폭에 맞춰 뒤 문구가 바로 붙게 한다 */
+function fitPN(root){
+  root.querySelectorAll(".pnl").forEach(l=>{
+    const pn=l.querySelector(".pn");if(!pn)return;
+    const full=pn.dataset.full||(pn.dataset.full=pn.textContent);
+    l.classList.remove("fit");pn.textContent=full;
+    const avail=pn.clientWidth;if(!avail||pn.scrollWidth<=avail+1)return;
+    l.classList.add("fit");pn.title=full;
+    let lo=0,hi=full.length;
+    while(lo<hi){const m=(lo+hi+1)>>1;pn.textContent=full.slice(0,m).trimEnd()+"…";if(pn.scrollWidth<=avail)lo=m;else hi=m-1}
+    pn.textContent=full.slice(0,lo).trimEnd()+"…";
+  });
 }
 function fitScale(stage,fit,scr,actual,crop){
   if(actual){stage.classList.add("actual");scr.style.transform="none";return}
@@ -2461,11 +2568,11 @@ function act(a){
   }
   else if(a==="quitNo")s.quit=false;
   else if(a==="quitYes"){s.quit=false;s.hs="normal";s.midSettled=false;s.midDone=false;s.midPick=null;P.hist=[]}
-  else if(a==="mid"){go("mid");return}
-  else if(a==="arrNow"){s.quit=false;arriveWith({ab:s.ab,people:s.people>1?s.people:4,restPre:"open"});return}
+  else if(a==="mid"){if(!s.midDone){s.midRest=null;s.midAsk=true}go("mid");return}
+  else if(a==="arrNow"){s.quit=false;arriveWith({ab:s.ab,people:s.people>1?s.people:4});return}
   else if(a==="pvRetry"){s.pvFail=false;pvLoad()}
   else if(a==="goNavi"){s.routeFail=false;s.sending=true;setTimeout(()=>{if(P.screen==="depart"&&P.s.sending){P.s.sending=false;if(P.s.routeFailNext){P.s.routeFailNext=false;P.s.routeFail=true;renderProto()}else go("navi")}},700)}
-  else if(a==="restEdit")s.ask=true;
+  else if(a==="restEdit"){if(P.screen==="mid")s.midAsk=true;else s.ask=true}
   else if(a==="calcSkip"){P.ctok=(P.ctok||0)+1;P.screen="arrive";s.cstep=null;s.cdone=false;s.printFx=true}
   else if((m=a.match(/^(dest|res|fav|hc|rec|lrec|why|rest|pick)(\d)$/))){const i=+m[2];
     if(m[1]==="dest"){s.dest=RECENT[i].nm;s.search=false}
@@ -2475,7 +2582,7 @@ function act(a){
     else if(m[1]==="fav"){s.dest=FAVS[i]}
     else if(m[1]==="hc"){s.search=false;if(s.dest===DCARDS[i].nm){s.dest=null;s.pv=null}else{s.dest=DCARDS[i].nm;pvLoad()}}
     else if(m[1]==="why")s.why=s.why===i?null:i;
-    else if(m[1]==="rest"){s.prevRest=s.rest;s.rest=i;s.why=null;s.restPre=null;s.ask=false}
+    else if(m[1]==="rest"){if(P.screen==="mid"){s.midRest=i;s.midAsk=false}else{s.prevRest=s.rest;s.rest=i;s.why=null;s.restPre=null;s.ask=false}}
     else if(P.screen==="mid"){s.midPick=i;s.midDone=true;s.midSettled=true}
     else{s.pick=i;s.done=true}}
   renderProto();
@@ -2515,7 +2622,7 @@ function signal(sig){
   if(sig==="people"){if(P.screen!=="depart")go("depart");s.detected=4;s.split=4;s.toast="B";renderProto();return}
   if(sig==="drive"){go("driving");return}
   const crew=s.people>1?s.people:4;
-  const o={arriveA:{ab:"A",people:crew},arriveB:{ab:"B",people:crew},nodata:{trip:"nodata",people:crew},arriveSnow:{trip:"snow",rest:0,people:crew},arriveClear:{trip:"clear",people:2},arriveShort:{ab:"B",trip:"short",people:2},arriveSolo:{people:1},arriveMid:{ab:"A",people:crew,midSettled:true,midDone:true,restPre:"open"}}[sig];
+  const o={arriveA:{ab:"A",people:crew},arriveB:{ab:"B",people:crew},nodata:{trip:"nodata",people:crew},arriveSnow:{trip:"snow",rest:0,people:crew},arriveClear:{trip:"clear",people:2},arriveShort:{ab:"B",trip:"short",people:2},arriveSolo:{people:1},arriveMid:{ab:"A",people:crew,midSettled:true,midDone:true,restPre:null}}[sig];
   if(o)arriveWith(o);
 }
 $("pStage").addEventListener("click",e=>{
@@ -2534,7 +2641,7 @@ new ResizeObserver(()=>{if(P)fitScale($("pStage"),$("pFit"),pScr,pActual)}).obse
    지금 시안이 실제로 쓰는 값만 모음(부품은 화면과 같은 코드로 그려 50%로 보여 줌). 컬러·로고는 미정이라 뺌(11/8 명준) */
 const DS_TOK=["--bg","--win","--card","--txt","--txt2","--txt3","--txt4","--div","--div2","--div3","--handle","--btn-fill","--btn-fill-txt","--btn-basic","--ph","--ph2","--dim","--btn-fill-p","--btn-basic-p","--btn-off","--toggle-on","--toast","--toast-txt","--sh1","--sh2","--sh3","--r-win","--pad","--headline-l","--headline-m","--headline-s","--title-l","--title-m","--title-s","--body-l","--body-m","--body-m-b","--body-s","--label-m","--label-s","--color-progress-line","--color-progress-indicator-border","--color-selection-halo","--color-illust-car","--color-illust-car-shade","--color-illust-car-hi","--color-illust-car-line","--color-illust-ink-car","--color-illust-ink-car-shade","--color-illust-ink-car-hi","--color-illust-ink-car-line","--color-illust-ink-glass","--color-illust-ink-trim","--color-illust-ink-head","--color-illust-glass","--color-illust-glass-hi","--color-illust-trim","--color-illust-well","--color-illust-tire","--color-illust-tire-edge","--color-illust-tire-hi","--color-illust-rim","--color-illust-rim-dark","--color-illust-cap","--color-illust-rim-hi","--color-illust-rim-shade","--color-illust-glass-top","--color-illust-ink-glass-top","--color-illust-tail-hi","--color-illust-tail","--color-illust-head","--color-illust-ground","--color-illust-other","--color-illust-other-shade","--color-illust-other-line","--color-illust-other-glass","--color-background-canvas","--color-background-subtle","--color-surface-default","--color-surface-raised","--color-surface-modal","--color-surface-notification","--color-text-primary","--color-text-secondary","--color-text-tertiary","--color-text-disabled","--color-text-link","--color-icon-primary","--color-icon-secondary","--color-divider-default","--color-border-subtle","--color-border-strong","--color-focus-ring","--color-button-primary-fill","--color-button-primary-hover","--color-button-primary-pressed","--color-button-primary-foreground","--color-button-secondary-fill","--color-button-secondary-hover","--color-button-secondary-pressed","--color-button-secondary-foreground","--color-button-tertiary-pressed","--color-button-tertiary-foreground","--color-button-disabled-fill","--color-button-disabled-foreground","--color-button-destructive-fill","--color-button-destructive-pressed","--color-button-destructive-foreground","--color-field-background","--color-field-border","--color-field-foreground","--color-field-placeholder","--color-field-caret","--color-selection-background","--color-selection-foreground","--color-selection-border","--color-selection-pressed","--color-switch-track-off","--color-switch-thumb-off","--color-switch-track-on","--color-switch-thumb-on","--color-progress-track","--color-progress-indicator","--color-skeleton-base","--color-skeleton-highlight","--color-receipt-paper","--color-receipt-rule","--color-receipt-detail-background","--color-receipt-printer-highlight","--color-receipt-printer-midtone","--color-receipt-printer-shade","--color-receipt-printer-slot","--color-receipt-result-text","--color-receipt-result-marker","--color-status-neutral-background","--color-status-neutral-foreground","--color-status-warning-background","--color-status-warning-foreground","--color-status-error-background","--color-status-error-foreground","--color-status-info-background","--color-status-info-foreground","--color-dim-scrim","--color-overlay-hover","--color-overlay-pressed","--color-driving-lock-background","--color-driving-lock-foreground","--color-brand-wordmark"];
 function dsTokens(){const t=document.createElement("div");t.className="screen"+(ui.mode==="dark"?" dark":"");t.style.visibility="hidden";document.body.appendChild(t);const cs=getComputedStyle(t);const v=DS_TOK.map(n=>n+":"+cs.getPropertyValue(n)).join(";");t.remove();return v}
-const NOGO_ROLES=[["--color-background-canvas","#F7F5FC","#242033"],["--color-background-subtle","#EFEDF5","#292538"],["--color-surface-default","#FFFFFF","#312C40"],["--color-surface-raised","#FFFFFF","#3A354A"],["--color-surface-modal","#FFFFFF","#3A354A"],["--color-surface-notification","#FFFFFF","#3A354A"],["--color-text-primary","#242033","#F7F5FC"],["--color-text-secondary","#51495F","#DEDAE8"],["--color-text-tertiary","#6B637B","#AFA8BD"],["--color-text-disabled","#8B849C","#797187"],["--color-text-link","#445616","#D9F77A"],["--color-icon-primary","#242033","#F7F5FC"],["--color-icon-secondary","#6B637B","#AFA8BD"],["--color-divider-default","#DEDAE8","#464055"],["--color-border-subtle","#DEDAE8","#464055"],["--color-border-strong","#797187","#8B849C"],["--color-focus-ring","#242033","#D9F77A"],["--color-button-primary-fill","#D9F77A","#CDEA6D"],["--color-button-primary-hover","#CDEA6D","#D9F77A"],["--color-button-primary-pressed","#BFD95F","#BFD95F"],["--color-button-primary-foreground","#242033","#242033"],["--color-button-secondary-fill","#E6E3EF","#464055"],["--color-button-secondary-hover","#DEDAE8","#51495F"],["--color-button-secondary-pressed","#D1CCDD","#5C546B"],["--color-button-secondary-foreground","#242033","#F7F5FC"],["--color-button-tertiary-pressed","#2420331F","#FFFFFF1F"],["--color-button-tertiary-foreground","#51495F","#DEDAE8"],["--color-button-disabled-fill","#EFEDF5","#3A354A"],["--color-button-disabled-foreground","#8B849C","#797187"],["--color-button-destructive-fill","#9D303D","#FFADAD"],["--color-button-destructive-pressed","#792532","#F78F92"],["--color-button-destructive-foreground","#FFFFFF","#242033"],["--color-field-background","#FFFFFF","#292538"],["--color-field-border","#797187","#8B849C"],["--color-field-foreground","#242033","#F7F5FC"],["--color-field-placeholder","#6B637B","#AFA8BD"],["--color-field-caret","#242033","#D9F77A"],["--color-selection-background","#D9F77A","#D9F77A"],["--color-selection-foreground","#242033","#242033"],["--color-selection-border","#242033","#D9F77A"],["--color-selection-pressed","#CDEA6D","#CDEA6D"],["--color-switch-track-off","#797187","#8B849C"],["--color-switch-thumb-off","#FFFFFF","#242033"],["--color-switch-track-on","#D9F77A","#CDEA6D"],["--color-switch-thumb-on","#242033","#242033"],["--color-progress-track","#9A93AA","#6B637B"],["--color-progress-indicator","#D9F77A","#D9F77A"],["--color-skeleton-base","#EFEDF5","#3A354A"],["--color-skeleton-highlight","#DEDAE8","#51495F"],["--color-progress-line","#242033","#D9F77A"],["--color-progress-indicator-border","#242033","#D9F77A"],["--color-selection-halo","#D9F77A80","#D9F77A40"],["--color-illust-car","#D9F77A","#D9F77A"],["--color-illust-car-shade","#C2DF5C","#BFD95F"],["--color-illust-car-hi","#F3FEC9","#F3FEC9"],["--color-illust-car-line","#A6C246","#9CB743"],["--color-illust-ink-car","#242033","#242033"],["--color-illust-ink-car-shade","#1B1828","#1B1828"],["--color-illust-ink-car-hi","#4A445C","#4A445C"],["--color-illust-ink-car-line","#3A354A","#3A354A"],["--color-illust-ink-glass","#4A4560","#4A4560"],["--color-illust-ink-trim","#121019","#121019"],["--color-illust-ink-head","#D9F77A","#D9F77A"],["--color-illust-glass","#2E2A3D","#2E2A3D"],["--color-illust-glass-hi","#FFFFFF59","#FFFFFF59"],["--color-illust-trim","#242033","#242033"],["--color-illust-well","#16131F","#0E0C14"],["--color-illust-tire","#242033","#16131F"],["--color-illust-tire-edge","#242033","#5C546B"],["--color-illust-tire-hi","#51495F","#5C546B"],["--color-illust-rim","#CBD2DB","#A5AFBC"],["--color-illust-rim-dark","#3E4754","#3E4754"],["--color-illust-cap","#D9F77A","#D9F77A"],["--color-illust-tail","#F78F92","#F78F92"],["--color-illust-head","#FFFFFF","#FFFFFF"],["--color-illust-ground","#24203329","#00000066"],["--color-illust-other","#FFFFFF","#51495F"],["--color-illust-other-shade","#E6E3EF","#464055"],["--color-illust-other-line","#C9C3D6","#3A354A"],["--color-illust-other-glass","#AFA8BD","#312C40"],["--color-illust-rim-hi","#EDF1F6","#EDF1F6"],["--color-illust-rim-shade","#8994A3","#626D7D"],["--color-illust-glass-top","#4A4560","#4A4560"],["--color-illust-ink-glass-top","#6B637B","#6B637B"],["--color-illust-tail-hi","#FFADAD","#FFADAD"],["--color-receipt-paper","#FFFFFF","#312C40"],["--color-receipt-rule","#DEDAE8","#464055"],["--color-receipt-detail-background","#F7F5FC","#292538"],["--color-receipt-printer-highlight","#EDF1F6","#A5AFBC"],["--color-receipt-printer-midtone","#CBD2DB","#626D7D"],["--color-receipt-printer-shade","#8994A3","#3E4754"],["--color-receipt-printer-slot","#171B22","#171B22"],["--color-receipt-result-text","#242033","#F7F5FC"],["--color-receipt-result-marker","#D9F77A","#445616"],["--color-status-neutral-background","#EFEDF5","#3A354A"],["--color-status-neutral-foreground","#51495F","#DEDAE8"],["--color-status-warning-background","#FFF1CC","#493518"],["--color-status-warning-foreground","#6F4908","#F9D171"],["--color-status-error-background","#FDE9E9","#48272E"],["--color-status-error-foreground","#9D303D","#FFADAD"],["--color-status-info-background","#E7F1FD","#203750"],["--color-status-info-foreground","#244D7F","#A9CFFF"],["--color-notification-dot","#E5484D","#FF6B6B"],["--color-dim-scrim","#2420338F","#000000B8"],["--color-overlay-hover","#24203314","#FFFFFF14"],["--color-overlay-pressed","#2420331F","#FFFFFF1F"],["--color-driving-lock-background","#EFEDF5","#242033"],["--color-driving-lock-foreground","#242033","#F7F5FC"],["--color-brand-wordmark","#242033","#D9F77A"]];
+const NOGO_ROLES=[["--color-background-canvas","#F7F5FC","#242033"],["--color-background-subtle","#EFEDF5","#292538"],["--color-surface-default","#FFFFFF","#312C40"],["--color-surface-raised","#FFFFFF","#3A354A"],["--color-surface-modal","#FFFFFF","#3A354A"],["--color-surface-notification","#FFFFFF","#3A354A"],["--color-text-primary","#242033","#F7F5FC"],["--color-text-secondary","#51495F","#DEDAE8"],["--color-text-tertiary","#6B637B","#AFA8BD"],["--color-text-disabled","#8B849C","#797187"],["--color-text-link","#445616","#D9F77A"],["--color-icon-primary","#242033","#F7F5FC"],["--color-icon-secondary","#6B637B","#AFA8BD"],["--color-divider-default","#DEDAE8","#464055"],["--color-border-subtle","#DEDAE8","#464055"],["--color-border-strong","#797187","#8B849C"],["--color-focus-ring","#242033","#D9F77A"],["--color-button-primary-fill","#D9F77A","#CDEA6D"],["--color-button-primary-hover","#CDEA6D","#D9F77A"],["--color-button-primary-pressed","#BFD95F","#BFD95F"],["--color-button-primary-foreground","#242033","#242033"],["--color-button-secondary-fill","#E6E3EF","#464055"],["--color-button-secondary-hover","#DEDAE8","#51495F"],["--color-button-secondary-pressed","#D1CCDD","#5C546B"],["--color-button-secondary-foreground","#242033","#F7F5FC"],["--color-button-tertiary-pressed","#2420331F","#FFFFFF1F"],["--color-button-tertiary-foreground","#51495F","#DEDAE8"],["--color-button-disabled-fill","#EFEDF5","#3A354A"],["--color-button-disabled-foreground","#8B849C","#797187"],["--color-button-destructive-fill","#9D303D","#FFADAD"],["--color-button-destructive-pressed","#792532","#F78F92"],["--color-button-destructive-foreground","#FFFFFF","#242033"],["--color-field-background","#FFFFFF","#292538"],["--color-field-border","#797187","#8B849C"],["--color-field-foreground","#242033","#F7F5FC"],["--color-field-placeholder","#6B637B","#AFA8BD"],["--color-field-caret","#242033","#D9F77A"],["--color-selection-background","#D9F77A","#D9F77A"],["--color-selection-foreground","#242033","#242033"],["--color-selection-border","#D9F77A","#D9F77A"],["--color-selection-pressed","#CDEA6D","#CDEA6D"],["--color-switch-track-off","#797187","#8B849C"],["--color-switch-thumb-off","#FFFFFF","#242033"],["--color-switch-track-on","#D9F77A","#CDEA6D"],["--color-switch-thumb-on","#242033","#242033"],["--color-progress-track","#9A93AA","#6B637B"],["--color-progress-indicator","#D9F77A","#D9F77A"],["--color-skeleton-base","#EFEDF5","#3A354A"],["--color-skeleton-highlight","#DEDAE8","#51495F"],["--color-progress-line","#242033","#D9F77A"],["--color-progress-indicator-border","#242033","#D9F77A"],["--color-selection-halo","#D9F77A80","#D9F77A40"],["--color-illust-car","#D9F77A","#D9F77A"],["--color-illust-car-shade","#C2DF5C","#BFD95F"],["--color-illust-car-hi","#F3FEC9","#F3FEC9"],["--color-illust-car-line","#A6C246","#9CB743"],["--color-illust-ink-car","#242033","#242033"],["--color-illust-ink-car-shade","#1B1828","#1B1828"],["--color-illust-ink-car-hi","#4A445C","#4A445C"],["--color-illust-ink-car-line","#3A354A","#3A354A"],["--color-illust-ink-glass","#4A4560","#4A4560"],["--color-illust-ink-trim","#121019","#121019"],["--color-illust-ink-head","#D9F77A","#D9F77A"],["--color-illust-glass","#2E2A3D","#2E2A3D"],["--color-illust-glass-hi","#FFFFFF59","#FFFFFF59"],["--color-illust-trim","#242033","#242033"],["--color-illust-well","#16131F","#0E0C14"],["--color-illust-tire","#242033","#16131F"],["--color-illust-tire-edge","#242033","#5C546B"],["--color-illust-tire-hi","#51495F","#5C546B"],["--color-illust-rim","#CBD2DB","#A5AFBC"],["--color-illust-rim-dark","#3E4754","#3E4754"],["--color-illust-cap","#D9F77A","#D9F77A"],["--color-illust-tail","#F78F92","#F78F92"],["--color-illust-head","#FFFFFF","#FFFFFF"],["--color-illust-ground","#24203329","#00000066"],["--color-illust-other","#FFFFFF","#51495F"],["--color-illust-other-shade","#E6E3EF","#464055"],["--color-illust-other-line","#C9C3D6","#3A354A"],["--color-illust-other-glass","#AFA8BD","#312C40"],["--color-illust-rim-hi","#EDF1F6","#EDF1F6"],["--color-illust-rim-shade","#8994A3","#626D7D"],["--color-illust-glass-top","#4A4560","#4A4560"],["--color-illust-ink-glass-top","#6B637B","#6B637B"],["--color-illust-tail-hi","#FFADAD","#FFADAD"],["--color-receipt-paper","#FFFFFF","#312C40"],["--color-receipt-rule","#DEDAE8","#464055"],["--color-receipt-detail-background","#F7F5FC","#292538"],["--color-receipt-printer-highlight","#EDF1F6","#A5AFBC"],["--color-receipt-printer-midtone","#CBD2DB","#626D7D"],["--color-receipt-printer-shade","#8994A3","#3E4754"],["--color-receipt-printer-slot","#171B22","#171B22"],["--color-receipt-result-text","#242033","#F7F5FC"],["--color-receipt-result-marker","#D9F77A","#445616"],["--color-status-neutral-background","#EFEDF5","#3A354A"],["--color-status-neutral-foreground","#51495F","#DEDAE8"],["--color-status-warning-background","#FFF1CC","#493518"],["--color-status-warning-foreground","#6F4908","#F9D171"],["--color-status-error-background","#FDE9E9","#48272E"],["--color-status-error-foreground","#9D303D","#FFADAD"],["--color-status-info-background","#E7F1FD","#203750"],["--color-status-info-foreground","#244D7F","#A9CFFF"],["--color-notification-dot","#E5484D","#FF6B6B"],["--color-dim-scrim","#2420338F","#000000B8"],["--color-overlay-hover","#24203314","#FFFFFF14"],["--color-overlay-pressed","#2420331F","#FFFFFF1F"],["--color-driving-lock-background","#EFEDF5","#242033"],["--color-driving-lock-foreground","#242033","#F7F5FC"],["--color-brand-wordmark","#242033","#D9F77A"]];
 const DM=rows=>`<ul class="dmeta">${rows.map(([k,v])=>`<li><span>${k}</span><span>${v}</span></li>`).join("")}</ul>`;
 const DC=(title,inner,meta,cls="",cc="")=>`<div class="dcard ${cc}"><b>${title}</b><div class="dbox"><div class="dsk ${cls}">${inner}</div></div>${DM(meta)}</div>`;
 function renderDS(){
@@ -2564,7 +2671,7 @@ function renderDS(){
     DC("인원 알약",`<span class="ppl"><i class="ico pi pi-users-three" aria-hidden="true"></i>함께 4명<i class="chev"></i></span>`,[["대응","디자인 제안"],["크기","64 · 알약"],["동작","누르면 인원 확인"]]),
     DC("중간 정산 버튼(시동 버튼)",`<div class="hero prg" style="flex:none"><div class="midb"><span class="sbtn" aria-hidden="true"><span class="sface">${NOGO_SYM}</span></span></div></div>`,[["대응","디자인 제안(11/9 명준: 원을 키우고 로고 심볼 · 시동 버튼처럼 · 아래 글자 삭제)"],["크기","바깥 테 360(분할 200) · 안쪽 버튼 면 = 테 안 22(분할 12) · 심볼 = 면의 58%"],["색","테 = Satin Silver 금속(출력구와 같은 4단, 매끈) · 테와 면 사이 가는 홈 · 면 = 로고 라임 그라디언트 배리언트와 같은 대각 3단(#F5FFD2 → #D9F77A → #A9C640), 광택 없음 · 심볼 = 딥 잉크"],["동작","누르면 지금까지의 노고 · 누를 때 면이 2px 들어가고 그림자가 줄어듦 · 로고 속 운전대가 2초마다 한 바퀴(0.9초 회전 · 1.1초 쉼) · 바깥 라임 고리 두 겹이 1.2초 간격으로 퍼지는 울림(주간은 진한 라임 선 + 빛 번짐, 움직임 줄이기면 멈춤) · 글자 없음, 화면 읽기 이름 \"지금까지의 노고 보기\""]]),
     DC("검색 한 줄",`<div class="hsearch" style="width:1000px"><i class="ico pi pi-magnifying-glass" aria-hidden="true"></i><span class="ph">목적지 검색</span><span class="mic"><i class="ico pi pi-microphone" aria-hidden="true"></i></span></div><div class="hsearch on" style="width:1000px;margin-top:0"><i class="ico pi pi-magnifying-glass" aria-hidden="true"></i><span class="q">꽃지</span><span class="tbtn clr">지우기</span></div>`,[["Pleos","Text Field 100의 알약 변형"],["크기","높이 100 · 모서리 50 · 음성 버튼 64"],["상태","기본 · 입력 중(검은 테두리 3) · 흐림(인터넷 없음)"]],"col"),
-    DC("목적지 카드",hc(false)+hc(true),[["대응","디자인 제안(Card)"],["크기","가로 창 4열 · 높이 320 · 바깥 40 / 안 32 · 사이 24 · 세로 창 2열 200 · 사이 16"],["글자","이름 Title L · 거리 Body M · 꼬리표 Body S"],["상태","기본 · 선택(검은 바깥 테두리)"]]),
+    DC("목적지 카드",hc(false)+hc(true),[["대응","디자인 제안(Card)"],["줄바꿈","이름 두 줄까지 · 한글 줄바꿈 규칙 kwrap(어절 안 안 끊음 · 줄 균형) · 넘치면 둘째 줄 끝 …"],["크기","가로 창 4열 · 높이 320 · 바깥 40 / 안 32 · 사이 24 · 세로 창 2열 200 · 사이 16"],["글자","이름 Title L · 거리 Body M · 꼬리표 Body S"],["상태","기본 · 선택(검은 바깥 테두리)"]]),
     DC("기록 카드",recCard,[["대응","디자인 제안(Card)"],["크기","가로 창 3열 276 · 세로 창 1열, 남는 높이를 3장이 나눔"],["글자","좌측 정렬 · 날짜 26 → 장소 44 → 수치 30 · 고른 것은 기록 상세에서만(11/9 명준)"],["상태","기본 · 방금 끝남(라임 꼬리표)"],["사진","홈에서는 안 씀(11/9 명준) — 장소 사진은 출발 화면 미리보기 배경에만"]]),
     DC("미리보기 칸",`<div class="pv" style="width:1200px;flex:none;margin:0"><div class="pvl"><b>태안 꽃지해수욕장</b><div class="pst3"><span class="st"><i class="k">도착 예상</i>1시간 45분</span><span class="st"><i class="k">거리</i>104km</span><span class="st"><i class="k">정체</i>경로의 36%</span></div><span class="pvn">도착하면 오늘 운전을 정리해 드려요</span></div>${CTA("출발")}</div>`,[["대응","디자인 제안(Card)"],["크기","모서리 40 · 왼쪽 44 · 남은 높이 채움"],["상태","빈 자리(점선) · 불러오는 중(회색 막대) · 실패(다시 시도) · 지원 안 하는 지역 · 준비 — 실패·지원 안 함도 출발은 켜 둠"]],"","wide"),
     DC("인원 확인 알림 바",`<div class="rel" style="width:1240px;height:200px">${peopleAlert(false,{...BASE,toast:"B",split:4,detected:4})}</div>`,[["Pleos","System Notification(700 × 276)을 한 줄로 줄인 변형"],["크기","1120 × 120 · 알약 · 그림자 Level 2 · 세로 창 104"],["위치","위 바 줄에 겹침 · 가운데 로고만 가림 · 저절로 안 사라짐"]],"","wide"),
@@ -2599,13 +2706,15 @@ function renderDS(){
     ${tbl(["자리","가로 창(1700)","분할 창(840)"],[["앱 안 여백","40","40"],["덩어리 사이","24","16"],["위 바","80","80(제목 Title M)"],["홈","인사(내 차 300 원 + 글자) · 최근 기록 3열 240","인사 · 기록 1열(남는 높이 나눔)"],["출발 화면","검색 1040 가운데 · 목적지 카드 4열 320 · 미리보기 남은 높이","검색 꽉 참 · 카드 2열 200 · 미리보기 세로 쌓기"],["도착","영수증(남은 폭) | 제안 카드 640 고정 · 사이 24","영수증 위 · 제안 카드 아래(남은 높이)"],["계산 연출","레일 가로 · 체크포인트 6개 같은 간격","레일 세로 · 창 가운데 정렬"],["시트","오른쪽 · 아래 40 · 폭 640","좌우 40 · 아래 40"]])}</section>
   <section class="dsec"><h3>글꼴 <small>시안용 Asta Sans(라틴 · 숫자) + Noto Sans KR(한글) · 크기 · 굵기는 Pleos 타입 스케일 그대로</small></h3>
     <div class="dtw"><table class="dtab"><thead><tr><th>토큰</th><th>굵기 크기/줄</th><th>보기(50%)</th><th>쓰는 곳</th></tr></thead><tbody>${typeRows}</tbody></table></div>
-    <p class="dnote">따로 쓰는 값: 인원 알림 제목 800 36/44 · 스테퍼 숫자 700 36/44 · 상태 표시줄 시각 700 34/44. 줄 바꿈은 낱말 단위(keep-all), 한 줄 자리는 줄임표(…).</p></section>
+    <p class="dnote">따로 쓰는 값: 인원 알림 제목 800 36/44 · 스테퍼 숫자 700 36/44 · 상태 표시줄 시각 700 34/44. 줄 바꿈은 낱말 단위(keep-all), 한 줄 자리는 줄임표(…).</p>
+    <div class="kwbox" data-anno="한글 줄바꿈 규칙(11/12 명준)"><b>한글 줄바꿈 규칙 · <code>kwrap</code></b><ol><li>어절(띄어쓰기 단위) 안에서는 끊지 않는다 — <code>word-break: keep-all</code></li><li>두 줄 이상이면 줄 길이를 고르게 — <code>text-wrap: balance</code></li><li>한 어절이 한 줄보다 길 때만 어절 안에서 끊는다 — <code>overflow-wrap: break-word</code></li><li>쓰는 곳: 두 줄까지 쓰는 이름(출발 목적지 카드). 넘치면 둘째 줄 끝 줄임표(…)</li><li>앱(Compose): 줄 균형 + 어절 단위 끊기. 기기에서 어절 단위가 안 되면 어절 안 글자 사이에 U+2060(단어 결합)을 넣어 같은 결과를 냄 [기기 지원 범위 June 확인]</li></ol><div class="dbox"><div class="dsk kwsk"><div class="kwrow"><figure><div class="kwdemo off"><span>남양주 물의정원 북한강 산책로</span></div><figcaption>규칙 없음 · "북 / 한강"으로 어절이 쪼개짐</figcaption></figure><figure><div class="kwdemo on"><span>남양주 물의정원 북한강 산책로</span></div><figcaption>kwrap · "남양주 물의정원 / 북한강 산책로"</figcaption></figure></div></div></div><p class="dnote">테스트(11/12): 장소 이름 50개 × 출발 카드 가로 · 분할. 어절 쪼개짐 규칙 없음 가로 31 · 분할 13건 → kwrap 0 · 0건. 두 줄 길이 균형(짧은 줄 ÷ 긴 줄) 평균 가로 0.28 → 0.57 · 분할 0.18 → 0.66. 가로 창에서 세 줄이 되는 이름 3건(예: "속초 설악산국립공원 소공원 주차장")은 둘째 줄 끝 줄임표.</p></div>
+    <div class="kwbox" data-anno="큰 숫자 길이 규칙(11/12 명준)"><b>큰 숫자 길이 규칙 · 결과 화면 금액</b><ol><li>기본: 큰 숫자 "한 사람 약 ○" — 가로 Headline L(800 60/80) · 분할 Headline S(800 48/64)</li><li>표시 금액이 <b>10만 원 이상</b>("약 ○○만 …")이거나 큰 숫자 줄이 <b>15자 이상</b>(띄어쓰기 포함)이면 한 단계 작게 — 가로 Headline M(800 56/72) · 분할 Title L(700 40/52)</li><li>쓰는 곳: 도착 제안 카드(방식 A) · 중간 정산 큰 숫자. 줄바꿈 · 말줄임 없이 한 줄 유지</li><li>코드: <code>bigCls(text)</code> → <code>.big.sm</code></li></ol><div class="dbox"><div class="dsk kwsk"><div class="kwrow"><figure><div class="kwdemo bgd"><span class="b1">한 사람 약 9천 원</span></div><figcaption>기본 · 11자 · Headline L</figcaption></figure><figure><div class="kwdemo bgd"><span class="b2">한 사람 약 12만 4천 원</span></div><figcaption>10만 원 이상 · 15자 · Headline M</figcaption></figure></div></div></div></div></section>
   <section class="dsec"><h3>간격 · 모서리 · 그림자</h3>
     <div class="dgrid">
       <div class="dcard"><b>간격(px)</b><div class="dbox"><div class="dsk col">${SP.map(([v,u])=>`<div style="display:flex;align-items:center;gap:24px"><span style="font:var(--body-m-b);width:80px">${v}</span><i class="sbar" style="width:${v*4}px"></i><span style="font:var(--label-m);color:var(--txt3)">${u}</span></div>`).join("")}</div></div><p class="dnote">막대 길이 = 값 × 4(보기 쉽게). 4의 배수만 씀.</p></div>
       <div class="dcard"><b>모서리(px)</b><div class="dbox"><div class="dsk">${RD.map(([v,u])=>`<div style="display:flex;flex-direction:column;gap:10px;width:200px"><i class="rbox" style="border-radius:${Math.min(v,60)}px"></i><span style="font:var(--body-m-b)">${v===999?"알약":v}</span><span style="font:var(--label-s);color:var(--txt3)">${u}</span></div>`).join("")}</div></div></div>
       <div class="dcard"><b>그림자(높이)</b><div class="dbox"><div class="dsk">${EL.map(([k,n,u])=>`<div style="display:flex;flex-direction:column;gap:12px;width:260px"><i class="ebox" style="box-shadow:var(${k})"></i><span style="font:var(--body-m-b)">${n}</span><span style="font:var(--label-s);color:var(--txt3)">${u}</span></div>`).join("")}</div></div><p class="dnote">Pleos Level 1 · 2 · 3 값 그대로(검정 투명도). 와이어에서는 선(테두리 2)을 함께 씀.</p></div>
-      <div class="dcard wide"><b>아이콘 · Phosphor Bold(11/9)</b><div class="dbox"><div class="dsk dico"><figure><i class="ico pi pi-receipt" aria-hidden="true"></i><figcaption>기록 전체(홈 위 바)<br><small>receipt</small></figcaption></figure><figure><i class="ico pi pi-bell" aria-hidden="true"></i><figcaption>알림(홈 위 바 · 새 기록 빨간 점)</figcaption></figure><figure><i class="ico pi pi-car-profile" aria-hidden="true"></i><figcaption>알림 창 한 줄(기록 저장)</figcaption></figure><figure><i class="ico pi pi-gear-six" aria-hidden="true"></i><figcaption>설정(홈 위 바)<br><small>gear-six</small></figcaption></figure><figure><i class="ico pi pi-users-three" aria-hidden="true"></i><figcaption>함께 탄 인원<br><small>users-three</small></figcaption></figure><figure><i class="ico pi pi-magnifying-glass" aria-hidden="true"></i><figcaption>목적지 검색<br><small>magnifying-glass</small></figcaption></figure><figure><i class="ico pi pi-microphone" aria-hidden="true"></i><figcaption>음성 검색<br><small>microphone</small></figcaption></figure><figure><i class="ico pi pi-house" aria-hidden="true"></i><figcaption>즐겨찾기 · 집<br><small>house</small></figcaption></figure><figure><i class="ico pi pi-briefcase" aria-hidden="true"></i><figcaption>즐겨찾기 · 회사<br><small>briefcase</small></figcaption></figure><figure><i class="ico pi pi-clock-counter-clockwise" aria-hidden="true"></i><figcaption>최근 목적지<br><small>clock-counter-clockwise</small></figcaption></figure><figure><i class="ico pi pi-wifi-slash" aria-hidden="true"></i><figcaption>인터넷 없음<br><small>wifi-slash</small></figcaption></figure><figure><i class="ico pi pi-warning-circle" aria-hidden="true"></i><figcaption>실패 · 오류<br><small>warning-circle</small></figcaption></figure><figure><i class="ico pi pi-map-trifold" aria-hidden="true"></i><figcaption>지원 안 하는 지역<br><small>map-trifold</small></figcaption></figure><figure><i class="ico pi pi-steering-wheel" aria-hidden="true"></i><figcaption>주행 중 잠금<br><small>steering-wheel</small></figcaption></figure><figure><i class="ico pi pi-arrow-bend-up-right" aria-hidden="true"></i><figcaption>내비 회전(와이어)<br><small>arrow-bend-up-right</small></figcaption></figure><figure><i class="ico pi pi-check-circle" aria-hidden="true"></i><figcaption>완료(예비)<br><small>check-circle</small></figcaption></figure><figure><i class="ico pi pi-info" aria-hidden="true"></i><figcaption>안내(예비)<br><small>info</small></figcaption></figure><figure><i class="ico pi pi-star" aria-hidden="true"></i><figcaption>즐겨찾기(예비)<br><small>star</small></figcaption></figure></div></div>${DM([["출처","Phosphor Icons 2.1 · Bold 굵기 · MIT 라이선스(img/icons/LICENSE-phosphor.txt)"],["결","워드마크 · 로고와 같은 굵고 둥근 선 · 둥근 끝 · 꽉 찬 모서리 없음"],["크기","아이콘 버튼 56 · M 버튼 40 · 알약 · 꼬리표 28~32 · 주행 중 잠금 104"],["색","늘 글자색을 따라감(주간 · 야간 · 딥 잉크 섹션 자동) · 상태 아이콘은 상태 글자색"],["Pleos","뒤로 · + · − · 화살표는 Pleos 에셋 그대로"]])}</div><div class="dcard"><b>아이콘(Pleos 에셋)</b><div class="dbox"><div class="dsk">${["back","plus","minus","arrow"].map(n=>`<div style="display:flex;flex-direction:column;align-items:center;gap:10px;width:120px"><i class="ic ic-${n}" style="width:56px;height:56px"></i><span style="font:var(--label-m)">${n}</span></div>`).join("")}<div style="display:flex;flex-direction:column;align-items:center;gap:10px;width:160px"><i class="ico" style="width:56px;height:56px"></i><span style="font:var(--label-m)">에셋에 없음</span></div></div></div>${DM([["출처","design assets 2.1.5 SVG(뒤로 56 · + 56 · − 44 · 화살표 40)"],["크기","버튼 L 52 · M 40 · S 32 · 아이콘 버튼 56 / 44"],["없는 것","점선 자리로 둠(기록 · 검색 · 음성 · 꼬리표 등) → BX 아이콘 세트 대기"]])}</div>
+      <div class="dcard wide"><b>아이콘 · Phosphor Bold(11/9)</b><div class="dbox"><div class="dsk dico"><figure><i class="ico pi pi-receipt" aria-hidden="true"></i><figcaption>기록 전체(홈 위 바)<br><small>receipt</small></figcaption></figure><figure><i class="ico pi pi-bell" aria-hidden="true"></i><figcaption>알림(홈 위 바 · 평소)</figcaption></figure><figure><i class="ico pi pi-bell-ringing" aria-hidden="true"></i><figcaption>알림 활성(새 기록 · 빨간 점과 함께)</figcaption></figure><figure><i class="ico pi pi-car-profile" aria-hidden="true"></i><figcaption>알림 창 한 줄(기록 저장)</figcaption></figure><figure><i class="ico pi pi-gear-six" aria-hidden="true"></i><figcaption>설정(홈 위 바)<br><small>gear-six</small></figcaption></figure><figure><i class="ico pi pi-users-three" aria-hidden="true"></i><figcaption>함께 탄 인원<br><small>users-three</small></figcaption></figure><figure><i class="ico pi pi-magnifying-glass" aria-hidden="true"></i><figcaption>목적지 검색<br><small>magnifying-glass</small></figcaption></figure><figure><i class="ico pi pi-microphone" aria-hidden="true"></i><figcaption>음성 검색<br><small>microphone</small></figcaption></figure><figure><i class="ico pi pi-house" aria-hidden="true"></i><figcaption>즐겨찾기 · 집<br><small>house</small></figcaption></figure><figure><i class="ico pi pi-briefcase" aria-hidden="true"></i><figcaption>즐겨찾기 · 회사<br><small>briefcase</small></figcaption></figure><figure><i class="ico pi pi-clock-counter-clockwise" aria-hidden="true"></i><figcaption>최근 목적지<br><small>clock-counter-clockwise</small></figcaption></figure><figure><i class="ico pi pi-wifi-slash" aria-hidden="true"></i><figcaption>인터넷 없음<br><small>wifi-slash</small></figcaption></figure><figure><i class="ico pi pi-warning-circle" aria-hidden="true"></i><figcaption>실패 · 오류<br><small>warning-circle</small></figcaption></figure><figure><i class="ico pi pi-map-trifold" aria-hidden="true"></i><figcaption>지원 안 하는 지역<br><small>map-trifold</small></figcaption></figure><figure><i class="ico pi pi-steering-wheel" aria-hidden="true"></i><figcaption>주행 중 잠금<br><small>steering-wheel</small></figcaption></figure><figure><i class="ico pi pi-arrow-bend-up-right" aria-hidden="true"></i><figcaption>내비 회전(와이어)<br><small>arrow-bend-up-right</small></figcaption></figure><figure><i class="ico pi pi-check-circle" aria-hidden="true"></i><figcaption>완료(예비)<br><small>check-circle</small></figcaption></figure><figure><i class="ico pi pi-info" aria-hidden="true"></i><figcaption>안내(예비)<br><small>info</small></figcaption></figure><figure><i class="ico pi pi-star" aria-hidden="true"></i><figcaption>즐겨찾기(예비)<br><small>star</small></figcaption></figure></div></div>${DM([["출처","Phosphor Icons 2.1 · Bold 굵기 · MIT 라이선스(img/icons/LICENSE-phosphor.txt)"],["결","워드마크 · 로고와 같은 굵고 둥근 선 · 둥근 끝 · 꽉 찬 모서리 없음"],["크기","아이콘 버튼 56 · M 버튼 40 · 알약 · 꼬리표 28~32 · 주행 중 잠금 104"],["색","늘 글자색을 따라감(주간 · 야간 · 딥 잉크 섹션 자동) · 상태 아이콘은 상태 글자색"],["Pleos","뒤로 · + · − · 화살표는 Pleos 에셋 그대로"]])}</div><div class="dcard"><b>아이콘(Pleos 에셋)</b><div class="dbox"><div class="dsk">${["back","plus","minus","arrow"].map(n=>`<div style="display:flex;flex-direction:column;align-items:center;gap:10px;width:120px"><i class="ic ic-${n}" style="width:56px;height:56px"></i><span style="font:var(--label-m)">${n}</span></div>`).join("")}<div style="display:flex;flex-direction:column;align-items:center;gap:10px;width:160px"><i class="ico" style="width:56px;height:56px"></i><span style="font:var(--label-m)">에셋에 없음</span></div></div></div>${DM([["출처","design assets 2.1.5 SVG(뒤로 56 · + 56 · − 44 · 화살표 40)"],["크기","버튼 L 52 · M 40 · S 32 · 아이콘 버튼 56 / 44"],["없는 것","점선 자리로 둠(기록 · 검색 · 음성 · 꼬리표 등) → BX 아이콘 세트 대기"]])}</div>
     </div></section>
   <section class="dsec"><h3>컴포넌트 <small>${comps.split('class="dcard').length-1}종 · 화면과 같은 코드</small></h3><div class="dgrid">${comps}</div></section>
   <section class="dsec"><h3>상태 표현 <small>흑백 규칙 — 색 없이 선 · 굵기 · 투명도로 구분</small></h3>${tbl(["상태","표현","쓰는 곳"],ST)}</section>

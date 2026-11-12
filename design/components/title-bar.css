@@ -16,3 +16,4 @@
 .cg-hbar-r{width:80px;flex:none}
 .cg-hbar .cg-logo.cg-t{font:var(--cg-title-l);letter-spacing:0}
 .cg-hbar .cg-logo.cg-wm{color:var(--color-brand-wordmark);letter-spacing:0;line-height:0}
+.cg-hd .cg-name,.cg-hd .cg-ttl{min-width:0;display:flex}

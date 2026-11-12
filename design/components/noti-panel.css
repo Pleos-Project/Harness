@@ -40,3 +40,4 @@
 .cg-play .cg-npanel .cg-nit,.cg-play .cg-npanel .cg-nhd,.cg-play .cg-npanel .cg-nft{animation:cg-np-row .5s cubic-bezier(.32,.72,0,1) calc(.08s + var(--i,0) * .05s) both}
 .cg-play .cg-npanel .cg-nft{--i:4}
 .cg-play .cg-npanel.cg-out{animation:cg-np-out .2s cubic-bezier(.4,0,1,1) both}
+.cg-npanel .cg-nt b{display:flex;min-width:0}

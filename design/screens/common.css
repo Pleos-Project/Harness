@@ -150,11 +150,22 @@
 /* ── 알림(11/9 명준): 홈 위 바 설정 왼쪽 종 아이콘 · 기록이 저장되면 빨간 점 · 알림 목록 ── */
 .cg-pi-car-profile{--m:url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNTYgMjU2IiBmaWxsPSJjdXJyZW50Q29sb3IiPjxwYXRoIGQ9Ik0yMzYsMTA4SDIxM0wxNzAuODMsNjUuODZBMTkuODYsMTkuODYsMCwwLDAsMTU2LjY5LDYwSDQ4LjI4YTIwLDIwLDAsMCwwLTE2LjY0LDguOTFMMiwxMTMuMzRBMTIsMTIsMCwwLDAsMCwxMjB2NDhhMjAsMjAsMCwwLDAsMjAsMjBIMzMuNWEzNCwzNCwwLDAsMCw2NSwwaDU5YTM0LDM0LDAsMCwwLDY1LDBIMjM2YTIwLDIwLDAsMCwwLDIwLTIwVjEyOEEyMCwyMCwwLDAsMCwyMzYsMTA4Wk01MC40Miw4NEgxNTVsMjQsMjRIMzQuNDJaTTY2LDE4OGExMCwxMCwwLDEsMSwxMC0xMEExMCwxMCwwLDAsMSw2NiwxODhabTEyNCwwYTEwLDEwLDAsMSwxLDEwLTEwQTEwLDEwLDAsMCwxLDE5MCwxODhabTQyLTI0SDIyMUEzNCwzNCwwLDAsMCwxNTksMTY0SDk3QTM0LDM0LDAsMCwwLDM1LDE2NEgyNFYxMzJIMjMyWiIvPjwvc3ZnPg==")}
 /* 알림 줄 아이콘(11/9 명준) */
+.cg-pi-bell-ringing{--m:url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNTYgMjU2IiBmaWxsPSJjdXJyZW50Q29sb3IiPjxwYXRoIGQ9Ik0yMjUuODEsNzQuNjVBMTEuODYsMTEuODYsMCwwLDEsMjIwLjMsNzZhMTIsMTIsMCwwLDEtMTAuNjctNi40Nyw5MC4xLDkwLjEsMCwwLDAtMzItMzUuMzgsMTIsMTIsMCwxLDEsMTIuOC0yMC4yOSwxMTUuMjUsMTE1LjI1LDAsMCwxLDQwLjU0LDQ0LjYyQTEyLDEyLDAsMCwxLDIyNS44MSw3NC42NVpNNDYuMzcsNjkuNTNhOTAuMSw5MC4xLDAsMCwxLDMyLTM1LjM4QTEyLDEyLDAsMSwwLDY1LjYsMTMuODYsMTE1LjI1LDExNS4yNSwwLDAsMCwyNS4wNiw1OC40OGExMiwxMiwwLDAsMCw1LjEzLDE2LjE3QTExLjg2LDExLjg2LDAsMCwwLDM1LjcsNzYsMTIsMTIsMCwwLDAsNDYuMzcsNjkuNTNabTE3My41MSw5OC4zNUEyMCwyMCwwLDAsMSwyMDQsMjAwSDE3MS44MWE0NCw0NCwwLDAsMS04Ny42MiwwSDUyYTIwLDIwLDAsMCwxLTE1LjkxLTMyLjEyYzcuMTctOS4zMywxNS43My0yNi42MiwxNS44OC01NS45NEE3Niw3NiwwLDAsMSwyMDQsMTEyQzIwNC4xNSwxNDEuMjYsMjEyLjcxLDE1OC41NSwyMTkuODgsMTY3Ljg4Wk0xNDcuNiwyMDBIMTA4LjRhMjAsMjAsMCwwLDAsMzkuMiwwWm00OC43NC0yNGMtOC4xNi0xMy0xNi4xOS0zMy41Ny0xNi4zNC02My45NEE1Miw1MiwwLDEsMCw3NiwxMTJjLS4xNSwzMC40Mi04LjE4LDUxLTE2LjM0LDY0WiIvPjwvc3ZnPg==")}
+@keyframes cg-ring-bell{0%,100%{transform:none}15%{transform:rotate(14deg)}30%{transform:rotate(-12deg)}45%{transform:rotate(8deg)}60%{transform:rotate(-5deg)}75%{transform:rotate(2deg)}}
 .cg-pi-bell{--m:url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNTYgMjU2IiBmaWxsPSJjdXJyZW50Q29sb3IiPjxwYXRoIGQ9Ik0yMjUuMjksMTY1LjkzQzIxNi42MSwxNTEsMjEyLDEyOS41NywyMTIsMTA0YTg0LDg0LDAsMCwwLTE2OCwwYzAsMjUuNTgtNC41OSw0Ny0xMy4yNyw2MS45M0EyMC4wOCwyMC4wOCwwLDAsMCwzMC42NiwxODYsMTkuNzcsMTkuNzcsMCwwLDAsNDgsMTk2SDg0LjE4YTQ0LDQ0LDAsMCwwLDg3LjY0LDBIMjA4YTE5Ljc3LDE5Ljc3LDAsMCwwLDE3LjMxLTEwQTIwLjA4LDIwLjA4LDAsMCwwLDIyNS4yOSwxNjUuOTNaTTEyOCwyMTJhMjAsMjAsMCwwLDEtMTkuNi0xNmgzOS4yQTIwLDIwLDAsMCwxLDEyOCwyMTJaTTU0LjY2LDE3MkM2My41MSwxNTQsNjgsMTMxLjE0LDY4LDEwNGE2MCw2MCwwLDAsMSwxMjAsMGMwLDI3LjEzLDQuNDgsNTAsMTMuMzMsNjhaIi8+PC9zdmc+")}
 @keyframes cg-dot{from{transform:scale(0)}to{transform:none}}
 @keyframes cg-np-in{from{opacity:0;transform:translateY(-14px) scaleY(.78) scaleX(.96)}to{opacity:1;transform:none}}
 @keyframes cg-np-row{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
 @keyframes cg-np-out{to{opacity:0;transform:translateY(-10px) scaleY(.9)}}
+/* 기록 상세 그날의 노고(11/9 명준): 금액 밑줄(도착과 같은 .ul) 뒤 줄바꿈 → 아래 줄 운전 시간 · 거리 · 인원. 밑줄과 아래 줄 사이 숨 */
+.cg-why.cg-ldw .cg-ul{display:inline-block;margin-bottom:8px}
+.cg-p .cg-why.cg-ldw .cg-ul{margin-bottom:6px}
+/* 한글 줄바꿈 kwrap(D3): 어절 안에서 안 끊음(keep-all) · 두 줄 균형(balance) · 한 어절이 줄보다 길 때만 끊음. Compose: 줄 균형 + 어절 단위, 미지원이면 어절 안 글자 사이 U+2060 */
+.cg-kwrap{word-break:keep-all;overflow-wrap:break-word;text-wrap:balance}
+/* 장소 이름만 말줄임(D2): .pnl > .pn(이름, 줄어듦) + .pr(뒤 문구, 안 줄어듦). 넘치면 JS fitPN이 글자 수를 줄여 …를 붙이고 .fit */
+.cg-pnl{display:inline-flex;max-width:100%;min-width:0;vertical-align:bottom;white-space:nowrap}
+.cg-pnl .cg-pn{min-width:0;overflow:hidden;text-overflow:ellipsis}
+.cg-pnl .cg-pr{flex:none}
 
 /* ── 시안 보기 틀(앱 아님) ── */
 .cg-sheet{margin:0;background:var(--cg-bg-secondary);color:var(--cg-text-primary);font:16px/1.5 var(--cg-font);padding:24px}
