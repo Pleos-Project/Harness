@@ -3,6 +3,7 @@ package com.mist.pleos_app.navi
 import ai.pleos.playground.navi.constants.BookmarkType
 import ai.pleos.playground.navi.constants.NaviErrorCode
 import ai.pleos.playground.navi.constants.NaviMode
+import ai.pleos.playground.navi.data.DestinationArrivedInfo
 import ai.pleos.playground.navi.data.DestinationInfo
 import ai.pleos.playground.navi.data.RouteStateInfo
 import com.mist.pleos_app.effort.CongestionList
@@ -78,6 +79,10 @@ class NaviRepository(context: Context) : DefaultLifecycleObserver {
 
     /** F20 ② 정체 구간 목록을 받으면(나란히 배치) 부른다. MainActivity가 뷰모델에 잇는다. */
     var onCongestion: ((CongestionList) -> Unit)? = null
+    /** 내비가 안내를 끝냄("arrived" · "cancelled"). 앱이 보이는 동안(나란히 배치)만 온다. 메인 스레드로 넘긴다(DECISIONS 11/12). */
+    var onGuideEnd: ((String) -> Unit)? = null
+    /** 내비가 새 안내를 시작함. 메인 스레드로 넘긴다. */
+    var onGuideStart: (() -> Unit)? = null
 
     private val app = context.applicationContext
     private val flow = MutableStateFlow(DepartState.IDLE)
@@ -99,6 +104,18 @@ class NaviRepository(context: Context) : DefaultLifecycleObserver {
             ChagokLog.event("navi_route_started")
             // 기본 배치에서는 이 콜백 전에 앱이 멈춰 여기 오지 않는다. 여기 왔다면 앱이 보이는 것(나란히 배치) → 정체 목록을 묻는다
             startCongestion()
+            main.post { onGuideStart?.invoke() }
+        }
+
+        // 안내 끝(11/12 실측): 기본 배치에서는 앱이 동결돼 오지 않고, 나란히 배치에서만 바로 온다. 이벤트가 두 번 와도 뷰모델이 한 번만 도착 처리한다
+        override fun onDestinationArrived(destinationArrivedInfo: DestinationArrivedInfo) {
+            ChagokLog.event("navi_guide_end", "kind" to "arrived")
+            main.post { onGuideEnd?.invoke("arrived") }
+        }
+
+        override fun onRouteCancelled() {
+            ChagokLog.event("navi_guide_end", "kind" to "cancelled")
+            main.post { onGuideEnd?.invoke("cancelled") }
         }
 
         override fun onRecentDestinationInfo(recentDestinationInfoList: List<RecentDestinationInfo>) {
@@ -252,6 +269,9 @@ class NaviRepository(context: Context) : DefaultLifecycleObserver {
     private var guideGotRemain = false
     private var guideGotMode = false
     private val guideTimeout = Runnable { finishGuide() }
+
+    /** 진행 중 출발이 있을 때 다시 보이면 연결만 맺어 리스너를 건다(안내 끝 이벤트용). 실패해도 할 일 없음. onStop 때 놓는다. */
+    fun listen() = withNavi(fail = {}) { }
 
     /**
      * 도착인지 중간 정차인지: getDestinationInfo(남은 거리) + getRouteStateInfo(안내 상태), P NAVI_ROUTE.

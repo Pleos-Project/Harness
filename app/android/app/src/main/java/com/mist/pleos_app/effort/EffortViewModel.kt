@@ -45,6 +45,8 @@ interface DepartNavi {
     fun route(d: Destination)
     /** 도착인지 중간 정차인지(F22). */
     fun guide(done: (GuideState?) -> Unit)
+    /** 보이는 동안 내비 이벤트(안내 끝)를 받도록 연결만 해 둔다. 화면이 가려지면 리스너를 놓는다. */
+    fun listen() {}
 }
 
 /** 앰비언트 라이트(F28) 켜 달라는 이유를 차량 쪽(AmbientLight)에 넘긴다. MainActivity가 넣는다. 없으면(테스트) 조명 없이. */
@@ -366,25 +368,48 @@ class EffortViewModel(app: Application, private val saved: SavedStateHandle) : A
         if (flow.setCongestionList(c)) refresh()
     }
 
+    /** 마지막으로 받은 정차 여부(기어 P). 안내 끝 이벤트가 왔을 때 바로 볼지 정한다. */
+    private var lastParked = false
+    /** 보이는 동안(나란히 배치) 내비가 안내를 끝냈고 아직 도착을 보지 않았다. 기어 P가 되면 1번 본다(DECISIONS 11/12). */
+    private var guideEnded = false
+
     /** MainActivity onStart. 시연 모드는 문 열기로만 도착한다(12절 시연 순서). */
-    fun onShown() { resumeCheck = true; lastDoorOpen = null; shownFlow.value += 1 }
+    fun onShown() {
+        resumeCheck = true; lastDoorOpen = null; guideEnded = false; shownFlow.value += 1
+        // 진행 중 실제 출발이면 보이는 동안 내비 안내 끝을 이벤트로 받는다(나란히 배치). onStop 때 리스너를 놓는다
+        val trip = flow.state.openTrip
+        if (flow.phase == EffortPhase.DRIVING && trip != null && !trip.demo && !source.demo) navi?.listen()
+    }
+
+    /**
+     * 내비가 안내를 끝냄(NaviRepository: onDestinationArrived = "arrived", onRouteCancelled = "cancelled").
+     * 앱이 보일 때만 온다(기본 배치에서는 동결 · 리스너 해제). 기어 P면 바로, 아니면 P가 될 때 도착인지 본다.
+     */
+    fun onGuideEnded(kind: String) {
+        val trip = flow.state.openTrip
+        if (flow.phase != EffortPhase.DRIVING || trip == null || trip.demo || source.demo) return
+        guideEnded = true
+        ChagokLog.event("effort_guide_end", "kind" to kind, "parked" to lastParked)
+        if (lastParked) onCar(true, lastDoorOpen)
+    }
+
+    /** 내비가 새 안내를 시작함(목적지를 바꿈 등) → 앞서 받은 안내 끝은 버린다. */
+    fun onGuideStarted() { guideEnded = false }
 
     /**
      * 화면이 보이는 동안 기어·문 값이 바뀔 때마다(이벤트, 폴링 없음 — AC-C-2·AC-F21-4).
-     * 진행 중 출발이 있고 정차(기어 P)일 때: 운전석 문이 열리는 순간, 또는 다시 보인 뒤 처음이면 도착인지 본다.
+     * 진행 중 출발이 있고 정차(기어 P)일 때: 운전석 문이 열리는 순간, 다시 보인 뒤 처음, 또는 내비가 안내를 끝낸 뒤면 도착인지 본다.
      */
     fun onCar(parked: Boolean, doorOpen: Boolean?) {
-        val cue = when {
-            doorOpen == true && lastDoorOpen == false -> ArrivalCue.DOOR
-            doorOpen == true && lastDoorOpen == null -> ArrivalCue.DOOR_ON_SHOW
-            else -> null
-        }
+        val prevDoor = lastDoorOpen
         lastDoorOpen = doorOpen
+        lastParked = parked
         if (!parked || flow.phase != EffortPhase.DRIVING) return
         val trip = flow.state.openTrip ?: return
         val resume = resumeCheck && !source.demo && !trip.demo
         resumeCheck = false
-        val c = cue ?: (if (resume) ArrivalCue.RESUME else return)
+        val c = arrivalCueOf(doorOpen, prevDoor, resume, guideEnded) ?: return
+        guideEnded = false
         if (!autoArrivalAllowed(trip, c, isoNow())) { ChagokLog.event("effort_auto_arrive_skip", "cue" to c.name, "eta" to (trip.etaS > 0)); return }
         checkArrival(c)
     }
