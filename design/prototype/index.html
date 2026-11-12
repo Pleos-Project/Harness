@@ -2114,7 +2114,7 @@ function receipt(p,s,c){
     <div class="ph"><b>오늘 주행 영수증</b><span>${c.t.mid?"14:20 출발 · 아직 가는 중":c.t.place+" · "+(c.t.date||"11월 10일")} · ${s.people>1?s.people+"명":"혼자"}</span></div>
     <i class="rule2"></i>
     <div class="rhd"><span>항목</span><span>더한 몫</span></div>
-    ${rows||`<div class="rnone" data-anno="가산 0개일 때 · 수월한 길이어도 운전한 시간은 센다는 한 줄(11/11 명준, 임시 문구)"><i class="ico pi pi-sun" aria-hidden="true"></i><span><b>비·정체·밤길 없이 달렸어요</b><small>더할 조건은 없고, 운전한 시간만큼 셌어요</small></span></div>`}
+    ${rows||`<div class="rnone" data-anno="가산 0개일 때 · 수월한 길이어도 운전한 시간은 센다는 한 줄(11/11 명준, 11/12 확정 문구)"><i class="ico pi pi-sun" aria-hidden="true"></i><span><b>비·정체·밤길 없이 달렸어요</b><small>더할 조건은 없고, 운전한 시간만큼 셌어요</small></span></div>`}
     <div class="rsum rs1${cP&&cP.T!==c.T?" chg":""}"><span>운전 시간</span><b>${hm(c.T)}</b></div>
     ${c.t.auto?"":`<div class="rsum"><span>중간에 쉰 시간</span><span class="rr">${s.ro?`<b>${RESTL[s.rest]}</b>`:`<b class="rtap" data-act="restEdit" role="button" aria-label="중간에 쉰 시간 바꾸기" data-anno="값을 누르면 쉰 시간 시트가 다시 뜸(11/9 명준: 바꾸기 버튼 없음)">${RESTL[s.rest]}</b>`}</span></div>`}
     <div class="rsum"><span>거리</span><b>${c.t.km}km</b></div>
