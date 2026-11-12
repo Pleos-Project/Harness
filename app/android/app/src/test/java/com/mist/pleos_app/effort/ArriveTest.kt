@@ -124,6 +124,31 @@ class ArriveTest {
     }
 
     @Test
+    fun guideEndIsCueOnlyAfterDoorAndResume() {
+        // 문이 열리는 순간 > 다시 보인 뒤 처음 > 보이는 동안 받은 안내 끝(DECISIONS 11/12)
+        assertEquals(ArrivalCue.DOOR, arrivalCueOf(true, false, resume = true, guideEnded = true))
+        assertEquals(ArrivalCue.DOOR_ON_SHOW, arrivalCueOf(true, null, resume = false, guideEnded = true))
+        assertEquals(ArrivalCue.RESUME, arrivalCueOf(false, false, resume = true, guideEnded = true))
+        assertEquals(ArrivalCue.GUIDE_END, arrivalCueOf(false, false, resume = false, guideEnded = true))
+        assertEquals(ArrivalCue.GUIDE_END, arrivalCueOf(true, true, resume = false, guideEnded = true))   // 문이 이미 열려 있어도
+        assertNull(arrivalCueOf(false, false, resume = false, guideEnded = false))
+        assertNull(arrivalCueOf(null, null, resume = false, guideEnded = false))
+    }
+
+    @Test
+    fun guideEndFollowsResumeBlocks() {
+        // 안내 끝도 다시 보임(RESUME)과 같은 막기: ETA 없음 · 출발 뒤 1분 안 → 자동 도착 안 함
+        val t = OpenTrip("t1", "2026-11-17T16:00:00+09:00", "서울식물원", 1, 2000.0)
+        assertFalse(autoArrivalAllowed(t.copy(etaS = 0.0), ArrivalCue.GUIDE_END, "2026-11-17T16:30:00+09:00"))
+        assertFalse(autoArrivalAllowed(t, ArrivalCue.GUIDE_END, "2026-11-17T16:00:30+09:00"))
+        assertTrue(autoArrivalAllowed(t, ArrivalCue.GUIDE_END, "2026-11-17T16:30:00+09:00"))
+        // 내비 상태를 못 읽으면 도착으로 보지 않고, 안내 중 + 남은 거리면 중간 정차
+        assertFalse(arrivalByGuide(null, ArrivalCue.GUIDE_END))
+        assertFalse(arrivalByGuide(GuideState(1200, true), ArrivalCue.GUIDE_END))
+        assertTrue(arrivalByGuide(GuideState(0, false), ArrivalCue.GUIDE_END))
+    }
+
+    @Test
     fun noAutoArrivalOnResumeRightAfterDeparture() {
         // 출발 직후 다시 열면 내비 안내 시작 전이라 "안내 안 함"으로 답한다 → 1분 안에는 다시 보임으로 도착하지 않음(에뮬 11/9)
         val t = OpenTrip("t1", "2026-11-17T16:00:00+09:00", "서울식물원", 1, 2000.0)

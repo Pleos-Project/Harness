@@ -95,6 +95,20 @@ enum class ArrivalCue {
     DOOR,           // 화면이 보이는 동안 운전석 문이 닫힘 → 열림으로 바뀜
     DOOR_ON_SHOW,   // 다시 보였을 때 문이 이미 열려 있음
     RESUME,         // 다시 보였을 때(기어 P) 내비 안내 상태로 판정
+    GUIDE_END,      // 보이는 동안(나란히 배치) 내비가 안내를 끝냄(도착·안내 종료) → 기어 P에서 내비 안내 상태로 판정(DECISIONS 11/12)
+}
+
+/**
+ * 이번 기어·문 변화에서 볼 도착 계기. 없으면 null.
+ * 문이 열리는 순간이 가장 앞서고, 다시 보인 뒤 처음(RESUME), 그다음 보이는 동안 받은 안내 끝(GUIDE_END) 순이다.
+ * 안내 끝은 기본 배치에서는 오지 않는다(앱이 동결돼 있고 onStop 때 리스너를 놓음, 11/12 실측). 나란히 배치에서만 온다.
+ */
+fun arrivalCueOf(doorOpen: Boolean?, lastDoorOpen: Boolean?, resume: Boolean, guideEnded: Boolean): ArrivalCue? = when {
+    doorOpen == true && lastDoorOpen == false -> ArrivalCue.DOOR
+    doorOpen == true && lastDoorOpen == null -> ArrivalCue.DOOR_ON_SHOW
+    resume -> ArrivalCue.RESUME
+    guideEnded -> ArrivalCue.GUIDE_END
+    else -> null
 }
 
 /**

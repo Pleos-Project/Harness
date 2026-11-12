@@ -42,6 +42,8 @@ class MainActivity : ComponentActivity() {
         lifecycle.addObserver(vehicle)
         navi = NaviRepository(this)                      // 출발 화면(F20): 즐겨찾기·최근 목적지·현재 위치·requestTrip·requestRoute
         navi.onCongestion = vm::onCongestionList          // F20 ②: 나란히 배치일 때만 오는 정체 구간 목록
+        navi.onGuideEnd = vm::onGuideEnded                // F22: 나란히 배치에서 내비가 안내를 끝냄 → 기어 P에서 도착 확인(DECISIONS 11/12)
+        navi.onGuideStart = vm::onGuideStarted
         lifecycle.addObserver(navi)
         val n = navi
         vm.navi = object : DepartNavi {
@@ -50,6 +52,7 @@ class MainActivity : ComponentActivity() {
             override fun preview(d: Destination, done: (TripPreview?) -> Unit) = n.previewTrip(d, done)
             override fun route(d: Destination) = n.depart(d)
             override fun guide(done: (GuideState?) -> Unit) = n.fetchGuide(done)
+            override fun listen() = n.listen()
         }
         // F28 앰비언트 라이트: 정산할 때 켜고 놓기(뷰모델) → 차량 쪽 AmbientLight
         val amb = vehicle.ambient
