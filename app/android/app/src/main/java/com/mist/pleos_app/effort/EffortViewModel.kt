@@ -55,6 +55,16 @@ interface EffortAmbient {
     fun release(reason: String)
 }
 
+/**
+ * 주행 중 포그라운드 서비스(DECISIONS 11/12, TripService). MainActivity가 넣는다. 없으면(테스트) 서비스 없이.
+ * - [sync]: 진행 중 실제 출발의 목적지 이름이면 띄우고, null이면 끈다
+ * - [takeGuideEnd]: 앱이 안 보이는 동안 서비스가 받은 안내 끝을 1번 가져온다
+ */
+interface TripKeeper {
+    fun sync(destName: String?)
+    fun takeGuideEnd(): String?
+}
+
 /** 노고 흐름 화면(명세 v0.5 3절). */
 /** 도착 화면(RECEIPT)은 영수증과 제안을 한 화면에 둔다(Design v2 arrive, #75). */
 enum class EffortScreen { HOME, DEPART, SETTINGS, CALC, RECEIPT, LOG, RECORD, MIDWAY }
@@ -237,6 +247,16 @@ class EffortViewModel(app: Application, private val saved: SavedStateHandle) : A
     /** F28: 앱이 보이는 동안 브랜드 색으로 켜 둔다(화면 EffortApp이 부름, 구두 합의 11/9). */
     var ambient: EffortAmbient? = null
 
+    /** 주행 중 포그라운드 서비스. 출발·도착·그만두기·다시 보일 때 [syncTrip]으로 맞춘다. */
+    var tripKeeper: TripKeeper? = null
+
+    /** 진행 중 실제 출발(시연 아님)이면 서비스를 띄우고, 아니면 끈다(DECISIONS 11/12). */
+    private fun syncTrip() {
+        val trip = flow.state.openTrip
+        val live = flow.phase == EffortPhase.DRIVING && trip != null && !trip.demo && !source.demo
+        tripKeeper?.sync(if (live) trip!!.destName else null)
+    }
+
     private val api = EffortApi(BuildConfig.API_BASE_URL)
     /** 시간대별 강수는 서버가 기상청 호출을 3초에서 끊으므로 앱은 4초까지 기다린다(#66 June 답). */
     private val tripApi = EffortApi(BuildConfig.API_BASE_URL, timeoutMs = TRIP_TIMEOUT_MS.toInt())
@@ -336,6 +356,7 @@ class EffortViewModel(app: Application, private val saved: SavedStateHandle) : A
         }
         val trip = departTrip(newTripId(), source.departedAt(), sel.dest, payersFor(seats), ui.preview, weatherDep ?: WEATHER_UNKNOWN, here)
         val opened = flow.depart(trip)
+        syncTrip()                                   // 내비가 덮기 전에(앱이 보이는 동안) 서비스를 띄운다
         lastRoute = sel.dest
         navi?.route(sel.dest)
         refresh(); home()
@@ -378,7 +399,12 @@ class EffortViewModel(app: Application, private val saved: SavedStateHandle) : A
         resumeCheck = true; lastDoorOpen = null; guideEnded = false; shownFlow.value += 1
         // 진행 중 실제 출발이면 보이는 동안 내비 안내 끝을 이벤트로 받는다(나란히 배치). onStop 때 리스너를 놓는다
         val trip = flow.state.openTrip
-        if (flow.phase == EffortPhase.DRIVING && trip != null && !trip.demo && !source.demo) navi?.listen()
+        val live = flow.phase == EffortPhase.DRIVING && trip != null && !trip.demo && !source.demo
+        // 안 보이는 동안 서비스가 받은 안내 끝(기본 배치) → 기어 P에서 도착인지 본다. 다시 보임(RESUME)과 판정이 같아 계기는 RESUME 하나로 1번만 본다
+        val ended = tripKeeper?.takeGuideEnd()
+        if (live && ended != null) { guideEnded = true; ChagokLog.event("effort_guide_end", "kind" to ended, "from" to "service") }
+        if (live) navi?.listen()
+        syncTrip()                                   // 프로세스가 다시 만들어졌거나 출발 기록이 바뀌었으면 맞춘다
     }
 
     /**
@@ -440,6 +466,7 @@ class EffortViewModel(app: Application, private val saved: SavedStateHandle) : A
         val arrivedAt = if (demo) demoSource?.arrivedAt() ?: isoNow() else isoNow()
         val weather = if (demo) demoSource?.demoWeatherArr() ?: WEATHER_UNKNOWN else null
         if (!flow.arrive(arrivedAt, weather)) return
+        syncTrip()                                   // 도착했으니 서비스·상주 알림을 내린다
         ChagokLog.event("effort_arrived", "reason" to reason, "demo" to demo)
         refresh()
         // 계산 연출(Design v2 #75) → 영수증. 정리하지 못함은 셀 것이 없어 바로 안내로
@@ -624,10 +651,10 @@ class EffortViewModel(app: Application, private val saved: SavedStateHandle) : A
     }
 
     /** 진행 중인 출발을 그만둔다. */
-    fun discardTrip() { flow.discardTrip(); refresh() }
+    fun discardTrip() { flow.discardTrip(); syncTrip(); refresh() }
 
     /** 기록 초기화(S20). PT 리허설 전. */
-    fun resetRecords() { flow.reset(); refresh(); ChagokLog.event("effort_reset") }
+    fun resetRecords() { flow.reset(); syncTrip(); refresh(); ChagokLog.event("effort_reset") }
 
     private companion object {
         const val NET_TIMEOUT_MS = 3_000L                   // 날씨·검색 전체 마감(AC-C-6, #57)

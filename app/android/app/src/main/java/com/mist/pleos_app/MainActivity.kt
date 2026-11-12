@@ -1,6 +1,10 @@
 package com.mist.pleos_app
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
@@ -9,6 +13,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.mist.pleos_app.effort.DepartNavi
 import com.mist.pleos_app.effort.EffortAmbient
 import com.mist.pleos_app.effort.EffortViewModel
+import com.mist.pleos_app.effort.TripKeeper
+import com.mist.pleos_app.trip.TripService
 import com.mist.pleos_app.navi.Destination
 import com.mist.pleos_app.navi.NaviPlace
 import com.mist.pleos_app.navi.TripPreview
@@ -60,11 +66,20 @@ class MainActivity : ComponentActivity() {
             override fun acquire(reason: String) = amb.acquire(reason)
             override fun release(reason: String) = amb.release(reason)
         }
+        // 주행 중 포그라운드 서비스(DECISIONS 11/12): 실제 출발~도착 동안 내비 안내 끝을 받아 도착 확인 알림
+        val ctx = applicationContext
+        vm.tripKeeper = object : TripKeeper {
+            override fun sync(destName: String?) = TripService.sync(ctx, destName)
+            override fun takeGuideEnd(): String? = TripService.takeGuideEnd()
+        }
+        askNotifications()
         // 다시 보일 때마다 도착 여부를 1번 본다(기본 배치에서는 도착 순간 차곡이 멈춰 있음, 명세 F22)
         lifecycle.addObserver(object : DefaultLifecycleObserver {
-            override fun onStart(owner: LifecycleOwner) = vm.onShown()
+            override fun onStart(owner: LifecycleOwner) { TripService.appVisible = true; TripService.onAppShown(ctx); vm.onShown() }
+            override fun onStop(owner: LifecycleOwner) { TripService.appVisible = false }
         })
         ChagokLog.event("app_create", "restored" to (savedInstanceState != null))
+        ChagokLog.event("app_create_noti", "granted" to notificationsGranted())
         setContent {
             val snapshot by vehicle.state.collectAsStateWithLifecycle()
             val settings by vm.settings.collectAsStateWithLifecycle()
@@ -80,5 +95,17 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    private val notiPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) { ok ->
+        ChagokLog.event("noti_permission", "granted" to ok)
+    }
+
+    private fun notificationsGranted(): Boolean =
+        Build.VERSION.SDK_INT < 33 || checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
+
+    /** 알림 권한(Android 13+ 런타임). 없으면 앱을 켤 때 1번 묻는다. 거절해도 흐름은 그대로(알림만 안 뜸). */
+    private fun askNotifications() {
+        if (!notificationsGranted()) notiPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
     }
 }

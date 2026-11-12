@@ -219,6 +219,14 @@
     <string name="effort_noti_new">새 알림 %1$d</string>
     <string name="effort_noti_saved">%1$s 기록을 남겼어요</string>
     <string name="effort_noti_foot">기록은 왼쪽 위에서 볼 수 있어요</string>
+
+    <!-- 주행 중 포그라운드 서비스 알림(DECISIONS 11/12, F22). Pleos는 카테고리 navigation·msg만 보여 준다 -->
+    <string name="trip_channel_trip">가는 중</string>
+    <string name="trip_channel_arrive">도착 확인</string>
+    <string name="trip_noti_title">%1$s 가는 중</string>
+    <string name="trip_noti_text">안내가 끝나면 도착했는지 여쭤볼게요</string>
+    <string name="trip_noti_arrive_title">도착했나요?</string>
+    <string name="trip_noti_arrive_text">눌러서 오늘 운전 노고를 확인해 보세요</string>
     <string name="effort_home_just_now">방금</string>
     <string name="effort_home_rec_per">한 사람 %1$s</string>
     <string name="effort_home_rec_closed">닫음</string>
