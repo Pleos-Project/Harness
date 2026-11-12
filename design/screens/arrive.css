@@ -32,6 +32,7 @@
 .cg-pg.cg-p .cg-vlines i{height:12px}
 .cg-pg.cg-p .cg-uns .cg-bts{align-self:stretch}
 .cg-pg.cg-p .cg-uns .cg-bts .cg-btn{flex:1}
+/* 시연 표시 · 값 바뀐 순간 */
 .cg-chg{background:var(--cg-placeholder-strong);box-shadow:-12px 0 0 var(--cg-placeholder-strong),12px 0 0 var(--cg-placeholder-strong);border-radius:8px}
 .cg-play .cg-chg{animation:cg-chg 1.8s ease-out forwards}
 .cg-vlines i{background:var(--color-skeleton-base)}

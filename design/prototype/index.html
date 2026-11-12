@@ -943,7 +943,6 @@ details ul.nav li.g{font-size:11.5px;font-weight:800;color:var(--ink-3);margin-t
 .splash .logo{font:800 64px/72px var(--font);letter-spacing:.08em}
 .splash .ld{font:var(--body-m);color:var(--txt3)}
 /* 시연 표시 · 값 바뀐 순간 */
-.demotag{position:absolute;z-index:11;right:24px;bottom:16px;font:var(--label-s);color:var(--txt3);background:var(--card);border:1px dashed var(--div3);border-radius:999px;padding:4px 14px}
 .chg{background:var(--ph2);box-shadow:-12px 0 0 var(--ph2),12px 0 0 var(--ph2);border-radius:8px}
 .proto-on .chg{animation:cg-chg 1.8s ease-out forwards}
 @keyframes cg-chg{0%,40%{background:var(--ph2);box-shadow:-12px 0 0 var(--ph2),12px 0 0 var(--ph2)}100%{background:transparent;box-shadow:0 0 0 transparent}}
@@ -1143,7 +1142,6 @@ details ul.nav li.g{font-size:11.5px;font-weight:800;color:var(--ink-3);margin-t
 .card.notice.warn b,.card.notice.warn span{color:var(--color-status-warning-foreground)}
 .pvfail.err{color:var(--color-status-error-foreground)}
 .pvfail.info{color:var(--color-status-info-foreground)}
-.demotag{background:var(--color-status-info-background);color:var(--color-status-info-foreground);border-color:transparent}
 .offer .head.ok{color:var(--color-text-primary)}   /* 11/9 명준: 그린 완료 색 제외 · 메인 딥 잉크 */
 
 /* 주행 중 잠금 */
@@ -1920,7 +1918,7 @@ const valTxt=i=>ITEMS[i].k+(i===2?"에서":"값에서");
 const B=(label,o={})=>{const i=o.ic?`<i class="ic ic-${o.ic}"></i>`:o.ico?(typeof o.ico==="string"?`<i class="ico pi pi-${o.ico}" aria-hidden="true"></i>`:`<i class="ico" title="아이콘 자리"></i>`):"";
   return `<span class="btn ${o.cls||""}" ${o.go?`data-go="${o.go}"`:""} ${o.act?`data-act="${o.act}"`:""} ${o.anno?`data-anno="${o.anno}"`:""} ${o.aria?`aria-label="${o.aria}"`:""}>${o.end?"":i}${label}${o.end?i:""}</span>`};
 /* D2(11/12 명준): 문장 속 장소 이름만 말줄임하고 뒤 문구 · 시각 · 인원은 늘 보이게 */
-const PN=(nm,rest)=>`<span class="pnl"><span class="pn">${nm}</span><span class="pr">${rest}</span></span>`;
+const PN=(nm,rest)=>`<span class="pnl"><span class="pn">${nm}</span><span class="pr">${rest.startsWith(" ")?"&nbsp;"+rest.slice(1):rest}</span></span>`;   /* 뒤 문구 첫 칸 띄어쓰기는 flex 안에서 사라지므로 nbsp */
 const HD=(title,o={})=>`<div class="hd" data-anno="${o.back?"Title · Depth 80":"Title · Main 80"}">${o.back?B("",{cls:"ib plain",act:"back",ic:"back",aria:"뒤로",anno:"Icon Button 80 · Plain · 뒤로"}):""}<span class="${o.back?"ttl":"name"}">${title}</span>${o.right||""}</div>`;
 const STEP=(v,act,anno="Stepper 420 × 100")=>`<div class="stepper" data-anno="${anno}">${B("",{cls:"ib s plain",act:act+"-",ic:"minus",aria:"줄이기"})}<i class="dv2"></i><span class="val">${v}</span><i class="dv2"></i>${B("",{cls:"ib s plain",act:act+"+",ic:"plus",aria:"늘리기"})}</div>`;
 
@@ -2041,7 +2039,7 @@ function settingsScr(p,s){
   const nrec=s.wiped?0:RECDATA.length;
   const rows=[
     row("제안 방식",`도착 화면에서 보여 드릴 제안이에요 · 지금은 방식 ${s.ab}`,seg,"Segmented · 제안 방식 A/B(개발·시험용)"," wrap"),
-    row("시연 고정 모드",s.demo?"켜짐 · 태안 꽃지해수욕장 · 1.57배 값으로 고정해요":"켜면 시연용 값으로 고정하고 화면 구석에 \"시연용 값\"을 보여 드려요",sw,"Switch · 시연(데모) 고정 모드"),
+    row("시연 고정 모드",s.demo?"켜짐 · 태안 꽃지해수욕장 · 1.57배 값으로 고정해요":"켜면 시연용 값(태안 꽃지해수욕장 · 1.57배)으로 고정해요",sw,"Switch · 시연(데모) 고정 모드"),
     row("단가 출처","최저임금 1분 178원 기준",wage,"펼침 · 단가 출처"," fold")+(s.wageOpen?`<div class="swy" data-anno="펼침 · PRD 5-2 단가 근거">2027년 최저임금 시급 1만 700원을 60분으로 나눈 값이에요(1분 178.33원)<br>금액은 보여 드리기만 하고 결제·송금으로 이어지지 않아요</div>`:""),
     row("기록 초기화",nrec?`이 차에 남은 주행 기록 ${nrec}건을 지워요`:"남은 기록이 없어요",B("지우기",{cls:"s"+(nrec?"":" off"),act:"wipe",anno:"Basic Button S · 기록 지우기 → 확인 시트"}),"기록 초기화(개발·시연용)")
   ].join("");
@@ -2412,8 +2410,6 @@ const SCREENS=[
    ck:[["q","열린 결정 6: 기본값(영수증만)으로 그림"]]},
   {g:"도착 · 예외 상태",id:"arrive-nodata",r:"arrive",tag:"날씨·정체 정보 없음",s:{ab:"A",trip:"nodata"},desc:"날씨 조회와 출발 때 정체 정보가 실패하면 그 줄을 \"정보 없음\"으로 두고 더하지 않는다. 도착을 막지 않는다.",
    st:["날씨 · 정보 없음 · —","정체 구간 · 정체 정보 없음 · —","펼치면 \"날씨를 불러오지 못해 이번에는 더하지 않았어요\""],ck:[["ok","[신규] 에러 · 날씨 조회 실패 / 정체 정보 없음(유저 플로우 3장)"],["q","정체 정보 없음은 '줄 생략'도 가능 — 시안은 표시"]]},
-  {g:"도착 · 예외 상태",id:"arrive-demo",r:"arrive",tag:"시연 모드",s:{ab:"A",demo:true},desc:"데모 고정 모드에서는 화면 오른쪽 아래 구석에 \"시연용 값\"을 작게 둔다(R1: 꽃지해수욕장 · 1.57배 · 한 사람 약 9천 원).",
-   st:["오른쪽 아래 점선 알약 \"시연용 값\"(Label S)"],ck:[["ok","[신규] 시연 모드 표시(유저 플로우 2장 끝)"]]},
   {g:"도착 · 예외 상태",id:"arrive-unsettled",r:"arrive",tag:"정리하지 못함",s:{unsettled:true},desc:"출발하고 너무 오래 지나 앱을 열면(경과 > max(ETA × 2, ETA + 60분) 또는 12시간) 계산 연출 없이 바로 이 화면이 뜬다. 숫자·쉰 시간·제안은 없고 [홈으로]만 있다.",
    st:["빈 영수증 종이: 제목은 흐리게, 가운데 \"이번 주행은 정리하지 못했어요\"(엔진 문구)","이유 두 줄: \"출발하고 14시간이 지나서 열었어요 · 도착한 시간을 알 수 없어 이번에는 세지 않았어요\"","회색 빈 줄 3개(숫자 자리) · 안내 \"도착해서 바로 열거나, 가는 중에 [도착했어요]를 누르면 정리할 수 있어요\"","[홈으로](L 채움) → 홈 · 최근 기록에 \"정리하지 못함\""],
    ck:[["ok","#68·#71 · June #75 '정리하지 못함'"],["ok","제안 없음 · 기록은 선택 없이 출발만 닫음(F26 예외)"],["q","\"14시간\"은 시연 예시 — 실제 경과로 채움"]]},
@@ -2421,7 +2417,7 @@ const SCREENS=[
    st:["내 차 그림에 \"도착\" 깃발","\"태안 꽃지해수욕장에 도착했어요 · 16:30\" / \"오늘 운전 영수증이 여기 있어요\"","[영수증 보기 →](L 100) → 도착 · 영수증(계산 연출 다시 안 봄)"],
    ck:[["ok","F22·F26 · June #75"],["ok","재촉 문구 없음(AC-C-8 ⑥)"],["q","계속 안 고르면 언제 '닫음'으로 기록할지(다음 출발 때 등) 기획 확인"]]},
   {g:"설정",id:"settings",r:"settings",tag:"설정",s:{},desc:"홈 위 바 오른쪽 아이콘으로 연다. 제안 방식 A/B, 시연 고정 모드, 단가 출처, 기록 초기화. 바꾼 값은 바로 다른 화면에 적용된다(S20).",
-   st:["제안 방식: 둘로 나뉜 알약 \"방식 A · 돈으로 환산 / 방식 B · 한 번 빼 주기\"(고른 쪽만 흰 면)","시연 고정 모드: 스위치(켜면 검은 바탕, 화면 구석 \"시연용 값\")","단가 출처: \"최저임금 1분 178원 기준\" ⌄","기록 초기화: \"이 차에 남은 주행 기록 3건을 지워요\" · [지우기]","아래: \"개발·시연용 설정이에요 · 좌표 없이 이 차에만 저장돼요\""],
+   st:["제안 방식: 둘로 나뉜 알약 \"방식 A · 돈으로 환산 / 방식 B · 한 번 빼 주기\"(고른 쪽만 흰 면)","시연 고정 모드: 스위치(켜면 검은 바탕 · 화면에는 표시 없음)","단가 출처: \"최저임금 1분 178원 기준\" ⌄","기록 초기화: \"이 차에 남은 주행 기록 3건을 지워요\" · [지우기]","아래: \"개발·시연용 설정이에요 · 좌표 없이 이 차에만 저장돼요\""],
    ck:[["ok","명세 v0.5 S20 [제안] · June #75 설정"],["q","색이 정해지면 스위치 켜짐 색은 Pleos --switch-on(초록) 후보"]]},
   {g:"설정",id:"settings-wage",r:"settings",tag:"단가 출처 펼침",s:{wageOpen:true,demo:true},desc:"단가 출처를 누르면 근거가 펼쳐진다. 시연 고정 모드를 켠 모습도 함께.",
    st:["\"2027년 최저임금 시급 1만 700원을 60분으로 나눈 값이에요(1분 178.33원)\"","\"금액은 보여 드리기만 하고 결제·송금으로 이어지지 않아요\""],ck:[["ok","PRD 6장 단가 근거 · 5-4"]]},
@@ -2445,7 +2441,7 @@ const $=id=>document.getElementById(id);
 function appHTML(rname,p,s){
   let h=R[rname](p,s);
   if(s.toast) h+=peopleAlert(p,s);
-  if(s.demo) h+=`<span class="demotag" data-anno="시연(데모 고정) 모드 표시">시연용 값</span>`;
+  /* 11/12 명준: "시연용 값" 칩은 화면에서 아예 뺌(시연 고정 모드는 설정에만) */
   return h;
 }
 function paint(scr,rname,s,mode){
@@ -2456,7 +2452,7 @@ function paint(scr,rname,s,mode){
   q(".a-p2").innerHTML=land?"":(rname==="driving"?naviWF(true):otherApp());
   scr.classList.toggle("dark",ui.mode==="dark");scr.classList.toggle("no-guide",!ui.guide);scr.classList.toggle("anno",ui.anno);
   q(".gnb").src="img/gnb_"+(ui.mode==="dark"?"dark":"light")+".png";
-  fitPN(scr);if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>fitPN(scr));
+  fitPN(scr);if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>fitPN(scr));setTimeout(()=>fitPN(scr),400);setTimeout(()=>fitPN(scr),1500);   /* 글꼴이 늦게 붙어도 다시 맞춤 */
 }
 /* D2 말줄임 빈칸 없애기(11/12 명준): CSS 말줄임은 글자 단위로 잘려 "…"와 뒤 문구 사이에 남는 폭이 빈칸으로 보인다.
    넘치는 장소 이름만 글자 수를 줄여 "…"를 직접 붙이고, 이름 칸을 내용 폭에 맞춰 뒤 문구가 바로 붙게 한다 */

@@ -5,8 +5,6 @@
 .cg-card.cg-notice b{font:var(--cg-title-m)}
 .cg-card.cg-notice span{font:var(--cg-body-m);color:var(--cg-text-tertiary)}
 .cg-lnote{font:var(--cg-label-m);color:var(--cg-text-tertiary);padding:8px 16px}
-/* 시연 표시 · 값 바뀐 순간 */
-.cg-demotag{position:absolute;z-index:11;right:24px;bottom:16px;font:var(--cg-label-s);color:var(--cg-text-tertiary);background:var(--cg-surface-card);border:1px dashed var(--cg-line-strong);border-radius:999px;padding:4px 14px}
 .cg-home.cg-p .cg-card.cg-notice{padding:24px 28px}
 .cg-home.cg-p .cg-card.cg-notice b{font:var(--cg-body-l)}
 .cg-home.cg-p .cg-offl{font:var(--cg-label-m);height:52px;padding:0 18px;white-space:normal}
@@ -14,4 +12,3 @@
 .cg-offl{background:var(--color-status-warning-background);color:var(--color-status-warning-foreground)}
 .cg-card.cg-notice.cg-warn{background:var(--color-status-warning-background);border-color:transparent}
 .cg-card.cg-notice.cg-warn b,.cg-card.cg-notice.cg-warn span{color:var(--color-status-warning-foreground)}
-.cg-demotag{background:var(--color-status-info-background);color:var(--color-status-info-foreground);border-color:transparent}
