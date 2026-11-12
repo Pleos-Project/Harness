@@ -16,6 +16,9 @@
 | P `CAR_LIGHTS` | 앰비언트 라이트 스위치·색 읽기(켜기 전 원래 값) | F28 앰비언트 라이트 | `adb -g`(protectionLevel normal) |
 | P `CONTROL_CAR_LIGHTS` | 앰비언트 라이트 스위치·색 켜고 되돌리기(`setAmbientLightSwitch`·`setAmbientLightBrightnessColor`만) | F28 앰비언트 라이트 | `adb -g`(protectionLevel normal). 문서는 `CAR_LIGHTS`로 쓰기가 된다고 적었지만 에뮬에서 `SecurityException`이라 필요(June #109 실측) |
 | `android.permission.INTERNET` | `/v1/weather`·`/v1/weather/trip`·`/v1/places` 호출 | F20·F23 | 일반 권한 |
+| `android.permission.FOREGROUND_SERVICE` | 주행 중 포그라운드 서비스(내비 안내 끝 받기) | F22 도착 | 일반 권한 |
+| `android.permission.FOREGROUND_SERVICE_SPECIAL_USE` | 포그라운드 서비스 type `specialUse`(Android 14+) | F22 도착 | 일반 권한 |
+| `android.permission.POST_NOTIFICATIONS` | 상주 알림(`navigation`)·도착 확인 알림(`msg`) | F22 도착 | 런타임 권한 · 에뮬은 `pm grant --user 10` |
 
 ## 선언하지 않는 것
 - 피봇 전 기능(잔고·한 장·장부)에만 쓰던 것(11/8 노고 정리): P `CAR_ENERGY`(SOC·연료 %·연비·전비·충전 스위치), A `CAR_ENERGY`(`RANGE_REMAINING`·`EV_CHARGE_SWITCH`), A `CAR_INFO`(배터리·연료 용량·연료 종류). 노고 흐름은 이 값을 읽지 않는다.
