@@ -70,7 +70,7 @@ class MainActivity : ComponentActivity() {
         // 주행 중 포그라운드 서비스(DECISIONS 11/12): 실제 출발~도착 동안 내비 안내 끝(종류·시각)을 받아 남기고 도착 확인 알림(#145)
         val ctx = applicationContext
         vm.tripKeeper = object : TripKeeper {
-            override fun sync(destName: String?) = TripService.sync(ctx, destName)
+            override fun sync(destName: String?, fresh: Boolean) = TripService.sync(ctx, destName, fresh)
             override fun takeGuideEnd() = TripService.takeGuideEnd(ctx)
             override val running: Boolean get() = TripService.isRunning
             override fun expectOldCancel(v: Boolean) { TripService.expectOldCancel = v }
