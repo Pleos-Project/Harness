@@ -64,7 +64,7 @@ interface EffortAmbient {
  * - [running]: 서비스가 지금 떠 있는지. 진행 중 출발인데 없으면 주행이 끊겼다 이어진 것(시동이 완전히 꺼짐 등)
  */
 interface TripKeeper {
-    fun sync(destName: String?)
+    fun sync(destName: String?, fresh: Boolean = false)
     fun takeGuideEnd(): GuideEnd?
     val running: Boolean
     /** 보내기 전에 내비가 이미 안내 중이었음 → 서비스가 첫 취소를 이전 안내의 것으로 본다(#132). */
@@ -264,11 +264,11 @@ class EffortViewModel(app: Application, private val saved: SavedStateHandle) : A
     /** 주행 중 포그라운드 서비스. 출발·도착·그만두기·다시 보일 때 [syncTrip]으로 맞춘다. */
     var tripKeeper: TripKeeper? = null
 
-    /** 진행 중 실제 출발(시연 아님)이면 서비스를 띄우고, 아니면 끈다(DECISIONS 11/12). */
-    private fun syncTrip() {
+    /** 진행 중 실제 출발(시연 아님)이면 서비스를 띄우고, 아니면 끈다(DECISIONS 11/12). [fresh]는 [출발] 직후(길을 보내기 전). */
+    private fun syncTrip(fresh: Boolean = false) {
         val trip = flow.state.openTrip
         val live = flow.phase == EffortPhase.DRIVING && trip != null && !trip.demo && !source.demo
-        tripKeeper?.sync(if (live) trip!!.destName else null)
+        tripKeeper?.sync(if (live) trip!!.destName else null, fresh)
     }
 
     private val api = EffortApi(BuildConfig.API_BASE_URL)
@@ -372,7 +372,7 @@ class EffortViewModel(app: Application, private val saved: SavedStateHandle) : A
         val opened = flow.depart(trip)
         tripKeeper?.takeGuideEnd()                   // 지난 주행에서 남은 안내 끝은 버린다
         clearGuideEnd()
-        syncTrip()                                   // 내비가 덮기 전에(앱이 보이는 동안) 서비스를 띄운다
+        syncTrip(fresh = true)                       // 내비가 덮기 전에(앱이 보이는 동안) 서비스를 띄운다
         lastRoute = sel.dest
         departSnapshot = ui.copy(routeFailed = false)   // 경로 요청이 실패하면 이 출발 화면으로 되돌린다(#132)
         departTripId = trip.tripId

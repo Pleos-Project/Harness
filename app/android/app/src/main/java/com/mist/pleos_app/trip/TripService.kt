@@ -47,6 +47,7 @@ class TripService : Service() {
         private const val ID_TRIP = 1
         private const val ID_ARRIVE = 2
         private const val EXTRA_DEST = "dest"
+        private const val EXTRA_FRESH = "fresh"
         private const val PREFS = "trip_service"
         private const val K_KIND = "end_kind"
         private const val K_AT = "end_at"
@@ -84,8 +85,9 @@ class TripService : Service() {
         /**
          * [destName]이 있으면(진행 중 실제 출발) 서비스를 띄우고, null이면 끈다. 같은 상태면 아무것도 하지 않는다.
          * 앱이 보이는 동안(출발·도착·다시 보임) 부르므로 Android 백그라운드 시작 제한에 걸리지 않는다.
+         * [fresh]는 방금 [출발]해서 길을 보내기 직전인지. 아니면(시동이 완전히 꺼졌다 켜진 뒤 다시 보임 등) 이어 가는 주행이다.
          */
-        fun sync(context: Context, destName: String?) {
+        fun sync(context: Context, destName: String?, fresh: Boolean = false) {
             val app = context.applicationContext
             val intent = Intent(app, TripService::class.java)
             if (destName == null) {
@@ -94,7 +96,7 @@ class TripService : Service() {
                 return
             }
             if (running && destName == current) return
-            runCatching { app.startForegroundService(intent.putExtra(EXTRA_DEST, destName)) }
+            runCatching { app.startForegroundService(intent.putExtra(EXTRA_DEST, destName).putExtra(EXTRA_FRESH, fresh)) }
                 .onFailure { ChagokLog.event("trip_service_failed", "step" to "start", "err" to it.javaClass.simpleName) }
         }
 
@@ -159,8 +161,16 @@ class TripService : Service() {
         }
         val first = !running
         running = true; current = dest
+        val fresh = intent.getBooleanExtra(EXTRA_FRESH, false)
+        if (fresh) { routeStarted = false; failedSent = false }
+        else if (first) {
+            // 이어 가는 주행(#145 추가): 순정 내비는 시동을 껐다 켜도 도착 전이면 안내를 이어 주는데, 그 안내의 시작은 서비스가 뜨기 전에 지나갔다.
+            // 시작을 기다리면 이어진 안내의 도착 신호를 버리고 [안내 종료]를 경로 요청 실패로 잘못 본다(#132 판단은 방금 출발에만).
+            // 그래서 이미 시작된 안내로 둔다. 안내가 사라졌으면 끝 이벤트가 안 오고, 새 안내가 시작되면 onRouteStarted가 다시 맞춘다.
+            routeStarted = true
+        }
         if (first) connect()
-        ChagokLog.event("trip_service_start", "first" to first)   // 목적지 이름은 로그에 남기지 않는다(AC-C-10)
+        ChagokLog.event("trip_service_start", "first" to first, "fresh" to fresh)   // 목적지 이름은 로그에 남기지 않는다(AC-C-10)
         return START_NOT_STICKY
     }
 
