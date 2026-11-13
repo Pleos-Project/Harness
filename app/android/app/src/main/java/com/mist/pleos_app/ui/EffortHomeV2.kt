@@ -119,6 +119,7 @@ internal fun EffortHomeScreen(
     onMidway: () -> Unit = {},
     onNoti: () -> Unit = {},
     onNotiClose: () -> Unit = {},
+    onArriveAnswer: (Boolean) -> Unit = {},
 ) {
     val narrow = LocalNarrow.current
     val reduce = rememberReduceMotion()
@@ -215,6 +216,30 @@ internal fun EffortHomeScreen(
             if (freshN > 0) stringResource(R.string.effort_noti_new, freshN) else null,
             stringResource(R.string.effort_noti_foot), onNotiClose, compact = narrow, reduce = reduce,
         )
+        // "도착했나요?"(#145): 안내 종료 · 끊겼다 이어진 주행 · ETA 없는 도착 신호. 예면 물을 때 정한 시각으로 도착
+        val ask = ui.arriveAsk
+        if (ask != null && trip != null && !trip.arrived && !quit) {
+            CgBottomSheet(
+                Modifier.align(Alignment.BottomCenter).then(if (narrow) Modifier.fillMaxWidth() else Modifier.width(760.gpx)), compact = narrow, confirm = true,
+            ) {
+                Column(verticalArrangement = Arrangement.spacedBy(8.gpx)) {
+                    Text(stringResource(R.string.effort_arrive_ask_title), style = if (narrow) t.bodyL else t.titleM, color = c.textPrimary)
+                    val hm = ask.at.substring(11, 16)
+                    Text(
+                        when (ask.kind) {
+                            com.mist.pleos_app.effort.GUIDE_CANCELLED -> stringResource(R.string.effort_arrive_ask_cancelled, hm)
+                            com.mist.pleos_app.effort.GUIDE_ARRIVED -> stringResource(R.string.effort_arrive_ask_arrived, hm)
+                            else -> stringResource(R.string.effort_arrive_ask_interrupted)
+                        },
+                        style = t.bodyM, color = c.textSecondary,
+                    )
+                }
+                CgSheetButtons(narrow) { sz ->
+                    CgButton(stringResource(R.string.effort_arrive_ask_no), { onArriveAnswer(false) }, kind = CgButtonKind.Basic, size = sz)
+                    CgButton(stringResource(R.string.effort_arrive_now), { onArriveAnswer(true) }, kind = CgButtonKind.Filled, size = sz)
+                }
+            }
+        }
         // 그만두기 확인(v32 home-progress-quit, 딤 없음): 그만두면 기록 없이 출발이 닫히고 홈 기본으로
         if (quit && trip != null && !trip.arrived) {
             CgBottomSheet(

@@ -4,6 +4,9 @@ import ai.pleos.playground.navi.data.DestinationArrivedInfo
 import ai.pleos.playground.navi.data.RouteStartInfo
 import ai.pleos.playground.navi.helper.NaviHelper
 import ai.pleos.playground.navi.helper.listener.NaviHelperEventListener
+import ai.pleos.playground.vehicle.Vehicle
+import ai.pleos.playground.vehicle.constant.control.VehicleGear
+import ai.pleos.playground.vehicle.listener.GearSelectionListener
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -17,17 +20,23 @@ import android.os.IBinder
 import android.os.Looper
 import com.mist.pleos_app.MainActivity
 import com.mist.pleos_app.R
+import com.mist.pleos_app.effort.GUIDE_ARRIVED
+import com.mist.pleos_app.effort.GuideEnd
+import com.mist.pleos_app.effort.isoNow
 import com.mist.pleos_app.util.ChagokLog
 
 /**
  * 주행 중 포그라운드 서비스(DECISIONS 11/12 '주행 중 포그라운드 서비스', F22).
  * - 실제 출발(시연 아님)부터 도착·그만두기까지만 뜬다. 뷰모델이 [sync]로 켜고 끈다.
  * - 기본 배치에서 내비가 앱 창을 덮어 앱이 얼어도, 서비스가 건 내비 리스너로 안내 끝(도착·안내 종료)을 바로 받는다(11/12 에뮬 실측).
- * - 안내가 끝났는데 앱이 안 보이면 도착 확인 알림(카테고리 msg)을 1번 올린다. 누르면 노고가 열리고 뷰모델이 기존 도착 판정을 탄다.
- * - 내비가 목적지 도착(`onDestinationArrived`)을 알리면 노고를 앞으로 띄운다(DECISIONS 11/12 '목적지 도착 때 노고 띄우기', 제안).
+ * - 안내 끝은 종류와 **받은 시각**을 기기에 남긴다(#145). 뷰모델은 도착 신호면 그 시각으로 도착하고, 안내 종료면 "도착했나요?"를 묻는다.
+ *   시동이 완전히 꺼져 프로세스가 끝나도 남아 있어서 다시 켠 뒤 앱을 열면 그대로 쓴다.
+ * - 안내가 끝났는데 앱이 안 보이면 도착 확인 알림(카테고리 msg)을 1번 올린다. 누르면 노고가 열린다.
+ * - 목적지 도착이면 노고를 앞으로 띄운다. 주행 중(기어 P가 아님)이면 알림만 두고 기어 P가 되는 순간 띄운다(#145 3, 심사 '주행 중 화면 전환 최소화').
+ *   기어는 그동안만 이벤트로 받고(폴링 없음) P가 되거나 새 안내가 시작되면 바로 놓는다.
  *   AOSP는 이 실행을 막지만(BAL_BLOCK) Pleos 홈이 노고 창을 보여 준다(11/12 에뮬 실측). 안 뜨면 도착 확인 알림이 남는다.
  *   안내 종료(`onRouteCancelled`)는 도착이 아닐 수 있어 띄우지 않고 알림만.
- * - 폴링·타이머 없이 이벤트만 받는다. 차량값·위치를 읽거나 서버로 보내지 않는다.
+ * - 차량값은 기어만 읽고, 위치를 읽거나 서버로 보내지 않는다.
  */
 class TripService : Service() {
 
@@ -37,15 +46,28 @@ class TripService : Service() {
         private const val ID_TRIP = 1
         private const val ID_ARRIVE = 2
         private const val EXTRA_DEST = "dest"
+        private const val PREFS = "trip_service"
+        private const val K_KIND = "end_kind"
+        private const val K_AT = "end_at"
 
         /** 앱 화면이 보이는지(MainActivity onStart·onStop). 보이면 안내 끝은 화면 쪽 리스너가 처리하니 알림을 올리지 않는다. */
         @Volatile var appVisible = false
 
-        /** 앱이 안 보일 때 받은 안내 끝("arrived"·"cancelled"). 앱이 다시 보일 때 뷰모델이 [takeGuideEnd]로 가져간다. 새 안내가 시작되면 지운다. */
-        @Volatile private var guideEnd: String? = null
+        /** 서비스가 지금 떠 있는지. 진행 중 출발인데 false면 주행이 끊겼다 이어진 것(뷰모델이 묻는다, #145). */
+        val isRunning: Boolean get() = running
 
-        /** 안 보이는 동안 받은 안내 끝을 1번만 넘긴다. */
-        fun takeGuideEnd(): String? = guideEnd.also { guideEnd = null }
+        private fun prefs(context: Context) = context.applicationContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+
+        /** 앱이 안 보이는 동안 받은 안내 끝을 1번 넘기고 지운다. */
+        fun takeGuideEnd(context: Context): GuideEnd? {
+            val p = prefs(context)
+            val kind = p.getString(K_KIND, null)
+            val at = p.getString(K_AT, null)
+            p.edit().remove(K_KIND).remove(K_AT).apply()
+            return if (kind != null && at != null) GuideEnd(kind, at) else null
+        }
+
+        private fun clearGuideEnd(context: Context) { prefs(context).edit().remove(K_KIND).remove(K_AT).apply() }
 
         /** 앱이 보이면 도착 확인 알림은 할 일이 끝났으니 내린다(MainActivity onStart). */
         fun onAppShown(context: Context) {
@@ -60,7 +82,7 @@ class TripService : Service() {
             val app = context.applicationContext
             val intent = Intent(app, TripService::class.java)
             if (destName == null) {
-                guideEnd = null
+                clearGuideEnd(app)
                 if (running) app.stopService(intent)
                 return
             }
@@ -75,23 +97,34 @@ class TripService : Service() {
 
     private val main = Handler(Looper.getMainLooper())
     private var navi: NaviHelper? = null
+    private var vehicle: Vehicle? = null
     private var notified = false
     /** 이번 안내에서 노고를 이미 띄웠는지. 안내 종료 알림을 먼저 올렸어도 뒤에 온 목적지 도착에는 띄운다. */
     private var opened = false
+    /** 목적지 도착을 받았는데 주행 중이라 기어 P를 기다리는 중. */
+    private var waitPark = false
+    private var gearOn = false
 
     private val listener = object : NaviHelperEventListener {
         override fun onRouteStarted(routeStartInfo: RouteStartInfo) {
             main.post {
-                guideEnd = null; notified = false; opened = false
+                clearGuideEnd(this@TripService); notified = false; opened = false
+                stopWaitPark()
                 nm().cancel(ID_ARRIVE)
                 ChagokLog.event("trip_service_guide", "kind" to "started")
             }
         }
 
-        // 이벤트가 두 번씩 와도(11/7 실측) 알림은 안내 한 번에 1번
-        override fun onDestinationArrived(destinationArrivedInfo: DestinationArrivedInfo) { main.post { guideEnded("arrived") } }
+        // 이벤트가 두 번씩 와도(11/7 실측) 알림은 안내 한 번에 1번. 받은 시각은 콜백이 온 때(#145)
+        override fun onDestinationArrived(destinationArrivedInfo: DestinationArrivedInfo) { val at = isoNow(); main.post { guideEnded(GUIDE_ARRIVED, at) } }
 
-        override fun onRouteCancelled() { main.post { guideEnded("cancelled") } }
+        override fun onRouteCancelled() { val at = isoNow(); main.post { guideEnded("cancelled", at) } }
+    }
+
+    @Suppress("DEPRECATION")
+    private val gearListener = object : GearSelectionListener {
+        override fun onSelected(gear: VehicleGear?) { main.post { onGear(gear) } }
+        override fun onFailed(e: Exception) { main.post { gearFailed("listen", e) } }
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
@@ -118,8 +151,11 @@ class TripService : Service() {
     }
 
     override fun onDestroy() {
+        stopWaitPark()
         navi?.let { n -> runCatching { n.removeListener(listener) }; runCatching { n.release() } }
         navi = null
+        vehicle?.let { v -> runCatching { v.release() } }
+        vehicle = null
         running = false; current = null
         nm().cancel(ID_ARRIVE)
         main.removeCallbacksAndMessages(null)
@@ -141,19 +177,54 @@ class TripService : Service() {
     }
 
     /** 안내 끝. 앱이 보이면 화면 쪽(NaviRepository → 뷰모델)이 처리하니 기억·알림 없이 넘긴다. */
-    private fun guideEnded(kind: String) {
+    private fun guideEnded(kind: String, at: String) {
         ChagokLog.event("trip_service_guide", "kind" to kind, "visible" to appVisible)
         if (appVisible) return
-        if (guideEnd != "arrived") guideEnd = kind               // 도착이 안내 종료보다 강한 근거라 덮어쓰지 않는다
+        val p = prefs(this)
+        if (p.getString(K_KIND, null) != GUIDE_ARRIVED) p.edit().putString(K_KIND, kind).putString(K_AT, at).apply()   // 도착이 안내 종료보다 강한 근거라 덮어쓰지 않는다
         if (!notified) {
             notified = true
             nm().notify(ID_ARRIVE, arriveNotification())      // 띄우기가 막혀도 눌러서 열 수 있게 먼저 올린다
         }
-        if (kind == "arrived" && !opened) { opened = true; bringToFront() }
+        if (kind == GUIDE_ARRIVED && !opened) openWhenParked()
     }
 
-    /** 목적지 도착 → 노고를 앞으로. 이미 있는 화면을 쓴다(CLEAR_TOP·SINGLE_TOP). 열리면 뷰모델이 다시 보임(RESUME)으로 도착을 판정해 계산을 시작한다. */
-    private fun bringToFront() {
+    /** 목적지 도착 → 기어 P면 바로 띄우고, 아니면 P가 될 때까지 기어를 이벤트로 받는다. 기어를 못 읽으면 바로 띄운다(지금까지와 같음). */
+    @Suppress("DEPRECATION")
+    private fun openWhenParked() {
+        val v = vehicle ?: runCatching { Vehicle(applicationContext).also { it.initialize() } }
+            .onFailure { gearFailed("init", it) }.getOrNull()?.also { vehicle = it }
+        if (v == null) { open(); return }
+        waitPark = true
+        try {
+            v.getGear().getCurrentGearSelectionState({ g -> main.post { onGear(g) } }, { e -> main.post { gearFailed("get", e) } })
+            if (!gearOn) { v.getGear().registerGearSelection(gearListener); gearOn = true }
+        } catch (e: Exception) {
+            gearFailed("listen", e)
+        }
+    }
+
+    private fun onGear(gear: VehicleGear?) {
+        if (!waitPark) return
+        ChagokLog.event("trip_service_gear", "gear" to (gear?.name ?: "null"))
+        if (gear == VehicleGear.GEAR_PARK) { stopWaitPark(); open() }
+    }
+
+    private fun gearFailed(step: String, e: Throwable) {
+        ChagokLog.event("trip_service_gear_failed", "step" to step, "err" to e.javaClass.simpleName)
+        if (waitPark) { stopWaitPark(); open() }
+    }
+
+    @Suppress("DEPRECATION")
+    private fun stopWaitPark() {
+        waitPark = false
+        if (gearOn) { vehicle?.let { v -> runCatching { v.getGear().unregisterGearSelection(gearListener) } }; gearOn = false }
+    }
+
+    /** 노고를 앞으로. 이미 있는 화면을 쓴다(CLEAR_TOP·SINGLE_TOP). 열리면 뷰모델이 남겨 둔 도착 신호 시각으로 도착 처리한다. */
+    private fun open() {
+        if (opened || appVisible) return
+        opened = true
         try {
             startActivity(openIntent())
             ChagokLog.event("trip_service_open", "ok" to true)

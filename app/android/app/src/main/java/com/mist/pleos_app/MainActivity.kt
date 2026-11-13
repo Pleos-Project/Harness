@@ -66,11 +66,12 @@ class MainActivity : ComponentActivity() {
             override fun acquire(reason: String) = amb.acquire(reason)
             override fun release(reason: String) = amb.release(reason)
         }
-        // 주행 중 포그라운드 서비스(DECISIONS 11/12): 실제 출발~도착 동안 내비 안내 끝을 받아 도착 확인 알림
+        // 주행 중 포그라운드 서비스(DECISIONS 11/12): 실제 출발~도착 동안 내비 안내 끝(종류·시각)을 받아 남기고 도착 확인 알림(#145)
         val ctx = applicationContext
         vm.tripKeeper = object : TripKeeper {
             override fun sync(destName: String?) = TripService.sync(ctx, destName)
-            override fun takeGuideEnd(): String? = TripService.takeGuideEnd()
+            override fun takeGuideEnd() = TripService.takeGuideEnd(ctx)
+            override val running: Boolean get() = TripService.isRunning
         }
         askNotifications()
         // 다시 보일 때마다 도착 여부를 1번 본다(기본 배치에서는 도착 순간 차곡이 멈춰 있음, 명세 F22)

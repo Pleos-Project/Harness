@@ -227,6 +227,12 @@
     <string name="trip_noti_text">안내가 끝나면 도착했는지 여쭤볼게요</string>
     <string name="trip_noti_arrive_title">도착했나요?</string>
     <string name="trip_noti_arrive_text">눌러서 오늘 운전 노고를 확인해 보세요</string>
+    <!-- #145 "도착했나요?" 시트(홈). 예 = [도착했어요], 아니요 = 계속 가는 중 -->
+    <string name="effort_arrive_ask_title">도착했나요?</string>
+    <string name="effort_arrive_ask_cancelled">내비 안내가 %1$s에 끝났어요. 도착했다면 그때까지 운전을 세어 볼게요</string>
+    <string name="effort_arrive_ask_arrived">내비가 %1$s에 도착을 알렸어요. 도착했다면 그때까지 운전을 세어 볼게요</string>
+    <string name="effort_arrive_ask_interrupted">주행 기록이 잠시 끊겼어요. 도착했다면 지금까지 운전을 세어 볼게요</string>
+    <string name="effort_arrive_ask_no">아직이에요</string>
     <string name="effort_home_just_now">방금</string>
     <string name="effort_home_rec_per">한 사람 %1$s</string>
     <string name="effort_home_rec_closed">닫음</string>
