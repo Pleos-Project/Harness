@@ -10,7 +10,6 @@
 |---|---|---|---|
 | P `CAR_DRIVE` | 기어 | X1 주행 중 숨김·F22 도착 | `adb -g` |
 | P `CAR_SEATS` | 착석 | F20 인원 | `adb -g` |
-| P `CAR_DOORS` | 운전석 문 위치 | F22 도착 | `adb -g` |
 | P `NAVI_ROUTE` | 현재 위치·최근 목적지·즐겨찾기·경로 안내 시작·안내 상태 | F20 출발·F22 도착 | `adb -g` |
 | P `NAVI_ROUTE_SEARCH` | `requestTrip` 경로 미리보기(ETA·정체) | F20 | **필요 여부 미확인**(June, 빼고 시험) · `adb -g` |
 | P `CAR_LIGHTS` | 앰비언트 라이트 스위치·색 읽기(켜기 전 원래 값) | F28 앰비언트 라이트 | `adb -g`(protectionLevel normal) |
@@ -21,6 +20,7 @@
 | `android.permission.POST_NOTIFICATIONS` | 상주 알림(`navigation`)·도착 확인 알림(`msg`) | F22 도착 | 런타임 권한 · 에뮬은 `pm grant --user 10` |
 
 ## 선언하지 않는 것
+- P `CAR_DOORS`(운전석 문 위치): 운전석 문 열기를 도착 계기에서 빼서 읽지 않는다(DECISIONS 11/13 '도착 계기: 운전석 문 빼기').
 - 피봇 전 기능(잔고·한 장·장부)에만 쓰던 것(11/8 노고 정리): P `CAR_ENERGY`(SOC·연료 %·연비·전비·충전 스위치), A `CAR_ENERGY`(`RANGE_REMAINING`·`EV_CHARGE_SWITCH`), A `CAR_INFO`(배터리·연료 용량·연료 종류). 노고 흐름은 이 값을 읽지 않는다.
 - 제어 퍼미션 전부(`CONTROL_*`). 예외는 F28의 P `CONTROL_CAR_LIGHTS` 하나(앰비언트 스위치·색만, 효성 11/9). `setAmbientColorAutoByDriveModeEnabled` 같은 차 설정 변경 API와 `Odometer.setRangeRemainingDistance`는 사용 금지 API.
 - A `CAR_MILEAGE`(AAOS `PERF_ODOMETER`) — 부여 불가, 주행거리는 P `CAR_DRIVE`의 `Odometer`로.

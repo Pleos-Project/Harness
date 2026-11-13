@@ -103,34 +103,24 @@ class ArriveTest {
         // 오프라인 등으로 출발 때 ETA를 못 받았으면 내비 경로도 실패했을 수 있다 → 다시 열 때 자동 도착하지 않음(에뮬 11/8)
         val noEta = OpenTrip("t1", "2026-11-17T16:00:00+09:00", "서울식물원", 1, 0.0)
         assertFalse(autoArrivalAllowed(noEta, ArrivalCue.RESUME))
-        assertFalse(autoArrivalAllowed(noEta, ArrivalCue.DOOR_ON_SHOW))
-        assertTrue(autoArrivalAllowed(noEta, ArrivalCue.DOOR))                     // 보이는 동안 문이 열리는 순간은 도착
-        val withEta = noEta.copy(etaS = 2000.0)
-        ArrivalCue.entries.forEach { assertTrue(autoArrivalAllowed(withEta, it)) }  // ETA가 있으면 지금처럼
-        ArrivalCue.entries.forEach { assertTrue(autoArrivalAllowed(noEta.copy(demo = true), it)) }
+        assertTrue(autoArrivalAllowed(noEta.copy(etaS = 2000.0), ArrivalCue.RESUME))   // ETA가 있으면 지금처럼
+        // 시연은 자동 도착이 없다([도착했어요]로만, DECISIONS 11/13 '도착 계기: 운전석 문 빼기')
+        assertFalse(autoArrivalAllowed(noEta.copy(etaS = 2000.0, demo = true), ArrivalCue.RESUME))
     }
 
     @Test
-    fun unknownGuideArrivesOnlyByDoor() {
-        // 에뮬 11/9: 다시 보인 직후 내비 연결이 늦어 상태를 못 읽으면(null) 다시 보임으로는 도착하지 않음. 문이 열린 순간은 도착
-        assertFalse(arrivalByGuide(null, ArrivalCue.RESUME))
-        assertFalse(arrivalByGuide(null, ArrivalCue.DOOR_ON_SHOW))
-        assertTrue(arrivalByGuide(null, ArrivalCue.DOOR))
-        val guiding = GuideState(14000, true)
-        ArrivalCue.entries.forEach { assertFalse(arrivalByGuide(guiding, it)) }          // 안내 중 + 남은 거리 → 중간 정차
-        val done = GuideState(0, false)
-        ArrivalCue.entries.forEach { assertTrue(arrivalByGuide(done, it)) }              // 안내가 끝났으면 도착
-        assertTrue(arrivalByGuide(GuideState(null, false), ArrivalCue.RESUME))          // 한쪽만 읽어도 안내 아님이면 도착
+    fun unknownGuideIsNotArrival() {
+        // 에뮬 11/9: 다시 보인 직후 내비 연결이 늦어 상태를 못 읽으면(null) 도착으로 보지 않음. 문 계기는 뺐다(DECISIONS 11/13)
+        assertFalse(arrivalByGuide(null))
+        assertFalse(arrivalByGuide(GuideState(14000, true)))       // 안내 중 + 남은 거리 → 중간 정차
+        assertTrue(arrivalByGuide(GuideState(0, false)))           // 안내가 끝났으면 도착
+        assertTrue(arrivalByGuide(GuideState(null, false)))        // 한쪽만 읽어도 안내 아님이면 도착
     }
 
     @Test
-    fun doorBeforeResume() {
-        // 문이 열리는 순간 > 다시 보인 뒤 처음. 내비 안내 끝은 계기가 아니라 guideEndAction으로(#145)
-        assertEquals(ArrivalCue.DOOR, arrivalCueOf(true, false, resume = true))
-        assertEquals(ArrivalCue.DOOR_ON_SHOW, arrivalCueOf(true, null, resume = false))
-        assertEquals(ArrivalCue.RESUME, arrivalCueOf(false, false, resume = true))
-        assertNull(arrivalCueOf(true, true, resume = false))
-        assertNull(arrivalCueOf(null, null, resume = false))
+    fun onlyResumeCue() {
+        // 운전석 문 열기(DOOR · DOOR_ON_SHOW)는 도착 계기에서 뺐다. 남은 자동 계기는 다시 보임 하나
+        assertEquals(listOf(ArrivalCue.RESUME), ArrivalCue.entries.toList())
     }
 
     @Test
@@ -176,9 +166,6 @@ class ArriveTest {
         val t = OpenTrip("t1", "2026-11-17T16:00:00+09:00", "서울식물원", 1, 2000.0)
         val early = "2026-11-17T16:00:05+09:00"
         assertFalse(autoArrivalAllowed(t, ArrivalCue.RESUME, early))
-        assertFalse(autoArrivalAllowed(t, ArrivalCue.DOOR_ON_SHOW, early))
-        assertTrue(autoArrivalAllowed(t, ArrivalCue.DOOR, early))                       // 보이는 동안 문이 열리는 순간은 도착
-        assertTrue(autoArrivalAllowed(t.copy(demo = true), ArrivalCue.RESUME, early))   // 시연은 그대로
         assertFalse(autoArrivalAllowed(t, ArrivalCue.RESUME, "2026-11-17T16:00:59+09:00"))
         assertTrue(autoArrivalAllowed(t, ArrivalCue.RESUME, "2026-11-17T16:01:00+09:00"))
         assertTrue(autoArrivalAllowed(t, ArrivalCue.RESUME, "2026-11-17T16:40:00+09:00"))

@@ -88,7 +88,7 @@ class MainActivity : ComponentActivity() {
             androidx.compose.runtime.LaunchedEffect(settings.ambientLight) { vehicle.ambientEnabled = settings.ambientLight }   // S20(AC-F28-5)
             ChagokTheme {
                 EffortApp(
-                    vm, driving = isDriving(snapshot), parked = isParked(snapshot), doorOpen = snapshot.driverDoorOpen,
+                    vm, driving = isDriving(snapshot), parked = isParked(snapshot),
                     seats = seatCount(snapshot.seatsOccupied, invert = settings.seatInvert), route = route,
                 ) {
                     val moved = moveTaskToBack(true)

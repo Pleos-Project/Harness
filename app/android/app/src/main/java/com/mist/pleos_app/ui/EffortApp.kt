@@ -97,7 +97,6 @@ fun EffortApp(
     vm: EffortViewModel,
     driving: Boolean,
     parked: Boolean,
-    doorOpen: Boolean?,
     seats: Int,
     route: DepartState,
     onExit: () -> Unit,
@@ -110,9 +109,9 @@ fun EffortApp(
     val payer by vm.payerState.collectAsStateWithLifecycle()
     // CCP Back: 최상단(홈)에서는 finish 하지 않고 숨긴다. 주행 중 Back은 받아서 무시(가림 화면 유지)
     BackHandler { if (driving) return@BackHandler; if (screen == EffortScreen.CALC) vm.calcDone() else if (!vm.back()) onExit() }
-    // F22 도착: 기어·운전석 문이 바뀔 때, 그리고 화면이 다시 보일 때(이벤트, 폴링 없음). 기어 P + 문 열림이면 도착인지 본다
+    // F22 도착: 기어가 바뀔 때, 그리고 화면이 다시 보일 때(이벤트, 폴링 없음). 운전석 문은 보지 않는다(DECISIONS 11/13)
     val shown by vm.shown.collectAsStateWithLifecycle()
-    LaunchedEffect(parked, doorOpen, shown) { vm.onCar(parked, doorOpen) }
+    LaunchedEffect(parked, shown) { vm.onCar(parked) }
     // F28 앰비언트 라이트(구두 합의 11/9): 앱이 보이는 동안(정차) 늘 브랜드 색으로 켜 둔다. 주행으로 바뀌면(X1)·가려지면(onStop)
     // 차량 쪽이 그 자리에서 되돌리고, 기어 P로 다시 보이면 다시 켠다. 설정(S20)을 다시 켜도 다시 켠다
     LaunchedEffect(shown, driving, settings.ambientLight) {

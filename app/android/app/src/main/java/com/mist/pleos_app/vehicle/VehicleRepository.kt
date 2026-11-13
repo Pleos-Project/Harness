@@ -1,12 +1,9 @@
 package com.mist.pleos_app.vehicle
 
 import ai.pleos.playground.vehicle.Vehicle
-import ai.pleos.playground.vehicle.api.model.area.DoorArea
 import ai.pleos.playground.vehicle.api.model.area.SeatArea
-import ai.pleos.playground.vehicle.constant.area.DoorValue
 import ai.pleos.playground.vehicle.constant.area.SeatValue
 import ai.pleos.playground.vehicle.constant.control.VehicleGear
-import ai.pleos.playground.vehicle.listener.DoorPositionListener
 import ai.pleos.playground.vehicle.listener.GearSelectionListener
 import ai.pleos.playground.vehicle.listener.SeatOccupancyListener
 import android.car.Car
@@ -36,7 +33,7 @@ class FakeVehicleRepository(initial: VehicleSnapshot = VehicleSnapshot()) : Vehi
  *
  * 수명주기(Activity에 observer로 붙인다):
  * - onCreate: SDK·Car 연결만
- * - onStart(화면이 보임): 기어·주행 규제 리스너(관문)를 등록하고, 정차면 운전석 문·좌석 리스너(데이터)를 등록
+ * - onStart(화면이 보임): 기어·주행 규제 리스너(관문)를 등록하고, 정차면 좌석 리스너(데이터)를 등록
  * - 주행 전환(X1: 규제 ON 또는 기어 ≠ P): 데이터 리스너를 해제하고 관문만 남긴다(AC-X1-2). 정차로 돌아오면 다시 등록
  * - onStop(화면이 가려짐): 리스너를 **모두** 해제(AC-C-2: 백그라운드 SDK·AAOS 콜백 0건). 타이머·폴링 없음
  * - onDestroy: 연결 해제
@@ -44,7 +41,8 @@ class FakeVehicleRepository(initial: VehicleSnapshot = VehicleSnapshot()) : Vehi
  * onFailed는 SecurityException(권한 없음)과 그 밖의 Exception(미지원 영역·값 없음)으로 나눈다.
  * VehicleException은 공개 클래스가 아니라 쓸 수 없다(Pleos 실측 11번 2-1).
  *
- * 노고 흐름(명세 v0.5)이 쓰는 값만 읽는다: 기어·주행 규제(X1·도착), 운전석 문(F22 도착), 좌석(인원).
+ * 노고 흐름(명세 v0.5)이 쓰는 값만 읽는다: 기어·주행 규제(X1·도착), 좌석(인원).
+ * 운전석 문은 도착 계기에서 빼서 읽지 않는다(DECISIONS 11/13) → 권한 `CAR_DOORS`도 뺐다. [VehicleSnapshot.driverDoorOpen]은 피봇 전 코드용으로만 남는다.
  * 피봇 전 값(잔량·연비·용량·주행거리·충전 스위치·RANGE_REMAINING)은 읽지 않는다 → 권한도 뺐다(contract/permissions.md).
  * [VehicleSnapshot]의 그 필드는 피봇 전 코드(AppViewModel·ChagokApp)가 컴파일되도록 남겨 두고 정리 PR에서 지운다.
  */
@@ -142,11 +140,6 @@ class PleosVehicleRepository(context: Context) : VehicleRepository, DefaultLifec
         override fun onSelected(gear: VehicleGear?) { ok("gear"); flow.update { it.copy(gear = gear.toState()) }; onGateChanged() }
         override fun onFailed(e: Exception) = fail("gear", e)
     }
-    private val doorArea = DoorArea(DoorValue.ROW_1_LEFT)
-    private val doorListener = object : DoorPositionListener {
-        override fun onPositionUpdated(pos: Int?) { ok("driver_door"); flow.update { it.copy(driverDoorOpen = pos?.let { p -> p > 0 }) }; ChagokLog.event("door", "pos" to pos) }
-        override fun onFailed(e: Exception) = fail("driver_door", e)
-    }
 
     /** 1·2열 좌석. 차에 없는 좌석은 onFailed(미지원)로 오고 인원 계산에서 빠진다. */
     private val seatValues = listOf(SeatValue.ROW_1_LEFT, SeatValue.ROW_1_RIGHT, SeatValue.ROW_2_LEFT, SeatValue.ROW_2_CENTER, SeatValue.ROW_2_RIGHT)
@@ -198,7 +191,6 @@ class PleosVehicleRepository(context: Context) : VehicleRepository, DefaultLifec
         if (dataOn) return
         dataOn = true
         vehicle?.let { v ->
-            guard("driver_door") { v.getDoor().registerDoorPosition(doorArea, doorListener) }
             seatListeners.forEach { (sv, l) -> guard("seats") { v.getSeat().registerSeatOccupancy(SeatArea(sv), l) } }
         }
         ChagokLog.event("vehicle_listen", "on" to true)
@@ -208,7 +200,6 @@ class PleosVehicleRepository(context: Context) : VehicleRepository, DefaultLifec
         if (!dataOn) return
         dataOn = false
         vehicle?.let { v ->
-            runCatching { v.getDoor().unregisterDoorPosition(doorArea, doorListener) }
             seatListeners.forEach { (sv, l) -> runCatching { v.getSeat().unregisterSeatOccupancy(SeatArea(sv), l) } }
         }
         ChagokLog.event("vehicle_listen", "on" to false)
