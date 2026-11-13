@@ -258,6 +258,7 @@ fun CgTitleBar(
     leading: (@Composable () -> Unit)? = null,
     trailing: (@Composable () -> Unit)? = null,
     titleContent: (@Composable () -> Unit)? = null,   // 글자 대신 그림(홈 워드마크)
+    titlePlace: String? = null,                        // 제목이 장소 이름으로 시작하면 이름만 말줄임(#118 D2)
 ) {
     val t = Chagok.type
     Box(modifier.fillMaxWidth().height(80.gpx)) {
@@ -273,10 +274,27 @@ fun CgTitleBar(
                 val pull = 12.gpx
                 leading?.let { Box(Modifier.layout { m, cs -> val pl = m.measure(cs); val d = pull.roundToPx(); layout(pl.width - d, pl.height) { pl.place(-d, 0) } }) { it() } }
                 val auto = if (leading != null) (if (compact) t.titleM else t.titleL) else (if (compact) t.titleL else t.headlineS)
-                Text(title, Modifier.weight(1f), style = titleStyle ?: auto, color = Chagok.colors.textPrimary, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Box(Modifier.weight(1f)) { CgPlaceLine(title, titlePlace, titleStyle ?: auto, Chagok.colors.textPrimary) }
                 trailing?.invoke()
             }
         }
+    }
+}
+
+/**
+ * 문장 속 장소 이름만 말줄임(#118 D2 · 10-3 ③ `cg-pnl`): [full]이 [name]으로 시작하면 이름 칸만 줄이고
+ * 뒤 문구("으로 가는 중 · 14:20 출발 · 함께 4명", "에 도착했어요", " 기록을 남겼어요")는 늘 다 보인다.
+ * 이름으로 시작하지 않으면 줄 전체를 한 줄 말줄임.
+ */
+@Composable
+fun CgPlaceLine(full: String, name: String?, style: TextStyle, color: Color, modifier: Modifier = Modifier) {
+    if (name.isNullOrEmpty() || !full.startsWith(name) || full.length == name.length) {
+        Text(full, modifier, style = style, color = color, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        return
+    }
+    Row(modifier, verticalAlignment = Alignment.CenterVertically) {
+        Text(name, Modifier.weight(1f, fill = false), style = style, color = color, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Text(full.substring(name.length), style = style, color = color, maxLines = 1, softWrap = false)
     }
 }
 
@@ -378,12 +396,26 @@ fun CgDestCard(tag: String, name: String, meta: String?, selected: Boolean, onCl
                 Text(tag, style = Chagok.type.bodyS, color = if (selected) c.selectionForeground else c.textTertiary, maxLines = 1)   // .hcard .tag body-s 700
             }
             Spacer(Modifier.weight(1f))
-            // .hcard .nm: 한 줄 말줄임(긴 이름이 두 줄로 접혀 아래 줄을 밀어내지 않게)
-            Text(name, style = if (compact) Chagok.type.titleS else Chagok.type.titleL, color = if (selected) c.selectionForeground else c.textPrimary, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            // .hcard .nm(#118 D3 · 10-3 ① 한글 줄바꿈): 두 줄까지. 어절 안에서는 끊지 않고(WordBreak.Phrase) 두 줄 길이를 고르게(Balanced),
+            // 넘치면 둘째 줄 끝 "…". 시안 700 40/48(분할 카드 200 높이는 titleS)
+            Text(
+                name, style = (if (compact) Chagok.type.titleS else Chagok.type.titleL).copy(lineBreak = KoreanNameBreak),
+                color = if (selected) c.selectionForeground else c.textPrimary, maxLines = 2, overflow = TextOverflow.Ellipsis,
+            )
             meta?.let { Text(it, Modifier.graphicsLayer { alpha = if (selected) .72f else 1f }, style = Chagok.type.bodyM, color = if (selected) c.selectionForeground else c.textSecondary, maxLines = 1, overflow = TextOverflow.Ellipsis) }
         }
     }
 }
+
+/**
+ * 한글 줄바꿈 `cg-kwrap`(#118 10-3 ①): 어절(띄어쓰기 단위) 안에서는 끊지 않고 두 줄이면 길이를 고르게.
+ * 한 어절이 한 줄보다 길 때만 어절 안에서 끊긴다(Phrase가 못 맞추면 글자 단위로 내려감). Android 13+ 지원.
+ */
+val KoreanNameBreak = androidx.compose.ui.text.style.LineBreak(
+    androidx.compose.ui.text.style.LineBreak.Strategy.Balanced,
+    androidx.compose.ui.text.style.LineBreak.Strictness.Strict,
+    androidx.compose.ui.text.style.LineBreak.WordBreak.Phrase,
+)
 
 /** 기록 카드(`components/record-card`): 날짜(방금) · 목적지 · 요약 · 고른 것. fresh = 방금 끝난 기록(굵은 테두리 3, 0.7초 올라옴). */
 
@@ -770,7 +802,9 @@ fun CgReceiptRow(
         ) {
             Text(label, Modifier.width(if (compact) 150.gpx else 240.gpx), style = plain, color = c.textPrimary)
             Text(detail, Modifier.weight(1f), style = plain, color = c.textSecondary)
-            Text(pct, Modifier.width(if (compact) 90.gpx else 130.gpx), style = receiptStrong(compact), color = c.textPrimary, textAlign = TextAlign.End, maxLines = 1)
+            // "+1% 미만"만 작은 글자(#118 D5 · S2), 칸 폭은 그대로
+            val under = com.mist.pleos_app.effort.isUnderOnePct(pct)
+            Text(pct, Modifier.width(if (compact) 90.gpx else 130.gpx), style = if (under) (if (compact) t.labelS else t.labelM) else receiptStrong(compact), color = c.textPrimary, textAlign = TextAlign.End, maxLines = 1)
             Box(Modifier.size(if (compact) 18.gpx else 26.gpx), contentAlignment = Alignment.Center) {
                 if (basis != null) CgIconMark(CgIcon.Chevron, if (compact) 12.gpx else 14.gpx, c.textTertiary, Modifier.graphicsLayer { rotationZ = if (expanded) 180f else 0f })
             }
@@ -1077,7 +1111,7 @@ fun CgSwitch(checked: Boolean, onToggle: (Boolean) -> Unit, label: String, modif
 
 // ------------------------------------------------------------ noti-panel (v93 → v96)
 /** 알림 한 줄: "○○ 기록을 남겼어요" + 때("방금" · 날짜). fresh = 아직 안 읽은 새 알림(굵게 · 라임 아이콘 원 · 빨간 점). */
-data class CgNoti(val title: String, val time: String, val fresh: Boolean)
+data class CgNoti(val title: String, val time: String, val fresh: Boolean, val place: String? = null)   // place: 제목 앞 장소 이름(이름만 말줄임, #118 D2)
 
 private val BELL_KF = floatArrayOf(0f, 0f, .15f, 14f, .30f, -12f, .45f, 8f, .60f, -5f, .75f, 2f, 1f, 0f)
 
@@ -1208,8 +1242,8 @@ fun BoxScope.CgNotiPanel(
                             CgIconMark(CgIcon.CarProfile, if (compact) 26.gpx else 30.gpx, if (n.fresh) c.selectionForeground else c.iconSecondary)
                         }
                         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.gpx)) {
-                            Text(n.title, style = androidx.compose.ui.text.TextStyle(fontSize = (if (compact) 24 else 28).gsp, lineHeight = (if (compact) 32 else 36).gsp, fontWeight = if (n.fresh) FontWeight.ExtraBold else FontWeight.SemiBold),
-                                color = c.textPrimary, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            CgPlaceLine(n.title, n.place, androidx.compose.ui.text.TextStyle(fontSize = (if (compact) 24 else 28).gsp, lineHeight = (if (compact) 32 else 36).gsp, fontWeight = if (n.fresh) FontWeight.ExtraBold else FontWeight.SemiBold),
+                                c.textPrimary)
                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.gpx)) {
                                 if (n.fresh) Box(Modifier.size(12.gpx).background(c.notificationDot, CircleShape))
                                 Text(n.time, style = androidx.compose.ui.text.TextStyle(fontSize = (if (compact) 20 else 22).gsp, lineHeight = (if (compact) 26 else 28).gsp, fontWeight = if (n.fresh) FontWeight.Bold else FontWeight.Normal),

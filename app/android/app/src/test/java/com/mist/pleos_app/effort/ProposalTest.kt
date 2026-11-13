@@ -106,6 +106,16 @@ class ProposalTest {
         assertNull(recordOf(r6Trip, receiptOf(r6Trip, c)!!, null, Settings.METHOD_B, CHOICE_CLOSE).suggestion)
     }
 
+    @Test
+    fun bigNumberStepsDownForLongAmounts() {
+        // #118 D4 · 10-3 ②: 10만 원 이상 또는 15자 이상이면 한 단계 작게
+        assertFalse(bigNumberSmall("한 사람 약 9천 원"))
+        assertFalse(bigNumberSmall("한 사람 약 9만 8천 원"))
+        assertTrue(bigNumberSmall("한 사람 약 12만 3천 원"))
+        assertTrue(bigNumberSmall("가".repeat(15)))
+        assertFalse(bigNumberSmall("가".repeat(14)))
+    }
+
     private fun locate(rel: String): File {
         var dir: File? = File("").absoluteFile
         while (dir != null) {

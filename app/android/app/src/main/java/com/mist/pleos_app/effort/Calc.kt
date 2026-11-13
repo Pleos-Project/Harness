@@ -24,7 +24,14 @@ data class CalcItem(
     val say: CalcSay,
     val tag: String? = null,  // 그래픽 말풍선 "+25분"(예상보다 더) · "+10분"(장시간)
     val km: Int? = null,      // 거리 숫자 세기
-)
+    val pct: String? = null,  // 값 중 가산 % 부분("+20%" · "+1% 미만"). 가로 창은 [main] / [pct] 두 줄(#118 D1)
+) {
+    /** 값에서 % 앞부분("1시간 15분" · "비" · "38km"). % 부분이 없으면 값 그대로. */
+    val main: String? get() = if (value != null && pct != null && value.endsWith(pct)) value.removeSuffix(pct).trim().ifEmpty { null } else value
+}
+
+/** 1% 미만 가산("+1% 미만", 엔진 pctText)인지. 영수증 % 칸은 이 경우만 작은 글자(#118 D5 · S2). */
+fun isUnderOnePct(pct: String?): Boolean = pct?.endsWith("미만") == true
 
 /**
  * 영수증 → 체크포인트 6개(날씨 · 정체 구간 · 예상보다 더 · 밤길 · 장시간 · 거리). 프로토타입 calcItems와 같은 규칙.
@@ -40,28 +47,28 @@ fun calcItems(trip: OpenTrip, r: EffortReceipt, c: EffortConstants, distanceLabe
     val weather = if (wKey != null) {
         val l = lines.getValue(wKey)
         CalcItem("weather", label(wKey), "${c.copy.precipWords[wKey] ?: ""} ${l.pctText}".trim(), false, false,
-            if (wKey == "snow") CalcFx.SNOW else CalcFx.RAIN, if (wKey == "snow") CalcSay.SNOW else CalcSay.RAIN)
+            if (wKey == "snow") CalcFx.SNOW else CalcFx.RAIN, if (wKey == "snow") CalcSay.SNOW else CalcSay.RAIN, pct = l.pctText)
     } else if (weatherUnknown) {
         CalcItem("weather", label("rain"), null, true, true, CalcFx.NONE, CalcSay.WEATHER_NONE)
     } else CalcItem("weather", label("rain"), null, false, true, CalcFx.LEAVES, CalcSay.WEATHER_CLEAR)
 
     val jam = lines["congestion"]?.let { l ->
         val km = trip.congestionM?.let { kmText(it) }
-        CalcItem("congestion", l.label, listOfNotNull(km, l.pctText).joinToString(" "), false, false, CalcFx.JAM, CalcSay.JAM)
+        CalcItem("congestion", l.label, listOfNotNull(km, l.pctText).joinToString(" "), false, false, CalcFx.JAM, CalcSay.JAM, pct = l.pctText)
     } ?: CalcItem("congestion", label("congestion"), null, jamUnknown, true, if (jamUnknown) CalcFx.NONE else CalcFx.ZIP, CalcSay.JAM_NONE)
 
     val delay = lines["delay"]?.let { l ->
         val t = driveText(r.delayMin * 60)
-        CalcItem("delay", l.label, "$t ${l.pctText}", false, false, CalcFx.LATE, CalcSay.LATE, tag = "+$t")
+        CalcItem("delay", l.label, "$t ${l.pctText}", false, false, CalcFx.LATE, CalcSay.LATE, tag = "+$t", pct = l.pctText)
     } ?: CalcItem("delay", label("delay"), null, false, true, CalcFx.NONE, CalcSay.LATE_NONE)
 
     val night = lines["night"]?.let { l ->
-        CalcItem("night", l.label, "${driveText(r.nightMin * 60)} ${l.pctText}", false, false, CalcFx.NIGHT, CalcSay.NIGHT)
+        CalcItem("night", l.label, "${driveText(r.nightMin * 60)} ${l.pctText}", false, false, CalcFx.NIGHT, CalcSay.NIGHT, pct = l.pctText)
     } ?: CalcItem("night", label("night"), null, false, true, CalcFx.SUN, CalcSay.NIGHT_NONE)
 
     val long = lines["fatigue"]?.let { l ->
         val t = driveText(r.fatigueExcessMin * 60)
-        CalcItem("fatigue", l.label, "$t ${l.pctText}", false, false, CalcFx.LONG, CalcSay.LONG, tag = "+$t")
+        CalcItem("fatigue", l.label, "$t ${l.pctText}", false, false, CalcFx.LONG, CalcSay.LONG, tag = "+$t", pct = l.pctText)
     } ?: CalcItem("fatigue", label("fatigue"), null, false, true, CalcFx.NONE, CalcSay.LONG_NONE)
 
     val km = trip.routeM?.let { com.mist.pleos_app.engine.roundHalfUp(it / 1000) }

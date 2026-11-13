@@ -107,3 +107,9 @@ fun receiptForSettleMode(r: EffortReceipt, included: Boolean, n: Int, c: EffortC
  */
 fun receiptAmountText(r: EffortReceipt, c: EffortConstants?): String? =
     r.proposal?.amountText ?: c?.let { effortProposal(r.effortMin * 6000, 1, it, null).amountText }
+
+/**
+ * 큰 숫자 길이 규칙(#118 D4 · 10-3 ②): 표시 금액이 10만 원 이상("약 ○○만 …")이거나 큰 숫자 줄이 15자 이상(띄어쓰기 포함)이면
+ * 한 단계 작은 글자로 쓴다. 시안 판정 `/\d{2,}만/.test(text) || text.length >= 15`와 같다.
+ */
+fun bigNumberSmall(text: String): Boolean = Regex("""\d{2,}만""").containsMatchIn(text) || text.length >= 15

@@ -64,20 +64,20 @@ fun effortInputOf(trip: OpenTrip): EffortInput? {
  * 중간 정산 엔진 입력(F27, 효성 #97). 출발~[nowIso]를 도착과 같은 규칙으로 센다.
  * - 지금까지 거리는 엔진이 경로 거리 − [remainM]으로 만든다(화면에서 계산하지 않음)
  * - 날씨는 출발 좌표~현재 위치 시간대별 강수([weatherTrip], 실패면 null) · 도착 1회 관측은 부르지 않고 unknown(June #97 답)
- * - 쉰 시간은 묻지 않아 0, 앞서 한 정산은 그대로(엔진이 합과 정산 시각을 씀, #105)
+ * - 쉰 시간은 도착과 같은 시트로 물은 답([restMin], #118 10-3 ⑥ 명준 11/12). 고르기 전에는 0. 앞서 한 정산은 그대로(엔진이 합과 정산 시각을 씀, #105)
  * 경로 거리를 모르거나 이미 도착했으면 null(중간 정산 없음).
  */
-fun midwayInputOf(trip: OpenTrip, nowIso: String, remainM: Int, weatherTrip: com.mist.pleos_app.engine.WeatherTrip?): EffortInput? {
+fun midwayInputOf(trip: OpenTrip, nowIso: String, remainM: Int, weatherTrip: com.mist.pleos_app.engine.WeatherTrip?, restMin: Int = 0): EffortInput? {
     if (trip.arrived) return null
     val route = trip.routeM?.takeIf { it > 0 } ?: return null
-    val base = effortInputOf(trip.copy(arrivedAt = nowIso, weatherArr = WEATHER_UNKNOWN, restAnswerMin = 0, weatherTrip = weatherTrip)) ?: return null
+    val base = effortInputOf(trip.copy(arrivedAt = nowIso, weatherArr = WEATHER_UNKNOWN, restAnswerMin = restMin, weatherTrip = weatherTrip)) ?: return null
     return base.copy(midway = EffortMidway(route, remainM.toDouble()))
 }
 
 /** 중간 정산 영수증(엔진 effort). 계산은 엔진에서만. */
-fun midwayReceiptOf(trip: OpenTrip, nowIso: String, remainM: Int, weatherTrip: com.mist.pleos_app.engine.WeatherTrip?, c: EffortConstants?): EffortReceipt? {
+fun midwayReceiptOf(trip: OpenTrip, nowIso: String, remainM: Int, weatherTrip: com.mist.pleos_app.engine.WeatherTrip?, c: EffortConstants?, restMin: Int = 0): EffortReceipt? {
     if (c == null) return null
-    return midwayInputOf(trip, nowIso, remainM, weatherTrip)?.let { effort(it, c) }
+    return midwayInputOf(trip, nowIso, remainM, weatherTrip, restMin)?.let { effort(it, c) }
 }
 
 /** 영수증(엔진 effort). 도착 전이면 null. 계산은 엔진에서만 한다(CLAUDE.md). */

@@ -105,6 +105,13 @@ class MidwayTest {
     }
 
     @Test
+    fun midwayUsesRestAnswer() {
+        // #118 10-3 ⑥(명준 11/12): 중간 정산도 쉰 시간을 묻고 그 답으로 센다. 고르기 전 기본은 0
+        assertEquals(0, midwayInputOf(trip, "2026-11-17T17:05:00+09:00", 52300, null)!!.restAnswerMin)
+        assertEquals(30, midwayInputOf(trip, "2026-11-17T17:05:00+09:00", 52300, null, restMin = 30)!!.restAnswerMin)
+    }
+
+    @Test
     fun settlementsSurviveStoreAndRecord() {
         val s = Settlement("2026-11-17T17:05:00+09:00", 17964.189306487697, Settings.METHOD_A, CHOICE_ACCEPT, "한 사람 약 4천 원")
         val t = trip.copy(settlements = listOf(s), depLat = 37.4, depLng = 127.1)

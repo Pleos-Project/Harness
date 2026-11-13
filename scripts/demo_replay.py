@@ -6,10 +6,10 @@
   0 준비      콘솔: 기어 P · 4석 착석 / 앱: 데모 고정 모드 켜기
   1 출발      앱: 출발하기 → 미리보기(태안 꽃지해수욕장 · 104km · 정체 경로의 36%) → [출발]
   2 주행      콘솔: 기어 D → 1초 안에 화면 가림(AC-C-1) → 기어 P → 홈 복귀
-  2+ 휴게소   앱: 시동 버튼(지금까지의 노고 보기) → 오늘 주행 영수증(아직 가는 중 · 1시간 5분 · 52km · 1.55배, 한 사람 약 4천 원)
+  2+ 휴게소   앱: 시동 버튼(지금까지의 노고 보기) → 쉰 시간 [없음] → 오늘 주행 영수증(아직 가는 중 · 1시간 5분 · 52km · 1.55배, 한 사람 약 4천 원)
               → [좋아요]로 여기까지 정산 → [계속 가기] → 가는 중 홈(v3: "~까지 정산함" 표시 없음)
               콘솔: 기어 D(가림) → 기어 P(같은 주행을 이어 감, [출발]을 다시 누르지 않음)
-  3 도착      앱: 가는 중 홈 [도착했어요] → 계산 연출 → 영수증(2시간 10분 · 1.56배, 휴게소에서 장시간이 끊김)
+  3 도착      앱: 가는 중 홈 [도착했어요] → 계산 연출 → 쉰 시간 [없음] → 영수증(2시간 10분 · 1.56배, 휴게소에서 장시간이 끊김)
               (운전석 문 열기는 도착 계기에서 뺐다, DECISIONS 11/13)
               --no-midway면 1.57배(R1)
   4 선택      앱: 영수증 하단 '중간 정산 있음' → [좋아요](방식 A, 남은 몫 한 사람 약 5천 원) 또는 첫 항목(방식 B) → 기록 → [닫기] → 홈 알림 종 → 알림 창 "○○ 기록을 남겼어요"
@@ -49,8 +49,8 @@ FOCUS = (1700, 1290)  # 앱 창 아래 여백. uiautomator가 앱 창을 덤프�
 # 화면에서 기대하는 글자(fixtures/effort/demo.json R1, strings.xml)
 DEST = "태안 꽃지해수욕장"
 EXPECT_PREVIEW = ["104km", "경로의 36%"]                  # 미리보기 정체는 비율만(시안 v104)
-EXPECT_DRIVING_HOME = f"{DEST}으로 가는 중"          # v32 홈: "○○으로 가는 중 · 16:00 출발 · 함께 4명"
-EXPECT_ARRIVE = f"{DEST}에 도착했어요"
+EXPECT_DRIVING_HOME = [DEST, "으로 가는 중"]          # v32 홈: "○○으로 가는 중 · 16:00 출발 · 함께 4명". 장소 이름만 말줄임이라 두 조각(#118 D2)
+EXPECT_ARRIVE = [DEST, "에 도착했어요"]                   # 장소 이름만 말줄임이라 두 조각(#118 D2)
 EXPECT_RECEIPT = ["2시간 10분", "1.57배"]                 # 중간 정산 없음(R1)
 EXPECT_RECEIPT_MIDWAY = ["2시간 10분", "1.56배"]          # 휴게소 17:05 정산 뒤(demo.json midway_arrival = R28)
 EXPECT_MIDWAY = ["오늘 주행 영수증", "아직 가는 중", "1시간 5분", "52km", "1.55배", "한 사람 약 4천 원"]   # demo.json midway = R27
@@ -265,7 +265,7 @@ def step0(r: Run, reset: bool) -> None:
 def step1(r: Run) -> None:
     print("\n1 출발")
     if r.auto:
-        if has(EXPECT_DRIVING_HOME):
+        if all(has(w) for w in EXPECT_DRIVING_HOME):
             r.check("진행 중 출발 없음", False, "이전 시연이 진행 중이에요. 홈 '›' → 그만두기 뒤 다시 돌리세요")
         r.check("출발하기", tap("출발하기"))
         time.sleep(1.0)
@@ -276,7 +276,9 @@ def step1(r: Run) -> None:
     else:
         r.person(f"홈 [출발하기] → 인원 알림 [확인] → 목적지 카드 '{DEST}'")
     r.expect("출발 미리보기", [DEST] + EXPECT_PREVIEW)
-    r.expect("시연용 값 표시(AC-C-7)", "시연용 값")
+    # "시연용 값" 알약은 뺐다(#118 v122 명준 11/12, DECISIONS 11/13) → 화면에 없어야 한다
+    if r.auto:
+        r.check("시연용 값 알약 없음", not has("시연용 값"))
     if r.auto:
         r.check("[출발]", tap("출발"))
         time.sleep(2)
@@ -335,6 +337,13 @@ def step_midway(r: Run) -> None:
         r.check("[지금까지의 노고 보기]", tap("지금까지의 노고 보기"))
     else:
         r.person("휴게소 — 홈 시동 버튼(지금까지의 노고 보기)")
+    # 중간 정산도 쉰 시간을 먼저 묻는다(#118 10-3 ⑥ 명준 11/12). 시연은 운전자 교대라 '없음'
+    r.expect("중간 정산 쉰 시간 질문", "중간에 쉰 시간이 있었나요?", timeout=10)
+    if r.auto:
+        r.check("중간 정산 쉰 시간 '없음'", tap("없음", last=True))
+        time.sleep(1)
+    else:
+        r.person("쉰 시간 [없음]")
     r.expect("중간 정산 영수증", EXPECT_MIDWAY)
     if r.auto:
         ts = texts()
@@ -374,25 +383,25 @@ def step3(r: Run, midway: bool = False) -> None:
         seen = False
         while time.time() < end and not seen:
             ts = texts()
-            seen = has(EXPECT_ARRIVE, ts) or has("오늘 주행 영수증", ts)
+            seen = all(has(w, ts) for w in EXPECT_ARRIVE) or has("중간에 쉰 시간이 있었나요?", ts)
             if not seen:
                 time.sleep(0.4)
         r.check("[도착했어요] → 도착 화면", seen)
-    r.expect("영수증(계산 연출 뒤)", EXPECT_RECEIPT_MIDWAY if midway else EXPECT_RECEIPT, timeout=15)
-    # 계산 연출 뒤 '중간에 쉰 시간' 시트(F21). R1은 쉬지 않은 주행이라 '없음'
-    r.expect("쉰 시간 질문", "중간에 쉰 시간이 있었나요?", timeout=8)
+    # 계산 연출 뒤 '중간에 쉰 시간' 시트(F21)를 먼저 묻고, 고르면 영수증이 나온다(#118 10-3 ⑥). R1은 쉬지 않은 주행이라 '없음'
+    r.expect("쉰 시간 질문", "중간에 쉰 시간이 있었나요?", timeout=20)
     if r.auto:
-        r.check("쉰 시간 '없음'", tap("없음", last=True))   # 영수증 줄의 '없음'과 겹쳐 시트 단추(마지막)를 누른다
+        r.check("쉰 시간 '없음'", tap("없음", last=True))
         time.sleep(1)
     else:
         r.person("쉰 시간 [없음]")
+    r.expect("영수증(쉰 시간 고른 뒤)", EXPECT_RECEIPT_MIDWAY if midway else EXPECT_RECEIPT, timeout=15)
 
 
 def step4(r: Run, midway: bool = False) -> None:
     print("\n4 선택")
     if not r.auto:
         r.person("[좋아요](A) 또는 항목(B) → [닫기] → 홈 알림 종")
-        r.expect("알림 창 기록 저장", f"{DEST} 기록을 남겼어요")
+        r.expect("알림 창 기록 저장", [DEST, "기록을 남겼어요"])   # 장소 이름만 말줄임이라 두 조각(#118 D2)
         return
     ts = texts()
     if has("좋아요", ts):
@@ -411,9 +420,9 @@ def step4(r: Run, midway: bool = False) -> None:
     # v104: 홈에 최근 기록 카드가 없다. 알림 종 → 알림 창 "○○ 기록을 남겼어요"로 확인
     time.sleep(1.0)
     r.check("알림 종", tap("알림"))
-    r.expect("알림 창 기록 저장", f"{DEST} 기록을 남겼어요")
+    r.expect("알림 창 기록 저장", [DEST, "기록을 남겼어요"])   # 장소 이름만 말줄임이라 두 조각(#118 D2)
     adb("shell", "input", "tap", str(FOCUS[0]), str(FOCUS[1] - 400))   # 바깥을 눌러 접기
-    r.check("진행 중 없음", not has(EXPECT_DRIVING_HOME))
+    r.check("진행 중 없음", not has(EXPECT_DRIVING_HOME[1]))
 
 
 def main() -> None:
