@@ -13,6 +13,7 @@ import com.mist.pleos_app.app.Settings
 import com.mist.pleos_app.engine.EffortConstants
 import com.mist.pleos_app.engine.EffortReceipt
 import com.mist.pleos_app.engine.departurePreview
+import com.mist.pleos_app.engine.epochS
 import com.mist.pleos_app.engine.hhmm
 import com.mist.pleos_app.engine.sunTimes
 import com.mist.pleos_app.engine.parseEffortConstants
@@ -42,7 +43,8 @@ interface DepartNavi {
     fun location(done: (Pair<Double, Double>?) -> Unit)
     fun places(done: (List<NaviPlace>) -> Unit)
     fun preview(d: Destination, done: (TripPreview?) -> Unit)
-    fun route(d: Destination)
+    /** [replacing] = 보내기 전에 내비가 이미 안내 중이었음(이전 안내 취소를 실패로 보지 않게). */
+    fun route(d: Destination, replacing: Boolean = false)
     /** 도착인지 중간 정차인지(F22). */
     fun guide(done: (GuideState?) -> Unit)
     /** 보이는 동안 내비 이벤트(안내 끝)를 받도록 연결만 해 둔다. 화면이 가려지면 리스너를 놓는다. */
@@ -65,6 +67,8 @@ interface TripKeeper {
     fun sync(destName: String?)
     fun takeGuideEnd(): GuideEnd?
     val running: Boolean
+    /** 보내기 전에 내비가 이미 안내 중이었음 → 서비스가 첫 취소를 이전 안내의 것으로 본다(#132). */
+    fun expectOldCancel(v: Boolean) {}
 }
 
 /** 내비 안내 끝([GUIDE_ARRIVED]·[GUIDE_CANCELLED])과 받은 시각(ISO). */
@@ -309,7 +313,7 @@ class EffortViewModel(app: Application, private val saved: SavedStateHandle) : A
     fun clearSearch() { searchJob?.cancel(); departFlow.update { it.copy(query = "", searching = false, searchStatus = null, searchResults = emptyList()) } }
 
     /** 고른 목적지를 다시 누르면 선택을 푼다(Design v2 depart: 미리보기 빈 자리). */
-    fun unselect() { departFlow.update { it.copy(selected = null, preview = null, previewText = null, previewing = false) } }
+    fun unselect() { departFlow.update { it.copy(selected = null, preview = null, previewText = null, previewing = false, routeFailed = false) } }
 
     /** 시연 출발 화면의 미리보기(엔진 departurePreview, demo.json 값). */
     val demoPreview: com.mist.pleos_app.engine.DeparturePreview?
@@ -340,7 +344,7 @@ class EffortViewModel(app: Application, private val saved: SavedStateHandle) : A
             departFlow.update { it.copy(selected = o, preview = null, previewText = demoPreview, previewing = false) }
             return
         }
-        departFlow.update { it.copy(selected = o, preview = null, previewText = null, previewing = navi != null) }
+        departFlow.update { it.copy(selected = o, preview = null, previewText = null, previewing = navi != null, routeFailed = false) }
         navi?.preview(o.dest) { p ->
             val text = p?.let { t -> effortConstants?.let { c -> departurePreview(t.etaS.toDouble(), t.distanceM.toDouble(), t.congestionRatio, t.congestionM, c) } }
             departFlow.update { if (it.selected == o) it.copy(preview = p, previewText = text, previewing = false) else it }
@@ -370,21 +374,55 @@ class EffortViewModel(app: Application, private val saved: SavedStateHandle) : A
         clearGuideEnd()
         syncTrip()                                   // 내비가 덮기 전에(앱이 보이는 동안) 서비스를 띄운다
         lastRoute = sel.dest
-        navi?.route(sel.dest)
+        departSnapshot = ui.copy(routeFailed = false)   // 경로 요청이 실패하면 이 출발 화면으로 되돌린다(#132)
+        departTripId = trip.tripId
+        sendRoute(sel.dest)
         refresh(); home()
         departFlow.value = DepartUi()
         return opened
+    }
+
+    /** 경로 요청 실패 때 되돌릴 출발 화면(고른 목적지 · 미리보기)과 그 출발 기록. 메모리만. */
+    private var departSnapshot: DepartUi? = null
+    private var departTripId: String? = null
+
+    /** 보내기 전에 내비가 이미 안내 중인지 읽고(이전 안내 취소를 실패로 보지 않게, #132) 길을 보낸다. 읽기는 1.5초 안. */
+    private fun sendRoute(d: Destination) {
+        val n = navi ?: return
+        n.guide { g ->
+            val replacing = g?.routeGuiding == true
+            tripKeeper?.expectOldCancel(replacing)
+            n.route(d, replacing)
+        }
+    }
+
+    /**
+     * 내비로 길을 보내지 못함(#132 · #118 E1 depart-route-fail, F20 예외). 방금 남긴 출발 기록을 지우고(기록 없음)
+     * 출발 화면으로 돌아가 같은 목적지 · 미리보기에 "내비로 길을 보내지 못했어요"와 [다시 시도]를 보인다.
+     * 내비가 오류 창으로 노고를 덮어도, 다시 열면 이 화면이다.
+     */
+    fun onRouteFailed() {
+        val trip = flow.state.openTrip
+        if (flow.phase != EffortPhase.DRIVING || trip == null || trip.demo) return
+        // 이번 실행에서 보낸 출발이거나(뷰모델이 새로 만들어졌으면) 막 출발한 기록만(2분 안)
+        val id = departTripId
+        if (if (id != null) trip.tripId != id else epochS(isoNow()) - epochS(trip.departedAt) > ROUTE_FAIL_WINDOW_S) return
+        flow.discardTrip(); clearGuideEnd(); syncTrip()
+        departTripId = null
+        departFlow.value = (departSnapshot ?: DepartUi()).copy(routeFailed = true)
+        askFlow.value = false
+        saved[KEY_STACK] = listOf(EffortScreen.HOME.name, EffortScreen.DEPART.name)
+        refresh()
+        ChagokLog.event("effort_route_failed")
     }
 
     /** 경로 요청이 실패했을 때 홈 진행 중 카드의 [다시 시도]. 이번 실행에서 보낸 목적지가 있을 때만. */
     fun retryRoute(): Boolean {
         val d = lastRoute ?: return false
         if (flow.phase != EffortPhase.DRIVING) return false
-        navi?.route(d)
+        sendRoute(d)
         return true
     }
-
-    val canRetryRoute: Boolean get() = lastRoute != null
 
     // ------------------------------------------------------------ 도착(F22) → 영수증(F23)
     /** 화면이 다시 보였으니 정차 상태가 확인되면 1번 도착 여부를 본다(기본 배치에서는 도착 순간 차곡이 멈춰 있음, F22). */
@@ -436,6 +474,8 @@ class EffortViewModel(app: Application, private val saved: SavedStateHandle) : A
         val keeper = tripKeeper
         // 안 보이는 동안 서비스가 받은 안내 끝(기본 배치). 서비스를 다시 띄우기(syncTrip) 전에 본다
         val ended = keeper?.takeGuideEnd()
+        // 경로 요청 실패(#132): 노고가 가려진 뒤 서비스가 알아챔 → 출발 화면으로
+        if (live && ended?.kind == GUIDE_ROUTE_FAILED) { ChagokLog.event("effort_guide_end", "kind" to ended.kind, "from" to "service"); onRouteFailed(); return }
         val interrupted = live && keeper != null && !keeper.running
         if (live && ended != null) {
             ChagokLog.event("effort_guide_end", "kind" to ended.kind, "from" to "service", "interrupted" to interrupted)
@@ -771,6 +811,7 @@ class EffortViewModel(app: Application, private val saved: SavedStateHandle) : A
         const val KEY_RECORD = "effort_record"
         const val DEMO_ASSET = "data/effort/demo.json"
         const val ASK_INTERRUPTED = "interrupted"
+        const val ROUTE_FAIL_WINDOW_S = 120
 
         fun readAsset(app: Application, path: String): String? =
             runCatching { app.assets.open(path).bufferedReader().use { it.readText() } }

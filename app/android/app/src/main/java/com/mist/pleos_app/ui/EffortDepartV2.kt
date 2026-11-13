@@ -150,6 +150,7 @@ internal fun EffortDepartScreen(
                     val text = ui.previewText
                     val state = when {
                         selected == null -> CgPreviewState.Empty
+                        ui.routeFailed -> CgPreviewState.RouteFailed
                         ui.previewing -> CgPreviewState.Loading
                         text == null -> CgPreviewState.Failed
                         else -> CgPreviewState.Ready
@@ -165,9 +166,14 @@ internal fun EffortDepartScreen(
                         }.orEmpty(),
                         // Q-08-03(명준 11/8): 미리보기를 못 받아도 출발은 막지 않고, 무엇 없이 정리하는지 한 줄로 알린다
                         // 혼자면 정리 안내 줄을 두지 않는다(아티팩트 s.people>1)
-                        note = if (state == CgPreviewState.Failed) stringResource(R.string.effort_preview_fail_note) else if (payers > 1) stringResource(R.string.effort_preview_note) else null,
+                        note = when {
+                            state == CgPreviewState.RouteFailed -> stringResource(R.string.effort_route_send_failed_note)
+                            state == CgPreviewState.Failed -> stringResource(R.string.effort_preview_fail_note)
+                            payers > 1 -> stringResource(R.string.effort_preview_note)
+                            else -> null
+                        },
                         emptyText = stringResource(R.string.effort_preview_empty),
-                        failText = stringResource(R.string.effort_preview_failed),
+                        failText = stringResource(if (state == CgPreviewState.RouteFailed) R.string.effort_route_send_failed else R.string.effort_preview_failed),
                         retryLabel = stringResource(R.string.effort_route_retry),
                         onRetry = { ui.selected?.let(onSelect) },
                         modifier = Modifier.fillMaxWidth().weight(1f, fill = !narrow),
@@ -175,8 +181,9 @@ internal fun EffortDepartScreen(
                         photo = placePhotoRes(com.mist.pleos_app.effort.placePhotoOf(selected?.dest?.name)),
                         onPhoto = true,
                     ) { m ->
+                        // 경로 실패면 같은 자리가 [다시 시도](시안 rgo: 누르면 다시 requestRoute = 다시 출발)
                         CgCta(
-                            stringResource(if (sending) R.string.effort_depart_sending else R.string.effort_depart_go),
+                            stringResource(if (sending) R.string.effort_depart_sending else if (ui.routeFailed) R.string.effort_route_retry else R.string.effort_depart_go),
                             onClick = { if (!sending) sending = true }, modifier = m, compact = narrow,
                             enabled = ui.canDepart, busy = sending, fill = narrow,
                         )

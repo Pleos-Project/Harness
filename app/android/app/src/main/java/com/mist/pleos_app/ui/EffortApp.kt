@@ -125,10 +125,8 @@ fun EffortApp(
         when (screen) {
             EffortScreen.HOME -> if (splash) EffortSplash { splash = false } else EffortHomeScreen(
                 ui,
-                routeFailed = route == DepartState.FAILED && vm.canRetryRoute,
                 onDepart = vm::openDepart,
                 onDiscard = vm::discardTrip,
-                onRetry = { vm.retryRoute() },
                 onSettings = { vm.open(EffortScreen.SETTINGS) },
                 onReceipt = { vm.open(EffortScreen.RECEIPT) },
                 onArrive = vm::arriveNow,

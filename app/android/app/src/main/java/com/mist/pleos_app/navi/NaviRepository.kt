@@ -83,6 +83,15 @@ class NaviRepository(context: Context) : DefaultLifecycleObserver {
     var onGuideEnd: ((String) -> Unit)? = null
     /** 내비가 새 안내를 시작함. 메인 스레드로 넘긴다. */
     var onGuideStart: (() -> Unit)? = null
+    /**
+     * 경로 요청(requestRoute)이 실패함(#132, E1). 11/13 에뮬 실측: 오프라인이면 `onError`는 오지 않고, 요청 0.3초 뒤
+     * `onRouteCancelled`가 온 다음 내비가 앱을 덮고 "경로 탐색 오류" 창을 띄운다(0.5초에 onStop).
+     * 이미 안내 중이던 내비에 새 길을 보내면 이전 안내의 `onRouteCancelled`가 0.2초에 오고 6.6초에 `onRouteStarted`가 와서,
+     * 요청 전에 안내 중이었으면([depart]의 replacing) 첫 취소는 이전 안내 것으로 보고 넘긴다.
+     */
+    var onRouteFailed: (() -> Unit)? = null
+    /** 이전 안내의 취소를 한 번 기다리는 중(요청 전에 내비가 안내 중이었음). */
+    @Volatile private var oldCancelPending = false
 
     private val app = context.applicationContext
     private val flow = MutableStateFlow(DepartState.IDLE)
@@ -114,6 +123,11 @@ class NaviRepository(context: Context) : DefaultLifecycleObserver {
         }
 
         override fun onRouteCancelled() {
+            if (flow.value == DepartState.REQUESTING) {
+                if (oldCancelPending) { oldCancelPending = false; ChagokLog.event("navi_old_route_cancelled"); return }   // 이전 안내의 취소
+                routeFailed("cancelled")
+                return
+            }
             ChagokLog.event("navi_guide_end", "kind" to "cancelled")
             main.post { onGuideEnd?.invoke("cancelled") }
         }
@@ -164,13 +178,18 @@ class NaviRepository(context: Context) : DefaultLifecycleObserver {
         }
 
         override fun onError(errorCode: NaviErrorCode) {
-            if (flow.value == DepartState.REQUESTING) flow.value = DepartState.FAILED
             ChagokLog.event("navi_error", "code" to errorCode.name)
+            if (flow.value == DepartState.REQUESTING) routeFailed("error")
         }
     }
 
+    /**
+     * 내비에 길을 보낸다. [replacing] = 보내기 전에 내비가 이미 안내 중이었음(뷰모델이 [fetchGuide]로 읽음) →
+     * 곧 오는 첫 `onRouteCancelled`는 이전 안내의 것이라 실패로 보지 않는다.
+     */
     @Synchronized
-    fun depart(d: Destination) {
+    fun depart(d: Destination, replacing: Boolean = false) {
+        oldCancelPending = replacing
         flow.value = DepartState.REQUESTING
         congestionDone = false            // 새 경로: 정체 목록을 다시 받을 수 있다
         ChagokLog.event("navi_depart")   // 장소·좌표는 로그에 남기지 않는다(AC-C-10)
@@ -496,8 +515,15 @@ class NaviRepository(context: Context) : DefaultLifecycleObserver {
     }
 
     private fun failed(step: String, e: Throwable) {
-        flow.value = DepartState.FAILED
         ChagokLog.event("navi_failed", "step" to step, "err" to e.javaClass.simpleName)
+        routeFailed(step)
+    }
+
+    private fun routeFailed(why: String) {
+        flow.value = DepartState.FAILED
+        oldCancelPending = false
+        ChagokLog.event("navi_route_failed", "why" to why)
+        main.post { onRouteFailed?.invoke() }
     }
 
     /** 실패 안내를 지울 때(다시 시도하기 전) */

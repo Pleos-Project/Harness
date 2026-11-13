@@ -95,6 +95,7 @@ enum class ArrivalCue { RESUME }
 /** 내비가 안내를 끝낸 종류(NaviRepository·TripService). */
 const val GUIDE_ARRIVED = "arrived"       // onDestinationArrived
 const val GUIDE_CANCELLED = "cancelled"   // onRouteCancelled([안내 종료] 등)
+const val GUIDE_ROUTE_FAILED = "route_failed"   // 출발 뒤 우리 안내가 시작되기 전에 온 취소 = 경로 요청 실패(#132, 서비스가 판단)
 
 /** 내비 안내 끝을 받은 뒤 할 일(#145, DECISIONS 11/13 '도착 판정: 내비 도착 신호'). */
 sealed interface GuideEndAction {

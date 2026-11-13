@@ -21,6 +21,7 @@ import android.os.Looper
 import com.mist.pleos_app.MainActivity
 import com.mist.pleos_app.R
 import com.mist.pleos_app.effort.GUIDE_ARRIVED
+import com.mist.pleos_app.effort.GUIDE_ROUTE_FAILED
 import com.mist.pleos_app.effort.GuideEnd
 import com.mist.pleos_app.effort.isoNow
 import com.mist.pleos_app.util.ChagokLog
@@ -52,6 +53,12 @@ class TripService : Service() {
 
         /** 앱 화면이 보이는지(MainActivity onStart·onStop). 보이면 안내 끝은 화면 쪽 리스너가 처리하니 알림을 올리지 않는다. */
         @Volatile var appVisible = false
+
+        /**
+         * 길을 보내기 전에 내비가 이미 안내 중이었다(뷰모델이 읽어 넣음, #132). 곧 오는 첫 취소는 이전 안내의 것이라 실패로 보지 않는다.
+         * 11/13 에뮬: 이전 안내 취소는 요청 0.2~0.3초, 경로 요청 실패의 취소는 약 3.4초(이미 내비가 노고를 덮은 뒤)에 온다.
+         */
+        @Volatile var expectOldCancel = false
 
         /** 서비스가 지금 떠 있는지. 진행 중 출발인데 false면 주행이 끊겼다 이어진 것(뷰모델이 묻는다, #145). */
         val isRunning: Boolean get() = running
@@ -104,11 +111,18 @@ class TripService : Service() {
     /** 목적지 도착을 받았는데 주행 중이라 기어 P를 기다리는 중. */
     private var waitPark = false
     private var gearOn = false
+    /**
+     * 이번 출발의 안내가 시작됐는지(onRouteStarted). 그 전에 오는 취소는 이전 안내의 것이거나 경로 요청 실패라(#132, 11/13 에뮬)
+     * 도착 확인 알림을 올리지 않는다. 실패는 화면 쪽(NaviRepository → 뷰모델)이 출발 화면으로 되돌린다.
+     */
+    private var routeStarted = false
+    /** 경로 요청 실패를 이미 넘겼다(내비가 취소를 두 번 보내도 한 번만). */
+    private var failedSent = false
 
     private val listener = object : NaviHelperEventListener {
         override fun onRouteStarted(routeStartInfo: RouteStartInfo) {
             main.post {
-                clearGuideEnd(this@TripService); notified = false; opened = false
+                clearGuideEnd(this@TripService); notified = false; opened = false; routeStarted = true
                 stopWaitPark()
                 nm().cancel(ID_ARRIVE)
                 ChagokLog.event("trip_service_guide", "kind" to "started")
@@ -178,7 +192,19 @@ class TripService : Service() {
 
     /** 안내 끝. 앱이 보이면 화면 쪽(NaviRepository → 뷰모델)이 처리하니 기억·알림 없이 넘긴다. */
     private fun guideEnded(kind: String, at: String) {
-        ChagokLog.event("trip_service_guide", "kind" to kind, "visible" to appVisible)
+        ChagokLog.event("trip_service_guide", "kind" to kind, "visible" to appVisible, "started" to routeStarted)
+        if (!routeStarted) {
+            // 이번 출발의 안내가 시작되기 전의 취소: 이전 안내의 것이거나 경로 요청 실패(#132)
+            if (kind != "cancelled") return
+            if (expectOldCancel) { expectOldCancel = false; return }
+            if (appVisible) return                                    // 보이면 화면 쪽(NaviRepository)이 처리
+            if (failedSent) return
+            failedSent = true
+            prefs(this).edit().putString(K_KIND, GUIDE_ROUTE_FAILED).putString(K_AT, at).apply()
+            ChagokLog.event("trip_service_route_failed")
+            open()                                                    // 노고를 앞으로: 출발 화면 "내비로 길을 보내지 못했어요" · [다시 시도]
+            return
+        }
         if (appVisible) return
         val p = prefs(this)
         if (p.getString(K_KIND, null) != GUIDE_ARRIVED) p.edit().putString(K_KIND, kind).putString(K_AT, at).apply()   // 도착이 안내 종료보다 강한 근거라 덮어쓰지 않는다
