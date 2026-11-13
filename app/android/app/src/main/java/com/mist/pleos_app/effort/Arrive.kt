@@ -90,25 +90,62 @@ fun receiptOf(trip: OpenTrip?, c: EffortConstants?): EffortReceipt? {
     return effortInputOf(trip)?.let { effort(it, c) }
 }
 
-/** 자동 도착 판정의 계기(F22). */
+/** 자동 도착 판정의 계기(F22). 내비 안내 끝은 계기가 아니라 [guideEndAction]으로 따로 다룬다(#145). */
 enum class ArrivalCue {
     DOOR,           // 화면이 보이는 동안 운전석 문이 닫힘 → 열림으로 바뀜
     DOOR_ON_SHOW,   // 다시 보였을 때 문이 이미 열려 있음
     RESUME,         // 다시 보였을 때(기어 P) 내비 안내 상태로 판정
-    GUIDE_END,      // 보이는 동안(나란히 배치) 내비가 안내를 끝냄(도착·안내 종료) → 기어 P에서 내비 안내 상태로 판정(DECISIONS 11/12)
 }
 
 /**
  * 이번 기어·문 변화에서 볼 도착 계기. 없으면 null.
- * 문이 열리는 순간이 가장 앞서고, 다시 보인 뒤 처음(RESUME), 그다음 보이는 동안 받은 안내 끝(GUIDE_END) 순이다.
- * 안내 끝은 기본 배치에서는 오지 않는다(앱이 동결돼 있고 onStop 때 리스너를 놓음, 11/12 실측). 나란히 배치에서만 온다.
+ * 문이 열리는 순간이 가장 앞서고, 그다음 다시 보인 뒤 처음(RESUME)이다.
  */
-fun arrivalCueOf(doorOpen: Boolean?, lastDoorOpen: Boolean?, resume: Boolean, guideEnded: Boolean): ArrivalCue? = when {
+fun arrivalCueOf(doorOpen: Boolean?, lastDoorOpen: Boolean?, resume: Boolean): ArrivalCue? = when {
     doorOpen == true && lastDoorOpen == false -> ArrivalCue.DOOR
     doorOpen == true && lastDoorOpen == null -> ArrivalCue.DOOR_ON_SHOW
     resume -> ArrivalCue.RESUME
-    guideEnded -> ArrivalCue.GUIDE_END
     else -> null
+}
+
+/** 내비가 안내를 끝낸 종류(NaviRepository·TripService). */
+const val GUIDE_ARRIVED = "arrived"       // onDestinationArrived
+const val GUIDE_CANCELLED = "cancelled"   // onRouteCancelled([안내 종료] 등)
+
+/** 내비 안내 끝을 받은 뒤 할 일(#145, DECISIONS 11/13 '도착 판정: 내비 도착 신호'). */
+sealed interface GuideEndAction {
+    /** 기어 P에서 [at](신호를 받은 시각)으로 바로 도착 처리. 내비 상태를 다시 묻지 않는다. */
+    data class Arrive(val at: String) : GuideEndAction
+    /** "도착했나요?"를 한 번 묻고, 예면 [at]으로 도착 처리. */
+    data class Ask(val at: String) : GuideEndAction
+    data class Skip(val why: String) : GuideEndAction
+}
+
+/**
+ * 내비 안내 끝([kind])을 [at]에 받았을 때.
+ * - 목적지 도착 신호는 그 자체가 도착 근거라 내비 상태를 다시 읽지 않고, 받은 시각을 도착 시각으로 쓴다.
+ *   다시 읽으면 도착 직후 "안내 중 · 남은 거리 있음"이 잠깐 와도 중간 정차로 멈추고, 판정이 늦을수록 운전 시간이 늘었다.
+ * - [안내 종료]는 중간에 안내만 끈 것일 수 있어 묻는다. 예면 [안내 종료]를 누른 시각.
+ * - 출발 뒤 [EARLY_RESUME_S] 안의 신호와 시연은 보지 않는다. ETA를 못 받은 주행은 도착 신호여도 묻는다(경로 요청 실패와 겹칠 수 있음).
+ */
+fun guideEndAction(trip: OpenTrip, kind: String, at: String): GuideEndAction = when {
+    trip.demo || trip.arrived -> GuideEndAction.Skip("not_live")
+    epochS(at) - epochS(trip.departedAt) < EARLY_RESUME_S -> GuideEndAction.Skip("early")
+    kind == GUIDE_ARRIVED && trip.etaS > 0 -> GuideEndAction.Arrive(at)
+    kind == GUIDE_ARRIVED || kind == GUIDE_CANCELLED -> GuideEndAction.Ask(at)
+    else -> GuideEndAction.Skip("unknown")
+}
+
+/**
+ * 주행이 끊겼다 이어진 뒤(출발 기록은 있는데 주행 중 서비스가 없음 — 시동이 완전히 꺼졌다 켜짐 등, 11/13 에뮬)의 판정.
+ * 내비 안내도 사라져 "안내 안 함"으로 답하므로 다시 보임(RESUME)으로 보면 휴게소가 도착이 된다. 그래서 묻는다.
+ * 내비가 아직 안내 중이고 남은 거리가 있으면 중간 정차라 묻지 않는다. 출발 직후·시연도 묻지 않는다.
+ */
+fun interruptedAction(trip: OpenTrip, g: GuideState?, now: String): GuideEndAction = when {
+    trip.demo || trip.arrived -> GuideEndAction.Skip("not_live")
+    epochS(now) - epochS(trip.departedAt) < EARLY_RESUME_S -> GuideEndAction.Skip("early")
+    isMidStop(g) -> GuideEndAction.Skip("mid_stop")
+    else -> GuideEndAction.Ask(now)
 }
 
 /**

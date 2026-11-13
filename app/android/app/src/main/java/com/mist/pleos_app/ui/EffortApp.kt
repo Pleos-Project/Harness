@@ -138,6 +138,7 @@ fun EffortApp(
                 onMidway = vm::startMidway,
                 onRecord = vm::openRecord,
                 onNoti = vm::toggleNoti, onNotiClose = vm::closeNoti,
+                onArriveAnswer = vm::answerArrive,
             )
             EffortScreen.DEPART -> {
                 // Design v2 출발 화면(#75). 시연 모드도 같은 화면 · 기능(데이터만 시연 목록, June 11/9)

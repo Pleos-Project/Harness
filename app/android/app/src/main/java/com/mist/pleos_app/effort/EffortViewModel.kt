@@ -55,6 +55,24 @@ interface EffortAmbient {
     fun release(reason: String)
 }
 
+/**
+ * 주행 중 포그라운드 서비스(DECISIONS 11/12, TripService). MainActivity가 넣는다. 없으면(테스트) 서비스 없이.
+ * - [sync]: 진행 중 실제 출발의 목적지 이름이면 띄우고, null이면 끈다
+ * - [takeGuideEnd]: 앱이 안 보이는 동안 서비스가 받은 안내 끝(종류·받은 시각)을 1번 가져온다. 프로세스가 끝나도 남는다
+ * - [running]: 서비스가 지금 떠 있는지. 진행 중 출발인데 없으면 주행이 끊겼다 이어진 것(시동이 완전히 꺼짐 등)
+ */
+interface TripKeeper {
+    fun sync(destName: String?)
+    fun takeGuideEnd(): GuideEnd?
+    val running: Boolean
+}
+
+/** 내비 안내 끝([GUIDE_ARRIVED]·[GUIDE_CANCELLED])과 받은 시각(ISO). */
+data class GuideEnd(val kind: String, val at: String)
+
+/** "도착했나요?"(#145). 예면 [at]으로 도착 처리. [kind]: cancelled(안내 종료) · arrived(ETA 없는 도착 신호) · interrupted(주행이 끊겼다 이어짐). */
+data class ArriveAsk(val at: String, val kind: String)
+
 /** 노고 흐름 화면(명세 v0.5 3절). */
 /** 도착 화면(RECEIPT)은 영수증과 제안을 한 화면에 둔다(Design v2 arrive, #75). */
 enum class EffortScreen { HOME, DEPART, SETTINGS, CALC, RECEIPT, LOG, RECORD, MIDWAY }
@@ -87,6 +105,7 @@ data class EffortUi(
     val recordCount: Int = 0,                           // 남은 기록 수(설정 › 기록 초기화 "N건을 지워요")
     val midway: MidwayUi? = null,                       // 중간 정산 화면(F27)
     val midwayAvailable: Boolean = false,               // 가는 중 홈 내 차 그림 = [지금까지의 노고 보기]
+    val arriveAsk: ArriveAsk? = null,                   // 홈 "도착했나요?" 시트(#145)
 )
 
 /**
@@ -191,6 +210,7 @@ class EffortViewModel(app: Application, private val saved: SavedStateHandle) : A
             notiDot = notiDot, notiOpen = notiOpen, notiFresh = notiFresh,
             constants = effortConstants,
             midway = midway,
+            arriveAsk = arriveAsk?.takeIf { flow.phase == EffortPhase.DRIVING },
             // 실제 주행이고 경로 거리를 알 때만(지금까지 거리 = 경로 − 내비 남은 거리). 시연 데이터에는 중간 정산 장면이 없다
             midwayAvailable = trip != null && !trip.arrived && (!trip.demo || demoScene?.midway != null) && (trip.routeM ?: 0.0) > 0 && effortConstants != null,
             calcItems = if (trip?.arrived == true && receipt != null && !isUnsettled(receipt) && effortConstants != null)
@@ -236,6 +256,16 @@ class EffortViewModel(app: Application, private val saved: SavedStateHandle) : A
 
     /** F28: 앱이 보이는 동안 브랜드 색으로 켜 둔다(화면 EffortApp이 부름, 구두 합의 11/9). */
     var ambient: EffortAmbient? = null
+
+    /** 주행 중 포그라운드 서비스. 출발·도착·그만두기·다시 보일 때 [syncTrip]으로 맞춘다. */
+    var tripKeeper: TripKeeper? = null
+
+    /** 진행 중 실제 출발(시연 아님)이면 서비스를 띄우고, 아니면 끈다(DECISIONS 11/12). */
+    private fun syncTrip() {
+        val trip = flow.state.openTrip
+        val live = flow.phase == EffortPhase.DRIVING && trip != null && !trip.demo && !source.demo
+        tripKeeper?.sync(if (live) trip!!.destName else null)
+    }
 
     private val api = EffortApi(BuildConfig.API_BASE_URL)
     /** 시간대별 강수는 서버가 기상청 호출을 3초에서 끊으므로 앱은 4초까지 기다린다(#66 June 답). */
@@ -336,6 +366,9 @@ class EffortViewModel(app: Application, private val saved: SavedStateHandle) : A
         }
         val trip = departTrip(newTripId(), source.departedAt(), sel.dest, payersFor(seats), ui.preview, weatherDep ?: WEATHER_UNKNOWN, here)
         val opened = flow.depart(trip)
+        tripKeeper?.takeGuideEnd()                   // 지난 주행에서 남은 안내 끝은 버린다
+        clearGuideEnd()
+        syncTrip()                                   // 내비가 덮기 전에(앱이 보이는 동안) 서비스를 띄운다
         lastRoute = sel.dest
         navi?.route(sel.dest)
         refresh(); home()
@@ -370,35 +403,86 @@ class EffortViewModel(app: Application, private val saved: SavedStateHandle) : A
 
     /** 마지막으로 받은 정차 여부(기어 P). 안내 끝 이벤트가 왔을 때 바로 볼지 정한다. */
     private var lastParked = false
-    /** 보이는 동안(나란히 배치) 내비가 안내를 끝냈고 아직 도착을 보지 않았다. 기어 P가 되면 1번 본다(DECISIONS 11/12). */
-    private var guideEnded = false
+    // 안내 끝 · 질문 상태(#145)는 화면(뷰모델)이 아니라 앱 프로세스에 둔다([ArrivalHold]).
+    // Pleos 실행기에서 아이콘을 누르면 MainActivity가 새로 하나 더 만들어져 뷰모델도 새로 생긴다(11/13 에뮬) — 그때도 이어지게.
+    // 프로세스가 끝나면 사라지지만, 그때는 서비스도 없어 다시 열 때 끊김으로 다시 묻는다
+    /** 내비 목적지 도착 신호를 받은 시각. 기어 P가 되면 이 시각으로 도착 처리한다(#145 1). */
+    private var pendingArrival: String?
+        get() = ArrivalHold.pendingArrival
+        set(v) { ArrivalHold.pendingArrival = v }
+    /** 주행이 끊겼다 이어졌다(서비스 없음). 기어 P에서 내비 상태를 1번 보고 묻는다(#145, 11/13 에뮬). */
+    private var interruptCheck: Boolean
+        get() = ArrivalHold.interruptCheck
+        set(v) { ArrivalHold.interruptCheck = v }
+    /** 홈 "도착했나요?"(#145 2). 답하기 전까지 다른 자동 도착은 보지 않는다. */
+    private var arriveAsk: ArriveAsk?   // 화면 생성 중(uiOf)에도 읽으므로 위임 대신 직접 접근
+        get() = ArrivalHold.arriveAsk
+        set(v) { ArrivalHold.arriveAsk = v }
+    /**
+     * "도착했나요?"에 [아직이에요]로 답했다. 내비 안내가 없을 수 있어(끊김 뒤 · 안내 종료 뒤) 다시 보임(RESUME)으로는 자동 도착하지 않는다.
+     * 새 안내가 시작되거나 출발 기록이 바뀌면 푼다. 문 열림 · [도착했어요] · 내비 안내 끝은 그대로.
+     */
+    private var notYet: Boolean
+        get() = ArrivalHold.notYet
+        set(v) { ArrivalHold.notYet = v }
+
+    private fun clearGuideEnd() { pendingArrival = null; interruptCheck = false; arriveAsk = null; notYet = false }
 
     /** MainActivity onStart. 시연 모드는 문 열기로만 도착한다(12절 시연 순서). */
     fun onShown() {
-        resumeCheck = true; lastDoorOpen = null; guideEnded = false; shownFlow.value += 1
+        resumeCheck = true; lastDoorOpen = null; shownFlow.value += 1
         // 진행 중 실제 출발이면 보이는 동안 내비 안내 끝을 이벤트로 받는다(나란히 배치). onStop 때 리스너를 놓는다
         val trip = flow.state.openTrip
-        if (flow.phase == EffortPhase.DRIVING && trip != null && !trip.demo && !source.demo) navi?.listen()
+        val live = flow.phase == EffortPhase.DRIVING && trip != null && !trip.demo && !source.demo
+        val keeper = tripKeeper
+        // 안 보이는 동안 서비스가 받은 안내 끝(기본 배치). 서비스를 다시 띄우기(syncTrip) 전에 본다
+        val ended = keeper?.takeGuideEnd()
+        val interrupted = live && keeper != null && !keeper.running
+        if (live && ended != null) {
+            ChagokLog.event("effort_guide_end", "kind" to ended.kind, "from" to "service", "interrupted" to interrupted)
+            onGuideEnd(trip!!, ended)
+        } else if (interrupted && arriveAsk == null && pendingArrival == null && !notYet) {
+            interruptCheck = true; resumeCheck = false
+            ChagokLog.event("effort_interrupted")
+        }
+        if (live) navi?.listen()
+        syncTrip()                                   // 프로세스가 다시 만들어졌거나 출발 기록이 바뀌었으면 맞춘다
+    }
+
+    /** 안내 끝 → 신호 시각으로 도착 대기 · 묻기 · 무시(#145). 다시 보임(RESUME)은 보지 않는다(같은 일을 두 번 보지 않게). */
+    private fun onGuideEnd(trip: OpenTrip, e: GuideEnd) {
+        resumeCheck = false; interruptCheck = false
+        when (val a = guideEndAction(trip, e.kind, e.at)) {
+            is GuideEndAction.Arrive -> { pendingArrival = a.at; arriveAsk = null }
+            is GuideEndAction.Ask -> if (pendingArrival == null) arriveAsk = ArriveAsk(a.at, e.kind)
+            is GuideEndAction.Skip -> ChagokLog.event("effort_auto_arrive_skip", "cue" to "guide_${e.kind}", "why" to a.why)
+        }
+        refresh()
     }
 
     /**
      * 내비가 안내를 끝냄(NaviRepository: onDestinationArrived = "arrived", onRouteCancelled = "cancelled").
-     * 앱이 보일 때만 온다(기본 배치에서는 동결 · 리스너 해제). 기어 P면 바로, 아니면 P가 될 때 도착인지 본다.
+     * 앱이 보일 때만 온다(나란히 배치). 받은 시각을 남겨 두고 기어 P면 바로, 아니면 P가 될 때 처리한다.
      */
     fun onGuideEnded(kind: String) {
         val trip = flow.state.openTrip
         if (flow.phase != EffortPhase.DRIVING || trip == null || trip.demo || source.demo) return
-        guideEnded = true
         ChagokLog.event("effort_guide_end", "kind" to kind, "parked" to lastParked)
+        onGuideEnd(trip, GuideEnd(kind, isoNow()))
         if (lastParked) onCar(true, lastDoorOpen)
     }
 
-    /** 내비가 새 안내를 시작함(목적지를 바꿈 등) → 앞서 받은 안내 끝은 버린다. */
-    fun onGuideStarted() { guideEnded = false }
+    /** 내비가 새 안내를 시작함(목적지를 바꿈 · 다시 안내 등) → 앞서 받은 안내 끝과 질문은 버린다. */
+    fun onGuideStarted() {
+        if (pendingArrival != null || arriveAsk != null) ChagokLog.event("effort_guide_restart")
+        clearGuideEnd(); refresh()
+    }
 
     /**
      * 화면이 보이는 동안 기어·문 값이 바뀔 때마다(이벤트, 폴링 없음 — AC-C-2·AC-F21-4).
-     * 진행 중 출발이 있고 정차(기어 P)일 때: 운전석 문이 열리는 순간, 다시 보인 뒤 처음, 또는 내비가 안내를 끝낸 뒤면 도착인지 본다.
+     * 진행 중 출발이 있고 정차(기어 P)일 때:
+     * 내비 도착 신호를 받았으면 그 시각으로 도착, 주행이 끊겼다 이어졌으면 내비 상태를 보고 묻기,
+     * 그 밖에는 운전석 문이 열리는 순간이나 다시 보인 뒤 처음이면 도착인지 본다. 묻는 중이면 답을 기다린다.
      */
     fun onCar(parked: Boolean, doorOpen: Boolean?) {
         val prevDoor = lastDoorOpen
@@ -406,12 +490,44 @@ class EffortViewModel(app: Application, private val saved: SavedStateHandle) : A
         lastParked = parked
         if (!parked || flow.phase != EffortPhase.DRIVING) return
         val trip = flow.state.openTrip ?: return
-        val resume = resumeCheck && !source.demo && !trip.demo
+        pendingArrival?.let { at -> pendingArrival = null; resumeCheck = false; arrive("navi_arrived", at); return }
+        if (arriveAsk != null) { resumeCheck = false; return }
+        if (interruptCheck) { interruptCheck = false; resumeCheck = false; checkInterrupted(trip); return }
+        val resume = resumeCheck && !source.demo && !trip.demo && !notYet
         resumeCheck = false
-        val c = arrivalCueOf(doorOpen, prevDoor, resume, guideEnded) ?: return
-        guideEnded = false
+        val c = arrivalCueOf(doorOpen, prevDoor, resume) ?: return
         if (!autoArrivalAllowed(trip, c, isoNow())) { ChagokLog.event("effort_auto_arrive_skip", "cue" to c.name, "eta" to (trip.etaS > 0)); return }
         checkArrival(c)
+    }
+
+    /** 주행이 끊겼다 이어진 뒤: 내비가 아직 안내 중이면 그대로, 아니면 "도착했나요?". */
+    private fun checkInterrupted(trip: OpenTrip) {
+        val decide = { g: GuideState? ->
+            val cur = flow.state.openTrip
+            if (cur?.tripId == trip.tripId && flow.phase == EffortPhase.DRIVING) {
+                when (val a = interruptedAction(cur, g, isoNow())) {
+                    is GuideEndAction.Ask -> { arriveAsk = ArriveAsk(a.at, ASK_INTERRUPTED); refresh() }
+                    is GuideEndAction.Skip -> ChagokLog.event("effort_auto_arrive_skip", "cue" to ASK_INTERRUPTED, "why" to a.why)
+                    is GuideEndAction.Arrive -> Unit
+                }
+            }
+        }
+        val n = navi
+        if (n == null) decide(null) else n.guide { decide(it) }
+    }
+
+    /**
+     * 홈 "도착했나요?"에 답함(#145 2). 예 → 물을 때 정한 시각([안내 종료]를 누른 시각 · 끊김을 알아챈 시각)으로 도착.
+     * 아니요 → 계속 가는 중. 이번 실행에서 보낸 목적지가 있으면 내비 안내를 다시 요청한다.
+     */
+    fun answerArrive(yes: Boolean) {
+        val ask = arriveAsk ?: return
+        arriveAsk = null
+        ChagokLog.event("effort_arrive_ask", "kind" to ask.kind, "yes" to yes)
+        if (yes) { arrive("asked_${ask.kind}", ask.at); return }
+        notYet = true
+        if (lastRoute != null) retryRoute()
+        refresh()
     }
 
     private fun checkArrival(cue: ArrivalCue, retried: Boolean = false) {
@@ -433,13 +549,18 @@ class EffortViewModel(app: Application, private val saved: SavedStateHandle) : A
         }
     }
 
-    /** 도착 기록 → 영수증을 바로 띄우고(AC-F22-1), 도착 날씨·일출일몰은 받는 대로 채운다. */
-    private fun arrive(reason: String) {
+    /**
+     * 도착 기록 → 영수증을 바로 띄우고(AC-F22-1), 도착 날씨·일출일몰은 받는 대로 채운다.
+     * [at]: 내비 도착 신호·[안내 종료]를 받은 시각(#145). 없으면 지금.
+     */
+    private fun arrive(reason: String, at: String? = null) {
         val trip = flow.state.openTrip ?: return
         val demo = trip.demo
-        val arrivedAt = if (demo) demoSource?.arrivedAt() ?: isoNow() else isoNow()
+        clearGuideEnd()
+        val arrivedAt = if (demo) demoSource?.arrivedAt() ?: isoNow() else at ?: isoNow()
         val weather = if (demo) demoSource?.demoWeatherArr() ?: WEATHER_UNKNOWN else null
         if (!flow.arrive(arrivedAt, weather)) return
+        syncTrip()                                   // 도착했으니 서비스·상주 알림을 내린다
         ChagokLog.event("effort_arrived", "reason" to reason, "demo" to demo)
         refresh()
         // 계산 연출(Design v2 #75) → 영수증. 정리하지 못함은 셀 것이 없어 바로 안내로
@@ -624,10 +745,10 @@ class EffortViewModel(app: Application, private val saved: SavedStateHandle) : A
     }
 
     /** 진행 중인 출발을 그만둔다. */
-    fun discardTrip() { flow.discardTrip(); refresh() }
+    fun discardTrip() { flow.discardTrip(); clearGuideEnd(); syncTrip(); refresh() }
 
     /** 기록 초기화(S20). PT 리허설 전. */
-    fun resetRecords() { flow.reset(); refresh(); ChagokLog.event("effort_reset") }
+    fun resetRecords() { flow.reset(); clearGuideEnd(); syncTrip(); refresh(); ChagokLog.event("effort_reset") }
 
     private companion object {
         const val NET_TIMEOUT_MS = 3_000L                   // 날씨·검색 전체 마감(AC-C-6, #57)
@@ -635,9 +756,18 @@ class EffortViewModel(app: Application, private val saved: SavedStateHandle) : A
         const val KEY_STACK = "effort_stack"
         const val KEY_RECORD = "effort_record"
         const val DEMO_ASSET = "data/effort/demo.json"
+        const val ASK_INTERRUPTED = "interrupted"
 
         fun readAsset(app: Application, path: String): String? =
             runCatching { app.assets.open(path).bufferedReader().use { it.readText() } }
                 .onFailure { ChagokLog.event("asset_missing", "path" to path) }.getOrNull()
     }
+}
+
+/** 도착 판정 중간 상태(#145). 앱 프로세스에 하나. 출발 기록이 하나뿐이라 출발 · 도착 · 그만두기 때 함께 비운다. */
+private object ArrivalHold {
+    @Volatile var pendingArrival: String? = null
+    @Volatile var interruptCheck = false
+    @Volatile var arriveAsk: ArriveAsk? = null
+    @Volatile var notYet = false
 }

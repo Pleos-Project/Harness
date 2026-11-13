@@ -124,28 +124,50 @@ class ArriveTest {
     }
 
     @Test
-    fun guideEndIsCueOnlyAfterDoorAndResume() {
-        // 문이 열리는 순간 > 다시 보인 뒤 처음 > 보이는 동안 받은 안내 끝(DECISIONS 11/12)
-        assertEquals(ArrivalCue.DOOR, arrivalCueOf(true, false, resume = true, guideEnded = true))
-        assertEquals(ArrivalCue.DOOR_ON_SHOW, arrivalCueOf(true, null, resume = false, guideEnded = true))
-        assertEquals(ArrivalCue.RESUME, arrivalCueOf(false, false, resume = true, guideEnded = true))
-        assertEquals(ArrivalCue.GUIDE_END, arrivalCueOf(false, false, resume = false, guideEnded = true))
-        assertEquals(ArrivalCue.GUIDE_END, arrivalCueOf(true, true, resume = false, guideEnded = true))   // 문이 이미 열려 있어도
-        assertNull(arrivalCueOf(false, false, resume = false, guideEnded = false))
-        assertNull(arrivalCueOf(null, null, resume = false, guideEnded = false))
+    fun doorBeforeResume() {
+        // 문이 열리는 순간 > 다시 보인 뒤 처음. 내비 안내 끝은 계기가 아니라 guideEndAction으로(#145)
+        assertEquals(ArrivalCue.DOOR, arrivalCueOf(true, false, resume = true))
+        assertEquals(ArrivalCue.DOOR_ON_SHOW, arrivalCueOf(true, null, resume = false))
+        assertEquals(ArrivalCue.RESUME, arrivalCueOf(false, false, resume = true))
+        assertNull(arrivalCueOf(true, true, resume = false))
+        assertNull(arrivalCueOf(null, null, resume = false))
     }
 
     @Test
-    fun guideEndFollowsResumeBlocks() {
-        // 안내 끝도 다시 보임(RESUME)과 같은 막기: ETA 없음 · 출발 뒤 1분 안 → 자동 도착 안 함
+    fun naviArrivalUsesSignalTimeWithoutGuideReread() {
+        // #145 1: 목적지 도착 신호는 그 자체가 근거 → 받은 시각으로 도착(내비 상태를 다시 묻지 않음)
         val t = OpenTrip("t1", "2026-11-17T16:00:00+09:00", "서울식물원", 1, 2000.0)
-        assertFalse(autoArrivalAllowed(t.copy(etaS = 0.0), ArrivalCue.GUIDE_END, "2026-11-17T16:30:00+09:00"))
-        assertFalse(autoArrivalAllowed(t, ArrivalCue.GUIDE_END, "2026-11-17T16:00:30+09:00"))
-        assertTrue(autoArrivalAllowed(t, ArrivalCue.GUIDE_END, "2026-11-17T16:30:00+09:00"))
-        // 내비 상태를 못 읽으면 도착으로 보지 않고, 안내 중 + 남은 거리면 중간 정차
-        assertFalse(arrivalByGuide(null, ArrivalCue.GUIDE_END))
-        assertFalse(arrivalByGuide(GuideState(1200, true), ArrivalCue.GUIDE_END))
-        assertTrue(arrivalByGuide(GuideState(0, false), ArrivalCue.GUIDE_END))
+        val at = "2026-11-17T16:33:10+09:00"
+        assertEquals(GuideEndAction.Arrive(at), guideEndAction(t, GUIDE_ARRIVED, at))
+        // 출발 뒤 1분 안 · 시연 · 이미 도착은 보지 않음
+        assertTrue(guideEndAction(t, GUIDE_ARRIVED, "2026-11-17T16:00:59+09:00") is GuideEndAction.Skip)
+        assertEquals(GuideEndAction.Arrive("2026-11-17T16:01:00+09:00"), guideEndAction(t, GUIDE_ARRIVED, "2026-11-17T16:01:00+09:00"))
+        assertTrue(guideEndAction(t.copy(demo = true), GUIDE_ARRIVED, at) is GuideEndAction.Skip)
+        assertTrue(guideEndAction(t.copy(arrivedAt = at), GUIDE_ARRIVED, at) is GuideEndAction.Skip)
+        // ETA를 못 받은 주행은 도착 신호여도 묻는다
+        assertEquals(GuideEndAction.Ask(at), guideEndAction(t.copy(etaS = 0.0), GUIDE_ARRIVED, at))
+    }
+
+    @Test
+    fun cancelledGuideAsksWithCancelTime() {
+        // #145 2: [안내 종료]는 중간에 안내만 끈 것일 수 있다 → 바로 계산하지 않고 묻는다. 예면 [안내 종료]를 누른 시각
+        val t = OpenTrip("t1", "2026-11-17T16:00:00+09:00", "서울식물원", 1, 2000.0)
+        val at = "2026-11-17T16:20:00+09:00"
+        assertEquals(GuideEndAction.Ask(at), guideEndAction(t, GUIDE_CANCELLED, at))
+        assertTrue(guideEndAction(t, GUIDE_CANCELLED, "2026-11-17T16:00:30+09:00") is GuideEndAction.Skip)
+        assertTrue(guideEndAction(t, "other", at) is GuideEndAction.Skip)
+    }
+
+    @Test
+    fun interruptedTripAsksUnlessStillGuiding() {
+        // 11/13 에뮬: 시동이 완전히 꺼졌다 켜지면 내비 안내가 사라져 다시 보임으로는 휴게소가 도착이 된다 → 묻는다
+        val t = OpenTrip("t1", "2026-11-17T16:00:00+09:00", "코엑스", 1, 2820.0)
+        val now = "2026-11-17T16:15:00+09:00"
+        assertEquals(GuideEndAction.Ask(now), interruptedAction(t, GuideState(0, false), now))
+        assertEquals(GuideEndAction.Ask(now), interruptedAction(t, null, now))                          // 못 읽어도 묻는다
+        assertTrue(interruptedAction(t, GuideState(9000, true), now) is GuideEndAction.Skip)           // 아직 안내 중 → 중간 정차
+        assertTrue(interruptedAction(t, GuideState(0, false), "2026-11-17T16:00:20+09:00") is GuideEndAction.Skip)
+        assertTrue(interruptedAction(t.copy(demo = true), null, now) is GuideEndAction.Skip)
     }
 
     @Test
