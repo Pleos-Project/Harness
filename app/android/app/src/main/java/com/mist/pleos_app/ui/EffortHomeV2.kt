@@ -3,6 +3,7 @@ package com.mist.pleos_app.ui
 import androidx.compose.foundation.clickable
 import com.mist.pleos_app.ui.components.CgBell
 import com.mist.pleos_app.ui.components.CgNoti
+import com.mist.pleos_app.ui.components.CgPlaceLine
 import com.mist.pleos_app.ui.components.CgNotiPanel
 import com.mist.pleos_app.ui.theme.gsp
 import androidx.compose.ui.text.TextStyle
@@ -166,9 +167,10 @@ internal fun EffortHomeScreen(
                     horizontalAlignment = if (narrow) Alignment.CenterHorizontally else Alignment.Start,
                 ) {
                     // 작은 줄은 큰 인사 위 한 줄(500 30/40 · 분할 24/32, textSecondary). 큰 인사와 사이 16(분할 10, .hdesc margin -6)
+                    // 장소 이름만 말줄임(#118 D2): 뒤 문구 · 시각 · 인원은 늘 보이게
                     sub?.let {
-                        Text(it, Modifier.padding(bottom = if (narrow) 10.gpx else 16.gpx), style = TextStyle(fontSize = (if (narrow) 24 else 30).gsp, lineHeight = (if (narrow) 32 else 40).gsp, fontWeight = FontWeight.Medium, letterSpacing = (if (narrow) 24 else 30).gsp * -.005f),
-                            color = c.textSecondary, maxLines = 1, softWrap = false, textAlign = if (narrow) TextAlign.Center else TextAlign.Start)
+                        CgPlaceLine(it, trip?.destName, TextStyle(fontSize = (if (narrow) 24 else 30).gsp, lineHeight = (if (narrow) 32 else 40).gsp, fontWeight = FontWeight.Medium, letterSpacing = (if (narrow) 24 else 30).gsp * -.005f),
+                            c.textSecondary, Modifier.padding(bottom = if (narrow) 10.gpx else 16.gpx))
                     }
                     // 큰 인사 800 84/108 · 자간 -1.5%(가는 중 68/88, 분할 56/72)
                     val hs = if (narrow) 56 else if (progress) 68 else 84
@@ -208,7 +210,7 @@ internal fun EffortHomeScreen(
         // 알림 창(v96): 종 아래로 내려옴 · 바깥을 누르면 접힘 · 확인만
         val just = stringResource(R.string.effort_home_just_now)
         val notis = ui.recent.take(3).map { r ->
-            CgNoti(stringResource(R.string.effort_noti_saved, r.destName), if (r.tripId == ui.justFinished) just else dayText(r.date + "T"), r.tripId in ui.notiFresh)
+            CgNoti(stringResource(R.string.effort_noti_saved, r.destName), if (r.tripId == ui.justFinished) just else dayText(r.date + "T"), r.tripId in ui.notiFresh, place = r.destName)
         }
         val freshN = notis.count { it.fresh }
         CgNotiPanel(

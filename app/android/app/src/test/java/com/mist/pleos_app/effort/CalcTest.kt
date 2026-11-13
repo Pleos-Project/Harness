@@ -34,6 +34,18 @@ class CalcTest {
     }
 
     @Test
+    fun valueSplitsIntoMainAndPctForTwoLines() {
+        // #118 D1: 가로 창은 원 아래 값을 두 줄(위 "25분" / 아래 "+5%"). 거리는 % 없이 한 줄
+        val items = calcItems(r1, receiptOf(r1, c)!!, c, "거리")
+        assertEquals(listOf("비", "38km", "25분", "50분", "10분", "104km"), items.map { it.main })
+        assertEquals(listOf("+40%", "+10%", "+5%", "+2%", "+1%", null), items.map { it.pct })
+        // "+1% 미만"만 작은 글자(#118 D5 · S2)
+        assertTrue(isUnderOnePct("+1% 미만"))
+        assertFalse(isUnderOnePct("+1%"))
+        assertFalse(isUnderOnePct(null))
+    }
+
+    @Test
     fun clearShortTripIsGrayAndUnknownWeather() {
         // 맑은 낮 짧은 주행: 날씨 맑음(해·낙엽), 정체 없음("쌩"), 나머지 없음 → 회색 원
         val short = r1.copy(etaS = 600.0, arrivedAt = "2026-11-17T16:10:00+09:00", weatherDep = "none", weatherArr = "none",

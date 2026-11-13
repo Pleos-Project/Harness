@@ -194,7 +194,7 @@ internal fun EffortCalcScreen(ui: EffortUi, items: List<CalcItem>, onDone: () ->
     }
     Column(Modifier.fillMaxSize()) {
         CgTitleBar(
-            stringResource(R.string.effort_arrive_title, trip.destName), compact = narrow,
+            stringResource(R.string.effort_arrive_title, trip.destName), compact = narrow, titlePlace = trip.destName,
             trailing = { CgButton(stringResource(R.string.effort_calc_skip), { done() }, kind = CgButtonKind.Basic, size = CgSize.S) },
         )
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.gpx)) {
@@ -314,8 +314,11 @@ private fun Node(
         // 시안 .cn .lb top 52 · .vl top 96(원 가운데 기준), 폭 300 가운데 정렬
         Text(it.label, Modifier.offset { IntOffset((o.x - px(150)).toInt(), (o.y + px(52)).toInt()) }.width(300.gpx),
             style = lbStyle, color = c.textSecondary, maxLines = 1, textAlign = TextAlign.Center)
-        Text(v, Modifier.offset { IntOffset((o.x - px(150)).toInt(), (o.y + px(96)).toInt()) }.width(300.gpx).then(vlMod),
-            style = vlStyle, color = vlColor, maxLines = 1, textAlign = TextAlign.Center)
+        // #118 D1: 가로 창은 두 줄(위 "1시간 15분" / 아래 "+20%") — 한 줄이면 옆 원 값과 겹쳤다. % 부분이 없으면 한 줄
+        Column(Modifier.offset { IntOffset((o.x - px(150)).toInt(), (o.y + px(96)).toInt()) }.width(300.gpx).then(vlMod), horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(it.main ?: v, style = vlStyle, color = vlColor, maxLines = 1, textAlign = TextAlign.Center)
+            if (it.value != null && it.pct != null && it.main != null) Text(it.pct, style = vlStyle, color = vlColor, maxLines = 1, textAlign = TextAlign.Center)
+        }
         FxSlot(it, fx, Modifier.offset { IntOffset((o.x - px(150)).toInt(), (o.y - px(54) - px(240)).toInt()) }.size(300.gpx, 240.gpx), 1f, c)
     } else {
         // 시안 .calc.p .cn .lb left 52 · top -38, .vl left 52 · top 0

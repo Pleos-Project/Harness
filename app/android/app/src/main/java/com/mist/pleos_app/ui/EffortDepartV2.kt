@@ -117,7 +117,8 @@ internal fun EffortDepartScreen(
                     CgPill(
                         // 아티팩트 depart(1942): 알림이 떠 있는 동안 센서를 못 읽었으면 "인원 확인 필요", 읽었으면 "확인 중".
                         // 닫힌 뒤에는 2명 이상 "함께 N명", 1명 "혼자 운전"
-                        if (askPayers || peopleOpen) stringResource(if (seats <= 0) R.string.effort_depart_people_check else R.string.effort_depart_people_checking)
+                        // 분할 창은 제목과 겹치지 않게 "확인 필요"(#118 D9, 빨간 점 없음)
+                        if (askPayers || peopleOpen) stringResource(if (seats <= 0) (if (narrow) R.string.effort_depart_people_check_short else R.string.effort_depart_people_check) else R.string.effort_depart_people_checking)
                         else if (people > 1) stringResource(R.string.effort_depart_people_pill, people) else stringResource(R.string.effort_depart_people_solo),
                         onClick = { peopleOpen = true }, compact = narrow, icon = CgIcon.Users,
                     )

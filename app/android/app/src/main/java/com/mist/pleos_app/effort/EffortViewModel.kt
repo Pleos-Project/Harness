@@ -622,7 +622,7 @@ class EffortViewModel(app: Application, private val saved: SavedStateHandle) : A
                     if (midway?.at != now) return@launch            // 그사이 닫았거나 다시 누름
                     val r = midwayReceiptOf(cur, now, remain, wt, effortConstants) ?: run { midwayFailed(now, "no_route"); return@launch }
                     val view = if (cur.n >= 2 && !isUnsettled(r)) proposalViewOf(r, settingsFlow.value.proposalMethod, effortConstants?.items.orEmpty()) else null
-                    midway = MidwayUi(now, pending = false, receipt = r, proposal = view)
+                    midway = MidwayUi(now, pending = false, receipt = r, proposal = view, remainM = remain, weatherTrip = wt)
                     refresh()
                     ChagokLog.event("effort_midway", "hourly" to (wt != null), "unsettled" to isUnsettled(r), "offer" to (view != null), "count" to cur.settlements.size)
                 }
@@ -635,7 +635,7 @@ class EffortViewModel(app: Application, private val saved: SavedStateHandle) : A
         val m = demoScene?.midway ?: return
         val r = midwayReceiptOf(trip, m.at, m.remainM, m.weatherTrip, effortConstants) ?: return
         val view = if (trip.n >= 2 && !isUnsettled(r)) proposalViewOf(r, settingsFlow.value.proposalMethod, effortConstants?.items.orEmpty()) else null
-        midway = MidwayUi(m.at, pending = false, receipt = r, proposal = view)
+        midway = MidwayUi(m.at, pending = false, receipt = r, proposal = view, remainM = m.remainM, weatherTrip = m.weatherTrip)
         refresh(); open(EffortScreen.MIDWAY)
         ChagokLog.event("effort_midway", "demo" to true, "offer" to (view != null), "count" to trip.settlements.size)
     }
@@ -648,9 +648,25 @@ class EffortViewModel(app: Application, private val saved: SavedStateHandle) : A
     }
 
     /** 중간 정산에서 고름: A [좋아요] · B 항목. 그 영수증의 남은 금액(원 단위)을 출발 기록에 더한다. 도착 제안은 이만큼 뺀 남은 몫으로. */
+    /**
+     * 중간 정산 쉰 시간 답(#118 10-3 ⑥, 명준 11/12). 고르면 그 값으로 지금까지 영수증 · 제안을 다시 센다.
+     * 여기서 [좋아요] · 항목을 고르면 이 영수증의 남은 몫이 정산 기록(remainKrw)에 남아 최종 영수증의 중간 정산 몫이 된다.
+     */
+    fun answerMidwayRest(min: Int) {
+        val m = midway ?: return
+        if (m.choice != null || m.pending || m.failed) return
+        val trip = flow.state.openTrip?.takeIf { !it.arrived } ?: return
+        val remain = m.remainM ?: return
+        val r = midwayReceiptOf(trip, m.at, remain, m.weatherTrip, effortConstants, min) ?: return
+        val view = if (trip.n >= 2 && !isUnsettled(r)) proposalViewOf(r, settingsFlow.value.proposalMethod, effortConstants?.items.orEmpty()) else null
+        midway = m.copy(receipt = r, proposal = view, restMin = min)
+        refresh()
+        ChagokLog.event("effort_midway_rest", "min" to min)
+    }
+
     fun midwayPick(choice: String) {
         val m = midway ?: return
-        if (m.choice != null) return
+        if (m.choice != null || m.needsRest) return
         val remain = m.receipt?.proposal?.remainKrw ?: return
         val view = m.proposal ?: return
         val (method, suggestion) = when (view) {

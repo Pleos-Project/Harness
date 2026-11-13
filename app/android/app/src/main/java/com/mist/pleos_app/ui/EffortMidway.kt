@@ -1,7 +1,9 @@
 package com.mist.pleos_app.ui
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.ui.Alignment
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -51,7 +53,7 @@ import com.mist.pleos_app.ui.theme.gpx
  * 숫자는 엔진(midwayReceiptOf)에서만 온다.
  */
 @Composable
-internal fun EffortMidwayScreen(ui: EffortUi, onPick: (String) -> Unit, onClose: () -> Unit) {
+internal fun EffortMidwayScreen(ui: EffortUi, onPick: (String) -> Unit, onClose: () -> Unit, onRest: (Int) -> Unit = {}) {
     val m = ui.midway
     val trip = ui.openTrip
     if (m == null || trip == null) { LaunchedEffect(Unit) { onClose() }; return }   // 프로세스가 다시 만들어지면 메모리 상태가 없다 → 홈
@@ -63,7 +65,7 @@ internal fun EffortMidwayScreen(ui: EffortUi, onPick: (String) -> Unit, onClose:
     val since = if (trip.n >= 2) stringResource(R.string.effort_mid_receipt_sub, clockText(trip.departedAt), trip.n)
     else stringResource(R.string.effort_mid_receipt_sub_solo, clockText(trip.departedAt))
     val cap = stringResource(R.string.effort_mid_cap, clockText(trip.departedAt))                 // 카드 캡션 "14:20 출발 · 지금까지"
-    Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(if (narrow) 16.gpx else 24.gpx)) {
+    val titleBar: @Composable () -> Unit = {
         CgTitleBar(
             stringResource(R.string.effort_mid_title), compact = narrow,
             leading = { CgIconButton(stringResource(R.string.back), CgIcon.Back, onClose, plain = true) },
@@ -71,11 +73,19 @@ internal fun EffortMidwayScreen(ui: EffortUi, onPick: (String) -> Unit, onClose:
                 Text(if (trip.n >= 2) stringResource(R.string.effort_mid_people, trip.n) else stringResource(R.string.effort_mid_people_solo), style = Chagok.type.labelM, color = Chagok.colors.textTertiary)
             }),
         )
+    }
+    // #118 10-3 ⑥(명준 11/12): 중간 정산도 도착과 같은 시트로 쉰 시간을 묻는다. 고르기 전에는 "지금까지 운전을 정리하는 중이에요" · "확인 중"
+    if (m.needsRest) { RestPending(stringResource(R.string.effort_rest_pending_mid), ui.restAnswers, narrow, onRest, top = titleBar); return }
+    var sheet by rememberSaveable(m.at) { mutableStateOf(false) }
+    Box(Modifier.fillMaxSize()) {
+    Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(if (narrow) 16.gpx else 24.gpx)) {
+        titleBar()
         val receipt: @Composable (Modifier) -> Unit = { mod ->
+            // 쉰 시간 줄도 보인다(값을 누르면 시트 다시, 고른 뒤에는 못 바꿈). 줄 값은 중간 정산에서 고른 답
             if (r != null && showPaper) ReceiptColumn(
-                trip, r, ui, narrow, reduce = true, paperShift = 0f, open = open,
-                onToggle = { k -> open = if (open == k) null else k }, onChangeRest = {}, modifier = mod, editable = false,
-                midwaySub = since,
+                trip.copy(restAnswerMin = m.restMin), r, ui, narrow, reduce = true, paperShift = 0f, open = open,
+                onToggle = { k -> open = if (open == k) null else k }, onChangeRest = { sheet = true }, modifier = mod, editable = m.choice == null,
+                midwaySub = since, showRest = m.restMin != null,
             )
         }
         val card: @Composable (Modifier) -> Unit = { mod -> MidwayCard(m, cap, ui.items, narrow, onPick, onClose, mod, solo = trip.n < 2, settledBefore = trip.settlements.isNotEmpty()) }
@@ -90,6 +100,8 @@ internal fun EffortMidwayScreen(ui: EffortUi, onPick: (String) -> Unit, onClose:
                 card(Modifier.width(640.gpx).fillMaxHeight())
             }
         }
+    }
+    if (sheet && m.choice == null) RestSheet(ui.restAnswers, m.restMin, narrow, Modifier.align(if (narrow) Alignment.BottomCenter else Alignment.BottomEnd)) { min -> sheet = false; onRest(min) }
     }
 }
 
@@ -147,10 +159,11 @@ private fun MidwayCard(
                     Text(since, style = cap, color = c.textTertiary)
                     Column(verticalArrangement = Arrangement.spacedBy(if (narrow) 4.gpx else 8.gpx)) {
                         Text(stringResource(R.string.effort_mid_a_title), style = if (narrow) t.bodyL else t.titleM, color = c.textSecondary)
-                        // 1인 몫이 카드 폭을 넘치면 "원"이 잘리지 않게 한 단계 작게
-                        var bigStyle by remember(view.screen.mainText) { mutableStateOf(big) }
+                        // 큰 숫자 길이 규칙(#118 D4), 그래도 넘치면 한 단계 더
+                        val small = if (narrow) t.titleL else t.headlineM
+                        var bigStyle by remember(view.screen.mainText) { mutableStateOf(if (com.mist.pleos_app.effort.bigNumberSmall(view.screen.mainText)) small else big) }
                         Text(view.screen.mainText, style = bigStyle, color = c.textPrimary, maxLines = 1, softWrap = false,
-                            onTextLayout = { if (it.didOverflowWidth && bigStyle == big) bigStyle = if (narrow) t.titleL else t.headlineS })
+                            onTextLayout = { if (it.didOverflowWidth && bigStyle != t.titleM) bigStyle = if (bigStyle == big) small else t.titleM })
                     }
                 }
                 Spacer(Modifier.height(if (narrow) 4.gpx else 8.gpx))
@@ -168,8 +181,8 @@ private fun MidwayCard(
                 val opt: @Composable (Modifier, EffortItem) -> Unit = { mod, item ->
                     CgOptionButton(item.examples.ifEmpty { listOf(item.label) }, isDefault = item.key == view.screen.item, onClick = { onPick(item.key) }, modifier = mod, compact = narrow)
                 }
-                if (narrow) Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.gpx)) { view.items.forEach { opt(Modifier.weight(1f), it) } }
-                else Column(verticalArrangement = Arrangement.spacedBy(12.gpx)) { view.items.forEach { opt(Modifier.fillMaxWidth(), it) } }
+                // 분할 창도 세로(#118 D8)
+                Column(verticalArrangement = Arrangement.spacedBy(12.gpx)) { view.items.forEach { opt(Modifier.fillMaxWidth(), it) } }
                 Filler(narrow)
                 keep(false)
             }

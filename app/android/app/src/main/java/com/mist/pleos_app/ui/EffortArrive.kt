@@ -46,6 +46,7 @@ import androidx.compose.ui.text.style.TextAlign
 import com.mist.pleos_app.R
 import com.mist.pleos_app.effort.ArriveDone
 import com.mist.pleos_app.effort.CHOICE_ACCEPT
+import com.mist.pleos_app.effort.bigNumberSmall
 import com.mist.pleos_app.effort.EffortUi
 import com.mist.pleos_app.effort.OpenTrip
 import com.mist.pleos_app.effort.ProposalView
@@ -66,6 +67,8 @@ import com.mist.pleos_app.ui.components.CgOfferCard
 import com.mist.pleos_app.ui.components.CgOptionButton
 import com.mist.pleos_app.ui.components.CgReceipt
 import com.mist.pleos_app.ui.components.CgReceiptRow
+import com.mist.pleos_app.ui.components.CgIcon
+import com.mist.pleos_app.ui.components.CgIconMark
 import com.mist.pleos_app.ui.components.CgReceiptSum
 import com.mist.pleos_app.ui.components.CgSize
 import com.mist.pleos_app.ui.components.CgTitleBar
@@ -135,6 +138,12 @@ internal fun EffortArriveScreen(ui: EffortUi, onRest: (Int) -> Unit, onPick: (St
     val reduce = rememberReduceMotion()
     val key = trip.tripId
     if (ui.unsettled) { UnsettledArrive(trip, r, ui, narrow, onClose); return }
+    // #118 10-3 ⑥: 쉰 시간을 고르기 전에는 영수증 · 제안 대신 "오늘 운전을 정리하는 중이에요" · "확인 중"과 시트만.
+    // 고르면 그 값으로 센 영수증이 출력 연출과 함께 나온다
+    if (trip.restAnswerMin == null && ui.done == null) {
+        RestPending(stringResource(R.string.effort_rest_pending_arrive), ui.restAnswers, narrow, onRest)
+        return
+    }
 
     // 이 도착에서 처음 열 때만 출력 연출. 홈에서 [영수증 보기]로 다시 열거나 주행 중 가림이 풀려 돌아와도 끝 상태로
     // (화면을 바꾸면 rememberSaveable이 사라지므로 이 프로세스에서 이미 찍은 주행을 따로 기억)
@@ -174,25 +183,60 @@ internal fun EffortArriveScreen(ui: EffortUi, onRest: (Int) -> Unit, onPick: (St
                 }
             }
         }
-        // 쉰 시간 시트(딤 없음, 고르면 닫힘). 처음엔 답을 묻고, [바꾸기]로 다시 연다. 고른 뒤·정리하지 못함에는 없다
+        // 쉰 시간 시트(딤 없음, 고르면 닫힘). 영수증의 "중간에 쉰 시간" 값을 누르면 다시 연다. 고른 뒤·정리하지 못함에는 없다
         if (sheet && ui.done == null && !ui.unsettled) {
-            CgBottomSheet(
-                Modifier.align(if (narrow) Alignment.BottomCenter else Alignment.BottomEnd).then(if (narrow) Modifier.fillMaxWidth() else Modifier.width(640.gpx)),
-                compact = narrow,
-            ) {
-                Column(verticalArrangement = Arrangement.spacedBy(4.gpx)) {
-                    Text(stringResource(R.string.effort_rest_sheet_title), style = if (narrow) Chagok.type.bodyL else Chagok.type.titleM, color = Chagok.colors.textPrimary)
-                    Text(stringResource(R.string.effort_rest_sheet_sub), style = Chagok.type.bodyM, color = Chagok.colors.textSecondary)
-                }
-                ui.restAnswers.chunked(2).forEach { row ->
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.gpx)) {
-                        row.forEach { (min, label) ->
-                            CgChip(label, selected = min == (trip.restAnswerMin ?: 0), onClick = { sheet = false; onRest(min) }, modifier = Modifier.weight(1f), size = CgSize.M)
-                        }
-                    }
+            RestSheet(ui.restAnswers, trip.restAnswerMin, narrow, Modifier.align(if (narrow) Alignment.BottomCenter else Alignment.BottomEnd)) { min -> sheet = false; onRest(min) }
+        }
+    }
+}
+
+/**
+ * 쉰 시간 시트(도착 · 중간 정산 공통, #118 10-3 ⑥). [selected]가 null이면(아직 안 고름) 아무 칩도 고르지 않은 모양.
+ */
+@Composable
+internal fun RestSheet(answers: List<Pair<Int, String>>, selected: Int?, narrow: Boolean, modifier: Modifier = Modifier, onPick: (Int) -> Unit) {
+    CgBottomSheet(modifier.then(if (narrow) Modifier.fillMaxWidth() else Modifier.width(640.gpx)), compact = narrow) {
+        Column(verticalArrangement = Arrangement.spacedBy(4.gpx)) {
+            Text(stringResource(R.string.effort_rest_sheet_title), style = if (narrow) Chagok.type.bodyL else Chagok.type.titleM, color = Chagok.colors.textPrimary)
+            Text(stringResource(R.string.effort_rest_sheet_sub), style = Chagok.type.bodyM, color = Chagok.colors.textSecondary)
+        }
+        answers.chunked(2).forEach { row ->
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.gpx)) {
+                row.forEach { (min, label) ->
+                    CgChip(label, selected = min == selected, onClick = { onPick(min) }, modifier = Modifier.weight(1f), size = CgSize.M)
                 }
             }
         }
+    }
+}
+
+/**
+ * 쉰 시간을 고르기 전 화면(#118 10-3 ⑥): 영수증 자리 [text] · 제안 자리 "확인 중" + 쉰 시간 시트.
+ * 가로는 왼쪽 영수증 자리 + 오른쪽 카드 자리 640, 분할은 위아래.
+ */
+@Composable
+internal fun RestPending(text: String, answers: List<Pair<Int, String>>, narrow: Boolean, onPick: (Int) -> Unit, top: @Composable () -> Unit = {}) {
+    val c = Chagok.colors
+    val t = Chagok.type
+    val slot: @Composable (Modifier, String, Boolean) -> Unit = { m, s, main ->
+        Box(m.background(c.surfaceCard, RoundedCornerShape(32.gpx)).padding(32.gpx), contentAlignment = Alignment.Center) {
+            Text(s, style = if (main) (if (narrow) t.bodyL else t.titleM) else (if (narrow) t.bodyM else t.bodyL), color = if (main) c.textSecondary else c.textTertiary, textAlign = TextAlign.Center)
+        }
+    }
+    Box(Modifier.fillMaxSize()) {
+        Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(if (narrow) 16.gpx else 24.gpx)) {
+            top()
+            if (narrow) {
+                slot(Modifier.fillMaxWidth().height(420.gpx), text, true)
+                slot(Modifier.fillMaxWidth().height(160.gpx), stringResource(R.string.effort_rest_pending_offer), false)
+            } else {
+                Row(Modifier.weight(1f).fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(24.gpx)) {
+                    slot(Modifier.weight(1f).fillMaxHeight(), text, true)
+                    slot(Modifier.width(640.gpx).fillMaxHeight(), stringResource(R.string.effort_rest_pending_offer), false)
+                }
+            }
+        }
+        RestSheet(answers, null, narrow, Modifier.align(if (narrow) Alignment.BottomCenter else Alignment.BottomEnd), onPick)
     }
 }
 
@@ -203,7 +247,8 @@ internal fun ReceiptColumn(
     paperShift: Float, open: String?, onToggle: (String) -> Unit, onChangeRest: () -> Unit, modifier: Modifier,
     onSettleSwap: () -> Unit = {},
     editable: Boolean = true,   // 기록 상세(Q-08-01)는 쉰 시간 [바꾸기] 없이 근거 펼침만
-    midwaySub: String? = null,  // 중간 정산(F27): 제목 "오늘 주행 영수증"(v3) + 이 줄("14:20 출발 · 아직 가는 중"), 쉰 시간 줄 없음
+    midwaySub: String? = null,  // 중간 정산(F27): 제목 "오늘 주행 영수증"(v3) + 이 줄("14:20 출발 · 아직 가는 중")
+    showRest: Boolean = midwaySub == null,   // 쉰 시간 줄. 중간 정산도 묻게 되어(#118 10-3 ⑥) 중간 정산 화면이 true로 넘긴다
     print: PrintSeq? = null,    // 출력 연출(#118 v90~v94). null = 끝 상태(불 켜짐 · 합계 금액)
 ) {
     val c = Chagok.colors
@@ -252,7 +297,14 @@ internal fun ReceiptColumn(
             )
         }
         if (r.lines.isEmpty() && r.notes.isEmpty()) {
-            Text(stringResource(R.string.effort_receipt_plain), Modifier.padding(vertical = 14.gpx), style = if (narrow) t.bodyM else t.bodyL.copy(fontWeight = FontWeight.Normal), color = c.textTertiary)
+            // 가산 0개(#118 v114, 명준 11/12 확정 문구): 해 아이콘 + 굵은 줄 + 작은 줄
+            Row(Modifier.padding(vertical = 14.gpx), horizontalArrangement = Arrangement.spacedBy(16.gpx), verticalAlignment = Alignment.CenterVertically) {
+                CgIconMark(CgIcon.Sun, if (narrow) 40.gpx else 48.gpx, c.textPrimary)
+                Column(verticalArrangement = Arrangement.spacedBy(4.gpx)) {
+                    Text(stringResource(R.string.effort_receipt_plain), style = if (narrow) t.bodyM.copy(fontWeight = FontWeight.Bold) else t.bodyL.copy(fontWeight = FontWeight.Bold), color = c.textPrimary)
+                    Text(stringResource(R.string.effort_receipt_plain_sub), style = if (narrow) t.labelM else t.bodyM, color = c.textSecondary)
+                }
+            }
         }
         r.lines.forEach { line ->
             CgReceiptRow(
@@ -268,7 +320,7 @@ internal fun ReceiptColumn(
         CgReceiptSum(stringResource(R.string.effort_receipt_drive), r.driveText, compact = narrow, hi = hi("drive"))
         val restLabel = ui.restAnswers.firstOrNull { it.first == (trip.restAnswerMin ?: 0) }?.second ?: ""
         // v3 5-5: [바꾸기] 버튼 대신 값을 누르면 쉰 시간 시트가 다시 열림
-        if (midwaySub == null) CgReceiptSum(
+        if (showRest) CgReceiptSum(
             stringResource(R.string.effort_receipt_rest), restLabel, compact = narrow, hi = hi("rest"),
             onValue = if (editable && ui.done == null) onChangeRest else null, valueLabel = stringResource(R.string.effort_receipt_rest_change_label),
         )
@@ -356,10 +408,12 @@ private fun OfferCard(ui: EffortUi, trip: OpenTrip, narrow: Boolean, onPick: (St
                 // 묻는 줄과 큰 숫자 사이 8(분할 4), 큰 숫자와 근거 사이 28(분할 16)
                 Column(verticalArrangement = Arrangement.spacedBy(if (narrow) 4.gpx else 8.gpx)) {
                     Text(view.screen.titleText, style = if (narrow) t.bodyL else t.titleM, color = c.textSecondary)
-                    // 1인 몫이 10만 원을 넘어 카드 폭을 넘치면 "원"이 잘리지 않게 한 단계 작게
-                    var bigStyle by remember(view.screen.mainText) { mutableStateOf(big) }
+                    // 큰 숫자 길이 규칙(#118 D4): 10만 원 이상 · 15자 이상이면 한 단계 작게(가로 Headline M · 분할 Title L).
+                    // 그래도 카드 폭을 넘치면 "원"이 잘리지 않게 한 단계 더
+                    val small = if (narrow) t.titleL else t.headlineM
+                    var bigStyle by remember(view.screen.mainText) { mutableStateOf(if (bigNumberSmall(view.screen.mainText)) small else big) }
                     Text(view.screen.mainText, style = bigStyle, color = c.textPrimary, maxLines = 1, softWrap = false,
-                        onTextLayout = { if (it.didOverflowWidth && bigStyle == big) bigStyle = if (narrow) t.titleL else t.headlineS })
+                        onTextLayout = { if (it.didOverflowWidth && bigStyle != t.titleM) bigStyle = if (bigStyle == big) small else t.titleM })
                 }
                 Spacer(Modifier.height(if (narrow) 4.gpx else 8.gpx))
                 // 근거 = 별표 글머리 + 운전 노고 금액 밑줄(제안 카드가 올라온 뒤, 출력 연출이면 1.5초)
@@ -384,8 +438,8 @@ private fun OfferCard(ui: EffortUi, trip: OpenTrip, narrow: Boolean, onPick: (St
                 val opt: @Composable (Modifier, EffortItem) -> Unit = { m, item ->
                     CgOptionButton(item.examples.ifEmpty { listOf(item.label) }, isDefault = item.key == view.screen.item, onClick = { onPick(item.key) }, modifier = m, compact = narrow)
                 }
-                if (narrow) Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.gpx)) { view.items.forEach { opt(Modifier.weight(1f), it) } }
-                else Column(verticalArrangement = Arrangement.spacedBy(12.gpx)) { view.items.forEach { opt(Modifier.fillMaxWidth(), it) } }
+                // 분할 창도 세로(#118 D8): 가로 3칸이면 "바베큐장 이용료"처럼 긴 항목이 잘렸다
+                Column(verticalArrangement = Arrangement.spacedBy(12.gpx)) { view.items.forEach { opt(Modifier.fillMaxWidth(), it) } }
                 Filler(narrow)
                 close(false)
             }
@@ -449,7 +503,7 @@ private fun UnsettledArrive(trip: OpenTrip, r: EffortReceipt, ui: EffortUi, narr
     val t = Chagok.type
     Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(if (narrow) 16.gpx else 24.gpx)) {
         CgTitleBar(
-            stringResource(R.string.effort_arrive_title, trip.destName), compact = narrow,
+            stringResource(R.string.effort_arrive_title, trip.destName), compact = narrow, titlePlace = trip.destName,
             trailing = if (narrow) null else ({
                 Text(if (trip.n >= 2) stringResource(R.string.effort_arrive_people, trip.n) else stringResource(R.string.effort_arrive_solo),
                     style = t.labelM, color = c.textTertiary)

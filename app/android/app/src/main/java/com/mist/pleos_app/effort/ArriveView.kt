@@ -14,7 +14,14 @@ data class MidwayUi(
     val receipt: EffortReceipt? = null,
     val proposal: ProposalView? = null,     // null = 제안 없음(혼자 · 남은 몫이 작음 · 정리하지 못함)
     val choice: String? = null,             // 고른 뒤(accept | 항목 key) — 이미 settlements에 더함
-)
+    // #118 10-3 ⑥(명준 11/12): 중간 정산도 쉰 시간을 묻는다. 고르기 전(null)에는 영수증 · 제안 대신 "정리하는 중" · "확인 중"
+    val restMin: Int? = null,
+    val remainM: Int? = null,               // 다시 계산용 입력(내비 남은 거리 · 시간대별 날씨). 메모리만
+    val weatherTrip: com.mist.pleos_app.engine.WeatherTrip? = null,
+) {
+    /** 쉰 시간을 물어야 하는지: 영수증이 나왔고(실패 · 정리하지 못함 아님) 아직 고르지 않음. */
+    val needsRest: Boolean get() = !pending && !failed && receipt != null && !isUnsettled(receipt) && restMin == null && choice == null
+}
 
 /**
  * 도착 화면(Design v2 `screens/arrive.html`, #75)이 보는 값. 영수증과 제안을 한 화면에 둔다.

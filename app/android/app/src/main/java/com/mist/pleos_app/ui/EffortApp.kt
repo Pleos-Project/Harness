@@ -81,7 +81,6 @@ import com.mist.pleos_app.ui.components.CgCard
 import com.mist.pleos_app.ui.components.CgChip
 import com.mist.pleos_app.ui.components.CgNotice
 import com.mist.pleos_app.ui.components.CgTitle
-import com.mist.pleos_app.ui.components.DemoMark
 import com.mist.pleos_app.ui.theme.Chagok
 import com.mist.pleos_app.ui.theme.ChagokTheme
 import com.mist.pleos_app.ui.theme.NARROW_MAX_PX
@@ -122,7 +121,7 @@ fun EffortApp(
     val askPayers = screen == EffortScreen.DEPART && askEnter
     // 앱 시작 화면(Design v2 home app-splash, 1.6초) — 처음 켤 때 한 번
     var splash by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(true) }
-    EffortFrame(demoValues = ui.demo, driving = driving) {
+    EffortFrame(driving = driving) {
         when (screen) {
             EffortScreen.HOME -> if (splash) EffortSplash { splash = false } else EffortHomeScreen(
                 ui,
@@ -156,14 +155,17 @@ fun EffortApp(
             EffortScreen.RECEIPT -> EffortArriveScreen(ui, onRest = vm::answerRest, onPick = vm::pick, onClose = vm::closeArrive, onSettleSwap = vm::toggleSettle)
             EffortScreen.LOG -> EffortLogScreen(ui, onBack = { vm.back() }, onRecord = vm::openRecord)
             EffortScreen.RECORD -> EffortRecordScreen(ui, onBack = { vm.back() })
-            EffortScreen.MIDWAY -> EffortMidwayScreen(ui, onPick = vm::midwayPick, onClose = vm::closeMidway)
+            EffortScreen.MIDWAY -> EffortMidwayScreen(ui, onPick = vm::midwayPick, onClose = vm::closeMidway, onRest = vm::answerMidwayRest)
         }
     }
 }
 
-/** 창 폭(AC-C-9)·주행 중 가림(X1, AC-C-1)·"시연용 값"(AC-C-7)·위쪽 알림. 화면 스택은 그대로라 정차하면 같은 화면으로 돌아온다. */
+/**
+ * 창 폭(AC-C-9)·주행 중 가림(X1, AC-C-1)·위쪽 알림. 화면 스택은 그대로라 정차하면 같은 화면으로 돌아온다.
+ * "시연용 값" 알약(AC-C-7)은 뺐다(#118 v122 명준 11/12, DECISIONS 11/13). 시연 고정 모드는 설정 스위치 설명으로만 알린다.
+ */
 @Composable
-private fun EffortFrame(demoValues: Boolean, driving: Boolean, toast: @Composable () -> Unit = {}, content: @Composable () -> Unit) {
+private fun EffortFrame(driving: Boolean, toast: @Composable () -> Unit = {}, content: @Composable () -> Unit) {
     BoxWithConstraints(Modifier.fillMaxSize().background(Chagok.colors.bgPrimary)) {
         val narrow = with(LocalDensity.current) { maxWidth.toPx() } <= NARROW_MAX_PX
         CompositionLocalProvider(LocalNarrow provides narrow) {
@@ -172,8 +174,6 @@ private fun EffortFrame(demoValues: Boolean, driving: Boolean, toast: @Composabl
                 content()
                 Box(Modifier.align(Alignment.TopCenter)) { toast() }
             }
-            // .demotag: 창 기준 오른쪽 24 · 아래 16, 모든 화면(주행 중 가림 포함) 위
-            if (demoValues) DemoMark(stringResource(R.string.demo_values), Modifier.align(Alignment.BottomEnd).padding(end = 24.gpx, bottom = 16.gpx))
         }
     }
 }
@@ -261,7 +261,9 @@ private fun EffortSettings(
                 // 시연 고정 모드
                 val demoOn = demoSummary?.let { (dest, mult) -> stringResource(R.string.effort_settings_demo_on, dest, mult) }
                     ?: stringResource(R.string.effort_settings_demo_on_plain)
-                row(stringResource(R.string.effort_settings_demo), if (s.demoFixed) demoOn else stringResource(R.string.effort_settings_demo_off)) {
+                val demoOff = demoSummary?.let { (dest, mult) -> stringResource(R.string.effort_settings_demo_off_scene, dest, mult) }
+                    ?: stringResource(R.string.effort_settings_demo_off)
+                row(stringResource(R.string.effort_settings_demo), if (s.demoFixed) demoOn else demoOff) {
                     CgSwitch(s.demoFixed, { onChange(s.copy(demoFixed = it)) }, stringResource(R.string.effort_settings_demo))
                 }
                 line()
