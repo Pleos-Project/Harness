@@ -16,21 +16,17 @@ import com.mist.pleos_app.engine.parseHhmm
 data class GuideState(val remainM: Int?, val routeGuiding: Boolean?)
 
 /**
- * 기어 P·운전석 문이어도 경로 안내 중이고 남은 거리 > 0이면 도착이 아니라 중간 정차다(명세 F22·PRD 8장).
+ * 기어 P여도 경로 안내 중이고 남은 거리 > 0이면 도착이 아니라 중간 정차다(명세 F22·PRD 8장).
  * 내비 상태를 못 읽었으면(null) 도착으로 본다 — 도착을 놓치는 것보다 낫고, 시연·에뮬은 안내가 없다.
  */
 fun isMidStop(g: GuideState?): Boolean = g != null && (g.remainM ?: 0) > 0 && g.routeGuiding == true
 
 /**
- * 내비 상태로 도착을 볼 수 있는지. 다시 보일 때(RESUME·DOOR_ON_SHOW)는 내비 연결을 새로 맺느라 상태를 못 읽을 수 있어
+ * 내비 상태로 도착을 볼 수 있는지. 다시 보일 때(RESUME)는 내비 연결을 새로 맺느라 상태를 못 읽을 수 있어
  * (에뮬 11/9: 출발 1분 뒤 다시 열자 `navi_guide got:false` → 2분 주행이 도착으로 잡힘) 못 읽으면(null) 도착으로 보지 않는다.
- * 보이는 동안 문이 열린 순간(DOOR)은 문 신호 자체가 근거라 지금처럼 못 읽어도 도착. 그 밖에는 홈 [도착했어요].
+ * 그때는 홈 [도착했어요]로 직접.
  */
-fun arrivalByGuide(g: GuideState?, cue: ArrivalCue): Boolean = when {
-    isMidStop(g) -> false
-    g == null -> cue == ArrivalCue.DOOR
-    else -> true
-}
+fun arrivalByGuide(g: GuideState?): Boolean = g != null && !isMidStop(g)
 
 /**
  * 출발 기록 → 엔진 입력(명세 v0.5 F23). 도착 전이면 null.
@@ -90,23 +86,11 @@ fun receiptOf(trip: OpenTrip?, c: EffortConstants?): EffortReceipt? {
     return effortInputOf(trip)?.let { effort(it, c) }
 }
 
-/** 자동 도착 판정의 계기(F22). 내비 안내 끝은 계기가 아니라 [guideEndAction]으로 따로 다룬다(#145). */
-enum class ArrivalCue {
-    DOOR,           // 화면이 보이는 동안 운전석 문이 닫힘 → 열림으로 바뀜
-    DOOR_ON_SHOW,   // 다시 보였을 때 문이 이미 열려 있음
-    RESUME,         // 다시 보였을 때(기어 P) 내비 안내 상태로 판정
-}
-
 /**
- * 이번 기어·문 변화에서 볼 도착 계기. 없으면 null.
- * 문이 열리는 순간이 가장 앞서고, 그다음 다시 보인 뒤 처음(RESUME)이다.
+ * 자동 도착 판정의 계기(F22). 다시 보였을 때(기어 P) 내비 안내 상태로 판정하는 것(RESUME) 하나다.
+ * 운전석 문 열기는 계기에서 뺐다(DECISIONS 11/13 '도착 계기: 운전석 문 빼기'). 내비 안내 끝은 [guideEndAction]으로 따로 다룬다(#145).
  */
-fun arrivalCueOf(doorOpen: Boolean?, lastDoorOpen: Boolean?, resume: Boolean): ArrivalCue? = when {
-    doorOpen == true && lastDoorOpen == false -> ArrivalCue.DOOR
-    doorOpen == true && lastDoorOpen == null -> ArrivalCue.DOOR_ON_SHOW
-    resume -> ArrivalCue.RESUME
-    else -> null
-}
+enum class ArrivalCue { RESUME }
 
 /** 내비가 안내를 끝낸 종류(NaviRepository·TripService). */
 const val GUIDE_ARRIVED = "arrived"       // onDestinationArrived
@@ -151,11 +135,12 @@ fun interruptedAction(trip: OpenTrip, g: GuideState?, now: String): GuideEndActi
 /**
  * 이 계기로 자동 도착을 봐도 되는지.
  * 출발 때 ETA를 못 받은 실제 주행(경로 미리보기 실패 — 오프라인 등)은 내비 경로 요청도 실패했을 가능성이 커서,
- * 다시 열었을 때 "안내 안 함"을 도착으로 읽으면 출발 직후 영수증이 뜬다(에뮬 오프라인 11/8).
- * 이때는 보이는 동안 문이 실제로 열리는 순간만 도착으로 본다. 그 밖에는 홈 [도착했어요](#68)로 직접.
+ * 다시 열었을 때 "안내 안 함"을 도착으로 읽으면 출발 직후 영수증이 뜬다(에뮬 오프라인 11/8). 이때는 홈 [도착했어요](#68)로 직접.
+ * 시연은 자동 도착이 없다(시연 기록은 [도착했어요]로만 도착).
  */
+@Suppress("UNUSED_PARAMETER")
 fun autoArrivalAllowed(trip: OpenTrip, cue: ArrivalCue, nowIso: String? = null): Boolean {
-    if (trip.demo || cue == ArrivalCue.DOOR) return true
+    if (trip.demo) return false
     if (trip.etaS <= 0) return false
     // 출발 직후 다시 열면 내비가 아직 안내를 시작하기 전이라 "남은 거리 0 · 안내 안 함"으로 답한다(에뮬 11/9 실측: 경로 시작까지 몇 초).
     // 이걸 도착으로 읽지 않도록 출발 뒤 EARLY_RESUME_S 안에는 다시 보임으로 자동 도착하지 않는다

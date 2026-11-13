@@ -3,13 +3,14 @@
 명세 v0.5 12절 '시연 순서'를 지금 앱(Design v2, 정차는 도착 때 한 번 묻기 #58)에 맞춘 순서다.
 12/3 PT 순서는 휴게소 중간 정산(운전자 교대)을 넣는다(명준 11/9 #86, 효성 제안). 11/10 공유회 순서는 --no-midway.
 
-  0 준비      콘솔: 기어 P · 운전석 문 닫힘 · 4석 착석 / 앱: 데모 고정 모드 켜기
+  0 준비      콘솔: 기어 P · 4석 착석 / 앱: 데모 고정 모드 켜기
   1 출발      앱: 출발하기 → 미리보기(태안 꽃지해수욕장 · 104km · 정체 경로의 36%) → [출발]
   2 주행      콘솔: 기어 D → 1초 안에 화면 가림(AC-C-1) → 기어 P → 홈 복귀
   2+ 휴게소   앱: 시동 버튼(지금까지의 노고 보기) → 오늘 주행 영수증(아직 가는 중 · 1시간 5분 · 52km · 1.55배, 한 사람 약 4천 원)
               → [좋아요]로 여기까지 정산 → [계속 가기] → 가는 중 홈(v3: "~까지 정산함" 표시 없음)
               콘솔: 기어 D(가림) → 기어 P(같은 주행을 이어 감, [출발]을 다시 누르지 않음)
-  3 도착      콘솔: 운전석 문 열기 → 계산 연출 → 영수증(2시간 10분 · 1.56배, 휴게소에서 장시간이 끊김)
+  3 도착      앱: 가는 중 홈 [도착했어요] → 계산 연출 → 영수증(2시간 10분 · 1.56배, 휴게소에서 장시간이 끊김)
+              (운전석 문 열기는 도착 계기에서 뺐다, DECISIONS 11/13)
               --no-midway면 1.57배(R1)
   4 선택      앱: 영수증 하단 '중간 정산 있음' → [좋아요](방식 A, 남은 몫 한 사람 약 5천 원) 또는 첫 항목(방식 B) → 기록 → [닫기] → 홈 알림 종 → 알림 창 "○○ 기록을 남겼어요"
 
@@ -93,7 +94,6 @@ def vc_put(path: str) -> None:
 
 
 def gear(g: str) -> None: vc_put(f"/vehicle/gear?gear={g}")
-def door(open_: bool) -> None: vc_put(f"/vehicle/body?door_fl={'true' if open_ else 'false'}")
 def seat(area: str, on: bool) -> None: vc_put(f"/vehicle/seat?kind=occupied&area={area}&value={'true' if on else 'false'}")
 
 
@@ -217,7 +217,7 @@ class Run:
 def step0(r: Run, reset: bool) -> None:
     print("\n0 준비")
     r.check("콘솔 bridge_ready", bridge_ready(), "아니면 http://127.0.0.1:8088/ 을 브라우저로 다시 여세요")
-    gear("Park"); door(False)
+    gear("Park")
     for a in ("driver", "passenger", "rear_left", "rear_right"):
         seat(a, True)
     if not r.auto:
@@ -363,11 +363,21 @@ def step_midway(r: Run) -> None:
 
 def step3(r: Run, midway: bool = False) -> None:
     print("\n3 도착")
-    r.person("도착 — 콘솔 운전석 문을 열어요")
-    door(True)
-    r.expect("문 열림 → 도착 화면", EXPECT_ARRIVE, timeout=10)
-    time.sleep(0.5)
-    door(False)
+    # 운전석 문 열기는 도착 계기에서 뺐다(DECISIONS 11/13 '도착 계기: 운전석 문 빼기') → 시연은 [도착했어요]로만 도착
+    if r.auto:
+        r.check("[도착했어요]", tap("도착했어요"))
+    else:
+        r.person("도착 — 가는 중 홈 [도착했어요]를 눌러요")
+    # 버튼을 누르는 사이 계산 연출(약 13초)이 지나가 영수증으로 넘어가 있을 수 있어 둘 중 하나면 통과
+    if r.auto:
+        end = time.time() + 15
+        seen = False
+        while time.time() < end and not seen:
+            ts = texts()
+            seen = has(EXPECT_ARRIVE, ts) or has("오늘 주행 영수증", ts)
+            if not seen:
+                time.sleep(0.4)
+        r.check("[도착했어요] → 도착 화면", seen)
     r.expect("영수증(계산 연출 뒤)", EXPECT_RECEIPT_MIDWAY if midway else EXPECT_RECEIPT, timeout=15)
     # 계산 연출 뒤 '중간에 쉰 시간' 시트(F21). R1은 쉬지 않은 주행이라 '없음'
     r.expect("쉰 시간 질문", "중간에 쉰 시간이 있었나요?", timeout=8)

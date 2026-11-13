@@ -387,7 +387,6 @@ class EffortViewModel(app: Application, private val saved: SavedStateHandle) : A
     val canRetryRoute: Boolean get() = lastRoute != null
 
     // ------------------------------------------------------------ 도착(F22) → 영수증(F23)
-    private var lastDoorOpen: Boolean? = null
     /** 화면이 다시 보였으니 정차 상태가 확인되면 1번 도착 여부를 본다(기본 배치에서는 도착 순간 차곡이 멈춰 있음, F22). */
     private var resumeCheck = false
     private var checking = false
@@ -420,7 +419,7 @@ class EffortViewModel(app: Application, private val saved: SavedStateHandle) : A
         set(v) { ArrivalHold.arriveAsk = v }
     /**
      * "도착했나요?"에 [아직이에요]로 답했다. 내비 안내가 없을 수 있어(끊김 뒤 · 안내 종료 뒤) 다시 보임(RESUME)으로는 자동 도착하지 않는다.
-     * 새 안내가 시작되거나 출발 기록이 바뀌면 푼다. 문 열림 · [도착했어요] · 내비 안내 끝은 그대로.
+     * 새 안내가 시작되거나 출발 기록이 바뀌면 푼다. [도착했어요] · 내비 안내 끝은 그대로.
      */
     private var notYet: Boolean
         get() = ArrivalHold.notYet
@@ -428,9 +427,9 @@ class EffortViewModel(app: Application, private val saved: SavedStateHandle) : A
 
     private fun clearGuideEnd() { pendingArrival = null; interruptCheck = false; arriveAsk = null; notYet = false }
 
-    /** MainActivity onStart. 시연 모드는 문 열기로만 도착한다(12절 시연 순서). */
+    /** MainActivity onStart. 시연 모드는 [도착했어요]로만 도착한다(DECISIONS 11/13 '도착 계기: 운전석 문 빼기'). */
     fun onShown() {
-        resumeCheck = true; lastDoorOpen = null; shownFlow.value += 1
+        resumeCheck = true; shownFlow.value += 1
         // 진행 중 실제 출발이면 보이는 동안 내비 안내 끝을 이벤트로 받는다(나란히 배치). onStop 때 리스너를 놓는다
         val trip = flow.state.openTrip
         val live = flow.phase == EffortPhase.DRIVING && trip != null && !trip.demo && !source.demo
@@ -469,7 +468,7 @@ class EffortViewModel(app: Application, private val saved: SavedStateHandle) : A
         if (flow.phase != EffortPhase.DRIVING || trip == null || trip.demo || source.demo) return
         ChagokLog.event("effort_guide_end", "kind" to kind, "parked" to lastParked)
         onGuideEnd(trip, GuideEnd(kind, isoNow()))
-        if (lastParked) onCar(true, lastDoorOpen)
+        if (lastParked) onCar(true)
     }
 
     /** 내비가 새 안내를 시작함(목적지를 바꿈 · 다시 안내 등) → 앞서 받은 안내 끝과 질문은 버린다. */
@@ -479,14 +478,12 @@ class EffortViewModel(app: Application, private val saved: SavedStateHandle) : A
     }
 
     /**
-     * 화면이 보이는 동안 기어·문 값이 바뀔 때마다(이벤트, 폴링 없음 — AC-C-2·AC-F21-4).
+     * 화면이 보이는 동안 기어가 바뀔 때마다, 그리고 다시 보일 때(이벤트, 폴링 없음 — AC-C-2·AC-F21-4).
      * 진행 중 출발이 있고 정차(기어 P)일 때:
      * 내비 도착 신호를 받았으면 그 시각으로 도착, 주행이 끊겼다 이어졌으면 내비 상태를 보고 묻기,
-     * 그 밖에는 운전석 문이 열리는 순간이나 다시 보인 뒤 처음이면 도착인지 본다. 묻는 중이면 답을 기다린다.
+     * 그 밖에는 다시 보인 뒤 처음이면 도착인지 본다. 묻는 중이면 답을 기다린다. 운전석 문은 보지 않는다(DECISIONS 11/13).
      */
-    fun onCar(parked: Boolean, doorOpen: Boolean?) {
-        val prevDoor = lastDoorOpen
-        lastDoorOpen = doorOpen
+    fun onCar(parked: Boolean) {
         lastParked = parked
         if (!parked || flow.phase != EffortPhase.DRIVING) return
         val trip = flow.state.openTrip ?: return
@@ -495,7 +492,8 @@ class EffortViewModel(app: Application, private val saved: SavedStateHandle) : A
         if (interruptCheck) { interruptCheck = false; resumeCheck = false; checkInterrupted(trip); return }
         val resume = resumeCheck && !source.demo && !trip.demo && !notYet
         resumeCheck = false
-        val c = arrivalCueOf(doorOpen, prevDoor, resume) ?: return
+        if (!resume) return
+        val c = ArrivalCue.RESUME
         if (!autoArrivalAllowed(trip, c, isoNow())) { ChagokLog.event("effort_auto_arrive_skip", "cue" to c.name, "eta" to (trip.etaS > 0)); return }
         checkArrival(c)
     }
@@ -534,14 +532,14 @@ class EffortViewModel(app: Application, private val saved: SavedStateHandle) : A
         val reason = cue.name.lowercase()
         if (checking) return
         val trip = flow.state.openTrip ?: return
-        if (trip.demo) { arrive(reason); return }                 // 시연: 내비 안내가 없다
-        val n = navi ?: run { if (cue == ArrivalCue.DOOR) arrive(reason); return }
+        if (trip.demo) return                                     // 시연: 자동 도착 없음([도착했어요]로만)
+        val n = navi ?: return
         checking = true
         n.guide { g ->
             checking = false
             when {
                 isMidStop(g) -> ChagokLog.event("effort_mid_stop", "reason" to reason)   // 휴게소 정차: 도착 아님(PRD 8장)
-                arrivalByGuide(g, cue) -> arrive(reason)
+                arrivalByGuide(g) -> arrive(reason)
                 // 다시 보인 직후 내비 연결이 늦어 못 읽음 → 한 번만 다시 묻는다(연결은 이제 맺어짐). 그래도 모르면 도착으로 보지 않음
                 !retried -> checkArrival(cue, retried = true)
                 else -> ChagokLog.event("effort_auto_arrive_skip", "cue" to cue.name, "guide" to false)
