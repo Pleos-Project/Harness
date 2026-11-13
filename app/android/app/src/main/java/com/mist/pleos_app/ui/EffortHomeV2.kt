@@ -108,10 +108,8 @@ private val Idle = CubicBezierEasing(.45f, 0f, .55f, 1f)
 @Composable
 internal fun EffortHomeScreen(
     ui: EffortUi,
-    routeFailed: Boolean,
     onDepart: () -> Unit,
     onDiscard: () -> Unit,
-    onRetry: () -> Unit,
     onSettings: () -> Unit,
     onReceipt: () -> Unit,
     onArrive: () -> Unit,
@@ -186,10 +184,6 @@ internal fun EffortHomeScreen(
                                 Row(horizontalArrangement = Arrangement.spacedBy(20.gpx)) {
                                     CgButton(stringResource(R.string.effort_arrive_now), onArrive, size = if (narrow) CgSize.XLC else CgSize.XL)
                                     CgButton(stringResource(R.string.effort_discard), { quit = true }, kind = CgButtonKind.Basic, size = if (narrow) CgSize.XLC else CgSize.XL)
-                                }
-                                if (routeFailed) Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text(stringResource(R.string.effort_route_failed), style = t.bodyM, color = c.textSecondary)
-                                    CgTextButton(stringResource(R.string.effort_route_retry), onRetry, primary = true, compact = true)
                                 }
                             }
                         }

@@ -164,7 +164,9 @@
     <string name="effort_checking_route">경로를 확인하고 있어요</string>
     <string name="effort_preview_route">예상 %1$s · %2$s</string>
     <string name="effort_preview_congestion">정체 구간 %1$s</string>
-    <string name="effort_route_failed">내비 안내를 시작하지 못했어요</string>
+    <!-- #132 · #118 E1 depart-route-fail: 출발 화면 미리보기 칸 -->
+    <string name="effort_route_send_failed">내비로 길을 보내지 못했어요</string>
+    <string name="effort_route_send_failed_note">아직 출발 전이에요. 다시 시도하면 바로 안내를 시작해요</string>
     <string name="effort_route_retry">다시 시도</string>
     <string name="effort_receipt_open">영수증 보기</string>
     <string name="effort_receipt_none">아직 도착 전이에요</string>

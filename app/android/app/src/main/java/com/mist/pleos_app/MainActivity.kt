@@ -50,13 +50,14 @@ class MainActivity : ComponentActivity() {
         navi.onCongestion = vm::onCongestionList          // F20 ②: 나란히 배치일 때만 오는 정체 구간 목록
         navi.onGuideEnd = vm::onGuideEnded                // F22: 나란히 배치에서 내비가 안내를 끝냄 → 기어 P에서 도착 확인(DECISIONS 11/12)
         navi.onGuideStart = vm::onGuideStarted
+        navi.onRouteFailed = vm::onRouteFailed            // #132: 내비로 길을 보내지 못함 → 출발 기록 없이 출발 화면으로
         lifecycle.addObserver(navi)
         val n = navi
         vm.navi = object : DepartNavi {
             override fun location(done: (Pair<Double, Double>?) -> Unit) = n.fetchLocation { done(it?.let { p -> p.lat to p.lng }) }
             override fun places(done: (List<NaviPlace>) -> Unit) = n.fetchNaviPlaces(done)
             override fun preview(d: Destination, done: (TripPreview?) -> Unit) = n.previewTrip(d, done)
-            override fun route(d: Destination) = n.depart(d)
+            override fun route(d: Destination, replacing: Boolean) = n.depart(d, replacing)
             override fun guide(done: (GuideState?) -> Unit) = n.fetchGuide(done)
             override fun listen() = n.listen()
         }
@@ -72,6 +73,7 @@ class MainActivity : ComponentActivity() {
             override fun sync(destName: String?) = TripService.sync(ctx, destName)
             override fun takeGuideEnd() = TripService.takeGuideEnd(ctx)
             override val running: Boolean get() = TripService.isRunning
+            override fun expectOldCancel(v: Boolean) { TripService.expectOldCancel = v }
         }
         askNotifications()
         // 다시 보일 때마다 도착 여부를 1번 본다(기본 배치에서는 도착 순간 차곡이 멈춰 있음, 명세 F22)

@@ -420,7 +420,7 @@ val KoreanNameBreak = androidx.compose.ui.text.style.LineBreak(
 /** 기록 카드(`components/record-card`): 날짜(방금) · 목적지 · 요약 · 고른 것. fresh = 방금 끝난 기록(굵은 테두리 3, 0.7초 올라옴). */
 
 /** 미리보기 칸 상태(`components/preview-panel`). */
-enum class CgPreviewState { Empty, Loading, Ready, Failed }
+enum class CgPreviewState { Empty, Loading, Ready, Failed, RouteFailed }   // RouteFailed: 내비로 길을 보내지 못함(#132), [다시 시도]는 CTA 자리
 
 /**
  * 미리보기 칸(`components/preview-panel`): 빈 자리(점선) · 불러오는 중(회색 막대) · 준비(통계 3칸) · 실패(다시 시도).
@@ -497,6 +497,11 @@ private fun PreviewPanelBody(
                         CgSkeleton(Modifier.fillMaxWidth(.8f).height(30.gpx), onPhoto = bare)
                     }
                 }
+            }
+            // depart-route-fail(#132): 경고 아이콘 + 오류색 한 줄. [다시 시도]는 오른쪽 CTA(Basic)
+            CgPreviewState.RouteFailed -> Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.gpx)) {
+                CgIconMark(CgIcon.Warning, if (compact) 30.gpx else 36.gpx, c.statusErrorForeground)
+                Text(failText, Modifier.weight(1f, fill = false), style = t.bodyL, color = c.statusErrorForeground)
             }
             // .pvfail: 경고 아이콘 + 오류색 body-l 700 + [다시 시도]
             CgPreviewState.Failed -> Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.gpx)) {
