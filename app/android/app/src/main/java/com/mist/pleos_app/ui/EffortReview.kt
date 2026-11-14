@@ -76,6 +76,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.vector.PathParser
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -281,7 +282,15 @@ internal fun EffortReviewScreen(
         }
     }
 
-    Box(Modifier.fillMaxSize()) {
+    // 시안 .thx는 .pg 안에서 position:absolute; inset:0이라 바깥 여백 40을 받지 않는다(창 전체가 판).
+    // 앱 EffortFrame은 사방 40을 두므로 이 화면만 그만큼 넓혀 시안과 같은 폭으로 그린다(줄 안 연출 칸이 80 좁아 '예상 17:45'가 잘렸음)
+    val frame = with(LocalDensity.current) { 40.gpx.roundToPx() }
+    Box(
+        Modifier.fillMaxSize().layout { m, cs ->
+            val pl = m.measure(cs.copy(minWidth = cs.minWidth + frame * 2, maxWidth = cs.maxWidth + frame * 2, minHeight = cs.minHeight + frame * 2, maxHeight = cs.maxHeight + frame * 2))
+            layout(cs.maxWidth, cs.maxHeight) { pl.place(-frame, -frame) }
+        },
+    ) {
         // 화면 비(날씨 줄을 셀 때 세게 → 약하게 → 다 세면 그침)
         if (rainy && !done && !reduce) ScreenRain({ rain.value }, c)   // 다 세면 그친 비는 만들지도 않는다(반복이 계속 돌지 않게)
         Column(Modifier.fillMaxSize()) {
