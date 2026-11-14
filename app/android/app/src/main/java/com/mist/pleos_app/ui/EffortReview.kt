@@ -342,7 +342,7 @@ internal fun EffortReviewScreen(
                             val settled = states[i] == RowState.ON || states[i] == RowState.OFF
                             ReviewRow(
                                 // 줄 112~170(분할 84 이상, 6-1)
-                                Modifier.fillMaxWidth().weight(1f).heightIn(min = (if (narrow) 84 else 112).gpx, max = 170.gpx),
+                                Modifier.fillMaxWidth().weight(1f).heightIn(min = (if (narrow) 104 else 112).gpx, max = 170.gpx),
                                 it, if (settled) (if (it.on) RowState.ON else RowState.OFF) else states[i], if (settled) it.value else shown[i],
                                 { ring[i].value }, { pop[i].value }, { fx[i].value }, i == items.lastIndex, gap, narrow, c,
                             )
@@ -497,10 +497,11 @@ private fun ReviewRow(
     ring: () -> Float, pop: () -> Float, fx: () -> Float, last: Boolean, gap: Dp, narrow: Boolean, c: ChagokColors,
 ) {
     val t = Chagok.type
-    // 6-1: 가로 원 100(아이콘 50) · 이름 Title M · 값 Title L / 분할 원 64(아이콘 32) · 이름 700 24/32 · 값 700 26/34
-    val circle = (if (narrow) 64 else 100).gpx
-    val nameStyle = if (narrow) t.bodyL.copy(fontSize = 24.gsp, lineHeight = 32.gsp, fontWeight = FontWeight.Bold) else t.titleM
-    val valueStyle = if (narrow) t.bodyL.copy(fontSize = 26.gsp, lineHeight = 34.gsp, fontWeight = FontWeight.Bold) else t.titleL
+    // 6-1: 가로 원 100(아이콘 50) · 이름 Title M · 값 Title L / 분할 원 88(아이콘 44) · 이름 700 30/38 · 값 700 32/40
+    // (분할 숫자는 프로토타입 기준 `screens/review.css` `.cg-p .cg-rv` 11/14 규칙. HANDOFF_v4 6-1의 64는 문서 오류, 명준 #180 c-4)
+    val circle = (if (narrow) 88 else 100).gpx
+    val nameStyle = if (narrow) t.bodyL.copy(fontSize = 30.gsp, lineHeight = 38.gsp, fontWeight = FontWeight.Bold) else t.titleM
+    val valueStyle = if (narrow) t.bodyL.copy(fontSize = 32.gsp, lineHeight = 40.gsp, fontWeight = FontWeight.Bold) else t.titleL
     val d = LocalDensity.current
     val gapPx = with(d) { gap.toPx() }
     val lineColor = if (st == RowState.ON || st == RowState.OFF) c.textPrimary else c.dividerDefault
@@ -514,7 +515,7 @@ private fun ReviewRow(
             drawLine(lineColor, Offset(x, cy + r), Offset(x, cy + size.height + gapPx - r), 2f)
         },
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy((if (narrow) 12 else 24).gpx),
+        horizontalArrangement = Arrangement.spacedBy((if (narrow) 20 else 24).gpx),
     ) {
         // 원
         Box(Modifier.size(circle).graphicsLayer { val s = pop(); scaleX = s; scaleY = s }, contentAlignment = Alignment.Center) {
@@ -537,11 +538,11 @@ private fun ReviewRow(
                 ReviewIcon.RAIN -> CgIcon.Rain; ReviewIcon.SNOW -> CgIcon.Snow; ReviewIcon.TRAFFIC -> CgIcon.Traffic
                 ReviewIcon.DELAY -> CgIcon.Delay; ReviewIcon.MOON -> CgIcon.Moon; ReviewIcon.HOURGLASS -> CgIcon.Hourglass
             }
-            CgIconMark(ic, (if (narrow) 32 else 50).gpx, when (st) { RowState.ON -> LimeInk; RowState.NOW -> c.textPrimary; else -> c.textTertiary })
+            CgIconMark(ic, (if (narrow) 44 else 50).gpx, when (st) { RowState.ON -> LimeInk; RowState.NOW -> c.textPrimary; else -> c.textTertiary })
         }
         // 이름
         Text(
-            it.label, Modifier.width((if (narrow) 124 else 200).gpx),
+            it.label, Modifier.width((if (narrow) 150 else 200).gpx),
             style = nameStyle,
             color = if (st == RowState.NOW || st == RowState.ON) c.textPrimary else c.textTertiary, maxLines = 1, softWrap = false,
         )
@@ -551,7 +552,7 @@ private fun ReviewRow(
         }
         // 값
         Text(
-            value, Modifier.widthIn(min = (if (narrow) 128 else 220).gpx),
+            value, Modifier.widthIn(min = (if (narrow) 170 else 220).gpx),
             style = valueStyle.let { s -> if (st == RowState.OFF) s.copy(fontWeight = FontWeight.Normal) else s },
             color = if (st == RowState.OFF) c.textTertiary else c.textPrimary,
             textAlign = TextAlign.End, maxLines = 1, softWrap = false,
@@ -579,8 +580,8 @@ private fun RowFx(it: ReviewItem, ms: () -> Float, narrow: Boolean, c: ChagokCol
 /** 비 9줄(4 × 30 · 분할 3 × 22, 12° 기울임, 0.7초 linear로 (−22, 180) 떨어짐) · 눈은 14 원 1.4초. 색 reviewRain(--rc). */
 private fun DrawScope.drawRowRain(snow: Boolean, loopMs: Float, narrow: Boolean, c: ChagokColors) {
     val period = if (snow) 1400f else 700f
-    val dw = if (snow) 14f else if (narrow) 3f else 4f
-    val dh = if (snow) 14f else if (narrow) 22f else 30f
+    val dw = if (snow) 14f else 4f
+    val dh = if (snow) 14f else if (narrow) 26f else 30f
     repeat(9) { i ->
         val delay = ((i * .23f) % .7f) * 1000f                       // 시안 --dl: −((i·.23) % .7)초
         val ph = ((loopMs + delay) % period) / period
@@ -593,7 +594,7 @@ private fun DrawScope.drawRowRain(snow: Boolean, loopMs: Float, narrow: Boolean,
 
 /** 별 6개(22 · 분할 16): 0.7초 왕복 rv-io로 크기 .4 ↔ 1.15 · 투명도 .3 ↔ 1, 지연 −i·0.17초(시안 cg-twk). */
 private fun DrawScope.drawStars(star: Path, loopMs: Float, narrow: Boolean, c: ChagokColors) {
-    val s = if (narrow) 16f else 22f
+    val s = if (narrow) 20f else 22f
     val tops = listOf(.18f, .44f, .24f, .50f, .14f, .38f)
     repeat(6) { i ->
         val ph = (loopMs + i * 170f) % 1400f

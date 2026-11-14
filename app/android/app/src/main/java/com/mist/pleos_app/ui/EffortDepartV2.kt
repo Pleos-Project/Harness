@@ -190,7 +190,7 @@ internal fun EffortDepartScreen(
                         failText = stringResource(if (state == CgPreviewState.RouteFailed) R.string.effort_route_send_failed else R.string.effort_preview_failed),
                         retryLabel = stringResource(R.string.effort_route_retry),
                         onRetry = { ui.selected?.let(onSelect) },
-                        modifier = Modifier.fillMaxWidth().weight(1f, fill = !narrow),
+                        modifier = Modifier.fillMaxWidth().weight(1f),
                         compact = narrow,
                         photo = placePhotoRes(com.mist.pleos_app.effort.placePhotoOf(selected?.dest?.name)),
                         onPhoto = true,
