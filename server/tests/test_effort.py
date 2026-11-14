@@ -649,6 +649,15 @@ def test_demo_is_r1_scene():
     assert DEMO["input"]["distance_km"] * 1000 == sc["route_m"]
 
 
+def test_demo_preview_bg_kinds():
+    """출발 미리보기 코드 배경의 시연 종류(#116). 대표 목적지가 들어 있고, 값은 정해진 다섯 종류뿐이다."""
+    kinds = DEMO["scene"]["preview_bg"]["kinds"]
+    assert kinds[DEMO["scene"]["dest_name"]] == "sea"                      # 태안 꽃지해수욕장
+    assert (kinds["양평 두물머리"], kinds["가평 아침고요수목원"]) == ("nature", "nature")
+    assert set(kinds.values()) <= {"sea", "nature", "city", "home", "neutral"}
+    assert "집" not in kinds and "회사" not in kinds                         # 내비 구분값으로 고른다
+
+
 def test_demo_midway_scene():
     """시연 데이터 중간 정산 장면(효성 11/9): 휴게소 17:05·남은 52.3km → R27 영수증, [좋아요]로 정산 뒤 18:10 도착 → R28."""
     m, a = DEMO["midway"], DEMO["midway_arrival"]

@@ -219,6 +219,14 @@ DEMO_TRAFFIC = [("HEAVY", 2, 8), ("SLOW", 8, 20), ("SLOW", 72, 82), ("HEAVY", 90
 DEMO_MIDWAY_M = 52_000   # 휴게소(17:05)까지 온 거리 = R27
 
 
+# 시연 목록 목적지의 출발 미리보기 배경 종류(#116, 명준 11/15). 이름은 앱 시연 목록(DemoPlaces.kt)과 같아야 한다
+DEMO_PREVIEW_BG = {
+    "태안 꽃지해수욕장": "sea", "강릉 안목해변": "sea",
+    "양평 두물머리": "nature", "가평 아침고요수목원": "nature",
+    "코엑스": "neutral", "양양 서피비치": "neutral",
+}
+
+
 def demo_traffic(r1: dict) -> list[dict]:
     """정체 구간 목록을 검사하고 demo.json 모양으로 낸다.
     - SLOW·HEAVY 합 = 미리보기 정체 비율(36%). 앱 실제 모드도 이 둘만 더해 엔진 정체 입력으로 쓴다(NaviRepository.onTripInfo).
@@ -286,6 +294,14 @@ def demo_fixture(r1: dict) -> None:
                         "앱이 '현재 위치'로 쓴다(June #117 실측)",
                 "origin_name": "현재 위치",
                 "traffic": demo_traffic(r1),
+            },
+            # 출발 미리보기 코드 배경의 장소 종류(#116, 명준 11/15 · HANDOFF_v4 7-4). 엔진 입력이 아니라 그림용
+            "preview_bg": {
+                "note": "출발 미리보기 코드 배경의 장소 종류(#116). 시연 목록의 목적지 이름 → 종류(sea 바다 · nature 숲강 · "
+                        "neutral 중립). 실제 모드는 검색 결과의 카카오 분류로 고르지만 시연 장소에는 카카오 분류가 없어 여기 직접 적는다"
+                        "(두물머리는 카카오에도 세부 칸이 없음). 집 · 회사는 내비 구분값(HOME → home, OFFICE → city)이라 적지 않는다. "
+                        "여기 없는 이름은 neutral. 서피비치는 카카오 분류가 '술집'이라 우선 neutral(바다로 보일지는 명준이 정함)",
+                "kinds": DEMO_PREVIEW_BG,
             },
         },
         "input": r1_day, "expected": r.to_json(),
