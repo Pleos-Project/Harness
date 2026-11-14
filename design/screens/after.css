@@ -164,9 +164,3 @@
 @media (prefers-reduced-motion:reduce){
   .cg-rv .cg-rvi.cg-pop{animation:none}
 }
-/* 장소 사진(임시, ../places/CREDITS.md) — 출발 미리보기 배경 */
-.cg-pl-taean{background-image:url(../places/taean.jpg)}
-.cg-pl-gapyeong{background-image:url(../places/gapyeong.jpg)}
-.cg-pl-yangpyeong{background-image:url(../places/yangpyeong.jpg)}
-.cg-pl-home{background-image:url(../places/home.jpg)}
-.cg-pl-office{background-image:url(../places/office.jpg)}

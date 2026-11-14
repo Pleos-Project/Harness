@@ -13,7 +13,7 @@
 .cg-pst3 .cg-st .cg-k .cg-skel{height:18px;margin:0}
 .cg-pvfail.cg-err{color:var(--color-status-error-foreground)}
 .cg-pvfail.cg-info{color:var(--color-status-info-foreground)}
-/* ── 출발 화면 미리보기 = 고른 목적지 사진 배경(11/9 명준): 왼쪽(글자 쪽)은 딥 잉크 그늘, 오른쪽으로 사진이 드러남 · 글자 흰색 · 출발은 라임 ── */
+/* ── 출발 화면 미리보기 = 코드로 그린 목적지 배경(11/15 명준, 11/9 사진 배경 대체 · canvas.cg-pvbg = components/preview-bg.js): 왼쪽(글자 쪽)은 딥 잉크 그늘, 오른쪽으로 배경이 드러남 · 글자 흰색 · 출발은 라임 ── */
 .cg-pv.cg-pvimg{position:relative;overflow:hidden;isolation:isolate;border:none;color:#FFFFFF;background-color:#242135;background-size:cover;background-position:center 60%;
   --cg-text-primary:#FFFFFF;--cg-text-secondary:#FFFFFFE0;--cg-text-tertiary:#FFFFFFB8;--color-text-tertiary:#FFFFFFB8;--color-text-secondary:#FFFFFFE0;box-shadow:0 18px 44px #24213533,0 4px 12px #2421351F}
 .cg-pv.cg-pvimg::before{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(90deg,#242135F2 0%,#242135D9 34%,#24213580 62%,#24213526 100%)}
