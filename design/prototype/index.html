@@ -1987,7 +1987,7 @@ function homeScr(p,s){
   const sheet=s.quit?`<div class="isheet q" data-anno="멈추기 확인 · 짧은 하단 시트(딤 없음)"><span class="grab"></span><b>이번 출발을 그만둘까요?</b><span class="isub">지금까지 운전은 기록에 남지 않아요</span><div class="ibts">${B("계속 가기",{act:"quitNo"})}${B("멈추기",{cls:"fill danger",act:"quitYes"})}</div></div>`:"";
   return `<div class="home hm solo${s.pt==="c8"?" pt-c8":""}${p?" p":""}">${bar}${hero}${npanel}</div>${sheet}`;   /* 11/9 명준: 최근 기록 빼고 인사만 가운데 크게 (recs는 기록 목록 · 부품 보기용으로 남김) */
 }
-/* 11/15 명준: 출발 미리보기 배경 = 사진 대신 코드로 그린 배경(임시 사진 · 라이선스 문제 없음). 종류: 집 · 회사 = 내비 구분값, 검색 결과 = 카카오 분류 마지막 칸이 BG_CAT과 정확히 같을 때만,
+/* 11/15 명준: 출발 미리보기 배경 = 사진 대신 코드로 그린 배경(임시 사진 · 라이선스 문제 없음). 종류: 집 · 회사 = 내비 구분값, 검색 결과 = 카카오 분류(category_path)를 BG_LEAF → BG_UPPER 순서로 정확히 맞출 때만 바다 · 숲강 · 도시,
    시연 데이터 = 종류를 직접 적음(BG_DEMO), 나머지(분류 없음 · 표에 없음) = 중립(길). 시간대 = 출발 시각(미리보기는 지금 시각) 6~16 낮 · 17~19 해 질 녘 · 그 밖 밤, 날씨 = 그 주행의 출발 날씨(비 · 눈은 움직임) */
 const BG=(()=>{
 const WATER=/강|호수|두물머리|계곡|저수지|댐/;
@@ -2179,14 +2179,14 @@ function BGH(root){root.querySelectorAll("canvas.pvbg").forEach(cv=>{const pv=cv
   const ctx=cv.getContext("2d"),seed=BG.hash(st.name)+7,draw=t=>{ctx.setTransform(1,0,0,1,0,0);ctx.drawImage(base,0,0);ctx.setTransform(k,0,0,k,0,0);BG.precip(ctx,W,H,st.wx,t,seed)};draw(0);
   if(st.wx==="rain"||st.wx==="snow")BG_LIVE.add({cv,draw})})}
 (()=>{const t0=performance.now(),f=now=>{if(!BG_RM.matches&&!document.hidden){const t=(now-t0)/1000,vh=innerHeight;for(const e of BG_LIVE){if(!e.cv.isConnected){BG_LIVE.delete(e);continue}const r=e.cv.getBoundingClientRect();if(r.bottom>0&&r.top<vh&&r.width>0)e.draw(t)}}requestAnimationFrame(f)};requestAnimationFrame(f)})();
-const BG_CAT={"해수욕장,해변":"sea","산":"nature","호수":"nature","수목원,식물원":"nature","숲":"nature"};
+const BG_LEAF={"해수욕장,해변":"sea","섬":"sea","해상국립공원":"sea","항구,포구":"sea","부두":"sea","등대":"sea","방파제":"sea","여객선터미널":"sea","방조제":"sea","해파랑길":"sea","남파랑길":"sea","서해랑길":"sea","강":"nature","계곡":"nature","산":"nature","산봉우리":"nature","오름":"nature","숲":"nature","자연휴양림":"nature","수목원,식물원":"nature","호수":"nature","저수지":"nature","폭포":"nature","연못":"nature","등산로":"nature","고개":"nature","등산정보":"nature","북한산둘레길":"nature","지리산둘레길":"nature","금정산둘레길":"nature","소백산자락길":"nature"}, BG_UPPER={"지하철,전철":"city","백화점":"city"};   /* = fixtures/constants.json preview_bg(효성 #187): ① 마지막 칸이 leaf에 있으면 ② 윗칸 가운데 upper에 있으면 ③ 아니면 중립. 종류가 섞인 값은 넣지 않음 */
 const BG_DEMO={"태안 꽃지해수욕장":"sea","양평 두물머리":"nature","가평 아침고요수목원":"nature"};   /* 시연 데이터에 직접 적는 종류(앱 DemoPlaces · demo.json에도 같은 값) */
-const bgKind=nm=>nm==="집"?"home":nm==="회사"?"city":BG_DEMO[nm]||BG_CAT[(RES2.find(r=>r.nm===nm)||{}).cat]||"neutral";
+const bgKind=nm=>{if(nm==="집")return"home";if(nm==="회사")return"city";if(BG_DEMO[nm])return BG_DEMO[nm];const r=RES2.find(x=>x.nm===nm);if(!r)return"neutral";const path=r.path||[r.cat];return BG_LEAF[path[path.length-1]]||(path.slice(0,-1).map(c=>BG_UPPER[c]).find(Boolean))||"neutral"};
 const bgTod=h=>h>=6&&h<=16?"day":h>=17&&h<=19?"dusk":"night";
 const bgWx=w=>w==="비"?"rain":w==="눈"?"snow":"clear";
 const PV_BG=(s,nm)=>`<canvas class="pvbg" aria-hidden="true" data-k="${bgKind(nm)}" data-t="${s.pvTod||bgTod(new Date().getHours())}" data-w="${s.pvWx||bgWx((TRIPS[s.trip]||TRIPS.main).wx)}" data-n="${nm}"></canvas>`;
 const DCARDS=[{nm:"집",tag:"즐겨찾기",km:"12km",eta:"25분",cp:8},{nm:"회사",tag:"즐겨찾기",km:"8km",eta:"20분",cp:15},{nm:"태안 꽃지해수욕장",tag:"최근",km:"104km",eta:"1시간 45분",cp:36},{nm:"양평 두물머리",tag:"최근",km:"36km",eta:"42분",cp:12}];
-const RES2=[{nm:"태안 꽃지해수욕장",ad:"충남 태안군 안면읍 · 해수욕장",km:"104km",cat:"해수욕장,해변"},{nm:"꽃지 해안공원",ad:"충남 태안군 안면읍 · 공원",km:"104km",cat:"공원"},{nm:"꽃지 할미할아비바위",ad:"충남 태안군 안면읍 · 명소",km:"105km",cat:"관광,명소"}];   /* cat = 카카오 category_name 마지막 칸(예시) */
+const RES2=[{nm:"태안 꽃지해수욕장",ad:"충남 태안군 안면읍 · 해수욕장",km:"104km",cat:"해수욕장,해변",path:["여행","관광,명소","해수욕장,해변"]},{nm:"꽃지 해안공원",ad:"충남 태안군 안면읍 · 공원",km:"104km",cat:"도시근린공원",path:["여행","공원","도시근린공원"]},{nm:"꽃지 할미할아비바위",ad:"충남 태안군 안면읍 · 명소",km:"105km",cat:"관광,명소",path:["여행","관광,명소"]}];   /* cat = 카카오 category_name 마지막 칸(예시) */
 const DLONG=[{nm:"남양주 물의정원 북한강 산책로",tag:"최근",km:"31km",eta:"45분",cp:10},{nm:"한화리조트 대천 파로스 오션타워",tag:"최근",km:"168km",eta:"2시간 20분",cp:22}];   /* 11/11 June 대조 D3: 긴 목적지 이름 확인용 */
 const dinfo=nm=>[...DCARDS,...DLONG].find(d=>d.nm===nm)||{nm,km:"104km",eta:"1시간 45분",cp:36};
 function depart(p,s){
@@ -2518,8 +2518,8 @@ const SCREENS=[
    st:["\"태안 꽃지해수욕장\" · 도착 예상 1시간 45분 · 거리 104km · 정체 경로의 36%","\"도착하면 오늘 운전을 정리해 드려요\"","[안내 시작 →](L 100) → requestRoute로 Pleos 기본 내비게이션"],ck:[["ok","유저 플로우 2단계 미리보기 · 출발 전 안내 한 줄"],["ok","시연 목적지 태안 꽃지해수욕장(#60)"]]},
   {g:"출발 · 미리보기 → 내비로 보내기",id:"depart-bg-rain",r:"depart",tag:"미리보기 배경 · 바다 · 해 질 녘 · 비",s:{dest:"태안 꽃지해수욕장",pv:"ok",pvTod:"dusk",pvWx:"rain"},desc:"미리보기 칸 배경은 사진이 아니라 앱이 그리는 코드 배경이다(11/15 명준). 태안 꽃지해수욕장은 시연 데이터에 종류(바다)를 직접 적었고, 출발 시각이 해 질 녘이고 출발 날씨가 비라 빗줄기가 내린다.",
    st:["종류: 바다(시연 데이터 직접) · 시간대: 해 질 녘(17~19시) · 날씨: 비(움직임)","그늘 · 글자 · [안내 시작]은 사진 배경 때와 같음"],ck:[["ok","사진 · 라이선스 없음 · 서버 호출 없음"]]},
-  {g:"출발 · 미리보기 → 내비로 보내기",id:"depart-bg-snow",r:"depart",tag:"미리보기 배경 · 중립(길) · 밤 · 눈",s:{dest:"꽃지 할미할아비바위",pv:"ok",pvTod:"night",pvWx:"snow"},desc:"검색으로 고른 곳의 카카오 분류가 표에 없으면(여기서는 \"관광,명소\") 장소와 상관없는 중립 배경 \"길\"이다. 출발 시각이 밤이고 출발 날씨가 눈이라 눈송이가 내린다.",
-   st:["종류: 중립 · 길(카카오 \"관광,명소\" = 표에 없음) · 시간대: 밤 · 날씨: 눈(움직임)","분류 없는 즐겨찾기 · 최근 목적지도 중립"],ck:[["ok","중립은 길로 확정(11/15 명준)"],["q","카카오 분류 표는 확인된 값만 넣은 초안 — 모으는 중"]]},
+  {g:"출발 · 미리보기 → 내비로 보내기",id:"depart-bg-snow",r:"depart",tag:"미리보기 배경 · 중립(길) · 밤 · 눈",s:{dest:"꽃지 할미할아비바위",pv:"ok",pvTod:"night",pvWx:"snow"},desc:"검색으로 고른 곳의 카카오 분류가 표에 없으면(여기서는 \"관광,명소\", constants.json preview_bg) 장소와 상관없는 중립 배경 \"길\"이다. 출발 시각이 밤이고 출발 날씨가 눈이라 눈송이가 내린다.",
+   st:["종류: 중립 · 길(카카오 \"관광,명소\" = 표에 없음) · 시간대: 밤 · 날씨: 눈(움직임)","분류 없는 즐겨찾기 · 최근 목적지도 중립"],ck:[["ok","중립은 길로 확정(11/15 명준)"],["ok","카카오 분류 표 = constants.json preview_bg(효성 #187) · 새 값을 보면 한 줄 더함"]]},
   {g:"출발 · 미리보기 → 내비로 보내기",id:"depart-bg-day",r:"depart",tag:"미리보기 배경 · 숲 · 강 · 낮 · 맑음",s:{dest:"양평 두물머리",pv:"ok",pvTod:"day",pvWx:"clear"},desc:"양평 두물머리는 카카오에 세부 분류가 없어 시연 데이터에 종류(숲 · 강)를 직접 적었다. 물가 이름이라 강과 나무 한 그루를 함께 그린다. 낮 · 맑음.",
    st:["종류: 숲 · 강(시연 데이터 직접, 물가) · 시간대: 낮(6~16시) · 날씨: 맑음"],ck:[["ok","같은 목적지는 늘 같은 모습(이름으로 씨앗)"]]},
   {g:"출발 · 미리보기 → 내비로 보내기",id:"depart-preview-fail",r:"depart",tag:"미리보기 실패",s:{dest:"태안 꽃지해수욕장",pv:"fail"},desc:"미리보기를 못 받으면 다시 시도를 두고, 출발은 막지 않는다. 출발하면 정체·예상보다 더 없이 정리한다고 한 줄로 알린다(11/8 명준).",
@@ -2857,9 +2857,9 @@ const PV_KINDS=[["neutral","중립 · 길","꽃지 할미할아비바위"],["cit
 const PV_TODS=[["day","낮"],["dusk","해 질 녘"],["night","밤"]];
 const PV_WXS=[["태안 꽃지해수욕장","sea","dusk","rain","바다 · 해 질 녘 · 비"],["꽃지 할미할아비바위","neutral","night","snow","중립 · 밤 · 눈"],["회사","city","day","cloud","도시 · 낮 · 흐림"],["가평 아침고요수목원","nature","day","snow","숲 · 강 · 낮 · 눈"],["집","home","night","rain","집 · 밤 · 비"],["양평 두물머리","nature","dusk","cloud","숲 · 강 · 해 질 녘 · 흐림"]];
 const PV_RULES=[["종류 · 즐겨찾기 집 · 회사","내비 구분값(HOME · OFFICE) → 집 · 도시","집 · 회사"],
- ["종류 · 검색 결과","카카오 category_name 마지막 칸이 표와 <b>정확히</b> 같을 때만 — 해수욕장,해변 → 바다 · 산 · 호수 · 수목원,식물원 · 숲 → 숲 · 강","태안 꽃지해수욕장 · 북한산 · 청평호"],
- ["종류 · 그 밖","분류가 없거나 표에 없으면 <b>중립(길)</b>. 최근 목적지 · 그 밖의 즐겨찾기도 중립(서버 호출을 늘리지 않음)","꽃지 해안공원(공원) · 할미할아비바위(관광,명소) · 강남역(지하철,전철)"],
- ["종류 · 시연 데이터","시연 목록에 종류를 직접 적음(카카오에 세부 칸이 없는 곳도 맞게)","태안 = 바다 · 두물머리 · 가평 = 숲 · 강"],
+ ["종류 · 검색 결과","카카오 분류(<code>category_path</code>)를 <code>fixtures/constants.json</code> <code>preview_bg</code> 표로 — ① 마지막 칸이 leaf에 정확히 있으면 그 종류(바다: 해수욕장,해변 · 섬 · 해상국립공원 · 항구,포구 · 부두 · 등대 · 방파제 · 여객선터미널 · 방조제 · 해파랑길 · 남파랑길 · 서해랑길 / 숲 · 강: 강 · 계곡 · 산 · 산봉우리 · 오름 · 숲 · 자연휴양림 · 수목원,식물원 · 호수 · 저수지 · 폭포 · 연못 · 등산로 · 고개 · 등산정보 · 북한산둘레길 · 지리산둘레길 · 금정산둘레길 · 소백산자락길) ② 아니면 윗칸 가운데 upper(지하철,전철 · 백화점 → 도시) ③ 아니면 중립","태안 꽃지해수욕장 · 우도(섬) · 북한산 · 강남역(윗칸 지하철,전철 → 도시)"],
+ ["종류 · 그 밖","표에 없으면 <b>중립(길)</b>. 한 값 안에 종류가 섞인 값(국립공원 · 섬(내륙) · KTX정차역 · 도시근린공원 · 전망대 · 케이블카 · 유원지 · 캠핑장 · 공항 등)도 중립. 최근 목적지 · 그 밖의 즐겨찾기도 중립(서버 호출을 늘리지 않음)","꽃지 해안공원(도시근린공원) · 할미할아비바위(관광,명소) · 자라섬(섬(내륙)) · 남이섬(유원지)"],
+ ["종류 · 시연 데이터","demo.json scene.preview_bg.kinds에 직접 적음(효성 #186)","태안 · 안목해변 = 바다 · 두물머리 · 가평 = 숲 · 강 · 코엑스 · 서피비치 = 중립"],
  ["시간대","출발 시각(미리보기는 지금 시각) · 6~16시 낮 · 17~19시 해 질 녘 · 그 밖 밤","시연 16:00 출발 = 낮"],
  ["날씨","출발 날씨 · 비 · 눈은 빗줄기 · 눈송이가 움직임(보이는 동안만 · 동작 줄이기면 멈춤) · 흐림은 하늘만 어둡게","시연 = 비"],
  ["같은 목적지","목적지 이름으로 무작위 씨앗 → 언제 열어도 건물 높이 · 섬 위치가 같음",""],
