@@ -81,6 +81,9 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.zIndex
 import com.mist.pleos_app.R
 import com.mist.pleos_app.ui.theme.Chagok
+import com.mist.pleos_app.ui.theme.ChagokMotion
+import com.mist.pleos_app.ui.theme.ChagokRadius
+import com.mist.pleos_app.ui.theme.cgElevation
 import com.mist.pleos_app.ui.theme.gpx
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
@@ -101,9 +104,15 @@ import kotlinx.coroutines.delay
  * 문구는 부르는 쪽이 strings.xml·엔진 출력으로 넘긴다.
  */
 
-private val EaseRise = CubicBezierEasing(.2f, .7f, .2f, 1f)
-private val EaseIn = CubicBezierEasing(.32f, .72f, 0f, 1f)
+// 옛 private 곡선 EaseRise(.2,.7,.2,1) → ChagokMotion.Sheet, EaseIn(.32,.72,0,1) → ChagokMotion.Rise로 옮겼다(Design v2 PR-2)
 private val EaseRot = CubicBezierEasing(.65f, 0f, .35f, 1f)
+
+/**
+ * 딥 잉크(주야 같음) + 투명도. 값 = `btnFilledText`(라임 위 잉크 글자, 주간 · 야간 모두 #242033).
+ * 사진 칸 그늘 · CTA 화살표 원처럼 테마와 상관없이 잉크인 자리에 쓴다(예전 하드코딩 `0x..242033`과 값 같음).
+ */
+@Composable
+private fun inkAlpha(alpha: Int): Color = Chagok.colors.btnFilledText.copy(alpha = alpha / 255f)
 
 // ------------------------------------------------------------ 아이콘
 /**
@@ -120,13 +129,20 @@ fun CgWordmark(width: Dp, modifier: Modifier = Modifier, label: String? = null) 
     )
 }
 
-/** 앱 아이콘 타일(`design/brand/nogo_icon_*-gradient.svg`): 주간 라임 · 야간 잉크 그라디언트. 시작 화면 192. */
+/**
+ * 앱 아이콘 타일(`design/brand/nogo_icon_*-gradient.svg`): 주간 라임 · 야간 잉크 그라디언트. 시작 화면 192.
+ * 그림자는 주간만(아티팩트 `.screen.dark .splash .appicon{filter:none}`).
+ */
 @Composable
 fun CgAppIcon(size: Dp, modifier: Modifier = Modifier) {
+    val c = Chagok.colors
+    val shade = c.textPrimary.copy(alpha = 0x24 / 255f)   // 주간 textPrimary #242033 → 예전 0x24242033과 같음
     androidx.compose.foundation.Image(
-        androidx.compose.ui.res.painterResource(if (Chagok.colors.isDark) R.drawable.nogo_icon_ink_gradient else R.drawable.nogo_icon_lime_gradient),
+        androidx.compose.ui.res.painterResource(if (c.isDark) R.drawable.nogo_icon_ink_gradient else R.drawable.nogo_icon_lime_gradient),
         contentDescription = null,
-        modifier = modifier.size(size).shadow(8.gpx, RoundedCornerShape(size * 44f / 144f), ambientColor = Color(0x24242033), spotColor = Color(0x24242033)),
+        modifier = modifier.size(size).then(
+            if (c.isDark) Modifier else Modifier.shadow(8.gpx, RoundedCornerShape(size * 44f / 144f), ambientColor = shade, spotColor = shade),
+        ),
     )
 }
 
@@ -208,20 +224,21 @@ fun CgCta(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, comp
     val shape = RoundedCornerShape(999.gpx)
     val fg = if (on) c.btnFilledText else c.btnDisabledText
     Row(
-        modifier.graphicsLayer { val k = if (pressed && on) .98f else 1f; scaleX = k; scaleY = k }
+        modifier.graphicsLayer { val k = if (pressed && on) ChagokMotion.PRESS_SCALE else 1f; scaleX = k; scaleY = k }
             .height(if (hero) (if (compact) 104.gpx else 124.gpx) else if (compact) 80.gpx else 100.gpx)
             .background(if (!on) c.btnDisabled else if (pressed) c.btnFilledPressed else c.btnFilled, shape)   // 꺼짐도 테두리 없음(.cta.off)
             .clickable(src, indication = null, enabled = on, role = Role.Button, onClick = onClick)
             .padding(start = if (hero) (if (compact) 44.gpx else 52.gpx) else if (compact) 28.gpx else 40.gpx, end = if (hero) (if (compact) 12.gpx else 16.gpx) else if (compact) 8.gpx else 12.gpx),
-        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(if (hero) 26.gpx else 20.gpx),
+        // busy = 글자–점 사이 12(아티팩트 .cta.busy), 아니면 글자–화살표 원 20(hero 26)
+        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(if (busy) 12.gpx else if (hero) 26.gpx else 20.gpx),
     ) {
         // hero = v104 홈 [출발하기]: 124(분할 104) · 700 40/52(34/44) · 화살표 원 92(80) · 아이콘 48
         val ts = if (hero) androidx.compose.ui.text.TextStyle(fontSize = (if (compact) 34 else 40).gsp, lineHeight = (if (compact) 44 else 52).gsp, fontWeight = FontWeight.Bold)
         else if (compact) Chagok.type.bodyL else Chagok.type.titleS
         Text(text, Modifier.then(if (fill) Modifier.weight(1f) else Modifier), style = ts, color = fg, maxLines = 1)
         // busy("내비로 보내는 중") = 화살표 원 대신 점 세 개(.cta.busy .dots)
-        if (busy) Box(Modifier.padding(end = 20.gpx)) { CgLoadingDots(fg) }
-        else Box(Modifier.size(if (hero) (if (compact) 80.gpx else 92.gpx) else if (compact) 60.gpx else 76.gpx).background(if (on) Color(0x14242033) else Color.Transparent, CircleShape), contentAlignment = Alignment.Center) {
+        if (busy) Box(Modifier.padding(end = 24.gpx)) { CgLoadingDots(fg) }
+        else Box(Modifier.size(if (hero) (if (compact) 80.gpx else 92.gpx) else if (compact) 60.gpx else 76.gpx).background(if (on) inkAlpha(0x14) else Color.Transparent, CircleShape), contentAlignment = Alignment.Center) {
             CgIconMark(CgIcon.Arrow, (if (hero) (if (compact) 42 else 48) else if (compact) 32 else 40).gpx, fg)
         }
     }
@@ -344,7 +361,7 @@ fun CgSearchField(query: String, hint: String, clearLabel: String, onQuery: (Str
         Row(
             (if (compact) Modifier.fillMaxWidth() else Modifier.width(1040.gpx))
                 .height(if (compact) 88.gpx else 100.gpx)
-                .shadow(6.gpx, shape).background(c.fieldBackground, shape)
+                .cgElevation(1, shape).background(c.fieldBackground, shape)
                 .border(if (active) 3.gpx else 2.gpx, if (active) c.fieldCaret else c.fieldBorder, shape)
                 .padding(start = if (compact) 26.gpx else 36.gpx, end = if (compact) 14.gpx else 18.gpx),
             verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(20.gpx),
@@ -372,37 +389,40 @@ fun CgSearchField(query: String, hint: String, clearLabel: String, onQuery: (Str
 }
 
 // ------------------------------------------------------------ dest-card · record-card · preview-panel
-/** 목적지 카드(`components/dest-card`): 바깥 자리 면 8 + 안쪽 카드. 고르면 바깥이 라임 halo(아티팩트 .hcard.on), 안쪽은 라임 면. */
+/**
+ * 목적지 카드(`components/dest-card`): 바깥 자리 면 8 + 안쪽 카드(그림자 Level 1). 고르면 바깥이 라임 halo(아티팩트 .hcard.on), 안쪽은 라임 면.
+ * 분할(compact, `.home.p .hcard`): 바깥 모서리 32 · 자리 면 6 · 안쪽 모서리 26 · 안 여백 20 22 16 · 태그 · 메타 Label M · 이름 줄 높이 40.
+ */
 @Composable
 fun CgDestCard(tag: String, name: String, meta: String?, selected: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier, compact: Boolean = false, icon: CgIcon? = null) {
     val c = Chagok.colors
     val src = remember { MutableInteractionSource() }
     val pressed by src.collectIsPressedAsState()
-    val inner = RoundedCornerShape(32.gpx)
+    val inner = RoundedCornerShape(if (compact) 26.gpx else 32.gpx)
     Box(
-        modifier.height(if (compact) 200.gpx else 300.gpx).background(if (selected) c.selectionHalo else c.placeholder, RoundedCornerShape(40.gpx))
-            .clickable(src, indication = null, role = Role.Button, onClick = onClick).padding(8.gpx),
+        modifier.height(if (compact) 200.gpx else 300.gpx).background(if (selected) c.selectionHalo else c.placeholder, RoundedCornerShape(if (compact) 32.gpx else 40.gpx))
+            .clickable(src, indication = null, role = Role.Button, onClick = onClick).padding(if (compact) 6.gpx else 8.gpx),
     ) {
         Column(
-            Modifier.fillMaxSize().graphicsLayer { val k = if (pressed) .985f else 1f; scaleX = k; scaleY = k }
-                .shadow(6.gpx, inner).background(if (selected) c.selectionBackground else c.surfaceCard, inner)
+            Modifier.fillMaxSize().graphicsLayer { val k = if (pressed) ChagokMotion.PRESS_SCALE else 1f; scaleX = k; scaleY = k }
+                .cgElevation(1, inner).background(if (selected) c.selectionBackground else c.surfaceCard, inner)
                 .then(if (selected) Modifier.border(2.gpx, c.selectionBorder, inner) else Modifier)
-                .padding(start = 28.gpx, end = 28.gpx, top = if (compact) 18.gpx else 28.gpx, bottom = if (compact) 14.gpx else 22.gpx),
+                .padding(start = if (compact) 22.gpx else 28.gpx, end = if (compact) 22.gpx else 28.gpx, top = if (compact) 20.gpx else 28.gpx, bottom = if (compact) 16.gpx else 22.gpx),
             verticalArrangement = Arrangement.spacedBy(6.gpx),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.gpx)) {
                 val tagIcon = icon ?: when { tag.contains("집") -> CgIcon.House; tag.contains("회사") -> CgIcon.Briefcase; else -> CgIcon.Recent }
                 CgIconMark(tagIcon, 28.gpx, if (selected) c.selectionForeground else c.textTertiary)
-                Text(tag, style = Chagok.type.bodyS, color = if (selected) c.selectionForeground else c.textTertiary, maxLines = 1)   // .hcard .tag body-s 700
+                Text(tag, style = if (compact) Chagok.type.labelM else Chagok.type.bodyS, color = if (selected) c.selectionForeground else c.textTertiary, maxLines = 1)   // .hcard .tag body-s 700(분할 label-m)
             }
             Spacer(Modifier.weight(1f))
             // .hcard .nm(#118 D3 · 10-3 ① 한글 줄바꿈): 두 줄까지. 어절 안에서는 끊지 않고(WordBreak.Phrase) 두 줄 길이를 고르게(Balanced),
-            // 넘치면 둘째 줄 끝 "…". 시안 700 40/48(분할 카드 200 높이는 titleS)
+            // 넘치면 둘째 줄 끝 "…". 시안 700 40/48(`.home.dp .hcard .nm` 줄 높이 48) · 분할 titleS 32/40
             Text(
-                name, style = (if (compact) Chagok.type.titleS else Chagok.type.titleL).copy(lineBreak = KoreanNameBreak),
+                name, style = (if (compact) Chagok.type.titleS.copy(lineHeight = 40.gsp) else Chagok.type.titleL.copy(lineHeight = 48.gsp)).copy(lineBreak = KoreanNameBreak),
                 color = if (selected) c.selectionForeground else c.textPrimary, maxLines = 2, overflow = TextOverflow.Ellipsis,
             )
-            meta?.let { Text(it, Modifier.graphicsLayer { alpha = if (selected) .72f else 1f }, style = Chagok.type.bodyM, color = if (selected) c.selectionForeground else c.textSecondary, maxLines = 1, overflow = TextOverflow.Ellipsis) }
+            meta?.let { Text(it, Modifier.graphicsLayer { alpha = if (selected) .72f else 1f }, style = if (compact) Chagok.type.labelM else Chagok.type.bodyM, color = if (selected) c.selectionForeground else c.textSecondary, maxLines = 1, overflow = TextOverflow.Ellipsis) }
         }
     }
 }
@@ -457,9 +477,11 @@ private fun CgPreviewPanel(
 @Composable
 private fun CgPhotoPanel(photo: Int?, modifier: Modifier, compact: Boolean, content: @Composable () -> Unit) {
     val shape = RoundedCornerShape(40.gpx)
-    val shade = if (compact) Brush.verticalGradient(0f to Color(0x80242033), .45f to Color(0xCC242033), 1f to Color(0xF2242033))
-    else Brush.horizontalGradient(0f to Color(0xF2242033), .34f to Color(0xD9242033), .62f to Color(0x80242033), 1f to Color(0x26242033))
-    Box(modifier.shadow(18.gpx, shape, ambientColor = Color(0x33242033), spotColor = Color(0x33242033)).clip(shape).background(Color(0xFF242033))) {
+    // 사진 위 그늘 · 바탕은 테마와 상관없이 딥 잉크(값 = 예전 0x..242033)
+    val shade = if (compact) Brush.verticalGradient(0f to inkAlpha(0x80), .45f to inkAlpha(0xCC), 1f to inkAlpha(0xF2))
+    else Brush.horizontalGradient(0f to inkAlpha(0xF2), .34f to inkAlpha(0xD9), .62f to inkAlpha(0x80), 1f to inkAlpha(0x26))
+    val glow = inkAlpha(0x33)
+    Box(modifier.shadow(18.gpx, shape, ambientColor = glow, spotColor = glow).clip(shape).background(inkAlpha(0xFF))) {
         photo?.let {
             androidx.compose.foundation.Image(
                 androidx.compose.ui.res.painterResource(it), contentDescription = null, modifier = Modifier.matchParentSize(),
@@ -482,7 +504,7 @@ private fun PreviewPanelBody(
     val shape = RoundedCornerShape(40.gpx)
     if (state == CgPreviewState.Empty || name == null) {
         Box(modifier.heightIn(min = 240.gpx).cgDashed(40.gpx, c.borderStrong).padding(28.gpx), contentAlignment = Alignment.Center) {
-            Text(emptyText, style = t.bodyL, color = c.textTertiary)   // .pv.empty body-l 700
+            Text(emptyText, style = if (compact) t.bodyM else t.bodyL, color = c.textTertiary)   // .pv.empty body-l 700(분할 body-m)
         }
         return
     }
@@ -513,7 +535,7 @@ private fun PreviewPanelBody(
                 stats.forEach { (k, v) ->
                     Column(Modifier.widthIn(min = if (compact) 0.gpx else 150.gpx), verticalArrangement = Arrangement.spacedBy(2.gpx)) {
                         Text(k, style = t.labelM, color = c.textTertiary)
-                        Text(v, style = if (compact) t.bodyL else t.titleS, color = c.textPrimary, maxLines = 1)
+                        Text(v, style = t.titleS, color = c.textPrimary, maxLines = 1)   // .pv .st 값 title-s(분할도 같음)
                     }
                 }
             }
@@ -522,42 +544,71 @@ private fun PreviewPanelBody(
     }
     if (!compact) {
         Row(
-            (if (bare) modifier else modifier.shadow(6.gpx, shape).background(c.surfaceCard, shape).border(2.gpx, c.line, shape)).padding(start = 44.gpx, end = 28.gpx, top = 28.gpx, bottom = 28.gpx),
+            (if (bare) modifier else modifier.cgElevation(1, shape).background(c.surfaceCard, shape).border(2.gpx, c.line, shape)).padding(start = 44.gpx, end = 28.gpx, top = 28.gpx, bottom = 28.gpx),
             verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(32.gpx),
         ) {
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(14.gpx), content = body)
             cta(Modifier)
         }
     } else {
-        Column((if (bare) modifier else modifier.shadow(6.gpx, shape).background(c.surfaceCard, shape).border(2.gpx, c.line, shape)).padding(24.gpx), verticalArrangement = Arrangement.spacedBy(10.gpx)) {
-            body()
-            Spacer(Modifier.height(12.gpx))
+        // 분할 `.home.dp.p .pv`: 여백 위아래 20 · 좌우 24, 글 묶음과 CTA 사이 12, 글 묶음 안 14
+        Column(
+            (if (bare) modifier else modifier.cgElevation(1, shape).background(c.surfaceCard, shape).border(2.gpx, c.line, shape)).padding(horizontal = 24.gpx, vertical = 20.gpx),
+            verticalArrangement = Arrangement.spacedBy(12.gpx),
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(14.gpx), content = body)
             cta(Modifier.fillMaxWidth())
         }
     }
 }
 
 // ------------------------------------------------------------ people-alert · stepper
-/** 스테퍼(`components/stepper`, 알림 바 안 변형): [−] 값 [+]. */
+/**
+ * 스테퍼(`components/stepper`, 알림 바 안 알약): [−] 값 [+]. 높이 80 · 버튼 80 · 값 칸 최소 96 · Title M(분할 64 · 64 · 64 · Body L).
+ * [inBar] = 분할 인원 알림 바 안(`.a-p1 .pbar .pst`, compact와 같이 씀): 버튼 56 · 아이콘 40 · 값 칸 최소 56 · Body L.
+ */
 @Composable
-fun CgStepper(value: String, onMinus: () -> Unit, onPlus: () -> Unit, minusLabel: String, plusLabel: String, minusEnabled: Boolean, plusEnabled: Boolean, compact: Boolean = false) {
+fun CgStepper(
+    value: String, onMinus: () -> Unit, onPlus: () -> Unit, minusLabel: String, plusLabel: String, minusEnabled: Boolean, plusEnabled: Boolean,
+    compact: Boolean = false, inBar: Boolean = false,
+) {
     val c = Chagok.colors
-    Row(Modifier.height(if (compact) 64.gpx else 80.gpx).background(c.btnBasic, RoundedCornerShape(40.gpx)), verticalAlignment = Alignment.CenterVertically) {
-        CgIconButton(minusLabel, CgIcon.Minus, onMinus, small = compact, plain = true, enabled = minusEnabled)
-        Text(value, Modifier.widthIn(min = if (compact) 64.gpx else 96.gpx), style = if (compact) Chagok.type.bodyL else Chagok.type.titleM, color = c.textPrimary, textAlign = TextAlign.Center)
-        CgIconButton(plusLabel, CgIcon.Plus, onPlus, small = compact, plain = true, enabled = plusEnabled)
+    val bar = compact && inBar
+    Row(Modifier.height(if (compact) 64.gpx else 80.gpx).background(c.btnBasic, ChagokRadius.PILL), verticalAlignment = Alignment.CenterVertically) {
+        if (bar) StepButton(minusLabel, CgIcon.Minus, onMinus, minusEnabled)
+        else CgIconButton(minusLabel, CgIcon.Minus, onMinus, small = compact, plain = true, enabled = minusEnabled)
+        Text(value, Modifier.widthIn(min = if (bar) 56.gpx else if (compact) 64.gpx else 96.gpx), style = if (compact) Chagok.type.bodyL else Chagok.type.titleM, color = c.textPrimary, textAlign = TextAlign.Center)
+        if (bar) StepButton(plusLabel, CgIcon.Plus, onPlus, plusEnabled)
+        else CgIconButton(plusLabel, CgIcon.Plus, onPlus, small = compact, plain = true, enabled = plusEnabled)
     }
 }
 
+/** 분할 알림 바 안 스테퍼 버튼 56(면 없음 · 눌림 tertiary-pressed · 아이콘 40). */
+@Composable
+private fun StepButton(label: String, icon: CgIcon, onClick: () -> Unit, enabled: Boolean) {
+    val c = Chagok.colors
+    val src = remember { MutableInteractionSource() }
+    val pressed by src.collectIsPressedAsState()
+    Box(
+        Modifier.size(56.gpx)
+            .background(if (pressed) c.btnTertiaryPressed else Color.Transparent, ChagokRadius.PILL)
+            .clickable(src, indication = null, enabled = enabled, role = Role.Button, onClick = onClick)
+            .semantics { contentDescription = label },
+        contentAlignment = Alignment.Center,
+    ) { CgIconMark(icon, 40.gpx, if (enabled) c.textPrimary else c.textTertiary) }
+}
+
 /**
- * 인원 확인 알림 바(`components/people-alert`, 1120 × 120): 위 바 줄에 겹치는 얇은 알림. 저절로 안 사라짐.
- * 0.42초 (.32,.72,0,1) 위 16px · scale .98 → 제자리.
+ * 인원 확인 알림 바(`components/people-alert`, 아티팩트 `.pbar` 1040 × 96 · 분할 좌우 40 안쪽 × 88, 그림자 Level 2):
+ * 위 바 줄에 겹치는 얇은 알림. 저절로 안 사라짐. 0.42초 (.32,.72,0,1) 위 16px · scale .98 → 제자리.
+ * (아티팩트 DS 카드 문구의 "1120 × 120"은 CSS와 다른 옛 값. 도착 확인 System Notification 700은 OS 알림이라 이 부품이 아니다.)
+ * 분할 안 스테퍼는 `CgStepper(compact = true, inBar = true)`, 구분선은 `CgDivider(compact = true)`.
  */
 @Composable
 fun CgPeopleAlert(title: String, sub: String?, modifier: Modifier = Modifier, compact: Boolean = false, content: @Composable RowScope.() -> Unit) {
     val c = Chagok.colors
     val drop = remember { Animatable(0f) }
-    LaunchedEffect(Unit) { drop.animateTo(1f, tween(420, easing = EaseIn)) }
+    LaunchedEffect(Unit) { drop.animateTo(1f, tween(420, easing = ChagokMotion.Rise)) }
     // v37~v38(명준 11/8): 폭 = 목적지 검색 창(1040, 분할은 좌우 40 안쪽), 높이 96(분할 88). 내려오는 효과는 처음 뜰 때만
     val shape = RoundedCornerShape(if (compact) 44.gpx else 48.gpx)
     Row(
@@ -565,7 +616,7 @@ fun CgPeopleAlert(title: String, sub: String?, modifier: Modifier = Modifier, co
             .height(if (compact) 88.gpx else 96.gpx)
             .graphicsLayer { alpha = drop.value; translationY = -(1f - drop.value) * 16f * density; val k = .98f + .02f * drop.value; scaleX = k; scaleY = k }
             // 아티팩트 .pbar: 면 surface-notification · 테두리 주간 border-subtle / 야간 없음 · 여백 0 20 0 48 · 사이 28(분할 0 10 0 26 · 12)
-            .shadow(16.gpx, shape).background(c.surfaceNotification, shape).border(1.gpx, c.sheetBorder, shape)
+            .cgElevation(2, shape).background(c.surfaceNotification, shape).border(1.gpx, c.sheetBorder, shape)
             .padding(start = if (compact) 26.gpx else 48.gpx, end = if (compact) 10.gpx else 20.gpx),
         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(if (compact) 12.gpx else 28.gpx),
     ) {
@@ -577,28 +628,28 @@ fun CgPeopleAlert(title: String, sub: String?, modifier: Modifier = Modifier, co
     }
 }
 
-/** 알림 바 안 세로 구분선. */
+/** 알림 바 안 세로 구분선 2 × 56(분할 44). */
 @Composable
-fun CgDivider() { Box(Modifier.width(2.gpx).height(56.gpx).background(Chagok.colors.line)) }
+fun CgDivider(compact: Boolean = false) { Box(Modifier.width(2.gpx).height(if (compact) 44.gpx else 56.gpx).background(Chagok.colors.line)) }
 
 // ------------------------------------------------------------ bottom-sheet
 /**
  * 짧은 하단 시트(`components/bottom-sheet`): 딤·끌기 없음, 0.38초 (.2,.7,.2,1) 아래 115% → 제자리. 위에 손잡이.
  * 면 surface-modal · 테두리 주간 border-subtle / 야간 없음(아티팩트 1091·1093).
  * confirm = 확인 시트 .isheet(그만두기 · 기록 지우기): 모서리 40 · 여백 16 40 24 · 사이 8(분할 14 26 18).
- * 아니면 쉰 시간 시트 .rsheet: 모서리 32 · 여백 16 40 36 · 사이 20(분할 14 24 24 · 14).
+ * 아니면 쉰 시간 시트 .rsheet: 모서리 32 · 여백 16 40 36 · 사이 20(분할 14 24 24 · 14). 그림자 Level 3.
  */
 @Composable
 fun CgBottomSheet(modifier: Modifier = Modifier, compact: Boolean = false, delayMs: Long = 0, confirm: Boolean = false, content: @Composable ColumnScope.() -> Unit) {
     val c = Chagok.colors
     val y = remember { Animatable(1.15f) }
-    LaunchedEffect(Unit) { delay(delayMs); y.animateTo(0f, tween(380, easing = EaseRise)) }
+    LaunchedEffect(Unit) { delay(delayMs); y.animateTo(0f, tween(380, easing = ChagokMotion.Sheet)) }
     val shape = RoundedCornerShape((if (confirm) 40 else 32).gpx)
     val side = if (compact) (if (confirm) 26 else 24) else 40
     val bottom = if (compact) (if (confirm) 18 else 24) else (if (confirm) 24 else 36)
     Column(
         modifier.graphicsLayer { translationY = y.value * size.height }
-            .shadow(20.gpx, shape).background(c.surfaceModal, shape).border(2.gpx, c.sheetBorder, shape)
+            .cgElevation(3, shape).background(c.surfaceModal, shape).border(2.gpx, c.sheetBorder, shape)
             .padding(start = side.gpx, end = side.gpx, top = if (compact) 14.gpx else 16.gpx, bottom = bottom.gpx),
         verticalArrangement = Arrangement.spacedBy((if (confirm) 8 else if (compact) 14 else 20).gpx),
     ) {
@@ -607,11 +658,15 @@ fun CgBottomSheet(modifier: Modifier = Modifier, compact: Boolean = false, delay
     }
 }
 
-/** 확인 시트 버튼 줄(.isheet .ibts): 오른쪽 정렬 · 내용 폭 · 사이 12 · 위 8. 분할은 S 64. */
+/**
+ * 확인 시트 버튼 줄(.isheet .ibts): 오른쪽 정렬 · 내용 폭 · 사이 12 · 위 8. 분할은 S 64, 글자는 Body M 400 28/36
+ * (아티팩트 `.a-p1 .isheet .btn`, G6 settings-wipe — S 기본 글자 Body S 26/34보다 크다).
+ */
 @Composable
 fun CgSheetButtons(compact: Boolean, content: @Composable RowScope.(CgSize) -> Unit) {
     Row(Modifier.fillMaxWidth().padding(top = 8.gpx), horizontalArrangement = Arrangement.spacedBy(12.gpx, Alignment.End)) {
-        content(if (compact) CgSize.S else CgSize.M)
+        if (compact) androidx.compose.runtime.CompositionLocalProvider(LocalButtonTextS provides Chagok.type.bodyM) { content(CgSize.S) }
+        else content(CgSize.M)
     }
 }
 
@@ -722,22 +777,26 @@ internal fun slotJitter(p: Float): Float = when {
 internal fun slotBoost(p: Float): Float = if (p < .52f || p >= 1f) 0f else if (p < .56f) (p - .52f) / .04f else 1f - (p - .56f) / .44f
 
 /**
- * 영수증 = 출력 종이(`components/receipt`): 프린터 슬롯 + 슬롯에서 내려오는 종이(슬롯 밖은 잘림) + 지그재그 끝.
+ * 영수증 = 출력 종이(`components/receipt`): 프린터 슬롯(그림자 Level 1) + 슬롯에서 내려오는 종이(슬롯 밖은 잘림) + 지그재그 끝.
  * shift = 종이 위치(-1.05 → 0, 출력 연출). scroll = 종이가 칸보다 길 때 안에서 넘김.
+ * [arrive] = 도착 화면 가로 전용 틀(아티팩트 `.arrpg:not(.p)`): 종이 좌우 40 · 슬롯 겹침 30 · 안 여백 56 64 26.
+ * 기본 틀은 36 · 34 · 48 56 24. 분할(compact)에는 영향 없음. 이중선 위아래 여백(도착 28 · 18)은 부르는 쪽(CgDoubleRule padding)이 맞춘다.
  */
 @Composable
 fun CgReceipt(
     modifier: Modifier = Modifier, compact: Boolean = false, shift: Float = 0f, fill: Boolean = true, scroll: Boolean = true,
     light: () -> Float = { 1f },   // v91 출력구 불빛 진행(0 = 꺼짐 … 1 = 켜짐, 0.8초 깜빡임 키프레임). 정지 화면 = 1
+    arrive: Boolean = false,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val c = Chagok.colors
+    val arr = arrive && !compact
     val slotH = if (compact) 40.gpx else 68.gpx
     val slotShape = RoundedCornerShape(if (compact) 14.gpx else 22.gpx)
     Column(modifier) {
         Box(
             // v3: 출력구 = Satin Silver(금속은 여기만) + 어두운 슬롯
-            Modifier.fillMaxWidth().height(slotH).zIndex(2f).shadow(6.gpx, slotShape)
+            Modifier.fillMaxWidth().height(slotH).zIndex(2f).cgElevation(1, slotShape)
                 .background(Brush.verticalGradient(0f to c.receiptPrinterHighlight, .18f to c.receiptPrinterMidtone, .7f to c.receiptPrinterShade, 1f to c.receiptPrinterMidtone), slotShape)
                 .border(1.gpx, c.receiptPrinterShade, slotShape).padding(horizontal = if (compact) 28.gpx else 44.gpx),
             contentAlignment = Alignment.Center,
@@ -745,7 +804,7 @@ fun CgReceipt(
             // 슬롯 줄(검정) 위 라임 불빛: 다 나오면 지직 세 번 → 딱 켜지며 빛이 크게 번졌다 가라앉음(cg-slot-on)
             val dark = c.isDark
             Box(
-                Modifier.fillMaxWidth().height(if (compact) 6.gpx else 8.gpx).background(Color(0xFF171B22), RoundedCornerShape(4.gpx))
+                Modifier.fillMaxWidth().height(if (compact) 6.gpx else 8.gpx).background(c.receiptPrinterSlot, RoundedCornerShape(4.gpx))
                     .drawWithContent {
                         drawContent()
                         val p = light()
@@ -776,13 +835,16 @@ fun CgReceipt(
             )
         }
         Box(
-            Modifier.then(if (fill) Modifier.weight(1f) else Modifier).padding(horizontal = if (compact) 16.gpx else 36.gpx)
-                .offset(y = -slotH / 2).clipToBounds(),
+            Modifier.then(if (fill) Modifier.weight(1f) else Modifier).padding(horizontal = if (compact) 16.gpx else if (arr) 40.gpx else 36.gpx)
+                .offset(y = if (arr) (-30).gpx else -slotH / 2).clipToBounds(),
         ) {
             Column(Modifier.graphicsLayer { translationY = shift * size.height }.then(if (scroll) Modifier.verticalScroll(rememberScrollState()) else Modifier)) {
                 Column(
                     Modifier.fillMaxWidth().background(c.receiptPaper)
-                        .padding(start = if (compact) 28.gpx else 56.gpx, end = if (compact) 28.gpx else 56.gpx, top = if (compact) 24.gpx else 48.gpx, bottom = if (compact) 10.gpx else 24.gpx),
+                        .padding(
+                            start = if (compact) 28.gpx else if (arr) 64.gpx else 56.gpx, end = if (compact) 28.gpx else if (arr) 64.gpx else 56.gpx,
+                            top = if (compact) 24.gpx else if (arr) 56.gpx else 48.gpx, bottom = if (compact) 10.gpx else if (arr) 26.gpx else 24.gpx,
+                        ),
                     content = content,
                 )
                 CgZigzag(Modifier.fillMaxWidth().height(12.gpx), c.receiptPaper)
@@ -791,7 +853,11 @@ fun CgReceipt(
     }
 }
 
-/** 영수증 줄: 이름 · 값 · % · 꺾쇠. 누르면 아래에 근거 칸(extra는 굵은 첫 줄). hi = 바뀐 값 회색 강조(0..1). */
+/**
+ * 영수증 줄: 이름 · 값 · % · 꺾쇠. 누르면 아래에 근거 칸(extra는 굵은 첫 줄). hi = 바뀐 값 회색 강조(0..1, 색 = skeleton-highlight `--ph2`).
+ * 칸 폭: 이름 240(분할 140) · % 130(분할 84) · 꺾쇠 28(분할 18). 근거 칸 설명은 Body M · text-secondary(분할 Label S),
+ * 굵은 첫 줄은 Body L(분할 Label M 700).
+ */
 @Composable
 fun CgReceiptRow(
     label: String, detail: String, pct: String, basis: String?, expanded: Boolean, onClick: () -> Unit,
@@ -800,17 +866,17 @@ fun CgReceiptRow(
     val c = Chagok.colors
     val t = Chagok.type
     val plain = receiptPlain(compact)
-    Column(Modifier.fillMaxWidth().background(c.placeholderStrong.copy(alpha = c.placeholderStrong.alpha * hi), RoundedCornerShape(8.gpx))) {
+    Column(Modifier.fillMaxWidth().background(c.skeletonHighlight.copy(alpha = c.skeletonHighlight.alpha * hi), RoundedCornerShape(8.gpx))) {
         Row(
             Modifier.fillMaxWidth().heightIn(min = if (compact) 56.gpx else 70.gpx).then(if (basis != null) Modifier.clickable(role = Role.Button, onClick = onClick) else Modifier),
             verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.gpx),
         ) {
-            Text(label, Modifier.width(if (compact) 150.gpx else 240.gpx), style = plain, color = c.textPrimary)
+            Text(label, Modifier.width(if (compact) 140.gpx else 240.gpx), style = plain, color = c.textPrimary)
             Text(detail, Modifier.weight(1f), style = plain, color = c.textSecondary)
             // "+1% 미만"만 작은 글자(#118 D5 · S2), 칸 폭은 그대로
             val under = com.mist.pleos_app.effort.isUnderOnePct(pct)
-            Text(pct, Modifier.width(if (compact) 90.gpx else 130.gpx), style = if (under) (if (compact) t.labelS else t.labelM) else receiptStrong(compact), color = c.textPrimary, textAlign = TextAlign.End, maxLines = 1)
-            Box(Modifier.size(if (compact) 18.gpx else 26.gpx), contentAlignment = Alignment.Center) {
+            Text(pct, Modifier.width(if (compact) 84.gpx else 130.gpx), style = if (under) (if (compact) t.labelS else t.labelM) else receiptStrong(compact), color = c.textPrimary, textAlign = TextAlign.End, maxLines = 1)
+            Box(Modifier.size(if (compact) 18.gpx else 28.gpx), contentAlignment = Alignment.Center) {
                 if (basis != null) CgIconMark(CgIcon.Chevron, if (compact) 12.gpx else 14.gpx, c.textTertiary, Modifier.graphicsLayer { rotationZ = if (expanded) 180f else 0f })
             }
         }
@@ -819,8 +885,9 @@ fun CgReceiptRow(
                 Modifier.fillMaxWidth().padding(bottom = 10.gpx).background(c.receiptDetailBackground, RoundedCornerShape(16.gpx)).padding(horizontal = 20.gpx, vertical = 14.gpx),
                 verticalArrangement = Arrangement.spacedBy(4.gpx),
             ) {
-                extra?.let { Text(it, style = if (compact) t.bodyMB else t.bodyL, color = c.textPrimary) }
-                Text(basis, style = if (extra != null) t.labelM else t.bodyM, color = if (extra != null) c.textTertiary else c.textSecondary)
+                // 아티팩트 .wy: 굵은 첫 줄 700 30/38(분할 24/28), 설명은 첫 줄이 있든 없든 28/36 txt2(분할 20/24)
+                extra?.let { Text(it, style = if (compact) t.labelM.copy(fontWeight = FontWeight.Bold) else t.bodyL, color = c.textPrimary) }
+                Text(basis, style = if (compact) t.labelS else t.bodyM, color = c.textSecondary)
             }
         }
     }
@@ -840,13 +907,13 @@ fun CgReceiptSum(
     val c = Chagok.colors
     val plain = receiptPlain(compact)
     Row(
-        Modifier.fillMaxWidth().heightIn(min = if (compact) 50.gpx else 60.gpx).padding(top = if (total && !compact) 6.gpx else 0.gpx)
-            .background(c.placeholderStrong.copy(alpha = c.placeholderStrong.alpha * hi), RoundedCornerShape(8.gpx)),
+        Modifier.fillMaxWidth().heightIn(min = if (compact) 46.gpx else 60.gpx).padding(top = if (total && !compact) 6.gpx else 0.gpx)
+            .background(c.skeletonHighlight.copy(alpha = c.skeletonHighlight.alpha * hi), RoundedCornerShape(8.gpx)),
         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.gpx),
     ) {
         Text(label, if (total) Modifier else Modifier.weight(1f), style = if (total) receiptStrong(compact) else plain, color = c.textPrimary)
         if (total && amount != null) {
-            val style = if (compact) TextStyle(fontSize = 32.gsp, lineHeight = 40.gsp, fontWeight = FontWeight.ExtraBold) else TextStyle(fontSize = 38.gsp, lineHeight = 48.gsp, fontWeight = FontWeight.ExtraBold)
+            val style = totalValueStyle(compact)
             val pad = if (compact) 4.gpx else 6.gpx
             Box(
                 Modifier.weight(1f).clipToBounds().clearAndSetSemantics { contentDescription = "$amount · $value" },
@@ -868,7 +935,7 @@ fun CgReceiptSum(
                         drawRect(c.receiptMarker, Offset(l.getLineLeft(i) - pad.toPx(), y), Size(l.getLineRight(i) - l.getLineLeft(i) + pad.toPx() * 2, bottom - y))
                     }
                 },
-                style = if (compact) TextStyle(fontSize = 32.gsp, lineHeight = 40.gsp, fontWeight = FontWeight.ExtraBold) else TextStyle(fontSize = 38.gsp, lineHeight = 48.gsp, fontWeight = FontWeight.ExtraBold),
+                style = totalValueStyle(compact),
                 color = c.textPrimary, textAlign = TextAlign.End, onTextLayout = { layout = it },
             )
         } else Text(
@@ -895,10 +962,10 @@ fun CgSettleFold(
 ) {
     val c = Chagok.colors
     val line = c.lineStrong
-    val ease = CubicBezierEasing(.32f, .72f, 0f, 1f)
+    val ease = ChagokMotion.Rise
     val dur = if (reduce) 0 else 380
     Row(
-        Modifier.fillMaxWidth().padding(top = if (compact) 16.gpx else 28.gpx)
+        Modifier.fillMaxWidth().padding(top = 28.gpx)
             .drawBehind { drawLine(line, Offset(0f, 0f), Offset(size.width, 0f), strokeWidth = 2f.gpxPx(this), pathEffect = PathEffect.dashPathEffect(floatArrayOf(8f, 6f))) }
             .padding(top = 10.gpx),
         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.gpx),
@@ -909,7 +976,8 @@ fun CgSettleFold(
             label = "fold",
         ) { _ ->
             Column(verticalArrangement = Arrangement.spacedBy(2.gpx)) {
-                Text(main, style = receiptPlain(compact).copy(fontWeight = if (compact) FontWeight.Bold else FontWeight.Bold), color = c.textPrimary, maxLines = 1)
+                // 아티팩트 cg-sfold 이름: 700 34/42(분할 700 28/36)
+                Text(main, style = if (compact) TextStyle(fontSize = 28.gsp, lineHeight = 36.gsp, fontWeight = FontWeight.Bold) else receiptStrong(false), color = c.textPrimary, maxLines = 1)
                 Row(
                     Modifier.then(if (enabled) Modifier.clickable(role = Role.Button, onClickLabel = altLabel, onClick = onSwap) else Modifier)
                         .drawBehind { drawLine(line, Offset(0f, size.height), Offset(size.width, size.height), strokeWidth = 1.5f.gpxPx(this), pathEffect = PathEffect.dashPathEffect(floatArrayOf(6f, 4f))) }
@@ -950,6 +1018,11 @@ private fun MarkedText(text: String, style: TextStyle, pad: androidx.compose.ui.
         style = style, color = c.textPrimary, textAlign = TextAlign.End, onTextLayout = { layout = it },
     )
 }
+
+/** 영수증 합계 값(아티팩트: 800 38/48, 분할 700 32/40). */
+@Composable
+private fun totalValueStyle(compact: Boolean) = if (compact) TextStyle(fontSize = 32.gsp, lineHeight = 40.gsp, fontWeight = FontWeight.Bold)
+else TextStyle(fontSize = 38.gsp, lineHeight = 48.gsp, fontWeight = FontWeight.ExtraBold)
 
 /** 영수증 기본 글자(v3: 32/40, 분할 30/38, 보통 굵기). */
 @Composable
@@ -1099,11 +1172,11 @@ fun CgSegmented(options: List<String>, selected: Int, onSelect: (Int) -> Unit, m
     }
 }
 
-/** 스위치 116 × 68(`components/switch`): 켜짐 = 라임 트랙 + 잉크 손잡이 오른쪽(v3.1 switch-*). */
+/** 스위치 116 × 68(`components/switch`): 켜짐 = 라임 트랙 + 잉크 손잡이 오른쪽(v3.1 switch-*). 0.32초 (.32,.72,0,1). */
 @Composable
 fun CgSwitch(checked: Boolean, onToggle: (Boolean) -> Unit, label: String, modifier: Modifier = Modifier) {
     val c = Chagok.colors
-    val x by animateFloatAsState(if (checked) 1f else 0f, tween(320, easing = EaseRise), label = "sw")
+    val x by animateFloatAsState(if (checked) 1f else 0f, tween(320, easing = ChagokMotion.Rise), label = "sw")
     Box(
         modifier.size(116.gpx, 68.gpx).background(if (checked) c.switchTrackOn else c.switchTrackOff, RoundedCornerShape(34.gpx))
             .semantics { contentDescription = label }
@@ -1215,9 +1288,9 @@ fun BoxScope.CgNotiPanel(
             .background(rim, RoundedCornerShape(5.gpx)))
         Column(
             Modifier.fillMaxWidth()
-                .shadow(28.gpx, outer, ambientColor = if (c.isDark) Color(0xA6000000) else Color(0x4D242033), spotColor = if (c.isDark) Color(0x66000000) else Color(0x24242033))
+                .shadow(28.gpx, outer, ambientColor = if (c.isDark) Color(0xA6000000) else c.textPrimary.copy(alpha = 0x4D / 255f), spotColor = if (c.isDark) Color(0x66000000) else c.textPrimary.copy(alpha = 0x24 / 255f))
                 .background(rim, outer)
-                .border(1.gpx, if (c.isDark) Color(0x17FFFFFF) else Color(0x0F242033), outer)
+                .border(1.gpx, if (c.isDark) Color(0x17FFFFFF) else c.textPrimary.copy(alpha = 0x0F / 255f), outer)   // 주간 textPrimary #242033 → 예전 값과 같음
                 .padding(if (compact) 6.gpx else 8.gpx),
         ) {
             Column(
