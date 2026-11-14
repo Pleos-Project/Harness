@@ -28,6 +28,7 @@
 <link rel="stylesheet" href="components/nogo-car.css">
 <link rel="stylesheet" href="components/noti-panel.css">
 <link rel="stylesheet" href="components/sys-noti.css">
+<link rel="stylesheet" href="components/preview-bg.css">
 <link rel="stylesheet" href="screens/home.css">
 <link rel="stylesheet" href="screens/depart.css">
 <link rel="stylesheet" href="screens/search.css">
@@ -79,6 +80,8 @@
   <a href="screens/record.html">기록<small>주행 기록 목록 · 기록 상세</small></a>
   <a href="screens/settings.html">설정<small>시연 고정 · 단가 출처 · 기록 초기화(제안 방식 줄 없음)</small></a>
 </div>
+<h2>출발 미리보기 코드 배경 <small>components/preview-bg.html · preview-bg.js(앱 기준 코드) · 종류 5 × 시간대 3 + 날씨</small></h2>
+<div id="pvbg"></div>
 <h2>부품 · 앱 1개(1700)와 분할(840) 폭</h2>
 <div id="comps"></div>
 <script>
@@ -95,6 +98,7 @@
         <div><div class="cap">분할 840</div><div class="box port${cls} cg-a-p1"><div class="cg-home cg-hm cg-dp cg-p ctx">${frag}</div></div></div></div></section>`;
     }).join('');
   }).catch(() => { document.body.insertAdjacentHTML('afterbegin', '<p>조각을 못 읽었습니다. design/ 에서 <code>python -m http.server</code> 로 여세요.</p>'); });
+  fetch('components/preview-bg.html').then(r => r.text()).then(t => { document.getElementById('pvbg').innerHTML = t.replace(/<!--[\s\S]*?-->/, ''); });
   // 주소로 고정: preview.html?theme=light / ?theme=dark
   const q = new URLSearchParams(location.search);
   if (q.get('theme')) document.documentElement.setAttribute('data-theme', q.get('theme'));
@@ -105,4 +109,5 @@
     el.setAttribute('data-theme', nowDark ? 'light' : 'dark');
   }
 </script>
+<script src="components/preview-bg.js"></script>
 </body></html>

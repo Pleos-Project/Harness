@@ -1,0 +1,9 @@
+/* 11/15 명준(v195): 출발 미리보기 코드 배경 — 디자인 시스템 시트(components/preview-bg.html) */
+.cg-pvsg{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.cg-pvsw{margin:0;display:flex;flex-direction:column;gap:6px;min-width:0}
+.cg-pvsb{position:relative;aspect-ratio:1618/478;border-radius:14px;overflow:hidden;isolation:isolate;background:#242135}
+.cg-pvsb::before{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(90deg,#242135F2 0%,#242135D9 34%,#24213580 62%,#24213526 100%)}
+.cg-pvsb canvas.cg-pvbg,.cg-pv.cg-pvimg canvas.cg-pvbg{position:absolute;inset:0;width:100%;height:100%;z-index:-2;display:block;pointer-events:none}
+.cg-pvsb span{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:#fff;font:700 13px/1.2 var(--cg-font,system-ui)}
+.cg-pvsw figcaption{font-size:12.5px;font-weight:700}
+.cg-pvsh{margin:18px 0 8px;font-size:13px;font-weight:800}
