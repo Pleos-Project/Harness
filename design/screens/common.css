@@ -9,30 +9,10 @@
 .cg-bar{display:block;height:24px;border-radius:12px;background:var(--cg-placeholder-strong)}
 .cg-split{flex:1;display:flex;gap:24px;min-height:0}
 .cg-col{display:flex;flex-direction:column;gap:24px;min-width:0;min-height:0}
-.cg-grow{flex:1}
 .cg-sp{flex:1;min-height:0}
 .cg-note{font:var(--cg-label-m);color:var(--cg-text-tertiary)}
 /* 인원 확인 알림 = System Notification(에셋 ivi_notification_system) 700: 모서리 48·그림자 Level3, 버튼 M 80 두 개. 앱 안 겹침, 자동으로 안 사라짐 */
 .cg-toast{position:absolute;z-index:10;left:50%;top:24px;transform:translateX(-50%);max-width:calc(100% - 48px);background:var(--cg-surface-card);border:1px solid var(--cg-line-strong);display:flex;flex-direction:column}
-.cg-toast.cg-nb{width:700px;border-radius:48px;box-shadow:var(--cg-shadow-3);overflow:hidden}
-.cg-toast.cg-nb .cg-nh{display:flex;flex-direction:column;gap:12px;padding:36px 40px 16px}
-.cg-toast.cg-nb .cg-nm{display:flex;justify-content:center;padding:8px 32px 0}
-.cg-toast.cg-nb .cg-bt{display:flex;gap:16px;padding:24px}
-.cg-rcpt{flex:1.15;display:flex;flex-direction:column;padding:32px 40px;min-width:0;min-height:0}
-.cg-rcpt .cg-rh{display:flex;align-items:baseline;gap:20px}
-.cg-rcpt .cg-rh .cg-t{font:var(--cg-title-m);color:var(--cg-text-secondary)}
-.cg-rcpt .cg-rh .cg-tot{font:var(--cg-headline-m)}
-.cg-rcpt .cg-rh .cg-tot.cg-dim{color:var(--cg-text-quaternary)}
-.cg-rcpt .cg-mult{font:var(--cg-title-s);padding:4px 0 20px;border-bottom:3px solid var(--cg-text-primary)}
-.cg-ph-rows{display:flex;flex-direction:column;gap:32px;padding-top:32px}
-.cg-ph-rows .cg-bar:nth-child(2){width:78%}
-.cg-ph-rows .cg-bar:nth-child(3){width:64%}
-.cg-ph-rows .cg-bar:nth-child(4){width:40%}
-.cg-p .cg-rcpt{flex:none;padding:20px 24px}
-.cg-p .cg-rcpt .cg-rh .cg-t{font:var(--cg-body-l)}
-.cg-p .cg-rcpt .cg-rh .cg-tot{font:var(--cg-title-l)}
-.cg-p .cg-rcpt .cg-mult{font:var(--cg-body-l);padding:0 0 10px}
-.cg-p .cg-ph-rows{gap:20px;padding-top:20px}
 /* 근거 목록: 별표 글머리 + 운전 노고 금액 밑줄(11/9 명준) */
 .cg-why.cg-wl{display:flex;flex-direction:column;gap:6px}
 .cg-why.cg-wl .cg-li{position:relative;padding-left:28px}
@@ -44,36 +24,8 @@
 .cg-p .cg-why.cg-wl{gap:2px}
 .cg-p .cg-why.cg-wl .cg-li{padding-left:20px}
 .cg-p .cg-why.cg-wl .cg-li::before{left:2px}
-@keyframes cg-pop{0%{transform:scale(.55)}60%{transform:scale(1.2)}100%{transform:scale(1)}}
-@keyframes cg-rev{to{transform:translateX(-4px) scale(1.04,.88)}}
-@keyframes cg-jolt{0%{transform:scale(1.04,.88)}35%{transform:translateX(3px) scale(.97,1.05)}100%{transform:none}}
-@keyframes cg-tire{
-  0%{opacity:0;transform:translateX(0) scale(.08,.2);animation-timing-function:cubic-bezier(.2,.7,.3,1)}
-  8%{opacity:1}
-  11%{transform:translateX(2px) scale(.32,.36);animation-timing-function:cubic-bezier(.3,1.1,.5,1)}
-  46%{transform:translateX(var(--fx)) scale(1,.92);animation-timing-function:ease-out}
-  60%{opacity:1;transform:translateX(calc(var(--fx) - 6px)) scale(1.06,1);animation-timing-function:cubic-bezier(.3,0,.6,1)}
-  100%{opacity:0;transform:translateX(calc(var(--fx) - 30px)) translateY(-4px) scale(1.22,1.12)}}
-@keyframes cg-ex-grow{from{scale:.05 .3}to{scale:1 1}}
-@keyframes cg-ex-drift{from{translate:0 0}to{translate:-30px -18px}}
-@keyframes cg-ex-fade{from{opacity:1}to{opacity:0}}
-@keyframes cg-billow{from{scale:.96 1.03}to{scale:1.04 .97}}
-@keyframes cg-bob{to{transform:translateY(-1.5px)}}
 @keyframes cg-spin{to{transform:rotate(360deg)}}
-@keyframes cg-hop{40%{transform:translateY(-14px)}100%{transform:none}}
-@keyframes cg-fx{0%{opacity:0;transform:translateY(18px) scale(.86)}14%{opacity:1;transform:translateY(0) scale(1.04)}22%{transform:scale(1)}80%{opacity:1;transform:none;animation-timing-function:cubic-bezier(.4,0,1,1)}100%{opacity:0;transform:translateY(-14px) scale(.96)}}
-@keyframes cg-rain{0%{transform:translateY(0);opacity:0}20%{opacity:1}100%{transform:translateY(120px);opacity:0}}
-@keyframes cg-snow{0%{transform:translate(0,0);opacity:0}15%{opacity:1}50%{transform:translate(14px,62px)}100%{transform:translate(-6px,128px);opacity:0}}
-@keyframes cg-leaf{0%{transform:translate(-20px,0) rotate(0);opacity:0}15%{opacity:1}50%{transform:translate(22px,66px) rotate(160deg)}100%{transform:translate(-8px,150px) rotate(320deg);opacity:0}}
-@keyframes cg-crawl{to{transform:translateX(20px)}}
-@keyframes cg-jit{to{transform:translateY(-3px)}}
-@keyframes cg-honk{0%{transform:scale(0) rotate(-14deg);opacity:0}55%{transform:scale(1.12) rotate(4deg);opacity:1}100%{transform:scale(1) rotate(0);opacity:1}}
-@keyframes cg-zip{from{transform:translateX(-20px)}to{transform:translateX(170px)}}
-.cg-fx-zip .cg-tg{left:110px;top:70px}
-@keyframes cg-rise{from{transform:translateY(40px) rotate(-20deg)}to{transform:none}}
 @keyframes cg-twk{from{transform:scale(.4);opacity:.3}to{transform:scale(1.15);opacity:1}}
-@keyframes cg-flip{0%,35%{transform:rotate(0)}65%,100%{transform:rotate(180deg)}}
-@keyframes cg-road{to{background-position:-52px 0}}
 @keyframes cg-print{from{transform:translateY(-105%)}to{transform:none}}
 @keyframes cg-offer{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
 @keyframes cg-sheet{from{transform:translateY(115%)}to{transform:none}}
@@ -83,15 +35,18 @@
 @keyframes cg-go{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
 @keyframes cg-up{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:none}}
 @keyframes cg-drop{from{opacity:0;transform:translateY(-16px) scale(.98)}to{opacity:1;transform:none}}
-@keyframes cg-blink{from{opacity:.3}to{opacity:1}}
 @keyframes cg-swap-up{from{transform:translateY(30px);opacity:.2}to{transform:none;opacity:1}}
 @keyframes cg-swap-down{from{transform:translateY(-30px);opacity:.2}to{transform:none;opacity:1}}
 @keyframes cg-num{from{transform:translateY(10px);opacity:0}to{transform:none;opacity:1}}
 @keyframes cg-skel{from{opacity:.45}to{opacity:1}}
 @keyframes cg-dot{0%,100%{opacity:.25;transform:translateY(0)}50%{opacity:1;transform:translateY(-4px)}}
 @keyframes cg-chg{0%,40%{background:var(--cg-placeholder-strong);box-shadow:-12px 0 0 var(--cg-placeholder-strong),12px 0 0 var(--cg-placeholder-strong)}100%{background:transparent;box-shadow:0 0 0 transparent}}
-@keyframes cg-rot{0%,14%{transform:translateY(0)}16.67%,30.67%{transform:translateY(-1.25em)}33.33%,47.33%{transform:translateY(-2.5em)}50%,64%{transform:translateY(-3.75em)}66.67%,80.67%{transform:translateY(-5em)}83.33%,97.33%{transform:translateY(-6.25em)}100%{transform:translateY(-7.5em)}}
 [data-go],[data-act]{cursor:pointer}
+/* ═══ Nogo 컬러 시스템 v3.0 (11/9 명준: 확정 로고 · 워드마크 · 컬러 반영) → v3.1(11/9 대비 검수) → v4(11/14: 키 컬러 딥 잉크 #242135 · 라임 #C8F04A, 나머지는 v3.1 관계대로) ═══
+   출처: Figma hd(tYlusvtRmucgL2OCFAZULv) · Nogo / Color 컬렉션 Light·Dark 78개 역할 + 영수증 A안(22:10230)
+   적용 범위: 차곡 앱 창(1700 · 840) 안쪽만. 상태바 · 주행 보조 화면 · 순정 내비 · 시스템 키보드 · GNB는 Pleos 플랫폼 값 그대로 */
+.cg-app{--color-background-canvas:#F7F5FC;--color-background-subtle:#EFEDF5;--color-surface-default:#FFFFFF;--color-surface-raised:#FFFFFF;--color-surface-modal:#FFFFFF;--color-surface-notification:#FFFFFF;--color-text-primary:#242135;--color-text-secondary:#504960;--color-text-tertiary:#6A637C;--color-text-disabled:#8A849D;--color-text-link:#41570B;--color-icon-primary:#242135;--color-icon-secondary:#6A637C;--color-divider-default:#DDDAE9;--color-border-subtle:#DDDAE9;--color-border-strong:#787188;--color-focus-ring:#242135;--color-button-primary-fill:#C8F04A;--color-button-primary-hover:#BDE342;--color-button-primary-pressed:#B0D33A;--color-button-primary-foreground:#242135;--color-button-secondary-fill:#E5E3F0;--color-button-secondary-hover:#DDDAE9;--color-button-secondary-pressed:#D0CCDE;--color-button-secondary-foreground:#242135;--color-button-tertiary-pressed:#2421351F;--color-button-tertiary-foreground:#504960;--color-button-disabled-fill:#EFEDF5;--color-button-disabled-foreground:#8A849D;--color-button-destructive-fill:#9D303D;--color-button-destructive-pressed:#792532;--color-button-destructive-foreground:#FFFFFF;--color-field-background:#FFFFFF;--color-field-border:#787188;--color-field-foreground:#242135;--color-field-placeholder:#6A637C;--color-field-caret:#242135;--color-selection-background:#C8F04A;--color-selection-foreground:#242135;--color-selection-border:#C8F04A;--color-selection-pressed:#BDE342;--color-switch-track-off:#787188;--color-switch-thumb-off:#FFFFFF;--color-switch-track-on:#C8F04A;--color-switch-thumb-on:#242135;--color-progress-track:#9993AB;--color-progress-indicator:#C8F04A;--color-skeleton-base:#EFEDF5;--color-skeleton-highlight:#DDDAE9;--color-progress-line:#242135;--color-progress-indicator-border:#242135;--color-selection-halo:#C8F04A80;--color-illust-car:#C8F04A;--color-illust-car-shade:#B3D737;--color-illust-car-hi:#E6F5B4;--color-illust-car-line:#98BA28;--color-illust-ink-car:#242135;--color-illust-ink-car-shade:#1A1829;--color-illust-ink-car-hi:#49445D;--color-illust-ink-car-line:#39354B;--color-illust-ink-glass:#494562;--color-illust-ink-trim:#12101A;--color-illust-ink-head:#C8F04A;--color-illust-glass:#2D2A3E;--color-illust-glass-hi:#FFFFFF59;--color-illust-trim:#242135;--color-illust-well:#151320;--color-illust-tire:#242135;--color-illust-tire-edge:#242135;--color-illust-tire-hi:#504960;--color-illust-rim:#CBD2DB;--color-illust-rim-dark:#3E4754;--color-illust-cap:#C8F04A;--color-illust-tail:#F78F92;--color-illust-head:#FFFFFF;--color-illust-ground:#24213529;--color-illust-other:#FFFFFF;--color-illust-other-shade:#E5E3F0;--color-illust-other-line:#C8C3D7;--color-illust-other-glass:#AEA8BE;--color-illust-rim-hi:#EDF1F6;--color-illust-rim-shade:#8994A3;--color-illust-glass-top:#494562;--color-illust-ink-glass-top:#6A637C;--color-illust-tail-hi:#FFADAD;--color-receipt-paper:#FFFFFF;--color-receipt-rule:#DDDAE9;--color-receipt-detail-background:#F7F5FC;--color-receipt-printer-highlight:#EDF1F6;--color-receipt-printer-midtone:#CBD2DB;--color-receipt-printer-shade:#8994A3;--color-receipt-printer-slot:#171B22;--color-receipt-result-text:#242135;--color-receipt-result-marker:#C8F04A;--color-status-neutral-background:#EFEDF5;--color-status-neutral-foreground:#504960;--color-status-warning-background:#FFF1CC;--color-status-warning-foreground:#6F4908;--color-status-error-background:#FDE9E9;--color-status-error-foreground:#9D303D;--color-status-info-background:#E7F1FD;--color-status-info-foreground:#244D7F;--color-dim-scrim:#2421358F;--color-overlay-hover:#24213514;--color-overlay-pressed:#2421351F;--color-driving-lock-background:#EFEDF5;--color-driving-lock-foreground:#242135;--color-brand-wordmark:#242135;
+  --pl-win:var(--cg-bg-primary);--pl-card:var(--cg-surface-card);--pl-txt:var(--cg-text-primary);--pl-txt2:var(--cg-text-secondary);--pl-txt3:var(--cg-text-tertiary);--pl-div2:var(--cg-line);--pl-div3:var(--cg-line-strong);--pl-btn-fill:var(--cg-btn-filled);--pl-btn-fill-txt:var(--cg-btn-filled-text)}
 /* 와이어 시절 흑백 필터 해제: 도로 · 차량 · GNB는 Pleos 리소스 원래 색 */
 .cg-app img{filter:none}
 .cg-a-land,.cg-a-p1{color:var(--color-text-primary);
@@ -106,7 +61,6 @@
 @keyframes cg-wheel{0%{transform:rotate(0)}45%,100%{transform:rotate(360deg)}}
 @keyframes cg-float{from{transform:translateY(0)}to{transform:translateY(-4px)}}
 @keyframes cg-gnd{from{transform:scaleX(1);opacity:1}to{transform:scaleX(.9);opacity:.75}}
-@keyframes cg-grad{0%{transform:translate(-6%,-5%) rotate(-3deg) scale(1)}50%{transform:translate(4%,2%) rotate(2deg) scale(1.06)}100%{transform:translate(-2%,6%) rotate(-1deg) scale(1.03)}}
 .cg-pi-receipt{--m:url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNTYgMjU2IiBmaWxsPSJjdXJyZW50Q29sb3IiPjxwYXRoIGQ9Ik02OCwxMDBBMTIsMTIsMCwwLDEsODAsODhoOTZhMTIsMTIsMCwwLDEsMCwyNEg4MEExMiwxMiwwLDAsMSw2OCwxMDBabTEyLDUyaDk2YTEyLDEyLDAsMCwwLDAtMjRIODBhMTIsMTIsMCwwLDAsMCwyNFpNMjM2LDU2VjIwOGExMiwxMiwwLDAsMS0xNy4zNywxMC43M0wxOTIsMjA1LjQybC0yNi42MywxMy4zMWExMiwxMiwwLDAsMS0xMC43NCwwTDEyOCwyMDUuNDJsLTI2LjYzLDEzLjMxYTEyLDEyLDAsMCwxLTEwLjc0LDBMNjQsMjA1LjQyLDM3LjM3LDIxOC43M0ExMiwxMiwwLDAsMSwyMCwyMDhWNTZBMjAsMjAsMCwwLDEsNDAsMzZIMjE2QTIwLDIwLDAsMCwxLDIzNiw1NlptLTI0LDRINDRWMTg4LjU4bDE0LjYzLTcuMzFhMTIsMTIsMCwwLDEsMTAuNzQsMEw5NiwxOTQuNThsMjYuNjMtMTMuMzFhMTIsMTIsMCwwLDEsMTAuNzQsMEwxNjAsMTk0LjU4bDI2LjYzLTEzLjMxYTEyLDEyLDAsMCwxLDEwLjc0LDBMMjEyLDE4OC41OFoiLz48L3N2Zz4=")}
 .cg-pi-gear-six{--m:url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNTYgMjU2IiBmaWxsPSJjdXJyZW50Q29sb3IiPjxwYXRoIGQ9Ik0xMjgsNzZhNTIsNTIsMCwxLDAsNTIsNTJBNTIuMDYsNTIuMDYsMCwwLDAsMTI4LDc2Wm0wLDgwYTI4LDI4LDAsMSwxLDI4LTI4QTI4LDI4LDAsMCwxLDEyOCwxNTZabTExMy44Ni00OS41N0ExMiwxMiwwLDAsMCwyMzYsOTguMzRMMjA4LjIxLDgyLjQ5bC0uMTEtMzEuMzFhMTIsMTIsMCwwLDAtNC4yNS05LjEyLDExNiwxMTYsMCwwLDAtMzgtMjEuNDEsMTIsMTIsMCwwLDAtOS42OC44OUwxMjgsMzcuMjcsOTkuODMsMjEuNTNhMTIsMTIsMCwwLDAtOS43LS45LDExNi4wNiwxMTYuMDYsMCwwLDAtMzgsMjEuNDcsMTIsMTIsMCwwLDAtNC4yNCw5LjFsLS4xNCwzMS4zNEwyMCw5OC4zNWExMiwxMiwwLDAsMC01Ljg1LDguMTEsMTEwLjcsMTEwLjcsMCwwLDAsMCw0My4xMUExMiwxMiwwLDAsMCwyMCwxNTcuNjZsMjcuODIsMTUuODUuMTEsMzEuMzFhMTIsMTIsMCwwLDAsNC4yNSw5LjEyLDExNiwxMTYsMCwwLDAsMzgsMjEuNDEsMTIsMTIsMCwwLDAsOS42OC0uODlMMTI4LDIxOC43M2wyOC4xNCwxNS43NGExMiwxMiwwLDAsMCw5LjcuOSwxMTYuMDYsMTE2LjA2LDAsMCwwLDM4LTIxLjQ3LDEyLDEyLDAsMCwwLDQuMjQtOS4xbC4xNC0zMS4zNCwyNy44MS0xNS44MWExMiwxMiwwLDAsMCw1Ljg1LTguMTFBMTEwLjcsMTEwLjcsMCwwLDAsMjQxLjg2LDEwNi40M1ptLTIyLjYzLDMzLjE4LTI2Ljg4LDE1LjI4YTExLjk0LDExLjk0LDAsMCwwLTQuNTUsNC41OWMtLjU0LDEtMS4xMSwxLjkzLTEuNywyLjg4YTEyLDEyLDAsMCwwLTEuODMsNi4zMUwxODQuMTMsMTk5YTkxLjgzLDkxLjgzLDAsMCwxLTIxLjA3LDExLjg3bC0yNy4xNS0xNS4xOWExMiwxMiwwLDAsMC01Ljg2LTEuNTNoLS4yOWMtMS4xNCwwLTIuMywwLTMuNDQsMGExMi4wOCwxMi4wOCwwLDAsMC02LjE0LDEuNTFMOTMsMjEwLjgyQTkyLjI3LDkyLjI3LDAsMCwxLDcxLjg4LDE5OWwtLjExLTMwLjI0YTEyLDEyLDAsMCwwLTEuODMtNi4zMmMtLjU4LS45NC0xLjE2LTEuOTEtMS43LTIuODhBMTEuOTIsMTEuOTIsMCwwLDAsNjMuNywxNTVMMzYuOCwxMzkuNjNhODYuNTMsODYuNTMsMCwwLDEsMC0yMy4yNGwyNi44OC0xNS4yOGExMiwxMiwwLDAsMCw0LjU1LTQuNThjLjU0LTEsMS4xMS0xLjk0LDEuNy0yLjg5YTEyLDEyLDAsMCwwLDEuODMtNi4zMUw3MS44Nyw1N0E5MS44Myw5MS44MywwLDAsMSw5Mi45NCw0NS4xN2wyNy4xNSwxNS4xOWExMS45MiwxMS45MiwwLDAsMCw2LjE1LDEuNTJjMS4xNCwwLDIuMywwLDMuNDQsMGExMi4wOCwxMi4wOCwwLDAsMCw2LjE0LTEuNTFMMTYzLDQ1LjE4QTkyLjI3LDkyLjI3LDAsMCwxLDE4NC4xMiw1N2wuMTEsMzAuMjRhMTIsMTIsMCwwLDAsMS44Myw2LjMyYy41OC45NCwxLjE2LDEuOTEsMS43LDIuODhBMTEuOTIsMTEuOTIsMCwwLDAsMTkyLjMsMTAxbDI2LjksMTUuMzNBODYuNTMsODYuNTMsMCwwLDEsMjE5LjIzLDEzOS42MVoiLz48L3N2Zz4=")}
 .cg-pi-users-three{--m:url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNTYgMjU2IiBmaWxsPSJjdXJyZW50Q29sb3IiPjxwYXRoIGQ9Ik0xNjQuMzgsMTgxLjFhNTIsNTIsMCwxLDAtNzIuNzYsMCw3NS44OSw3NS44OSwwLDAsMC0zMCwyOC44OSwxMiwxMiwwLDAsMCwyMC43OCwxMiw1Myw1MywwLDAsMSw5MS4yMiwwLDEyLDEyLDAsMSwwLDIwLjc4LTEyQTc1Ljg5LDc1Ljg5LDAsMCwwLDE2NC4zOCwxODEuMVpNMTAwLDE0NGEyOCwyOCwwLDEsMSwyOCwyOEEyOCwyOCwwLDAsMSwxMDAsMTQ0Wm0xNDcuMjEsOS41OWExMiwxMiwwLDAsMS0xNi44MS0yLjM5Yy04LjMzLTExLjA5LTE5Ljg1LTE5LjU5LTI5LjMzLTIxLjY0YTEyLDEyLDAsMCwxLTEuODItMjIuOTEsMjAsMjAsMCwxLDAtMjQuNzgtMjguMywxMiwxMiwwLDEsMS0yMS0xMS42LDQ0LDQ0LDAsMSwxLDczLjI4LDQ4LjM1LDkyLjE4LDkyLjE4LDAsMCwxLDIyLjg1LDIxLjY5QTEyLDEyLDAsMCwxLDI0Ny4yMSwxNTMuNTlabS0xOTIuMjgtMjRjLTkuNDgsMi4wNS0yMSwxMC41NS0yOS4zMywyMS42NUExMiwxMiwwLDAsMSw2LjQxLDEzNi43OSw5Mi4zNyw5Mi4zNywwLDAsMSwyOS4yNiwxMTUuMWE0NCw0NCwwLDEsMSw3My4yOC00OC4zNSwxMiwxMiwwLDEsMS0yMSwxMS42LDIwLDIwLDAsMSwwLTI0Ljc4LDI4LjMsMTIsMTIsMCwwLDEtMS44MiwyMi45MVoiLz48L3N2Zz4=")}
@@ -136,13 +90,12 @@
 .cg-pi-moon{--m:url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNTYgMjU2IiBmaWxsPSJjdXJyZW50Q29sb3IiPjxwYXRoIGQ9Ik0yMzYuMzcsMTM5LjRhMTIsMTIsMCwwLDAtMTItM0E4NC4wNyw4NC4wNywwLDAsMSwxMTkuNiwzMS41OWExMiwxMiwwLDAsMC0xNS0xNUExMDguODYsMTA4Ljg2LDAsMCwwLDQ5LjY5LDU1LjA3LDEwOCwxMDgsMCwwLDAsMTM2LDIyOGExMDcuMDksMTA3LjA5LDAsMCwwLDY0LjkzLTIxLjY5LDEwOC44NiwxMDguODYsMCwwLDAsMzguNDQtNTQuOTRBMTIsMTIsMCwwLDAsMjM2LjM3LDEzOS40Wm0tNDkuODgsNDcuNzRBODQsODQsMCwwLDEsNjguODYsNjkuNTEsODQuOTMsODQuOTMsMCwwLDEsOTIuMjcsNDguMjlROTIsNTIuMTMsOTIsNTZBMTA4LjEyLDEwOC4xMiwwLDAsMCwyMDAsMTY0cTMuODcsMCw3LjcxLS4yN0E4NC43OSw4NC43OSwwLDAsMSwxODYuNDksMTg3LjE0WiIvPjwvc3ZnPg==")}
 .cg-pi-hourglass-medium{--m:url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNTYgMjU2IiBmaWxsPSJjdXJyZW50Q29sb3IiPjxwYXRoIGQ9Ik0yMDQsNzUuNjRWNDBhMjAsMjAsMCwwLDAtMjAtMjBINzJBMjAsMjAsMCwwLDAsNTIsNDBWNzZhMjAuMSwyMC4xLDAsMCwwLDgsMTZsNDgsMzZMNjAsMTY0YTIwLjEsMjAuMSwwLDAsMC04LDE2djM2YTIwLDIwLDAsMCwwLDIwLDIwSDE4NGEyMCwyMCwwLDAsMCwyMC0yMFYxODAuMzZhMjAuMTMsMjAuMTMsMCwwLDAtNy45NC0xNkwxNDcuOSwxMjhsNDguMTYtMzYuNEEyMC4xMywyMC4xMywwLDAsMCwyMDQsNzUuNjRaTTE4MCw0NFY3Mkg3NlY0NFptLTUyLDY5TDEwNS4zMyw5Nmg0NS4xWm01Miw5OUg3NlYxODJsNDAtMzB2MTZhMTIsMTIsMCwwLDAsMjQsMFYxNTIuMTFsNDAsMzAuMjRaIi8+PC9zdmc+")}
 .cg-pi-sun{--m:url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNTYgMjU2IiBmaWxsPSJjdXJyZW50Q29sb3IiPjxwYXRoIGQ9Ik0xMTYsMzZWMjBhMTIsMTIsMCwwLDEsMjQsMFYzNmExMiwxMiwwLDAsMS0yNCwwWm04MCw5MmE2OCw2OCwwLDEsMS02OC02OEE2OC4wNyw2OC4wNywwLDAsMSwxOTYsMTI4Wm0tMjQsMGE0NCw0NCwwLDEsMC00NCw0NEE0NC4wNSw0NC4wNSwwLDAsMCwxNzIsMTI4Wk01MS41MSw2OC40OWExMiwxMiwwLDEsMCwxNy0xN2wtMTItMTJhMTIsMTIsMCwwLDAtMTcsMTdabTAsMTE5LTEyLDEyYTEyLDEyLDAsMCwwLDE3LDE3bDEyLTEyYTEyLDEyLDAsMSwwLTE3LTE3Wk0xOTYsNzJhMTIsMTIsMCwwLDAsOC40OS0zLjUxbDEyLTEyYTEyLDEyLDAsMCwwLTE3LTE3bC0xMiwxMkExMiwxMiwwLDAsMCwxOTYsNzJabTguNDksMTE1LjUxYTEyLDEyLDAsMCwwLTE3LDE3bDEyLDEyYTEyLDEyLDAsMCwwLDE3LTE3Wk00OCwxMjhhMTIsMTIsMCwwLDAtMTItMTJIMjBhMTIsMTIsMCwwLDAsMCwyNEgzNkExMiwxMiwwLDAsMCw0OCwxMjhabTgwLDgwYTEyLDEyLDAsMCwwLTEyLDEydjE2YTEyLDEyLDAsMCwwLDI0LDBWMjIwQTEyLDEyLDAsMCwwLDEyOCwyMDhabTEwOC05MkgyMjBhMTIsMTIsMCwwLDAsMCwyNGgxNmExMiwxMiwwLDAsMCwwLTI0WiIvPjwvc3ZnPg==")}
-@keyframes cg-slot-on{
-  0%{opacity:0;transform:none;filter:none}
+@keyframes cg-slot-on{0%{opacity:0;transform:none;filter:none}
   8%{opacity:.55;transform:translateX(1px)}  11%{opacity:0;transform:none}
   20%{opacity:.35;transform:translateX(-1px)} 23%{opacity:.05}
   31%{opacity:.7;transform:translateX(1px)}  34%{opacity:0;transform:none}
   52%{opacity:0}
-  56%{opacity:1;filter:brightness(1.25) saturate(1.1);box-shadow:0 0 0 1px #A9C640,0 0 14px #D9F77A,0 0 40px #D9F77ACC,0 0 80px #D9F77A66}
+  56%{opacity:1;filter:brightness(1.25) saturate(1.1);box-shadow:0 0 0 1px #9BBD25,0 0 14px #C8F04A,0 0 40px #C8F04ACC,0 0 80px #C8F04A66}
   100%{opacity:1;filter:none}}
 @keyframes cg-tf-out{from{visibility:visible;opacity:1;transform:none}to{visibility:visible;opacity:0;transform:translateY(-70%)}}
 @keyframes cg-tf-in{from{opacity:0;transform:translateY(70%)}to{opacity:1;transform:none}}
@@ -152,7 +105,10 @@
 /* 알림 줄 아이콘(11/9 명준) */
 .cg-pi-bell-ringing{--m:url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNTYgMjU2IiBmaWxsPSJjdXJyZW50Q29sb3IiPjxwYXRoIGQ9Ik0yMjUuODEsNzQuNjVBMTEuODYsMTEuODYsMCwwLDEsMjIwLjMsNzZhMTIsMTIsMCwwLDEtMTAuNjctNi40Nyw5MC4xLDkwLjEsMCwwLDAtMzItMzUuMzgsMTIsMTIsMCwxLDEsMTIuOC0yMC4yOSwxMTUuMjUsMTE1LjI1LDAsMCwxLDQwLjU0LDQ0LjYyQTEyLDEyLDAsMCwxLDIyNS44MSw3NC42NVpNNDYuMzcsNjkuNTNhOTAuMSw5MC4xLDAsMCwxLDMyLTM1LjM4QTEyLDEyLDAsMSwwLDY1LjYsMTMuODYsMTE1LjI1LDExNS4yNSwwLDAsMCwyNS4wNiw1OC40OGExMiwxMiwwLDAsMCw1LjEzLDE2LjE3QTExLjg2LDExLjg2LDAsMCwwLDM1LjcsNzYsMTIsMTIsMCwwLDAsNDYuMzcsNjkuNTNabTE3My41MSw5OC4zNUEyMCwyMCwwLDAsMSwyMDQsMjAwSDE3MS44MWE0NCw0NCwwLDAsMS04Ny42MiwwSDUyYTIwLDIwLDAsMCwxLTE1LjkxLTMyLjEyYzcuMTctOS4zMywxNS43My0yNi42MiwxNS44OC01NS45NEE3Niw3NiwwLDAsMSwyMDQsMTEyQzIwNC4xNSwxNDEuMjYsMjEyLjcxLDE1OC41NSwyMTkuODgsMTY3Ljg4Wk0xNDcuNiwyMDBIMTA4LjRhMjAsMjAsMCwwLDAsMzkuMiwwWm00OC43NC0yNGMtOC4xNi0xMy0xNi4xOS0zMy41Ny0xNi4zNC02My45NEE1Miw1MiwwLDEsMCw3NiwxMTJjLS4xNSwzMC40Mi04LjE4LDUxLTE2LjM0LDY0WiIvPjwvc3ZnPg==")}
 @keyframes cg-ring-bell{0%,100%{transform:none}15%{transform:rotate(14deg)}30%{transform:rotate(-12deg)}45%{transform:rotate(8deg)}60%{transform:rotate(-5deg)}75%{transform:rotate(2deg)}}
+.cg-pi-hand-heart{--m:url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNTYgMjU2IiBmaWxsPSJjdXJyZW50Q29sb3IiPjxwYXRoIGQ9Ik0yMzIuNzYsMTM3Ljg4YTI4LjY2LDI4LjY2LDAsMCwwLTEyLTUuMzlDMjM2LjE5LDExNC45NCwyNDQsOTcuMzcsMjQ0LDgwYzAtMjguNjctMjMuMDktNTItNTEuNDYtNTJBNTEuNzcsNTEuNzcsMCwwLDAsMTU2LDQyLjg1LDUxLjc3LDUxLjc3LDAsMCwwLDExOS40NiwyOEM5MS4wOSwyOCw2OCw1MS4zMyw2OCw4MGMwLDEwLjE1LDIuNzIsMjAuMyw4LjIyLDMwLjdhMzUuOSwzNS45LDAsMCwwLTExLjczLDcuODRMNDMsMTQwSDIwQTIwLDIwLDAsMCwwLDAsMTYwdjQwYTIwLDIwLDAsMCwwLDIwLDIwSDEyMGExMS44OSwxMS44OSwwLDAsMCwyLjkxLS4zNmw2NC0xNmExMS40LDExLjQsMCwwLDAsMS43OS0uNmwzOC44Mi0xNi41NGMuMjMtLjA5LjQ1LS4xOS42Ny0uM2EyOC42MSwyOC42MSwwLDAsMCw0LjU3LTQ4LjMyWk0xMTkuNDYsNTJBMjcuMTgsMjcuMTgsMCwwLDEsMTQ0LjksNjguNTZhMTIsMTIsMCwwLDAsMjIuMiwwQTI3LjE4LDI3LjE4LDAsMCwxLDE5Mi41NCw1MkMyMDcuNDIsNTIsMjIwLDY0LjgyLDIyMCw4MGMwLDE4LjA2LTE1LDM4Ljg0LTQzLjM4LDYwLjE5TDE3MiwxNDEuMjZjMC0uNDIsMC0uODQsMC0xLjI2YTMyLDMyLDAsMCwwLTMyLTMySDEwMi43MUM5NS40Miw5Ny43Niw5Miw4OC43Nyw5Miw4MCw5Miw2NC44MiwxMDQuNTgsNTIsMTE5LjQ2LDUyWk0yNCwxNjRIMzZ2MzJIMjRabTE5My42OC42MS0zNy41MSwxNkwxMTguNTIsMTk2SDYwVjE1N2wyMS40Ni0yMS40NkExMS45MywxMS45MywwLDAsMSw4OS45NCwxMzJIMTQwYTgsOCwwLDAsMSwwLDE2SDExMmExMiwxMiwwLDAsMCwwLDI0aDMyYTEyLjE5LDEyLjE5LDAsMCwwLDIuNjktLjNsNjctMTUuNDEuNDctLjEyYTQuNjEsNC42MSwwLDAsMSw1LjgyLDQuNDRBNC41OCw0LjU4LDAsMCwxLDIxNy42OCwxNjQuNjFaIi8+PC9zdmc+")}
+/* 11/13 명준: [노고 챙겨주기] 아이콘 · Phosphor Bold hand-heart(unpkg @phosphor-icons/core 2.1.1, MIT) */
 .cg-pi-bell{--m:url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNTYgMjU2IiBmaWxsPSJjdXJyZW50Q29sb3IiPjxwYXRoIGQ9Ik0yMjUuMjksMTY1LjkzQzIxNi42MSwxNTEsMjEyLDEyOS41NywyMTIsMTA0YTg0LDg0LDAsMCwwLTE2OCwwYzAsMjUuNTgtNC41OSw0Ny0xMy4yNyw2MS45M0EyMC4wOCwyMC4wOCwwLDAsMCwzMC42NiwxODYsMTkuNzcsMTkuNzcsMCwwLDAsNDgsMTk2SDg0LjE4YTQ0LDQ0LDAsMCwwLDg3LjY0LDBIMjA4YTE5Ljc3LDE5Ljc3LDAsMCwwLDE3LjMxLTEwQTIwLjA4LDIwLjA4LDAsMCwwLDIyNS4yOSwxNjUuOTNaTTEyOCwyMTJhMjAsMjAsMCwwLDEtMTkuNi0xNmgzOS4yQTIwLDIwLDAsMCwxLDEyOCwyMTJaTTU0LjY2LDE3MkM2My41MSwxNTQsNjgsMTMxLjE0LDY4LDEwNGE2MCw2MCwwLDAsMSwxMjAsMGMwLDI3LjEzLDQuNDgsNTAsMTMuMzMsNjhaIi8+PC9zdmc+")}
+.cg-app{--color-notification-dot:#E5484D}
 @keyframes cg-dot{from{transform:scale(0)}to{transform:none}}
 @keyframes cg-np-in{from{opacity:0;transform:translateY(-14px) scaleY(.78) scaleX(.96)}to{opacity:1;transform:none}}
 @keyframes cg-np-row{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
@@ -166,7 +122,6 @@
 .cg-pnl{display:inline-flex;max-width:100%;min-width:0;vertical-align:bottom;white-space:nowrap}
 .cg-pnl .cg-pn{min-width:0;overflow:hidden;text-overflow:ellipsis}
 .cg-pnl .cg-pr{flex:none}
-
 /* ── 시안 보기 틀(앱 아님) ── */
 .cg-sheet{margin:0;background:var(--cg-bg-secondary);color:var(--cg-text-primary);font:16px/1.5 var(--cg-font);padding:24px}
 .cg-sheet > header{max-width:1300px;margin:0 0 24px}
@@ -182,5 +137,8 @@
 .cg-win{position:relative;height:1184px;border-radius:var(--cg-radius-win);overflow:hidden;background:var(--color-background-canvas);border:1px solid var(--cg-line-weak);flex:none}
 .cg-win--land{width:1700px}
 .cg-win--port{width:840px}
+/* 도착 확인 알림 보기 칸(정적 화면 전용 · v170): 시스템 알림은 앱 창 밖 화면 맨 위에 OS가 그린다. 앱 창(순정 내비) 옆에 따로 둔다 */
+.cg-sysn-stage{position:relative;width:780px;padding:40px 40px 72px;border-radius:var(--cg-radius-win);background:var(--cg-bg-primary);border:1px dashed var(--cg-line-strong);flex:none}
+.cg-sysn-stage .cg-sysn{position:relative;left:auto;top:auto;z-index:auto}
 .cg-app{position:absolute;inset:0;color:var(--cg-text-primary);font:14px/1.5 var(--cg-font)}
 .cg-app,.cg-app *,.cg-app *::before,.cg-app *::after{box-sizing:border-box}

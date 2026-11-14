@@ -27,19 +27,20 @@
 <link rel="stylesheet" href="../components/logo.css">
 <link rel="stylesheet" href="../components/nogo-car.css">
 <link rel="stylesheet" href="../components/noti-panel.css">
+<link rel="stylesheet" href="../components/sys-noti.css">
 <link rel="stylesheet" href="home.css">
 <link rel="stylesheet" href="depart.css">
 <link rel="stylesheet" href="search.css">
 <link rel="stylesheet" href="drive.css">
 <link rel="stylesheet" href="midway.css">
-<link rel="stylesheet" href="calc.css">
+<link rel="stylesheet" href="review.css">
 <link rel="stylesheet" href="arrive.css">
 <link rel="stylesheet" href="record.css">
 <link rel="stylesheet" href="settings.css">
 <link rel="stylesheet" href="after.css">
 </head>
 <body class="cg-sheet">
-<header><h1>기록</h1><p>Design v2(운전 노고 정산 PRD v1.3) · 상태마다 앱 1개(1700)와 분할(840)을 함께 둠 · 50%로 보임. 눌러 보는 흐름과 움직임은 ../prototype/index.html, 옮기는 법은 ../HANDOFF_v2.md.</p></header>
+<header><h1>기록</h1><p>Design v2(노고 PRD v2.0 · 아티팩트 v170) · 상태마다 앱 1개(1700)와 분할(840)을 함께 둠 · 50%로 보임. 눌러 보는 흐름과 움직임은 ../prototype/index.html, 옮기는 법은 ../HANDOFF_v4.md(앞 판 v2 · v3 위에 바뀐 것).</p></header>
 <section class="cg-state" data-state="주행 기록 목록" data-id="log">
 <h2>주행 기록 목록<small>log</small></h2>
 <p>홈 위 바 기록 아이콘을 누르면 주행 기록이 최근 순 목록으로 나온다. 줄을 누르면 그날 상세로 간다(11/8 명준). 고른 것은 상세에서만 보인다(11/9).</p>
@@ -64,7 +65,7 @@
     <div class="cg-rsum cg-tot"><span>합계</span><b class="cg-tflip" aria-label="약 3만 6천 원 · 평소보다 1.57배 힘든 길"><span class="cg-t1">평소보다 1.57배 힘든 길</span><span class="cg-t2">약 3만 6천 원</span></b></div>
     
     <div class="cg-bc" aria-hidden="true"><i class="cg-bars"></i><span>#2026 1110 104 130</span></div>
-  </div></div></div><div class="cg-card cg-offer" data-anno="기록 상세 · 그날의 노고 + 고른 것(11/8 명준)"><span class="cg-cap2">그날의 노고</span><span class="cg-head">평소보다 1.57배 힘든 길</span><span class="cg-why cg-ldw"><i class="cg-ul">운전 노고 약 3만 6천 원</i><br>운전 2시간 10분 · 104km · 함께 4명</span><i class="cg-odiv"></i><span class="cg-cap2">그날 고른 것</span><span class="cg-why">방식 A · 한 사람 약 9천 원 · 좋아요를 눌렀어요</span><span class="cg-note">좌표 없이 이 차에만 남아요</span><span class="cg-sp"></span><div class="cg-bts"><span class="cg-btn cg-l" data-act="back">닫기</span></div></div></div></div></div></div></div>
+  </div></div></div><div class="cg-card cg-offer" data-anno="기록 상세 · 그날의 노고 + 고른 것(11/8 명준)"><span class="cg-cap2">그날의 노고</span><span class="cg-head">평소보다 1.57배 힘든 길</span><span class="cg-why cg-ldw"><i class="cg-ul">운전 노고 약 3만 6천 원</i><br>운전 2시간 10분 · 104km · 함께 4명</span><i class="cg-odiv"></i><span class="cg-cap2">그날 고른 것</span><span class="cg-why">한 사람 약 9천 원 · 좋아요를 눌렀어요</span><span class="cg-note">좌표 없이 이 차에만 남아요</span><span class="cg-sp"></span><div class="cg-bts"><span class="cg-btn cg-l" data-act="back">닫기</span></div></div></div></div></div></div></div>
 <div><div class="cg-frame-cap">분할 · 840 × 1184</div><div class="cg-win cg-win--port"><div class="cg-app cg-a-p1"><div class="cg-pg cg-p"><div class="cg-hd" data-anno="Title · Depth 80"><span class="cg-btn cg-ib cg-plain" data-act="back" data-anno="Icon Button 80 · Plain · 뒤로" aria-label="뒤로"><i class="cg-ic cg-ic-back"></i></span><span class="cg-ttl">11월 10일 · 태안 꽃지해수욕장</span></div><div class="cg-arr"><div class="cg-rcol" data-anno="오늘 운전 영수증 (5-1) · 출력 종이 형태 · 값이 0인 줄 생략"><div class="cg-prn" aria-hidden="true"><i></i></div><div class="cg-paperwrap"><div class="cg-paper">
     <div class="cg-ph"><b>오늘 주행 영수증</b><span>태안 꽃지해수욕장 · 11월 10일 · 4명</span></div>
     <i class="cg-rule2"></i>
@@ -76,37 +77,7 @@
     <div class="cg-rsum cg-tot"><span>합계</span><b class="cg-tflip" aria-label="약 3만 6천 원 · 평소보다 1.57배 힘든 길"><span class="cg-t1">평소보다 1.57배 힘든 길</span><span class="cg-t2">약 3만 6천 원</span></b></div>
     
     <div class="cg-bc" aria-hidden="true"><i class="cg-bars"></i><span>#2026 1110 104 130</span></div>
-  </div></div></div><div class="cg-card cg-offer" data-anno="기록 상세 · 그날의 노고 + 고른 것(11/8 명준)"><span class="cg-cap2">그날의 노고</span><span class="cg-head">평소보다 1.57배 힘든 길</span><span class="cg-why cg-ldw"><i class="cg-ul">운전 노고 약 3만 6천 원</i><br>운전 2시간 10분 · 104km · 함께 4명</span><i class="cg-odiv"></i><span class="cg-cap2">그날 고른 것</span><span class="cg-why">방식 A · 한 사람 약 9천 원 · 좋아요를 눌렀어요</span><span class="cg-note">좌표 없이 이 차에만 남아요</span><span class="cg-sp"></span><div class="cg-bts"><span class="cg-btn cg-l" data-act="back">닫기</span></div></div></div></div></div></div></div>
-</div>
-</section><section class="cg-state" data-state="기록 상세 · 방식 B" data-id="log-detail-b">
-<h2>기록 상세 · 방식 B<small>log-detail-b</small></h2>
-<p>방식 B로 고른 날은 고른 항목을 적는다.</p>
-<ul><li>&quot;그날 고른 것 · 방식 B · 커피값에서 운전자 빼기로 했어요&quot;</li></ul>
-<div class="cg-frames">
-<div><div class="cg-frame-cap">앱 1개 · 1700 × 1184</div><div class="cg-win cg-win--land"><div class="cg-app cg-a-land"><div class="cg-pg"><div class="cg-hd" data-anno="Title · Depth 80"><span class="cg-btn cg-ib cg-plain" data-act="back" data-anno="Icon Button 80 · Plain · 뒤로" aria-label="뒤로"><i class="cg-ic cg-ic-back"></i></span><span class="cg-ttl">10월 26일 · 양평 두물머리</span></div><div class="cg-arr"><div class="cg-rcol" data-anno="오늘 운전 영수증 (5-1) · 출력 종이 형태 · 값이 0인 줄 생략"><div class="cg-prn" aria-hidden="true"><i></i></div><div class="cg-paperwrap"><div class="cg-paper">
-    <div class="cg-ph"><b>오늘 주행 영수증</b><span>양평 두물머리 · 10월 26일 · 3명</span></div>
-    <i class="cg-rule2"></i>
-    <div class="cg-rhd"><span>항목</span><span>더한 몫</span></div>
-    <div class="cg-rrow" data-act="why0"><span class="cg-k">정체 구간</span><span class="cg-v">4km</span><span class="cg-pc">+3%</span><i class="cg-chev"></i></div><div class="cg-rrow" data-act="why1"><span class="cg-k">예상보다 더</span><span class="cg-v">+13분</span><span class="cg-pc">+6%</span><i class="cg-chev"></i></div><div class="cg-rrow" data-act="why2"><span class="cg-k">밤길</span><span class="cg-v">55분</span><span class="cg-pc">+4%</span><i class="cg-chev"></i></div>
-    <div class="cg-rsum cg-rs1"><span>운전 시간</span><b>55분</b></div>
-    <div class="cg-rsum"><span>중간에 쉰 시간</span><span class="cg-rr"><b>없음</b></span></div>
-    <div class="cg-rsum"><span>거리</span><b>36km</b></div>
-    <div class="cg-rsum cg-tot"><span>합계</span><b class="cg-tflip" aria-label="약 1만 1천 원 · 평소보다 1.14배 힘든 길"><span class="cg-t1">평소보다 1.14배 힘든 길</span><span class="cg-t2">약 1만 1천 원</span></b></div>
-    
-    <div class="cg-bc" aria-hidden="true"><i class="cg-bars"></i><span>#2026 1026 036 055</span></div>
-  </div></div></div><div class="cg-card cg-offer" data-anno="기록 상세 · 그날의 노고 + 고른 것(11/8 명준)"><span class="cg-cap2">그날의 노고</span><span class="cg-head">평소보다 1.14배 힘든 길</span><span class="cg-why cg-ldw"><i class="cg-ul">운전 노고 약 1만 1천 원</i><br>운전 55분 · 36km · 함께 3명</span><i class="cg-odiv"></i><span class="cg-cap2">그날 고른 것</span><span class="cg-why">방식 B · 커피값에서 운전자 빼기로 했어요</span><span class="cg-note">좌표 없이 이 차에만 남아요</span><span class="cg-sp"></span><div class="cg-bts"><span class="cg-btn cg-l" data-act="back">닫기</span></div></div></div></div></div></div></div>
-<div><div class="cg-frame-cap">분할 · 840 × 1184</div><div class="cg-win cg-win--port"><div class="cg-app cg-a-p1"><div class="cg-pg cg-p"><div class="cg-hd" data-anno="Title · Depth 80"><span class="cg-btn cg-ib cg-plain" data-act="back" data-anno="Icon Button 80 · Plain · 뒤로" aria-label="뒤로"><i class="cg-ic cg-ic-back"></i></span><span class="cg-ttl">10월 26일 · 양평 두물머리</span></div><div class="cg-arr"><div class="cg-rcol" data-anno="오늘 운전 영수증 (5-1) · 출력 종이 형태 · 값이 0인 줄 생략"><div class="cg-prn" aria-hidden="true"><i></i></div><div class="cg-paperwrap"><div class="cg-paper">
-    <div class="cg-ph"><b>오늘 주행 영수증</b><span>양평 두물머리 · 10월 26일 · 3명</span></div>
-    <i class="cg-rule2"></i>
-    <div class="cg-rhd"><span>항목</span><span>더한 몫</span></div>
-    <div class="cg-rrow" data-act="why0"><span class="cg-k">정체 구간</span><span class="cg-v">4km</span><span class="cg-pc">+3%</span><i class="cg-chev"></i></div><div class="cg-rrow" data-act="why1"><span class="cg-k">예상보다 더</span><span class="cg-v">+13분</span><span class="cg-pc">+6%</span><i class="cg-chev"></i></div><div class="cg-rrow" data-act="why2"><span class="cg-k">밤길</span><span class="cg-v">55분</span><span class="cg-pc">+4%</span><i class="cg-chev"></i></div>
-    <div class="cg-rsum cg-rs1"><span>운전 시간</span><b>55분</b></div>
-    <div class="cg-rsum"><span>중간에 쉰 시간</span><span class="cg-rr"><b>없음</b></span></div>
-    <div class="cg-rsum"><span>거리</span><b>36km</b></div>
-    <div class="cg-rsum cg-tot"><span>합계</span><b class="cg-tflip" aria-label="약 1만 1천 원 · 평소보다 1.14배 힘든 길"><span class="cg-t1">평소보다 1.14배 힘든 길</span><span class="cg-t2">약 1만 1천 원</span></b></div>
-    
-    <div class="cg-bc" aria-hidden="true"><i class="cg-bars"></i><span>#2026 1026 036 055</span></div>
-  </div></div></div><div class="cg-card cg-offer" data-anno="기록 상세 · 그날의 노고 + 고른 것(11/8 명준)"><span class="cg-cap2">그날의 노고</span><span class="cg-head">평소보다 1.14배 힘든 길</span><span class="cg-why cg-ldw"><i class="cg-ul">운전 노고 약 1만 1천 원</i><br>운전 55분 · 36km · 함께 3명</span><i class="cg-odiv"></i><span class="cg-cap2">그날 고른 것</span><span class="cg-why">방식 B · 커피값에서 운전자 빼기로 했어요</span><span class="cg-note">좌표 없이 이 차에만 남아요</span><span class="cg-sp"></span><div class="cg-bts"><span class="cg-btn cg-l" data-act="back">닫기</span></div></div></div></div></div></div></div>
+  </div></div></div><div class="cg-card cg-offer" data-anno="기록 상세 · 그날의 노고 + 고른 것(11/8 명준)"><span class="cg-cap2">그날의 노고</span><span class="cg-head">평소보다 1.57배 힘든 길</span><span class="cg-why cg-ldw"><i class="cg-ul">운전 노고 약 3만 6천 원</i><br>운전 2시간 10분 · 104km · 함께 4명</span><i class="cg-odiv"></i><span class="cg-cap2">그날 고른 것</span><span class="cg-why">한 사람 약 9천 원 · 좋아요를 눌렀어요</span><span class="cg-note">좌표 없이 이 차에만 남아요</span><span class="cg-sp"></span><div class="cg-bts"><span class="cg-btn cg-l" data-act="back">닫기</span></div></div></div></div></div></div></div>
 </div>
 </section>
 </body></html>

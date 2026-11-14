@@ -25,7 +25,6 @@
 .cg-ic-arrow{--m:url(../icons/pleos/ic_arrow_40.svg)}
 .cg-ico{width:40px;height:40px;border-radius:12px;border:3px dashed currentColor;opacity:.45;flex:none;display:inline-block}
 .cg-btn.cg-s .cg-ico{width:32px;height:32px;border-radius:10px}
-.cg-toast.cg-nb .cg-bt .cg-btn{flex:1}
 /* 버튼: 주요(라임) · 보조(뉴트럴) · 비활성 · 삭제 */
 .cg-btn{color:var(--color-button-secondary-foreground)}
 .cg-btn.cg-fill{color:var(--color-button-primary-foreground)}
@@ -48,3 +47,5 @@
 .cg-p .cg-btn.cg-ib.cg-bell .cg-ndot{top:12px;right:14px;width:16px;height:16px}
 .cg-play .cg-btn.cg-ib.cg-bell .cg-ndot{animation:cg-dot .45s cubic-bezier(.3,1.5,.5,1) .3s both}
 .cg-btn.cg-ib.cg-bell.cg-on{background:var(--color-button-secondary-pressed)}
+.cg-ico.cg-pi.cg-hh{background:none;-webkit-mask:none;mask:none}
+.cg-ico.cg-pi.cg-hh svg{display:block;width:100%;height:100%;overflow:visible}

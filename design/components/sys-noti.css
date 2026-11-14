@@ -1,0 +1,25 @@
+/* Design v2(운전 노고 정산) — 아티팩트 시안에서 옮김. 값은 tokens.css의 --cg-* 변수, 크기는 Connect-S 실제 픽셀(1dp = 1px). */
+/* ── 도착 확인 알림 = Pleos 시스템 알림 목업(11/14) ──
+   ivi_notification_system · Type=Image+Text(design assets 2.1.5, 67:34044): 700 폭 · 모서리 48 · 선 #131417 10% · 그림자 Level 3
+   머리 32/32/16/32 · 이미지 100(모서리 24) · 사이 24 · 제목 800 36/44 · 본문 400 26/34(64%) · 버튼 줄 24 · Basic Button 80
+   모양은 OS가 그림 — 앱 창 밖 화면 맨 위에 얹은 목업. 실제 위치 · 주행 중 표시 [미확인] */
+.cg-sysn{position:absolute;z-index:40;top:120px;left:1340px;width:700px;display:flex;flex-direction:column;background:var(--cg-surface-card);border:1px solid var(--cg-line);border-radius:48px;box-shadow:var(--cg-shadow-3);color:var(--cg-text-primary);cursor:pointer;word-break:keep-all}
+.cg-sysn.cg-p{left:910px}
+.cg-sysn .cg-sh{display:flex;gap:24px;padding:32px 32px 16px}
+.cg-sysn .cg-si{width:100px;height:100px;flex:none;border-radius:24px;overflow:hidden}
+.cg-sysn .cg-si svg{display:block;width:100px;height:100px}
+.cg-sysn .cg-si .cg-d{display:none}
+.cg-sysn .cg-st{display:flex;flex-direction:column;gap:12px;padding-top:4px;min-width:0}
+.cg-sysn .cg-st b{font:800 36px/44px var(--cg-font)}
+.cg-sysn .cg-st span{font:400 26px/34px var(--cg-font);color:var(--cg-text-tertiary);text-wrap:pretty}
+.cg-sysn .cg-st .cg-pnl,.cg-sysn .cg-st .cg-pnl span{white-space:nowrap;text-wrap:nowrap}
+/* 본문 첫 줄 = 장소 · 시각(긴 이름은 이름만 말줄임 D2), 둘째 줄 = 오늘 운전 기록~ (11/14 명준 코멘트) */
+.cg-sysn .cg-sb{display:flex;gap:16px;padding:24px}
+/* 11/14 명준 코멘트: 버튼 분할 [열기] [닫기](열기 왼쪽) · 사이 16(Pleos 원본) */
+.cg-sysn .cg-sb .cg-btn{flex:1}
+.cg-sysn .cg-sb .cg-btn.cg-fill{background:var(--color-button-primary-fill);color:var(--color-button-primary-foreground)}
+/* 11/14 명준 코멘트: 주간에 글자가 안 보임 → 라임 포인트(앱 기본 채움 버튼과 같음) */
+.cg-sysn .cg-sb .cg-btn.cg-fill:active{background:var(--color-button-primary-pressed)}
+.cg-sysn .cg-sb .cg-btn:not(.cg-fill){background:var(--color-button-secondary-fill);color:var(--color-button-secondary-foreground)}
+.cg-sysn .cg-sb .cg-btn:not(.cg-fill):active{background:var(--color-button-secondary-pressed)}
+.cg-sysn-tag{position:absolute;left:0;right:0;top:calc(100% + 18px);text-align:center;font:700 22px/28px var(--cg-font);color:#00a3ffcc;pointer-events:none}

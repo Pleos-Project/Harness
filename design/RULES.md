@@ -15,19 +15,19 @@
 - 시안에 없는 앱 요소가 기능(AC 번호가 있는 것)이면 반영 PR이 지우지 않고 "확인 필요"로 남긴다. 디자이너가 다음 디자인 PR에서 자리를 정한다.
 - 화면 시안은 `design/screens/<화면>.html`(+ 같은 이름 `.css`), 상태가 여럿이면 한 파일 안에 `data-state="기본|정산 닫음|…"` 블록으로 나눈다. 부품은 `design/components/`.
 
-### 시안 ↔ 앱 파일 대응표 (반영 PR이 고칠 곳) — Design v2(운전 노고 정산, 11/8)
+### 시안 ↔ 앱 파일 대응표 (반영 PR이 고칠 곳) — Design v2(운전 노고 정산, 11/8 · 11/14 v170에서 앱 파일 이름 최신화)
 | 시안 | 앱(Compose) | 비고 |
 |---|---|---|
-| `screens/home.html` | `ui/EffortApp.kt` `EffortHome`·`RecordCard` | 시작 화면(새로) · 첫 사용 · 기본 · 방금 끝난 기록 · 고르기 전에 나간 도착(v41). 위 바 오른쪽 = 설정 아이콘 |
-| `screens/midway.html` | `ui/EffortApp.kt` `EffortHome` 진행 중 상태 + 새 화면 `EffortMidScreen`(가칭, 중간 정산) | v32~v33: 휴게소에서 다시 연 홈(내 차 그림 = 중간 정산 버튼 · [도착했어요] · [그만두기]) · 그만두기 확인 · 지금까지의 노고 A/B · 정산 뒤 |
-| `screens/depart.html` | `ui/EffortApp.kt` `EffortDepart`·`DestRow`·`DemoDepart`, `ui/PayerToast.kt` | 목록형 → 목적지 카드 4장 + 미리보기 칸. 인원 확인은 위 바 줄 알림 바 |
-| `screens/search.html` | `ui/EffortApp.kt` `EffortDepart` 검색 상태 | 결과 · 검색 중 · 결과 없음 · 안 됨 · 위치 못 받음 |
+| `screens/home.html` | `ui/EffortHomeV2.kt` | 시작 화면 · 기본 · 방금 끝난 기록 · 알림 펼침. 위 바 = 기록 · 워드마크 · 알림 · 설정. 로고 · 워드마크 v2(11/14) |
+| `screens/midway.html` | `ui/EffortMidway.kt` + `ui/EffortHomeV2.kt` 가는 중 상태 | 휴게소에서 다시 연 홈(시동 버튼 · [도착했어요] · [멈추기]) · 멈추기 확인 · 쉰 시간 묻기 · 지금까지의 노고(방식 A) · 정산 뒤 |
+| `screens/depart.html` | `ui/EffortDepartV2.kt`, `ui/PayerToast.kt` | 목적지 카드 4장 + 미리보기 칸([안내 시작]). 인원 확인은 위 바 줄 알림 바 |
+| `screens/search.html` | `ui/EffortDepartV2.kt` 검색 상태 | 결과 · 검색 중 · 결과 없음 · 안 됨 · 위치 못 받음 |
 | `screens/drive.html` | 그리지 않음(순정 내비 · 시스템 차단 `DrivingCover`) | 참고용 |
-| `screens/calc.html` | 새 화면 `EffortCalcScreen`(가칭) | 도착 → 계산 연출(약 13초, 건너뛰기) → 영수증. 움직임은 `HANDOFF_v2.md` 3절 |
-| `screens/arrive.html` | `ui/EffortApp.kt` `EffortReceiptScreen` + `EffortProposalScreen` → **한 화면으로 합침** | 왼쪽 영수증 · 오른쪽 제안 카드(가로) / 위·아래(분할). 쉰 시간은 짧은 하단 시트 |
-| `screens/record.html` | 새 화면(가칭 `EffortRecordScreen`). `ui/RecordScreen.kt`는 피봇 전 장부 화면이라 대응 안 함 | 주행 기록 목록 → 기록 상세(A · B) |
-| `screens/settings.html` | `app/Settings.kt` + 새 설정 화면(가칭 `EffortSettingsScreen`) `[June 확인]` | 제안 방식 A/B · 시연 고정 · 단가 출처 · 기록 초기화(S20) |
-| `components/<부품>.html` | `ui/components/Components.kt` `Cg*` | 버튼·칩·카드·시트 등. 화면마다 따로 만들지 않는다 |
+| `screens/review.html` | `ui/EffortReview.kt` · 주행 중 서비스의 도착 확인 알림 | 도착 확인 알림(시스템 알림 목업, 두 안) → 오늘 운전 돌아보기(캐릭터 + 기준 5줄, 약 10초, 건너뛰기) → [운전자 챙겨주기] · [다음에]. 움직임은 `HANDOFF_v4.md` 6절. 옛 `calc.html`(계산 연출)은 11/14에 지움 |
+| `screens/arrive.html` | `ui/EffortArrive.kt` | 왼쪽 영수증 · 오른쪽 금액 카드(가로) / 위·아래(분할). 쉰 시간은 짧은 하단 시트 |
+| `screens/record.html` | `ui/EffortRecord.kt`. `ui/RecordScreen.kt`는 피봇 전 장부 화면이라 대응 안 함 | 주행 기록 목록 → 기록 상세 |
+| `screens/settings.html` | `ui/SettingsScreen.kt` `[June 확인]` | 시연 고정 · 단가 출처 · 기록 초기화(S20). 제안 방식 줄은 11/14에 뺌 |
+| `components/<부품>.html` | `ui/components/CgParts.kt` `Cg*` | 버튼·칩·카드·시트 등. 화면마다 따로 만들지 않는다 |
 | 모든 시안의 화면 문구 | `res/values/strings.xml` | 문구는 여기서만 고친다. 임시 문구는 디자인이 확정 전(PR 본문에 목록) |
 - 피봇 전 시안 대응(`home`·`card`·`range` 등 옛 이름)은 쓰지 않는다. `components/badge`·`card-front`는 피봇 전 부품으로 이력만 남긴다.
 - 대응표에 없는 시안이 오면 반영 PR이 가장 가까운 파일을 고르고 PR 본문에 적는다. 화면 파일 이름이 바뀌면 이 표를 같이 고친다(개발 PR에서).
@@ -63,11 +63,13 @@
 | `dest-card` · `record-card` · `preview-panel` | 출발 · 홈 | Card |
 | `people-alert` | 출발 화면 인원 확인 | System Notification 한 줄 변형 |
 | `bottom-sheet` | 쉰 시간 · 진행 중 출발 정보 | Bottom Sheet(딤 · 끌기 없음) |
-| `receipt` · `offer-card` | 도착 | 디자인 제안 · Card + Basic Button L |
+| `receipt` · `offer-card` | 도착 · 중간 정산(금액 카드 = 방식 A만, 머리 줄 없음 · 11/14) | 디자인 제안 · Card + Basic Button L |
 | `loading` · `empty` · `notice` | 로딩 · 빈 상태 · 에러 · 시연 표시 | — |
 | `mid-button` | 가는 중 홈 시동 버튼(중간 정산) | 디자인 제안 |
-| `logo` · `nogo-car` | 시작 화면 · 위 바 · 계산 연출(11/9) | 디자인 제안(`brand/`) |
+| `logo` · `nogo-car` | 시작 화면 · 위 바 · 홈 심볼(로고 v2 · 11/14) · 노고 카(옛 계산 연출, 지금은 디자인 시스템에만) | 디자인 제안(`brand/`) |
 | `noti-panel` | 홈 위 바 알림 종 · 종 아래로 내려오는 알림 창(11/9) | 디자인 제안(페이지 아님, 확인만) |
+| `sys-noti` | 도착 확인 알림(11/14) · 앱 창 밖 화면 맨 위, OS가 그림 · 두 안(본문 두 줄 · 한 줄) | Pleos System Notification Image+Text 700 |
+| ~~`segmented`~~ | 설정 제안 방식(A/B) 줄 삭제(11/14) · 이력만 | — |
 | ~~`record-card`~~ | 홈에서 삭제(11/9 v87) · 이력만 | — |
 - 움직임: 등장 움직임 규칙은 `.cg-play` 아래에 있다(시안 정지 화면은 끝 상태). 계산 연출처럼 JS로 차례를 짜는 움직임은 `prototype/`과 `HANDOFF_v2.md`가 기준.
 
@@ -76,6 +78,7 @@
   `sea lake river mountain park city island drive`, `<n>` = 1부터.
 - 같은 장소는 늘 같은 그림: 앱이 장소 ID로 변형을 고른다(Kotlin `illustrationName`). 변형 수를 바꾸면 PR에 적는다.
 - 실제 장소 사진인 척하지 않는다. 아이콘은 48dp 그리드 SVG, `design/icons/<name>.svg`(Pleos 에셋 = `icons/pleos/`, 그 밖 = Phosphor Bold `icons/phosphor/`, MIT). 로고·앱 아이콘(512px PNG)은 `design/brand/`. 장소 사진(출발 미리보기 배경, 임시)은 `design/places/<key>.jpg` + `CREDITS.md`.
+- 노고 캐릭터(오늘 운전 돌아보기, 11/14)는 `design/illustrations/character/nogo_v_<표정>.webp`(700 × 754, 표정 focus · shy · relief · proud · joy). BX 'NOGO 캐릭터 모션' 시안에서 내보낸 것이고, BX가 상황별 모션 에셋으로 다시 넘기면 같은 이름 규칙으로 바꾼다.
 - 레포에는 **앱이 쓰는 내보낸 파일(SVG·PNG)만** 둔다. 원본(피그마·AI·PSD)은 피그마·드라이브에.
 
 ### BX 파일 올리기
@@ -112,6 +115,6 @@ Co-authored-by: <BX 디자이너 이름> <GitHub에 쓸 이메일>
 
 ## 6. 프로토타입 (`design/prototype/`)
 - 디자인 아티팩트(Design v2) 원본 사본이다. JS로 화면을 그리고 눌러 볼 수 있으며, 계산 연출 · 영수증 출력 같은 움직임을 실제로 재생한다. **예시·참고용**이며 자동 반영 대상이 아니다(2절 "JS 없음" 규칙의 예외).
-- 화면 생김새의 기준은 `screens/`, 흐름·움직임의 기준은 `HANDOFF_v2.md`. 셋이 어긋나면 디자이너가 맞춘다.
-- 최신 아티팩트: https://claude.ai/artifact/MnKCLMKHXYrZqX72A2rgS9 (링크가 레포보다 앞설 수 있음 — 레포에 들어온 판이 넘긴 판)
+- 화면 생김새의 기준은 `screens/`, 흐름·움직임의 기준은 `HANDOFF_v2.md` → `HANDOFF_v3.md` → `HANDOFF_v4.md`(뒤 판이 앞 판 위에 바뀐 것). 셋이 어긋나면 디자이너가 맞춘다.
+- 최신 아티팩트: https://claude.ai/artifact/MnKCLMKHXYrZqX72A2rgS9 (링크가 레포보다 앞설 수 있음 — 레포에 들어온 판이 넘긴 판, 11/14 기준 v170)
 
