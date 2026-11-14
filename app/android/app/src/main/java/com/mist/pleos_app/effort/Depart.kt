@@ -41,6 +41,8 @@ data class DepartUi(
     val searching: Boolean = false,
     val searchStatus: PlacesStatus? = null,
     val searchResults: List<DestOption> = emptyList(),
+    /** 이번 검색에 현재 위치(소수 둘째 자리)를 보냈는지. false면 결과 머리에 "위치를 받지 못해 정확도순" 안내(AC-N-4, G1 search-noloc). */
+    val searchSentLocation: Boolean = true,
     val selected: DestOption? = null,
     val preview: TripPreview? = null,
     val previewing: Boolean = false,
