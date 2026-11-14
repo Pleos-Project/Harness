@@ -144,9 +144,12 @@ fun EffortApp(
             )
             EffortScreen.DEPART -> {
                 // Design v2 출발 화면(#75). 시연 모드도 같은 화면 · 기능(데이터만 시연 목록, June 11/9)
+                // 인터넷 없음 배너(#134): 시연 고정 모드는 서버 없이 시연 목록으로 검색하므로 막지 않는다
+                val online = rememberOnline()
                 EffortDepartScreen(
                     depart,
                     demoMissing = settings.demoFixed && !ui.demoAvailable,
+                    offline = !online && !settings.demoFixed,
                     seats = seats, payers = vm.payersFor(seats), askPayers = askPayers,
                     onBack = { vm.back() }, onQuery = vm::setQuery, onSearch = vm::search, onClearSearch = vm::clearSearch,
                     onSelect = vm::select, onUnselect = vm::unselect,

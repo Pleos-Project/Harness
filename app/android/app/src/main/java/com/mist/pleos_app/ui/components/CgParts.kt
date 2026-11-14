@@ -53,6 +53,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Brush
@@ -343,11 +344,12 @@ fun CgProgressPill(text: String, onClick: () -> Unit, modifier: Modifier = Modif
 // ------------------------------------------------------------ search-field
 /** 검색 한 줄(`components/search-field`, Text Field 100 알약): 가로 1040 가운데, 입력 중이면 테두리 3 + [지우기](v3: 면 없는 글자 버튼, 인원 알림 [닫기]와 같은 규칙). */
 @Composable
-fun CgSearchField(query: String, hint: String, clearLabel: String, onQuery: (String) -> Unit, onSearch: () -> Unit, onClear: () -> Unit, compact: Boolean = false) {
+fun CgSearchField(query: String, hint: String, clearLabel: String, onQuery: (String) -> Unit, onSearch: () -> Unit, onClear: () -> Unit, compact: Boolean = false, disabled: Boolean = false) {
     val c = Chagok.colors
-    val active = query.isNotEmpty()
+    val active = query.isNotEmpty() && !disabled
     val shape = RoundedCornerShape(50.gpx)
-    Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+    // 흐림(.hsearch.cg-dis): 투명도 .45 · 누르거나 입력할 수 없음(인터넷 없음, depart-offline)
+    Box(Modifier.fillMaxWidth().alpha(if (disabled) 0.45f else 1f), contentAlignment = Alignment.Center) {
         Row(
             (if (compact) Modifier.fillMaxWidth() else Modifier.width(1040.gpx))
                 .height(if (compact) 88.gpx else 100.gpx)
@@ -363,7 +365,7 @@ fun CgSearchField(query: String, hint: String, clearLabel: String, onQuery: (Str
                 val fs = if (compact) Chagok.type.bodyL else Chagok.type.titleS
                 if (query.isEmpty()) Text(hint, style = fs, color = c.textTertiary, maxLines = 1)
                 BasicTextField(
-                    value = query, onValueChange = { onQuery(it.take(100)) }, singleLine = true,
+                    value = query, onValueChange = { onQuery(it.take(100)) }, singleLine = true, enabled = !disabled,
                     textStyle = fs.copy(color = c.textPrimary), cursorBrush = SolidColor(c.fieldCaret),
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search), keyboardActions = KeyboardActions(onSearch = { onSearch() }),
                     modifier = Modifier.fillMaxWidth().semantics { contentDescription = hint },

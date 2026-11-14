@@ -152,6 +152,7 @@
     <string name="effort_search">검색</string>
     <string name="effort_searching">찾는 중</string>
     <string name="effort_search_empty">검색 결과 없음</string>
+    <string name="effort_offline_banner">인터넷이 연결되지 않았어요 · 검색 대신 아래 목적지에서 골라 주세요</string>
     <string name="effort_search_unavailable">지금은 검색이 안 돼요. 아래 최근 목적지·즐겨찾기에서 골라 주세요</string>
     <string name="effort_navi_places">즐겨찾기 · 최근</string>
     <string name="effort_navi_loading">불러오는 중이에요</string>

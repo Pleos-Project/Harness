@@ -84,6 +84,7 @@ private const val CARD_COUNT = 4
 internal fun EffortDepartScreen(
     ui: DepartUi,
     demoMissing: Boolean,
+    offline: Boolean = false,
     seats: Int,
     payers: Int,
     askPayers: Boolean,
@@ -108,7 +109,7 @@ internal fun EffortDepartScreen(
 
     // 시연 모드도 화면 · 기능은 같다. 데이터만 ViewModel이 시연 목록으로 채운다(DemoPlaces.kt)
     val selected = ui.selected
-    val searchMode = ui.query.isNotBlank() && (ui.searching || ui.searchStatus != null)
+    val searchMode = !offline && ui.query.isNotBlank() && (ui.searching || ui.searchStatus != null)
 
     // 들어올 때: 카드마다 아래 24px → 제자리 + 투명 → 보임 0.7초, 0.06초씩 지연. 화면에 처음 들어올 때 한 번만(검색에서 돌아와도 다시 안 함)
     val enterTotalMs = CARD_RISE_MS + CARD_STAGGER_MS * (CARD_COUNT - 1)
@@ -133,9 +134,11 @@ internal fun EffortDepartScreen(
                     )
                 },
             )
+            // 인터넷 없음(depart-offline): 위 바 아래 경고 알약 · 검색 한 줄은 흐리게 막는다
+            if (offline) CgBanner(stringResource(R.string.effort_offline_banner), Modifier.padding(top = if (narrow) 20.gpx else ChagokSpace.S28.gpx), warn = true, icon = CgIcon.WifiSlash)
             // 위 바 → 검색 28(분할 20)
             Box(Modifier.padding(top = if (narrow) 20.gpx else ChagokSpace.S28.gpx)) {
-                CgSearchField(ui.query, stringResource(R.string.effort_search_hint), stringResource(R.string.effort_search_clear), onQuery, search, onClearSearch, compact = narrow)
+                CgSearchField(ui.query, stringResource(R.string.effort_search_hint), stringResource(R.string.effort_search_clear), onQuery, search, onClearSearch, compact = narrow, disabled = offline)
             }
             if (demoMissing) CgBanner(stringResource(R.string.effort_depart_no_demo), Modifier.padding(top = if (narrow) ChagokSpace.S16.gpx else ChagokSpace.S24.gpx))
             if (searchMode) {
@@ -144,7 +147,7 @@ internal fun EffortDepartScreen(
                 SearchResults(ui, Modifier.padding(top = ChagokSpace.S24.gpx), onPick = { keyboard?.hide(); focus.clearFocus(); onSelect(it); onClearSearch() }, recent = recent)
             } else {
                 Column(Modifier.fillMaxWidth().weight(1f)) {
-                    if (ui.searchStatus == PlacesStatus.UNAVAILABLE) CgBanner(stringResource(R.string.effort_search_unavailable), Modifier.padding(top = 16.gpx), warn = true, icon = CgIcon.Warning)
+                    if (ui.searchStatus == PlacesStatus.UNAVAILABLE && !offline) CgBanner(stringResource(R.string.effort_search_unavailable), Modifier.padding(top = 16.gpx), warn = true, icon = CgIcon.Warning)
                     // .hlabel: 위 40(분할 28) · 아래 14(분할 10) · 좌우 8
                     Text(stringResource(R.string.effort_navi_places), Modifier.padding(start = ChagokSpace.S8.gpx, end = ChagokSpace.S8.gpx, top = if (narrow) ChagokSpace.S28.gpx else ChagokSpace.S40.gpx, bottom = if (narrow) 10.gpx else 14.gpx), style = Chagok.type.bodyS, color = c.textTertiary)
                     val options = ui.naviOptions.take(4)
