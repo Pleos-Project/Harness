@@ -1,5 +1,6 @@
 package com.mist.pleos_app.effort
 
+import com.mist.pleos_app.engine.epochS
 import com.mist.pleos_app.util.ChagokLog
 
 /** 홈에서 보는 노고 흐름 단계(명세 v0.5 3절). */
@@ -36,6 +37,15 @@ class EffortFlow(private val store: EffortStore) {
         if (cur != null) ChagokLog.event("effort_trip_replaced", "arrived" to cur.arrived)
         put(state.copy(openTrip = trip))
         ChagokLog.event("effort_depart", "demo" to trip.demo, "n" to trip.n, "eta" to (trip.etaS > 0), "congestion" to (trip.congestionRatio != null))
+        return true
+    }
+
+    /** 주행 중 목적지 변경(F22, AC-F22-10). 새 이름이 다를 때만 출발 기록의 이름·기준 ETA를 바꾼다. 바꿨으면 true. */
+    fun retarget(r: RouteStart): Boolean {
+        val cur = state.openTrip ?: return false
+        val next = retargetOf(cur, r) ?: return false
+        put(state.copy(openTrip = next))
+        ChagokLog.event("effort_retarget", "eta" to (r.durationS > 0), "elapsed_min" to com.mist.pleos_app.engine.roundHalfUp((epochS(r.at) - epochS(cur.departedAt)) / 60.0))   // 목적지 이름은 남기지 않는다(AC-C-10)
         return true
     }
 

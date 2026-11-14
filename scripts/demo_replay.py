@@ -236,7 +236,7 @@ def step0(r: Run, reset: bool) -> None:
             tap("홈으로")
         elif has("뒤로", ts):
             tap("뒤로")
-        elif has("제안 방식", ts):                     # 설정 화면은 [뒤로] 단추가 없어 BACK 키(앱 BackHandler → 홈)
+        elif has("시연 고정 모드", ts):                # 설정 화면은 [뒤로] 단추가 없어 BACK 키(앱 BackHandler → 홈). 제안 방식 항목은 1차에서 숨김
             adb("shell", "input", "keyevent", "4")
         elif has("영수증 보기", ts):                   # 고르기 전에 나간 도착(v32 home-pending) → 영수증 열고 닫기
             tap("영수증 보기")

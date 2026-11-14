@@ -74,6 +74,7 @@ class MainActivity : ComponentActivity() {
             override fun takeGuideEnd() = TripService.takeGuideEnd(ctx)
             override val running: Boolean get() = TripService.isRunning
             override fun expectOldCancel(v: Boolean) { TripService.expectOldCancel = v }
+            override fun takeRouteStart() = TripService.takeRouteStart(ctx)
         }
         askNotifications()
         // 다시 보일 때마다 도착 여부를 1번 본다(기본 배치에서는 도착 순간 차곡이 멈춰 있음, 명세 F22)

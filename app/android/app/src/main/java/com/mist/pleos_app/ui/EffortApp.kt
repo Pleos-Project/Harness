@@ -239,7 +239,8 @@ private fun EffortSettings(
             )
             val card = RoundedCornerShape(32.gpx)   // .card 모서리 32 · 테두리 2
             Column(Modifier.fillMaxWidth().background(c.surfaceCard, card).border(2.gpx, c.line, card)) {
-                // 제안 방식(개발·시험용 A/B)
+                // 제안 방식(개발·시험용 A/B). 1차는 방식 A만이라 숨긴다(명세 v0.6 S20, Settings.METHOD_B_SHOWN)
+                if (Settings.METHOD_B_SHOWN) {
                 val method = stringResource(R.string.effort_settings_method)
                 val methodSub = stringResource(
                     R.string.effort_settings_method_now,
@@ -256,6 +257,7 @@ private fun EffortSettings(
                     seg(Modifier.fillMaxWidth().padding(horizontal = side))
                 } else row(method, methodSub) { seg(Modifier) }
                 line()
+                }
                 // 시연 고정 모드
                 val demoOn = demoSummary?.let { (dest, mult) -> stringResource(R.string.effort_settings_demo_on, dest, mult) }
                     ?: stringResource(R.string.effort_settings_demo_on_plain)
