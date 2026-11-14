@@ -40,6 +40,15 @@ class EffortFlow(private val store: EffortStore) {
         return true
     }
 
+    /** 오늘 운전 돌아보기(F29)를 다 셈 · [운전자 챙겨주기]를 누름. 도착한 출발 기록에만. 바뀌었으면 true. */
+    fun markReview(seen: Boolean = true, consented: Boolean = false): Boolean {
+        val cur = state.openTrip?.takeIf { it.arrived } ?: return false
+        val next = cur.copy(reviewSeen = cur.reviewSeen || seen, consented = cur.consented || consented)
+        if (next == cur) return false
+        put(state.copy(openTrip = next))
+        return true
+    }
+
     /** 주행 중 목적지 변경(F22, AC-F22-10). 새 이름이 다를 때만 출발 기록의 이름·기준 ETA를 바꾼다. 바꿨으면 true. */
     fun retarget(r: RouteStart): Boolean {
         val cur = state.openTrip ?: return false

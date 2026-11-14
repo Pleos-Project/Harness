@@ -107,7 +107,7 @@ fun EffortApp(
     val depart by vm.departUi.collectAsStateWithLifecycle()
     val payer by vm.payerState.collectAsStateWithLifecycle()
     // CCP Back: 최상단(홈)에서는 finish 하지 않고 숨긴다. 주행 중 Back은 받아서 무시(가림 화면 유지)
-    BackHandler { if (driving) return@BackHandler; if (screen == EffortScreen.CALC) vm.calcDone() else if (!vm.back()) onExit() }
+    BackHandler { if (driving) return@BackHandler; if (!vm.back()) onExit() }
     // F22 도착: 기어가 바뀔 때, 그리고 화면이 다시 보일 때(이벤트, 폴링 없음). 운전석 문은 보지 않는다(DECISIONS 11/13)
     val shown by vm.shown.collectAsStateWithLifecycle()
     LaunchedEffect(parked, shown) { vm.onCar(parked) }
@@ -128,7 +128,7 @@ fun EffortApp(
                 onDepart = vm::openDepart,
                 onDiscard = vm::discardTrip,
                 onSettings = { vm.open(EffortScreen.SETTINGS) },
-                onReceipt = { vm.open(EffortScreen.RECEIPT) },
+                onReceipt = vm::openArrived,
                 onArrive = vm::arriveNow,
                 onLog = { vm.open(EffortScreen.LOG) },
                 onMidway = vm::startMidway,
@@ -149,7 +149,8 @@ fun EffortApp(
                 )
             }
             EffortScreen.SETTINGS -> EffortSettings(settings, ui.constants?.let(::wageSourceOf), vm.demoSummary, ui.recordCount, onBack = { vm.back() }, onChange = vm::updateSettings, onReset = vm::resetRecords)
-            EffortScreen.CALC -> if (ui.calcItems.isEmpty()) LaunchedEffect(Unit) { vm.calcDone() } else EffortCalcScreen(ui, ui.calcItems, onDone = vm::calcDone)
+            EffortScreen.REVIEW -> if (ui.reviewItems.isEmpty()) LaunchedEffect(Unit) { vm.consent() }
+                else EffortReviewScreen(ui, ui.reviewItems, onCounted = vm::reviewCounted, onConsent = vm::consent, onLater = vm::later)
             EffortScreen.RECEIPT -> EffortArriveScreen(ui, onRest = vm::answerRest, onPick = vm::pick, onClose = vm::closeArrive, onSettleSwap = vm::toggleSettle)
             EffortScreen.LOG -> EffortLogScreen(ui, onBack = { vm.back() }, onRecord = vm::openRecord)
             EffortScreen.RECORD -> EffortRecordScreen(ui, onBack = { vm.back() })
