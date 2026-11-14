@@ -13,6 +13,7 @@ import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ServiceInfo
+import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.os.Handler
@@ -340,11 +341,12 @@ class TripService : Service() {
     }
 
     /**
-     * 큰 아이콘 100px. 지금은 라임 그라데이션 앱 아이콘이다.
-     * TODO(PR-3L 로고 v2 머지 뒤): 주간 lime-solid · 야간 ink-solid로 바꾼다(디자인 v2 11/14, 그라데이션 안 씀).
+     * 큰 아이콘 100px = 노고 앱 아이콘 단색(로고 v2): 주간 lime-solid · 야간 ink-solid. 알림에는 그라데이션을 쓰지 않는다(HANDOFF_v4 2 · 5절).
+     * 주간 · 야간은 화면 테마와 같은 시스템 야간 모드로 고른다.
      */
     private fun largeIcon(): Bitmap? = runCatching {
-        val d = getDrawable(R.drawable.nogo_icon_lime_gradient) ?: return null
+        val night = (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
+        val d = getDrawable(if (night) R.drawable.nogo_icon_ink_solid else R.drawable.nogo_icon_lime_solid) ?: return null
         val px = (100 * resources.displayMetrics.density).toInt().coerceAtLeast(1)
         Bitmap.createBitmap(px, px, Bitmap.Config.ARGB_8888).also { bm -> d.setBounds(0, 0, px, px); d.draw(Canvas(bm)) }
     }.getOrNull()

@@ -131,7 +131,7 @@ fun CgWordmark(width: Dp, modifier: Modifier = Modifier, label: String? = null) 
 }
 
 /**
- * 앱 아이콘 타일(`design/brand/nogo_icon_*-gradient.svg`): 주간 라임 · 야간 잉크 그라디언트. 시작 화면 192.
+ * 앱 아이콘 타일(`design/brand/nogo_icon_*-gradient.svg`, 로고 v2 · 모서리 48에서 10.68): 주간 라임 · 야간 잉크 그라디언트. 시작 화면 192.
  * 그림자는 주간만(아티팩트 `.screen.dark .splash .appicon{filter:none}`).
  */
 @Composable
@@ -142,7 +142,7 @@ fun CgAppIcon(size: Dp, modifier: Modifier = Modifier) {
         androidx.compose.ui.res.painterResource(if (c.isDark) R.drawable.nogo_icon_ink_gradient else R.drawable.nogo_icon_lime_gradient),
         contentDescription = null,
         modifier = modifier.size(size).then(
-            if (c.isDark) Modifier else Modifier.shadow(8.gpx, RoundedCornerShape(size * 44f / 144f), ambientColor = shade, spotColor = shade),
+            if (c.isDark) Modifier else Modifier.shadow(8.gpx, RoundedCornerShape(size * 10.68f / 48f), ambientColor = shade, spotColor = shade),
         ),
     )
 }
