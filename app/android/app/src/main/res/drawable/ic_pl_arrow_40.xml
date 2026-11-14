@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Pleos design assets 2.1.5 — design/icons/pleos/ic_arrow_40.svg(= 디자인 v2 아티팩트 img/pleos/ic_arrow_40.svg, 바이트 같음)에서 변환.
+     손으로 고치지 말고 SVG를 바꾼 뒤 다시 변환. 색은 쓰는 자리에서 tint(CgIconMark). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="40dp" android:height="40dp" android:viewportWidth="40" android:viewportHeight="40">
+    <path
+        android:fillType="evenOdd"
+        android:pathData="M12.9882 7.15482C13.639 6.50395 14.6943 6.50395 15.3452 7.15482L27.0118 18.8215C27.6627 19.4724 27.6627 20.5276 27.0118 21.1785L15.3452 32.8452C14.6943 33.4961 13.639 33.4961 12.9882 32.8452C12.3373 32.1943 12.3373 31.139 12.9882 30.4882L23.4763 20L12.9882 9.51184C12.3373 8.86097 12.3373 7.8057 12.9882 7.15482Z"
+        android:fillColor="#FF000000"/>
+</vector>
