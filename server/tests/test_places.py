@@ -5,6 +5,7 @@
 
 import io
 import json
+from pathlib import Path
 import socket
 import time
 import urllib.error
@@ -335,3 +336,47 @@ def test_places_log_has_no_query_coords_results_or_key(api, monkeypatch, capsys)
     for bad in (QUERY, "없는곳", str(LAT), str(LNG), "37.41", "127.09", "37.53", "127.31", "7845373", "2141791502",
                 "양평", "관광", "23671", KEY, "dapi.kakao.com"):
         assert bad not in text
+
+
+# ------------------------------------------------------------ 출발 미리보기 배경의 장소 종류(#116)
+_FIX = Path(__file__).resolve().parents[2] / "fixtures"
+PREVIEW_BG = json.loads((_FIX / "constants.json").read_text(encoding="utf-8"))["preview_bg"]
+DEMO_SCENE = json.loads((_FIX / "effort/demo.json").read_text(encoding="utf-8"))["scene"]
+
+
+def test_preview_bg_table_shape():
+    """표의 값은 정해진 종류뿐이고, 검색 결과로는 home이 나오지 않는다(집은 내비 구분값). leaf와 upper는 겹치지 않는다."""
+    kinds = set(PREVIEW_BG["kinds"])
+    assert kinds == {"sea", "nature", "city", "home", "neutral"}
+    for name in ("leaf", "upper"):
+        assert set(PREVIEW_BG[name].values()) <= kinds - {"home", "neutral"}, name
+        assert all(k == k.strip() and k and ">" not in k for k in PREVIEW_BG[name]), name
+    assert not set(PREVIEW_BG["leaf"]) & set(PREVIEW_BG["upper"])
+    # 한 값 안에 종류가 섞여 있어 일부러 뺀 값(constants _basis). 다시 넣으면 엉뚱한 그림이 나온다
+    for mixed in ("국립공원", "국립공원 지구", "섬(내륙)", "KTX정차역", "도시근린공원", "전망대", "케이블카", "유원지", "공항", "관광,명소"):
+        assert mixed not in PREVIEW_BG["leaf"] and mixed not in PREVIEW_BG["upper"], mixed
+
+
+@pytest.mark.parametrize("ex", PREVIEW_BG["examples"], ids=lambda e: e["name"])
+def test_preview_bg_kind_examples(ex):
+    assert PL.preview_bg_kind(ex["category_path"], PREVIEW_BG) == ex["kind"]
+
+
+def test_preview_bg_kind_rules():
+    def k(*path):
+        return PL.preview_bg_kind(list(path), PREVIEW_BG)
+    assert k("여행", "관광,명소", "섬") == "sea"
+    assert k("여행", "관광,명소", "섬", "섬(내륙)") == "neutral"            # 윗칸 '섬'으로 올라가 바다가 되면 안 된다
+    assert k("교통,수송", "지하철,전철", "수도권2호선") == "city"            # 마지막 칸은 노선 이름, 윗칸으로 고른다
+    assert k("교통,수송", "교통시설", "선착장,항만시설", "방파제") == "sea"
+    assert k("음식점", "카페", "커피전문점") == "neutral" and k() == "neutral"
+    assert PL.preview_bg_kind(None, PREVIEW_BG) == "neutral" and PL.preview_bg_kind(["산"], {}) == "neutral"
+    # 서버가 실제로 내려 주는 category_path로도 같은 결과
+    doc = dict(DOCS[0], category_name="여행 > 관광,명소 > 해수욕장,해변")
+    out = PL.parse_keyword(json.dumps(keyword([doc]), ensure_ascii=False))
+    assert PL.preview_bg_kind(out[0].category_path, PREVIEW_BG) == "sea"
+
+
+def test_preview_bg_demo_kinds_are_known():
+    """시연 데이터에 직접 적은 종류(effort/demo.json)도 같은 종류 이름을 쓴다."""
+    assert set(DEMO_SCENE["preview_bg"]["kinds"].values()) <= set(PREVIEW_BG["kinds"])
