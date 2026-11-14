@@ -45,6 +45,9 @@ data class OpenTrip(
     // 중간 정산(F27, 명준 Q-08-02 · 효성 #97 · June #97 답): 정산마다 한 줄. 도착 제안은 남은 몫으로
     // (엔진 입력 settlements = 각 줄의 at·remainKrw, 합과 장시간 구간 경계는 엔진이 만든다 #105)
     val settlements: List<Settlement> = emptyList(),
+    // 오늘 운전 돌아보기(F29): 다 셌으면 다시 열 때 세는 연출을 다시 보지 않는다. [운전자 챙겨주기]를 눌렀으면 다시 열 때 영수증으로
+    val reviewSeen: Boolean = false,
+    val consented: Boolean = false,
 ) {
     val arrived: Boolean get() = arrivedAt != null
 }
@@ -97,6 +100,7 @@ fun OpenTrip.toJson(): JsonObject = obj(
     "dep_lat" to depLat, "dep_lng" to depLng,
     "weather_trip" to weatherTrip?.toJson(),
     "settlements" to JsonArray(settlements.map { obj("at" to it.at, "remain_krw" to it.remainKrw, "method" to it.method, "choice" to it.choice, "suggestion" to it.suggestion) }),
+    "review_seen" to reviewSeen, "consented" to consented,
 )
 
 /** 조각별 강수 저장 모양 = 계약 응답 WeatherTrip의 dep·arr 그대로(status 없음). */
@@ -131,6 +135,8 @@ fun parseOpenTrip(o: JsonObject): OpenTrip = OpenTrip(
             Settlement(s.str("at"), s.dblOrNull("remain_krw") ?: 0.0, s.str("method"), s.str("choice"), s.strOrNull("suggestion"))
         }.getOrNull()
     }.orEmpty(),
+    reviewSeen = o["review_seen"]?.jsonPrimitive?.booleanOrNull == true,
+    consented = o["consented"]?.jsonPrimitive?.booleanOrNull == true,
 )
 
 fun EffortRecord.toJson(): JsonObject = obj(

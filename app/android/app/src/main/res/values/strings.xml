@@ -283,14 +283,23 @@
     <!-- 계산 연출(Design v2 screens/calc.html, 프로토타입 문구 그대로 · 임시) -->
     <string name="effort_calc_loading">도착한 곳의 날씨를 확인하고 있어요</string>
     <string name="effort_calc_start">오늘 운전의 노고를 하나씩 세어 볼게요</string>
-    <string name="effort_calc_done">다 셌어요. 오늘 운전 정말 수고 많았어요</string>
     <string name="effort_calc_skip">건너뛰기</string>
-    <string name="effort_calc_total">오늘 운전 %1$s</string>
+    <!-- 오늘 운전 돌아보기(F29, 명준 11/14 아티팩트 rv-start ~ rv-solo) -->
+    <string name="effort_review_done">오늘 운전 %1$s · %2$s</string>
+    <string name="effort_review_people">%1$d명</string>
+    <string name="effort_review_solo">혼자</string>
+    <string name="effort_review_consent">운전자 챙겨주기</string>
+    <string name="effort_review_later">다음에</string>
+    <string name="effort_review_receipt">영수증 보기</string>
+    <string name="effort_review_whole">%1$s · 내내</string>
+    <string name="effort_review_dep_only">출발할 때 %1$s</string>
+    <string name="effort_review_long_over">2시간 넘게</string>
+    <string name="effort_review_alt_focus">집중한 표정의 노고</string>
+    <string name="effort_review_alt_shy">머리를 긁적이며 멋쩍게 웃는 노고</string>
+    <string name="effort_review_alt_relief">땀을 닦으며 웃는 노고</string>
+    <string name="effort_review_alt_proud">뿌듯하게 웃는 노고</string>
     <string name="effort_calc_none">없음</string>
     <string name="effort_calc_unknown">정보 없음</string>
-    <string name="effort_calc_clear">맑음</string>
-    <string name="effort_calc_honk">빵!</string>
-    <string name="effort_calc_zip">쌩</string>
     <string name="effort_calc_say_rain">쏟아지는 비를 뚫고 달린 시간 세는 중…</string>
     <string name="effort_calc_say_snow">미끄러운 눈길을 조심조심 달린 시간 세는 중…</string>
     <string name="effort_calc_say_weather_none">날씨는 이번엔 확인하지 못했어요</string>
@@ -303,8 +312,6 @@
     <string name="effort_calc_say_night_none">밤길이 있었는지 확인 중…</string>
     <string name="effort_calc_say_long">쉬지 않고 2시간 넘게 핸들을 잡은 시간 세는 중…</string>
     <string name="effort_calc_say_long_none">쉬지 않고 오래 달렸는지 확인 중…</string>
-    <string name="effort_calc_say_dist_group">오늘 모두를 태우고 달린 거리 세는 중…</string>
-    <string name="effort_calc_say_dist_solo">오늘 달린 거리 세는 중…</string>
     <!-- F24 방식 A 버튼: PRD 5-2 "[받아들이기] 글자는 디자인 확인" → 시안 [좋아요] -->
     <string name="effort_offer_like">좋아요</string>
     <string name="effort_offer_a_done">좋아요, 오늘 기록에 남겼어요</string>

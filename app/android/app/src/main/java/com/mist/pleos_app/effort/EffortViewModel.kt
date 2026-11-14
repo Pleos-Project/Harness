@@ -81,7 +81,7 @@ data class ArriveAsk(val at: String, val kind: String)
 
 /** 노고 흐름 화면(명세 v0.5 3절). */
 /** 도착 화면(RECEIPT)은 영수증과 제안을 한 화면에 둔다(Design v2 arrive, #75). */
-enum class EffortScreen { HOME, DEPART, SETTINGS, CALC, RECEIPT, LOG, RECORD, MIDWAY }
+enum class EffortScreen { HOME, DEPART, SETTINGS, REVIEW, RECEIPT, LOG, RECORD, MIDWAY }
 
 /** 홈·출발·영수증 화면이 보는 상태. */
 data class EffortUi(
@@ -102,7 +102,7 @@ data class EffortUi(
     val unsettled: Boolean = false,                     // 정리하지 못함(#68): 영수증 대신 안내 문구(receipt.statusText)와 [닫기]만
     val items: List<com.mist.pleos_app.engine.EffortItem> = emptyList(),   // 방식 B 항목(공동 경비 예시 포함)
     val done: ArriveDone? = null,                       // 고른 뒤: 기록은 남겼고 같은 화면에 "남겼어요"를 보여 주는 중
-    val calcItems: List<CalcItem> = emptyList(),        // 계산 연출 체크포인트 6개(도착 뒤, 정리하지 못함이 아닐 때)
+    val reviewItems: List<ReviewItem> = emptyList(),    // 오늘 운전 돌아보기 기준 5줄(F29, 도착 뒤 · 정리하지 못함이 아닐 때)
     val justFinished: String? = null,                   // 방금 끝난 기록 trip_id(알림 "방금", 메모리만)
     val notiDot: Boolean = false,                       // 알림 종 활성(울리는 종 + 빨간 점): 기록이 저장되면 켜고 창을 닫으면(읽음) 끔(11/9 명준 2차)
     val notiOpen: Boolean = false,                      // 알림 창 열림
@@ -219,8 +219,8 @@ class EffortViewModel(app: Application, private val saved: SavedStateHandle) : A
             arriveAsk = arriveAsk?.takeIf { flow.phase == EffortPhase.DRIVING },
             // 실제 주행이고 경로 거리를 알 때만(지금까지 거리 = 경로 − 내비 남은 거리). 시연 데이터에는 중간 정산 장면이 없다
             midwayAvailable = trip != null && !trip.arrived && (!trip.demo || demoScene?.midway != null) && (trip.routeM ?: 0.0) > 0 && effortConstants != null,
-            calcItems = if (trip?.arrived == true && receipt != null && !isUnsettled(receipt) && effortConstants != null)
-                calcItems(trip, receipt, effortConstants, getApplication<Application>().getString(com.mist.pleos_app.R.string.effort_receipt_distance)) else emptyList(),
+            reviewItems = if (trip?.arrived == true && receipt != null && !isUnsettled(receipt) && effortConstants != null)
+                reviewItems(trip, receipt, effortConstants, reviewWords()) else emptyList(),
         )
     }
 
@@ -617,8 +617,8 @@ class EffortViewModel(app: Application, private val saved: SavedStateHandle) : A
         syncTrip()                                   // 도착했으니 서비스·상주 알림을 내린다
         ChagokLog.event("effort_arrived", "reason" to reason, "demo" to demo)
         refresh()
-        // 계산 연출(Design v2 #75) → 영수증. 정리하지 못함은 셀 것이 없어 바로 안내로
-        open(if (ui.value.unsettled) EffortScreen.RECEIPT else EffortScreen.CALC)
+        // 오늘 운전 돌아보기(F29) → [운전자 챙겨주기] → 영수증. 정리하지 못함은 셀 것이 없어 바로 안내로
+        open(if (ui.value.unsettled) EffortScreen.RECEIPT else EffortScreen.REVIEW)
         if (ui.value.unsettled) ChagokLog.event("effort_unsettled", "reason" to reason)   // 날씨를 받아도 영수증이 안 나오니 부르지 않는다
         else if (weather == null) fetchArrivalWeather(arrivedAt)
     }
@@ -740,10 +740,53 @@ class EffortViewModel(app: Application, private val saved: SavedStateHandle) : A
     /** 영수증 화면의 쉰 시간 답(F21). 고르면 바로 다시 계산한다(#55). */
     fun answerRest(min: Int) { flow.answerRest(min); refresh(); ChagokLog.event("effort_rest", "min" to min) }
 
-    /** 계산 연출이 끝나거나 [건너뛰기]·뒤로 → 영수증. 스택에서 연출 자리를 영수증으로 바꿔 뒤로 가면 홈. */
-    fun calcDone() {
+    // ------------------------------------------------------------ 오늘 운전 돌아보기(F29)
+    private fun reviewWords(): ReviewWords {
+        val a = getApplication<Application>()
+        return ReviewWords(
+            none = a.getString(com.mist.pleos_app.R.string.effort_calc_none),
+            unknown = a.getString(com.mist.pleos_app.R.string.effort_calc_unknown),
+            whole = a.getString(com.mist.pleos_app.R.string.effort_review_whole),
+            depOnly = a.getString(com.mist.pleos_app.R.string.effort_review_dep_only),
+            longOver = a.getString(com.mist.pleos_app.R.string.effort_review_long_over),
+        )
+    }
+
+    /** 홈 "도착" 표시 → [운전자 챙겨주기]를 눌렀으면 영수증, 아니면 다 센 돌아보기(세는 연출은 다시 보지 않음, F29 '다시 열 때'). */
+    fun openArrived() {
+        val trip = flow.state.openTrip
+        open(if (trip?.consented == true || ui.value.unsettled || ui.value.reviewItems.isEmpty()) EffortScreen.RECEIPT else EffortScreen.REVIEW)
+    }
+
+    /** 다 셈(또는 [건너뛰기]). 다시 열면 세지 않고 다 센 모습으로. */
+    fun reviewCounted() { if (flow.markReview(seen = true)) { ChagokLog.event("effort_review_counted"); refresh() } }
+
+    /**
+     * [운전자 챙겨주기](혼자 · 짧은 주행은 [영수증 보기]) → 영수증 + 제안 A(AC-F29-2). 스택의 돌아보기 자리를 영수증으로 바꿔 뒤로 가면 홈.
+     */
+    fun consent() {
+        flow.markReview(seen = true, consented = true)
+        ChagokLog.event("effort_review_consent", "solo" to (ui.value.proposal == null))
         val names = saved.get<List<String>>(KEY_STACK) ?: listOf(EffortScreen.HOME.name)
-        saved[KEY_STACK] = names.filter { it != EffortScreen.CALC.name && it != EffortScreen.RECEIPT.name } + EffortScreen.RECEIPT.name
+        saved[KEY_STACK] = names.filter { it != EffortScreen.REVIEW.name && it != EffortScreen.RECEIPT.name } + EffortScreen.RECEIPT.name
+        refresh()
+    }
+
+    /**
+     * [다음에](AC-F29-2): 영수증 · 금액을 보이지 않고 기록 1건(choice = close)을 남긴 뒤 홈.
+     * 쉰 시간은 묻지 않고 '없음'(0)으로 센다(명세 v0.6 F29 [제안], PRD v2.0 7-5).
+     */
+    fun later() {
+        val trip = flow.state.openTrip ?: return
+        if (!trip.arrived) return
+        if (trip.restAnswerMin == null) flow.answerRest(0)
+        val cur = flow.state.openTrip ?: return
+        val r = receiptOf(cur, effortConstants)
+        if (r != null && !isUnsettled(r) && flow.finish(recordOf(cur, r, ui.value.proposal, settingsFlow.value.proposalMethod, CHOICE_CLOSE))) {
+            justFinished = cur.tripId; notifySaved(cur.tripId)
+        }
+        ChagokLog.event("effort_review_later")
+        refresh(); home()
     }
 
     // ------------------------------------------------------------ 제안(F24·F25) → 선택·기록(F26)

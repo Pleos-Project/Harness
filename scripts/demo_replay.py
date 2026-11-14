@@ -9,7 +9,7 @@
   2+ 휴게소   앱: 시동 버튼(지금까지의 노고 보기) → 쉰 시간 [없음] → 오늘 주행 영수증(아직 가는 중 · 1시간 5분 · 52km · 1.55배, 한 사람 약 4천 원)
               → [좋아요]로 여기까지 정산 → [계속 가기] → 가는 중 홈(v3: "~까지 정산함" 표시 없음)
               콘솔: 기어 D(가림) → 기어 P(같은 주행을 이어 감, [출발]을 다시 누르지 않음)
-  3 도착      앱: 가는 중 홈 [도착했어요] → 계산 연출 → 쉰 시간 [없음] → 영수증(2시간 10분 · 1.56배, 휴게소에서 장시간이 끊김)
+  3 도착      앱: 가는 중 홈 [도착했어요] → 오늘 운전 돌아보기(약 10초) → [운전자 챙겨주기] → 쉰 시간 [없음] → 영수증(2시간 10분 · 1.56배, 휴게소에서 장시간이 끊김)
               (운전석 문 열기는 도착 계기에서 뺐다, DECISIONS 11/13)
               --no-midway면 1.57배(R1)
   4 선택      앱: 영수증 하단 '중간 정산 있음' → [좋아요](방식 A, 남은 몫 한 사람 약 5천 원) 또는 첫 항목(방식 B) → 기록 → [닫기] → 홈 알림 종 → 알림 창 "○○ 기록을 남겼어요"
@@ -224,7 +224,7 @@ def step0(r: Run, reset: bool) -> None:
         r.person("앱 홈에서 설정 → 데모 고정 모드 '켜기' → 뒤로" + (" (기록 초기화도)" if reset else ""))
         return
     bring_app_front()
-    for _ in range(5):                                # 어느 화면에 있든 홈으로(지난 리허설이 남긴 영수증·시트·설정)
+    for _ in range(8):                                # 어느 화면에 있든 홈으로(지난 리허설이 남긴 영수증·시트·설정)
         ts = texts()
         if has("출발하기", ts) or has("으로 가는 중", ts) or has("로 가는 중", ts):
             break
@@ -238,6 +238,8 @@ def step0(r: Run, reset: bool) -> None:
             tap("뒤로")
         elif has("시연 고정 모드", ts):                # 설정 화면은 [뒤로] 단추가 없어 BACK 키(앱 BackHandler → 홈). 제안 방식 항목은 1차에서 숨김
             adb("shell", "input", "keyevent", "4")
+        elif has("운전자 챙겨주기", ts):               # 고르기 전에 나간 도착 → 돌아보기에서 [운전자 챙겨주기]
+            tap("운전자 챙겨주기")
         elif has("영수증 보기", ts):                   # 고르기 전에 나간 도착(v32 home-pending) → 영수증 열고 닫기
             tap("영수증 보기")
         time.sleep(0.8)
@@ -377,17 +379,18 @@ def step3(r: Run, midway: bool = False) -> None:
         r.check("[도착했어요]", tap("도착했어요"))
     else:
         r.person("도착 — 가는 중 홈 [도착했어요]를 눌러요")
-    # 버튼을 누르는 사이 계산 연출(약 13초)이 지나가 영수증으로 넘어가 있을 수 있어 둘 중 하나면 통과
+    # 오늘 운전 돌아보기(F29, 명준 11/14): 기준 5줄을 약 10초 동안 센 뒤 [운전자 챙겨주기] · [다음에]가 켜진다. 금액은 없다
+    r.expect("[도착했어요] → 오늘 운전 돌아보기", EXPECT_ARRIVE, timeout=8)
     if r.auto:
-        end = time.time() + 15
-        seen = False
-        while time.time() < end and not seen:
-            ts = texts()
-            seen = all(has(w, ts) for w in EXPECT_ARRIVE) or has("중간에 쉰 시간이 있었나요?", ts)
-            if not seen:
-                time.sleep(0.4)
-        r.check("[도착했어요] → 도착 화면", seen)
-    # 계산 연출 뒤 '중간에 쉰 시간' 시트(F21)를 먼저 묻고, 고르면 영수증이 나온다(#118 10-3 ⑥). R1은 쉬지 않은 주행이라 '없음'
+        ts = texts()
+        r.check("돌아보기에 금액 · 배수 없음(AC-F29-1)", not any(has(w, ts) for w in ("한 사람 약", "배 힘든 길", "평소보다")))
+    r.expect("다 셈 → [운전자 챙겨주기]", "운전자 챙겨주기", timeout=20)
+    if r.auto:
+        time.sleep(0.6)                                # 버튼이 올라오는 0.5초
+        r.check("[운전자 챙겨주기]", tap("운전자 챙겨주기"))
+    else:
+        r.person("같이 탄 사람 — [운전자 챙겨주기]를 눌러요")
+    # 그다음 '중간에 쉰 시간' 시트(F21)를 먼저 묻고, 고르면 영수증이 나온다(#118 10-3 ⑥). R1은 쉬지 않은 주행이라 '없음'
     r.expect("쉰 시간 질문", "중간에 쉰 시간이 있었나요?", timeout=20)
     if r.auto:
         r.check("쉰 시간 '없음'", tap("없음", last=True))
@@ -436,10 +439,19 @@ def main() -> None:
     r = Run(a.auto)
     t = time.time()
     midway = not a.no_midway
-    step0(r, a.reset); step1(r); step2(r)
-    if midway:
-        step_midway(r)
-    step3(r, midway); step4(r, midway)
+    # 점검은 '움직임 줄이기'(애니메이션 배율 0)로 돈다: 오늘 운전 돌아보기의 숨쉬기 · 버튼 물결은 늘 움직여서
+    # uiautomator가 화면 글자를 읽지 못한다("could not get idle state"). 배율 0이면 앱이 끝 모습으로 멈춘다(F29). 끝나면 되돌림
+    prev_scale = adb("shell", "settings", "get", "global", "animator_duration_scale").strip() if a.auto else ""
+    if a.auto:
+        adb("shell", "settings", "put", "global", "animator_duration_scale", "0")
+    try:
+        step0(r, a.reset); step1(r); step2(r)
+        if midway:
+            step_midway(r)
+        step3(r, midway); step4(r, midway)
+    finally:
+        if a.auto:
+            adb("shell", "settings", "put", "global", "animator_duration_scale", prev_scale if prev_scale not in ("", "null") else "1")
     if not a.auto:
         print(f"\n리허설 끝 ({time.time() - t:.0f}초)")
         return
