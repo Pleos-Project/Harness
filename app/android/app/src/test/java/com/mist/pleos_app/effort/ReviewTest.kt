@@ -27,7 +27,7 @@ class ReviewTest {
         assertEquals(listOf("비 · 내내", "38km", "25분", "50분", "2시간 넘게"), items.map { it.value })
         assertTrue(items.all { it.on })
         assertEquals(listOf(0, 38, 25, 50, 0), items.map { it.countTo })
-        assertEquals(listOf(ReviewPose.SHY, ReviewPose.FOCUS, ReviewPose.SHY, ReviewPose.FOCUS, ReviewPose.RELIEF), items.map { it.pose })
+        assertEquals(listOf(ReviewPose.RAIN_ALL, ReviewPose.JAM, ReviewPose.LATE, ReviewPose.NIGHT, ReviewPose.LONG), items.map { it.pose })
         // 금액 · 배수 · 퍼센트 없음(AC-F29-1)
         assertTrue(items.none { it.value.contains("%") || it.value.contains("원") || it.value.contains("배") })
         // 예상보다 더: 예상 도착 시각(출발 16:00 + ETA 105분) → 큰 숫자가 25분 넘어감(HANDOFF_v4 6-4)
@@ -70,13 +70,15 @@ class ReviewTest {
         val items = reviewItems(half, receiptOf(half, c)!!, c, w)
         assertTrue(items[0].on)
         assertEquals("출발할 때 비", items[0].value)
+        assertEquals(ReviewPose.RAIN_DEP, items[0].pose)
     }
 
     @Test
     fun castTableIsSingleSource() {
         // 표정 → 기준 짝(6-5)은 ReviewCast 한곳에서. 기쁨(joy)은 넣지 않는다
-        assertEquals(listOf("FOCUS", "SHY", "RELIEF", "PROUD"), ReviewPose.values().map { it.name })
-        assertEquals(ReviewPose.SHY to ReviewMotion.SLUMP, ReviewCast.byKey["delay"])
+        assertEquals(listOf("FOCUS", "SHY", "RELIEF", "PROUD", "RAIN_ALL", "RAIN_DEP", "JAM", "LATE", "NIGHT", "LONG"), ReviewPose.values().map { it.name })
+        assertEquals(ReviewPose.LATE to ReviewMotion.SLUMP, ReviewCast.byKey["delay"])
+        assertEquals(ReviewPose.SHY, ReviewCast.weatherPose(snow = true, whole = true))
         assertEquals(ReviewPose.PROUD to ReviewMotion.JUMP, ReviewCast.done)
     }
 
