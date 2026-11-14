@@ -1,0 +1,43 @@
+/* Design v2(운전 노고 정산) — 아티팩트 시안에서 옮김. 값은 tokens.css의 --cg-* 변수, 크기는 Connect-S 실제 픽셀(1dp = 1px). */
+/* 가는 중 홈(11/8 명준): 내 차 그림 = 중간 정산 버튼 · [도착했어요] · [그만두기] */
+.cg-midb{display:flex;flex-direction:column;align-items:center;gap:22px;cursor:pointer;flex:none}
+.cg-midb .cg-ill{position:relative;transition:transform .16s cubic-bezier(.2,.7,.2,1)}
+.cg-midb .cg-ill::before{content:"";position:absolute;inset:-14px;border-radius:50%;border:3px dashed var(--cg-line-strong);animation:cg-spin 24s linear infinite}
+.cg-midb:active .cg-ill{transform:scale(.97)}
+.cg-mlbl{display:inline-flex;align-items:center;gap:14px;height:72px;padding:0 24px 0 30px;border-radius:999px;background:var(--cg-surface-card);border:2px solid var(--cg-text-primary);font:var(--cg-body-l);white-space:nowrap}
+.cg-mlbl .cg-chev,.cg-logr .cg-chev{width:12px;height:12px;border-right:3px solid var(--cg-text-tertiary);border-bottom:3px solid var(--cg-text-tertiary);transform:rotate(-45deg);flex:none}
+.cg-home.cg-p .cg-midb{gap:12px}
+.cg-home.cg-p .cg-midb .cg-ill::before{inset:-8px}
+.cg-home.cg-p .cg-mlbl{height:56px;gap:10px;padding:0 16px 0 20px;font:var(--cg-label-m)}
+.cg-mlbl,.cg-prog{border-color:var(--color-border-strong)}
+/* ── 중간 정산 시동 버튼(11/9 명준): 원을 키우고 안에 로고 심볼, 아래 글자 없이 누를 수 있는 버튼처럼 ──
+   바깥 테(기계 테두리) + 안쪽 라임 면(살짝 볼록) + 딥 잉크 심볼. 누르면 면이 들어가고 그림자가 줄어듦 */
+.cg-midb{gap:0;-webkit-tap-highlight-color:transparent}
+.cg-midb .cg-sbtn{--sz:360px;--in:22px;position:relative;display:block;width:var(--sz);height:var(--sz);border-radius:50%;
+  background:linear-gradient(180deg,var(--color-receipt-printer-highlight) 0%,var(--color-receipt-printer-midtone) 18%,var(--color-receipt-printer-shade) 70%,var(--color-receipt-printer-midtone) 100%);   /* 11/9: 테 = Satin Silver(출력구와 같은 금속, 결 없이 매끈하게) */
+  box-shadow:0 26px 56px #24203333,0 8px 18px #24203324,inset 0 1.5px 0 #ffffffe6,inset 0 -2px 6px #2420332e;
+  transition:transform .22s cubic-bezier(.32,.72,0,1),box-shadow .22s cubic-bezier(.32,.72,0,1)}
+/* 울림: 라임 고리 두 겹이 1.2초 간격으로 퍼짐. 주간은 라임이 바탕에 묻혀 진한 라임 선 + 라임 빛 번짐으로(11/9 명준 코멘트) */
+.cg-midb .cg-sbtn::before,.cg-midb .cg-sbtn::after{content:"";position:absolute;inset:-10px;border-radius:50%;border:3px solid var(--ring,#D9F77A);box-shadow:0 0 22px var(--ring-glow,#D9F77A66),inset 0 0 14px var(--ring-glow,#D9F77A40);opacity:0;animation:cg-ring 2.4s cubic-bezier(.22,.7,.3,1) infinite;pointer-events:none}
+.cg-midb .cg-sbtn::after{animation-delay:1.2s}
+.cg-midb .cg-sface{position:absolute;inset:var(--in);border-radius:50%;display:grid;place-items:center;
+  background:radial-gradient(130% 130% at 30% 22%,#FBFFE6 0%,#E8FBA4 16%,#D9F77A 40%,#C4E05C 68%,#9DB83A 100%);   /* 11/9: 라임 5단 · 왼쪽 위 광택에서 가장자리로 깊어짐 */
+  box-shadow:0 0 0 3px #171B2238,0 12px 24px #24203338,0 3px 6px #2420332e,inset 0 2px 1px #ffffffd9,inset 0 -8px 16px #5E772066;
+  transition:transform .22s cubic-bezier(.32,.72,0,1),box-shadow .22s cubic-bezier(.32,.72,0,1)}
+.cg-midb .cg-sface::after{content:"";position:absolute;left:17%;right:17%;top:6%;height:40%;border-radius:50%;background:linear-gradient(180deg,#ffffffa6 0%,#ffffff00 100%);pointer-events:none}
+/* 위쪽 유리 광택 */
+.cg-midb .cg-nsym{width:58%;height:58%;display:block;margin-top:2%;position:relative;z-index:1}
+/* 로고 속 운전대: 2초마다 한 바퀴(0.9초 돌고 1.1초 쉼) */
+.cg-midb .cg-nsym path:first-child{transform-box:fill-box;transform-origin:50% 50%;animation:cg-wheel 2s cubic-bezier(.65,0,.35,1) infinite}
+.cg-midb .cg-nsym .cg-sf{fill:#242033}
+.cg-midb .cg-nsym path:not(:first-child){stroke:#D9F77A;stroke-width:1.6;stroke-linejoin:round}
+.cg-midb:active .cg-sbtn{transform:scale(.985)}
+.cg-midb:active .cg-sface{transform:translateY(2px);box-shadow:0 3px 8px #2420332e,inset 0 2px 2px #ffffff80,inset 0 -3px 8px #6F8A2440}
+.cg-midb:focus-visible{outline:none}
+.cg-midb:focus-visible .cg-sbtn{outline:2px solid var(--color-focus-ring);outline-offset:8px}
+.cg-home.cg-p .cg-midb .cg-sbtn{--sz:200px;--in:12px}
+.cg-home.cg-p .cg-midb .cg-sbtn::before,.cg-home.cg-p .cg-midb .cg-sbtn::after{inset:-7px}
+/* 시동 버튼 면 = 로고 라임 그라디언트 배리언트와 같은 색 · 효과(왼쪽 위 #F5FFD2 → #D9F77A → 오른쪽 아래 #A9C640, 대각 3단 · 광택 없음), 11/9 명준 */
+.cg-midb .cg-sface{background:linear-gradient(135deg,#F5FFD2 0%,#D9F77A 50%,#A9C640 100%);box-shadow:0 0 0 3px #171B2238,0 12px 24px #24203338,0 3px 6px #2420332e}
+.cg-midb .cg-sface::after{display:none}
+.cg-midb:active .cg-sface{box-shadow:0 0 0 3px #171B2238,0 3px 8px #2420332e}

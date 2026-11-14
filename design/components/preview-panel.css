@@ -1,0 +1,31 @@
+/* Design v2(운전 노고 정산) — 아티팩트 시안에서 옮김. 값은 tokens.css의 --cg-* 변수, 크기는 Connect-S 실제 픽셀(1dp = 1px). */
+.cg-pv{margin-top:28px;flex:1;min-height:0;border-radius:40px;background:var(--cg-surface-card);border:2px solid var(--cg-line);box-shadow:var(--cg-shadow-1);display:flex;align-items:center;gap:32px;padding:28px 28px 28px 44px}
+.cg-pv.cg-empty{background:transparent;border:3px dashed var(--cg-line-strong);box-shadow:none;justify-content:center;font:var(--cg-body-l);color:var(--cg-text-tertiary);padding:28px}
+.cg-pv .cg-pvl{flex:1;min-width:0;display:flex;flex-direction:column;gap:14px}
+.cg-pv .cg-pvl > b{font:var(--cg-title-l);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cg-pst3{display:flex;gap:48px}
+.cg-pst3 .cg-st{display:flex;flex-direction:column;gap:2px;font:var(--cg-title-s);min-width:150px;white-space:nowrap}
+.cg-pst3 .cg-st .cg-k{font:var(--cg-label-m);color:var(--cg-text-tertiary);font-style:normal}
+.cg-pv .cg-pvn{font:var(--cg-body-m);color:var(--cg-text-tertiary)}
+.cg-pv .cg-cta{align-self:center;margin-top:0}
+.cg-pvfail{display:flex;align-items:center;gap:12px;font:var(--cg-body-l);color:var(--cg-text-secondary)}
+.cg-pst3 .cg-skel{height:30px;margin-top:6px}
+.cg-pst3 .cg-st .cg-k .cg-skel{height:18px;margin:0}
+.cg-pvfail.cg-err{color:var(--color-status-error-foreground)}
+.cg-pvfail.cg-info{color:var(--color-status-info-foreground)}
+/* ── 출발 화면 미리보기 = 고른 목적지 사진 배경(11/9 명준): 왼쪽(글자 쪽)은 딥 잉크 그늘, 오른쪽으로 사진이 드러남 · 글자 흰색 · 출발은 라임 ── */
+.cg-pv.cg-pvimg{position:relative;overflow:hidden;isolation:isolate;border:none;color:#FFFFFF;background-color:#242033;background-size:cover;background-position:center 60%;
+  --cg-text-primary:#FFFFFF;--cg-text-secondary:#FFFFFFE0;--cg-text-tertiary:#FFFFFFB8;--color-text-tertiary:#FFFFFFB8;--color-text-secondary:#FFFFFFE0;box-shadow:0 18px 44px #24203333,0 4px 12px #2420331f}
+.cg-pv.cg-pvimg::before{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(90deg,#242033F2 0%,#242033D9 34%,#24203380 62%,#24203326 100%)}
+.cg-pv.cg-pvimg .cg-pvl > b{color:#FFFFFF}
+.cg-pv.cg-pvimg .cg-pst3 .cg-st .cg-k{color:#FFFFFFB8}
+.cg-pv.cg-pvimg .cg-pvn{color:#FFFFFFC7}
+.cg-pv.cg-pvimg .cg-pvfail{color:#FFFFFFE0}
+.cg-pv.cg-pvimg .cg-pvfail.cg-err{color:#FFADAD}
+.cg-pv.cg-pvimg .cg-pvfail.cg-info{color:#A9CFFF}
+.cg-pv.cg-pvimg .cg-pvfail .cg-tbtn.cg-pri{color:#FFFFFF}
+.cg-pv.cg-pvimg .cg-skel{background:#FFFFFF33;animation:none;opacity:.9}
+.cg-pv.cg-pvimg .cg-cta{background:#D9F77A;color:#242033}
+.cg-pv.cg-pvimg .cg-cta .cg-ar{background:#24203314}
+.cg-pv.cg-pvimg .cg-cta.cg-off{background:#FFFFFF2E;color:#FFFFFFA6}
+.cg-pv.cg-pvimg .cg-cta.cg-off .cg-ar{background:transparent}

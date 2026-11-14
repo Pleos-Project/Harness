@@ -1,47 +1,102 @@
 <!doctype html>
-<html lang="ko"><head><meta charset="utf-8"><title>차곡 컴포넌트 미리보기</title>
+<html lang="ko"><head><meta charset="utf-8"><title>차곡 시안 미리보기 · Design v2</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="stylesheet" href="tokens.css">
-<link rel="stylesheet" href="components/badge.css">
-<link rel="stylesheet" href="components/card-front.css">
+<link rel="stylesheet" href="screens/common.css">
+<link rel="stylesheet" href="components/button.css">
+<link rel="stylesheet" href="components/cta.css">
+<link rel="stylesheet" href="components/text-button.css">
+<link rel="stylesheet" href="components/chip.css">
+<link rel="stylesheet" href="components/stepper.css">
+<link rel="stylesheet" href="components/title-bar.css">
+<link rel="stylesheet" href="components/pill.css">
+<link rel="stylesheet" href="components/search-field.css">
+<link rel="stylesheet" href="components/dest-card.css">
+<link rel="stylesheet" href="components/record-card.css">
+<link rel="stylesheet" href="components/preview-panel.css">
+<link rel="stylesheet" href="components/people-alert.css">
+<link rel="stylesheet" href="components/bottom-sheet.css">
+<link rel="stylesheet" href="components/receipt.css">
+<link rel="stylesheet" href="components/offer-card.css">
+<link rel="stylesheet" href="components/loading.css">
+<link rel="stylesheet" href="components/empty.css">
+<link rel="stylesheet" href="components/notice.css">
+<link rel="stylesheet" href="components/mid-button.css">
+<link rel="stylesheet" href="components/switch.css">
+<link rel="stylesheet" href="components/segmented.css">
+<link rel="stylesheet" href="components/logo.css">
+<link rel="stylesheet" href="components/nogo-car.css">
+<link rel="stylesheet" href="components/noti-panel.css">
+<link rel="stylesheet" href="screens/home.css">
+<link rel="stylesheet" href="screens/depart.css">
+<link rel="stylesheet" href="screens/search.css">
+<link rel="stylesheet" href="screens/drive.css">
+<link rel="stylesheet" href="screens/calc.css">
+<link rel="stylesheet" href="screens/arrive.css">
+<link rel="stylesheet" href="screens/midway.css">
+<link rel="stylesheet" href="screens/record.css">
+<link rel="stylesheet" href="screens/settings.css">
+<link rel="stylesheet" href="screens/after.css">
 <style>
-  /* 프레임 크기는 디스플레이 실제 픽셀. 그래서 미리보기에서는 --u = 1px (tokens.css 기본값) */
-  body { margin: 0; background: var(--cg-bg-secondary); color: var(--cg-text-primary); font: var(--cg-body-s); padding: 24px; }
-  .bar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
-  .bar button { min-height: 40px; padding: 0 14px; border-radius: 8px; border: 1px solid var(--cg-line); background: var(--cg-surface-high); color: var(--cg-text-primary); }
-  .frame { border: 2px dashed var(--cg-line); border-radius: 12px; padding: 16px; margin-bottom: 24px; overflow: auto; }
-  .frame h3 { margin: 0 0 8px; font: var(--cg-label-m); color: var(--cg-text-tertiary); }
-  .viewport { background: var(--cg-bg-primary); padding: 16px; box-sizing: border-box; display: flex; flex-wrap: wrap;
-    align-items: center; justify-content: center; align-content: center; gap: 12px; overflow: auto; }
-  .s17 { width: 1920px; height: 720px; }   /* Connect-S 17" 근사 */
-  .s12 { width: 1280px; height: 720px; }   /* 12.9" 근사 */
-  .portrait { width: 720px; height: 1280px; }
-  .multi { width: 640px; height: 720px; }  /* 멀티윈도우: 한 장만 */
+  /* 미리보기 틀(앱 아님). 크기는 Connect-S 실제 픽셀, 화면에는 50%로 보임 */
+  body { margin: 0; background: var(--cg-bg-secondary); color: var(--cg-text-primary); font: 16px/1.5 var(--cg-font); padding: 24px; }
+  h1 { font-size: 22px; margin: 0 0 4px; } h2 { font-size: 17px; margin: 32px 0 8px; }
+  p { margin: 0 0 8px; color: var(--cg-text-secondary); max-width: 1200px; }
+  .bar { display: flex; gap: 8px; flex-wrap: wrap; margin: 12px 0 16px; }
+  .bar button, .bar a { min-height: 40px; padding: 0 14px; border-radius: 8px; border: 1px solid var(--cg-line); background: var(--cg-surface-high); color: var(--cg-text-primary); font: inherit; display: inline-flex; align-items: center; text-decoration: none; cursor: pointer; }
+  .scr { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 360px), 1fr)); gap: 12px; }
+  .scr a { display: block; padding: 14px 16px; border-radius: 12px; background: var(--cg-surface-high); color: var(--cg-text-primary); text-decoration: none; }
+  .scr a small { display: block; color: var(--cg-text-tertiary); }
+  .comp { margin: 0 0 28px; }
+  .comp h3 { font-size: 15px; margin: 0 0 4px; } .comp p { font-size: 13px; }
+  .row { display: flex; gap: 24px; flex-wrap: wrap; align-items: flex-start; zoom: .5; }
+  .box { position: relative; background: var(--cg-bg-primary); border: 1px dashed var(--cg-line-strong); border-radius: 40px; padding: 40px; display: flex; flex-wrap: wrap; gap: 24px; align-items: center; overflow: hidden; }
+  .box.land { width: 1700px; } .box.port { width: 840px; }
+  .box.tall { min-height: 900px; } .box.col { flex-direction: column; align-items: stretch; }
+  .box > .ctx { position: relative; inset: auto; padding: 0; width: 100%; display: flex; flex-wrap: wrap; gap: 24px; align-items: center; }
+  .box.col > .ctx { flex-direction: column; align-items: stretch; }
+  .box.tall > .ctx { min-height: 820px; }
+  .ctx > * { max-width: 100%; }
+  .cap { font: 700 26px/34px var(--cg-font); color: var(--cg-text-tertiary); margin-bottom: 8px; }
 </style></head>
 <body>
+<h1>차곡 시안 미리보기 · Design v2(운전 노고 정산)</h1>
+<p>화면은 <code>screens/*.html</code>(상태마다 앱 1개 1700 · 분할 840을 함께), 부품은 <code>components/*.html</code>. 눌러 보는 흐름과 움직임은 <a href="prototype/index.html">prototype/index.html</a>, 앱에 옮기는 법은 <code>HANDOFF_v2.md</code>. 컬러 · 로고는 미정이라 흑백 와이어 값만 씀.</p>
 <div class="bar">
   <button onclick="toggleTheme()">주간/야간</button>
-  <button onclick="document.querySelectorAll('.frame').forEach(f=>f.hidden=false)">전체</button>
-  <button onclick="show('s17')">17인치 가로</button>
-  <button onclick="show('s12')">12.9인치 가로</button>
-  <button onclick="show('portrait')">세로</button>
-  <button onclick="show('multi')">멀티윈도우</button>
+  <a href="prototype/index.html">프로토타입 열기</a>
 </div>
-<section class="frame" data-size="s17"><h3>17인치 가로 (1920×720)</h3><div class="viewport s17" data-slot></div></section>
-<section class="frame" data-size="s12"><h3>12.9인치 가로 (1280×720)</h3><div class="viewport s12" data-slot></div></section>
-<section class="frame" data-size="portrait"><h3>세로 (720×1280)</h3><div class="viewport portrait" data-slot></div></section>
-<section class="frame" data-size="multi"><h3>멀티윈도우 — 한 장만 (640×720)</h3><div class="viewport multi" data-slot></div></section>
+<h2>화면</h2>
+<div class="scr">
+  <a href="screens/home.html">홈 · 앱 시작<small>시작 화면 · 첫 사용 · 기본 · 방금 끝난 기록 · 알림 펼침 · 고르기 전에 나간 도착</small></a>
+  <a href="screens/depart.html">출발 화면 · 인원 확인<small>기본 · 인원 알림(감지 그대로 · 직접 바꿈 · 1명) · 센서 오류 · 미리보기(중·준비·실패·지원 안 하는 지역) · 누른 뒤 · 경로 요청 실패 · 빈 상태 · 인터넷 없음</small></a>
+  <a href="screens/search.html">목적지 검색<small>결과 · 검색 중 · 결과 없음 · 안 됨 · 위치 못 받음</small></a>
+  <a href="screens/drive.html">출발 뒤 · 주행 중<small>순정 내비(와이어) · 시스템 주행 차단</small></a>
+  <a href="screens/midway.html">가는 중 · 잠깐 멈춤 · 중간 정산<small>휴게소에서 다시 연 홈 · 그만두기 확인 · 지금까지의 노고 A/B · 정산 뒤</small></a>
+  <a href="screens/calc.html">도착 · 계산 연출<small>도착 처리 중 · 출발점 · 날씨 비/눈/맑음 · 정체 · 다 정리함</small></a>
+  <a href="screens/arrive.html">도착 · 영수증 + 쉰 시간 + 제안<small>쉰 시간 시트 · 방식 A · 방식 B · 제안 없음 · 중간 정산을 한 주행(아코디언) · 예외(0인 줄 · 혼자 · 정보 없음 · 시연 · 정리하지 못함)</small></a>
+  <a href="screens/record.html">기록<small>주행 기록 목록 · 기록 상세(방식 A · B)</small></a>
+  <a href="screens/settings.html">설정<small>제안 방식 · 시연 고정 · 단가 출처 · 기록 초기화</small></a>
+</div>
+<h2>부품 · 앱 1개(1700)와 분할(840) 폭</h2>
+<div id="comps"></div>
 <script>
-  // components/*.html 조각을 모든 뷰포트에 넣는다. file:// 에서 fetch가 막히면 design/ 에서 python -m http.server 로 연다.
-  const parts = ['card-front.html', 'badge.html'];
-  Promise.all(parts.map(p => fetch('components/' + p).then(r => r.text()))).then(htmls => {
-    document.querySelectorAll('[data-slot]').forEach(slot => { slot.innerHTML = htmls.join('\n'); });
+  // components/*.html 조각을 두 폭에 넣는다. file:// 에서 fetch가 막히면 design/ 에서 python -m http.server 로 연다.
+  const parts = [["button","Basic Button"],["icon-button","Icon Button"],["cta","출발 버튼"],["text-button","글자 버튼"],["chip","Toggle Button(칩)"],["stepper","Stepper"],["title-bar","위 바(Title)"],["pill","인원 · 진행 중 알약"],["search-field","검색 한 줄"],["dest-card","목적지 카드"],["record-card","기록 카드"],["preview-panel","미리보기 칸"],["people-alert","인원 확인 알림 바"],["bottom-sheet","짧은 하단 시트"],["receipt","영수증"],["offer-card","제안 카드"],["loading","기다림"],["empty","빈 상태"],["notice","안내"],["mid-button","중간 정산 버튼"],["switch","스위치"],["segmented","둘로 나뉜 알약"],["logo","Nogo 로고 · 워드마크"],["nogo-car","노고 카"],["noti-panel","알림 창 · 종 빨간 점"]];
+  const tall = new Set(["people-alert","bottom-sheet","receipt","offer-card","mid-button"]);
+  Promise.all(parts.map(([p]) => fetch('components/' + p + '.html').then(r => r.text()))).then(htmls => {
+    document.getElementById('comps').innerHTML = parts.map(([p, name], i) => {
+      const note = (htmls[i].match(/<!--([\s\S]*?)-->/) || ['', ''])[1].trim().split('\n')[0];
+      const frag = htmls[i].replace(/<!--[\s\S]*?-->/, '');
+      const cls = tall.has(p) ? ' tall col' : '';
+      return `<section class="comp"><h3>${name} <small>components/${p}.html</small></h3><p>${note}</p><div class="row">
+        <div><div class="cap">앱 1개 1700</div><div class="box land${cls} cg-a-land"><div class="cg-home cg-hm cg-dp ctx">${frag}</div></div></div>
+        <div><div class="cap">분할 840</div><div class="box port${cls} cg-a-p1"><div class="cg-home cg-hm cg-dp cg-p ctx">${frag}</div></div></div></div></section>`;
+    }).join('');
   }).catch(() => { document.body.insertAdjacentHTML('afterbegin', '<p>조각을 못 읽었습니다. design/ 에서 <code>python -m http.server</code> 로 여세요.</p>'); });
-  function show(size) { document.querySelectorAll('.frame').forEach(f => f.hidden = f.dataset.size !== size); }
-  // 주소로 고정: preview.html?theme=light / ?theme=dark, &size=multi
+  // 주소로 고정: preview.html?theme=light / ?theme=dark
   const q = new URLSearchParams(location.search);
   if (q.get('theme')) document.documentElement.setAttribute('data-theme', q.get('theme'));
-  if (q.get('size')) show(q.get('size'));
   // 기본은 시스템 설정(야간 기본, 시스템이 주간이면 주간). 버튼은 지금 보이는 반대쪽으로 고정한다.
   function toggleTheme() {
     const el = document.documentElement;

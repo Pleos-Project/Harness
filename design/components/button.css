@@ -1,0 +1,50 @@
+/* Design v2(운전 노고 정산) — 아티팩트 시안에서 옮김. 값은 tokens.css의 --cg-* 변수, 크기는 Connect-S 실제 픽셀(1dp = 1px). */
+/* Basic Button — 에셋 ivi_basic_button. 기본=회색 면, 채움=#44464e. 눌림·비활성 상태 포함 */
+.cg-btn{display:inline-flex;align-items:center;justify-content:center;gap:14px;white-space:nowrap;font:var(--cg-body-l);color:var(--cg-text-primary);background:var(--cg-btn-basic);border:2px solid transparent;border-radius:24px;height:80px;padding:0 30px;min-width:120px;position:relative;flex:none;cursor:pointer;transition:background .12s}
+.cg-btn:active{background:var(--cg-btn-basic-pressed)}
+.cg-btn.cg-l{height:100px;border-radius:32px;padding:0 38px;min-width:140px;gap:16px;font:var(--cg-title-s)}
+.cg-btn.cg-s{height:64px;border-radius:16px;padding:0 22px;min-width:100px;gap:12px;font:var(--cg-body-s)}
+.cg-btn.cg-fill{background:var(--cg-btn-filled);color:var(--cg-btn-filled-text)}
+.cg-btn.cg-fill:active{background:var(--cg-btn-filled-pressed)}
+.cg-btn.cg-ghost{background:transparent;padding:0 16px;min-width:0}
+.cg-btn.cg-off,.cg-btn.cg-fill.cg-off{background:var(--cg-btn-disabled);border-color:var(--cg-line);color:var(--cg-text-quaternary);pointer-events:none}
+.cg-btn.cg-full{align-self:stretch}
+.cg-btn.cg-ib{width:80px;min-width:80px;padding:0;border-radius:20px;border:none}
+.cg-btn.cg-ib.cg-plain{background:transparent}
+.cg-btn.cg-ib.cg-plain:active{background:var(--cg-btn-basic-pressed)}
+.cg-btn.cg-ib.cg-s{width:64px;min-width:64px;height:64px;border-radius:16px}
+/* 아이콘: 에셋 SVG를 마스크로(뒤로·+·−·화살표). 에셋에 없는 아이콘은 점선 자리 */
+.cg-ic{width:40px;height:40px;flex:none;display:inline-block;background:currentColor;-webkit-mask:var(--m) center/contain no-repeat;mask:var(--m) center/contain no-repeat}
+.cg-btn.cg-l .cg-ic{width:52px;height:52px}
+.cg-btn.cg-s .cg-ic{width:32px;height:32px}
+.cg-btn.cg-ib .cg-ic{width:56px;height:56px}
+.cg-btn.cg-ib.cg-s .cg-ic{width:44px;height:44px}
+.cg-ic-back{--m:url(../icons/pleos/ic_back_56.svg)}
+.cg-ic-plus{--m:url(../icons/pleos/ic_plus_56.svg)}
+.cg-ic-minus{--m:url(../icons/pleos/ic_minus_44.svg)}
+.cg-ic-arrow{--m:url(../icons/pleos/ic_arrow_40.svg)}
+.cg-ico{width:40px;height:40px;border-radius:12px;border:3px dashed currentColor;opacity:.45;flex:none;display:inline-block}
+.cg-btn.cg-s .cg-ico{width:32px;height:32px;border-radius:10px}
+.cg-toast.cg-nb .cg-bt .cg-btn{flex:1}
+/* 버튼: 주요(라임) · 보조(뉴트럴) · 비활성 · 삭제 */
+.cg-btn{color:var(--color-button-secondary-foreground)}
+.cg-btn.cg-fill{color:var(--color-button-primary-foreground)}
+.cg-btn.cg-ib.cg-plain,.cg-btn.cg-ghost{color:var(--color-icon-primary)}
+.cg-btn.cg-ib.cg-plain:active,.cg-btn.cg-ghost:active,.cg-tbtn:active,.cg-schev:active{background:var(--color-button-tertiary-pressed)}
+.cg-btn.cg-off,.cg-btn.cg-fill.cg-off{background:var(--color-button-disabled-fill);color:var(--color-button-disabled-foreground);border-color:transparent}
+.cg-btn.cg-fill.cg-danger{background:var(--color-button-destructive-fill);color:var(--color-button-destructive-foreground)}
+.cg-btn.cg-fill.cg-danger:active{background:var(--color-button-destructive-pressed)}
+:where(.cg-a-land,.cg-a-p1) :is(.cg-btn,.cg-chip,.cg-cta,.cg-sg,.cg-sw,.cg-opt,.cg-hcard,.cg-rec,.cg-dst,.cg-tbtn,.cg-schev,.cg-salt,.cg-rtap,[data-act]):focus-visible{outline:2px solid var(--color-focus-ring);outline-offset:2px}
+/* ── 아이콘(11/9): Phosphor Icons Bold(MIT · img/icons) — 워드마크 · 로고의 굵고 둥근 선과 같은 결. 점선 자리(.ico)를 실제 모양으로 채움.
+   색은 글자색(currentColor) · 크기는 자리(.ico) 크기 그대로. Pleos 에셋 아이콘(뒤로 · + · − · 화살표)은 그대로 둠 */
+.cg-ico.cg-pi{border:none;border-radius:0;opacity:1;background:currentColor;-webkit-mask:var(--m) center/contain no-repeat;mask:var(--m) center/contain no-repeat}
+.cg-btn.cg-ib .cg-ico.cg-pi{width:48px;height:48px}
+.cg-dico figure .cg-ico{width:48px;height:48px}
+/* 새 알림 = 활성 종(울리는 종) */
+.cg-btn.cg-ib.cg-bell.cg-act .cg-ico.cg-pi{color:var(--color-text-primary);transform-origin:50% 12%}
+.cg-play .cg-btn.cg-ib.cg-bell.cg-act .cg-ico.cg-pi{animation:cg-ring-bell 1.1s cubic-bezier(.36,.07,.19,.97) .5s both}
+.cg-btn.cg-ib.cg-bell{position:relative}
+.cg-btn.cg-ib.cg-bell .cg-ndot{position:absolute;top:14px;right:16px}
+.cg-p .cg-btn.cg-ib.cg-bell .cg-ndot{top:12px;right:14px;width:16px;height:16px}
+.cg-play .cg-btn.cg-ib.cg-bell .cg-ndot{animation:cg-dot .45s cubic-bezier(.3,1.5,.5,1) .3s both}
+.cg-btn.cg-ib.cg-bell.cg-on{background:var(--color-button-secondary-pressed)}

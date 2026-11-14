@@ -1,0 +1,14 @@
+/* Design v2(운전 노고 정산) — 아티팩트 시안에서 옮김. 값은 tokens.css의 --cg-* 변수, 크기는 Connect-S 실제 픽셀(1dp = 1px). */
+.cg-offl{align-self:center;display:flex;align-items:center;gap:14px;height:64px;padding:0 28px;border-radius:999px;background:var(--cg-placeholder-strong);font:var(--cg-body-m-b);margin-top:20px;flex:none;white-space:nowrap}
+.cg-offl .cg-ico{width:28px;height:28px;border-radius:50%}
+.cg-card.cg-notice{margin-top:24px;align-self:center;width:1040px;max-width:100%;padding:36px 40px;display:flex;flex-direction:column;gap:8px;flex:none}
+.cg-card.cg-notice b{font:var(--cg-title-m)}
+.cg-card.cg-notice span{font:var(--cg-body-m);color:var(--cg-text-tertiary)}
+.cg-lnote{font:var(--cg-label-m);color:var(--cg-text-tertiary);padding:8px 16px}
+.cg-home.cg-p .cg-card.cg-notice{padding:24px 28px}
+.cg-home.cg-p .cg-card.cg-notice b{font:var(--cg-body-l)}
+.cg-home.cg-p .cg-offl{font:var(--cg-label-m);height:52px;padding:0 18px;white-space:normal}
+/* 상태: 경고(인터넷 없음 · 검색 안 됨) · 오류(미리보기 · 경로 실패) · 안내(지원 안 하는 지역 · 시연) · 완료(기록에 남김) */
+.cg-offl{background:var(--color-status-warning-background);color:var(--color-status-warning-foreground)}
+.cg-card.cg-notice.cg-warn{background:var(--color-status-warning-background);border-color:transparent}
+.cg-card.cg-notice.cg-warn b,.cg-card.cg-notice.cg-warn span{color:var(--color-status-warning-foreground)}
