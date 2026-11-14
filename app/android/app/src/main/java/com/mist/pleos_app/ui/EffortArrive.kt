@@ -164,7 +164,7 @@ internal fun EffortArriveScreen(ui: EffortUi, onRest: (Int) -> Unit, onPick: (St
             // v3 5-5: 위 제목 줄("○○에 도착했어요" · 인원)은 없앰. 인원은 영수증 머리 아래 줄로
             val receipt: @Composable (Modifier) -> Unit = { m ->
                 if (!ui.unsettled) ReceiptColumn(
-                    trip, r, ui, narrow, reduce, paperShift = paper.value, open = open, print = seq,
+                    trip, r, ui, narrow, reduce, paperShift = paper.value, open = open, print = seq, arrive = true,
                     onToggle = { k -> open = if (open == k) null else k }, onChangeRest = { sheet = true }, modifier = m, onSettleSwap = onSettleSwap,
                 )
             }
@@ -200,10 +200,13 @@ internal fun RestSheet(answers: List<Pair<Int, String>>, selected: Int?, narrow:
             Text(stringResource(R.string.effort_rest_sheet_title), style = if (narrow) Chagok.type.bodyL else Chagok.type.titleM, color = Chagok.colors.textPrimary)
             Text(stringResource(R.string.effort_rest_sheet_sub), style = Chagok.type.bodyM, color = Chagok.colors.textSecondary)
         }
-        answers.chunked(2).forEach { row ->
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.gpx)) {
-                row.forEach { (min, label) ->
-                    CgChip(label, selected = min == selected, onClick = { onPick(min) }, modifier = Modifier.weight(1f), size = CgSize.M)
+        // 칩 두 줄은 한 묶음(줄 사이 12). 분할은 칩 높이 72 · Body M-B
+        Column(verticalArrangement = Arrangement.spacedBy(12.gpx)) {
+            answers.chunked(2).forEach { row ->
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.gpx)) {
+                    row.forEach { (min, label) ->
+                        CgChip(label, selected = min == selected, onClick = { onPick(min) }, modifier = Modifier.weight(1f), size = CgSize.M, compact = narrow)
+                    }
                 }
             }
         }
@@ -250,6 +253,7 @@ internal fun ReceiptColumn(
     midwaySub: String? = null,  // 중간 정산(F27): 제목 "오늘 주행 영수증"(v3) + 이 줄("14:20 출발 · 아직 가는 중")
     showRest: Boolean = midwaySub == null,   // 쉰 시간 줄. 중간 정산도 묻게 되어(#118 10-3 ⑥) 중간 정산 화면이 true로 넘긴다
     print: PrintSeq? = null,    // 출력 연출(#118 v90~v94). null = 끝 상태(불 켜짐 · 합계 금액)
+    arrive: Boolean = false,    // 도착 화면 가로만 종이 틀이 다르다(Design v2 .arrpg). 중간 정산 · 기록 상세는 그대로
 ) {
     val c = Chagok.colors
     val t = Chagok.type
@@ -266,7 +270,7 @@ internal fun ReceiptColumn(
         }
     }
     val hi = { k: String -> if (k in changed) flash.value else 0f }
-    CgReceipt(modifier, compact = narrow, shift = paperShift, fill = !narrow, scroll = !narrow, light = { print?.light?.value ?: 1f }) {
+    CgReceipt(modifier, compact = narrow, shift = paperShift, fill = !narrow, scroll = !narrow, light = { print?.light?.value ?: 1f }, arrive = arrive && !narrow) {
         // v3 5-5: 머리 700 42/54(분할 34/44) · 아래 줄 "장소 · 날짜 · n명"(혼자면 "혼자") 400 30/38
         Text(
             stringResource(if (midwaySub != null) R.string.effort_mid_receipt_title else R.string.effort_receipt_title), Modifier.fillMaxWidth(),
@@ -277,9 +281,9 @@ internal fun ReceiptColumn(
             midwaySub ?: if (trip.n >= 2) stringResource(R.string.effort_receipt_sub_people, trip.destName, dayText(trip.departedAt), trip.n)
             else stringResource(R.string.effort_receipt_sub_solo, trip.destName, dayText(trip.departedAt)),
             Modifier.fillMaxWidth().padding(top = if (narrow) 4.gpx else 8.gpx),
-            style = if (narrow) t.labelM else TextStyle(fontSize = 30.gsp, lineHeight = 38.gsp), color = c.textTertiary, textAlign = TextAlign.Center,
+            style = if (narrow) t.bodyM else TextStyle(fontSize = 30.gsp, lineHeight = 38.gsp), color = c.textTertiary, textAlign = TextAlign.Center,
         )
-        CgDoubleRule(Modifier.padding(top = if (narrow) 8.gpx else 24.gpx, bottom = if (narrow) 4.gpx else 16.gpx))
+        CgDoubleRule(Modifier.padding(top = if (narrow) 8.gpx else if (arrive) 28.gpx else 24.gpx, bottom = if (narrow) 4.gpx else if (arrive) 18.gpx else 16.gpx))
         if (!narrow) Row(Modifier.fillMaxWidth().padding(top = 4.gpx, bottom = 12.gpx)) {
             Text(stringResource(R.string.effort_receipt_col_item), Modifier.weight(1f), style = TextStyle(fontSize = 32.gsp, lineHeight = 40.gsp, fontWeight = FontWeight.Bold), color = c.textPrimary)
             Text(stringResource(R.string.effort_receipt_col_add), style = TextStyle(fontSize = 32.gsp, lineHeight = 40.gsp), color = c.textSecondary)
@@ -298,11 +302,11 @@ internal fun ReceiptColumn(
         }
         if (r.lines.isEmpty() && r.notes.isEmpty()) {
             // 가산 0개(#118 v114, 명준 11/12 확정 문구): 해 아이콘 + 굵은 줄 + 작은 줄
-            Row(Modifier.padding(vertical = 14.gpx), horizontalArrangement = Arrangement.spacedBy(16.gpx), verticalAlignment = Alignment.CenterVertically) {
-                CgIconMark(CgIcon.Sun, if (narrow) 40.gpx else 48.gpx, c.textPrimary)
+            Row(Modifier.padding(vertical = 14.gpx), horizontalArrangement = Arrangement.spacedBy(if (narrow) 10.gpx else 16.gpx), verticalAlignment = Alignment.CenterVertically) {
+                CgIconMark(CgIcon.Sun, if (narrow) 24.gpx else 36.gpx, c.textSecondary)
                 Column(verticalArrangement = Arrangement.spacedBy(4.gpx)) {
-                    Text(stringResource(R.string.effort_receipt_plain), style = if (narrow) t.bodyM.copy(fontWeight = FontWeight.Bold) else t.bodyL.copy(fontWeight = FontWeight.Bold), color = c.textPrimary)
-                    Text(stringResource(R.string.effort_receipt_plain_sub), style = if (narrow) t.labelM else t.bodyM, color = c.textSecondary)
+                    Text(stringResource(R.string.effort_receipt_plain), style = if (narrow) t.labelM.copy(fontWeight = FontWeight.Bold) else t.bodyMB, color = c.textPrimary)
+                    Text(stringResource(R.string.effort_receipt_plain_sub), style = if (narrow) t.labelS else t.labelM, color = c.textSecondary)
                 }
             }
         }
@@ -415,9 +419,10 @@ private fun OfferCard(ui: EffortUi, trip: OpenTrip, narrow: Boolean, onPick: (St
                     Text(view.screen.mainText, style = bigStyle, color = c.textPrimary, maxLines = 1, softWrap = false,
                         onTextLayout = { if (it.didOverflowWidth && bigStyle != t.titleM) bigStyle = if (bigStyle == big) small else t.titleM })
                 }
-                Spacer(Modifier.height(if (narrow) 4.gpx else 8.gpx))
                 // 근거 = 별표 글머리 + 운전 노고 금액 밑줄(제안 카드가 올라온 뒤, 출력 연출이면 1.5초)
-                CgBasisList(listOf(view.screen.basisText, view.screen.wageText), compact = narrow, underlineDelay = if (offerPlayed) 500 else 1500, animate = !reduceMotion)
+                Column(Modifier.padding(top = if (narrow) 4.gpx else 8.gpx)) {
+                    CgBasisList(listOf(view.screen.basisText, view.screen.wageText), compact = narrow, underlineDelay = if (offerPlayed) 500 else 1500, animate = !reduceMotion)
+                }
                 Filler(narrow)
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.gpx)) {
                     CgButton(stringResource(R.string.effort_offer_like), { onPick(CHOICE_ACCEPT) }, Modifier.weight(1f), size = btn)
@@ -525,8 +530,8 @@ private fun UnsettledArrive(trip: OpenTrip, r: EffortReceipt, ui: EffortUi, narr
                 CgDoubleRule(Modifier.padding(top = if (narrow) 12.gpx else 22.gpx, bottom = if (narrow) 20.gpx else 34.gpx))
                 Text(r.statusText.orEmpty(), style = if (narrow) t.titleM else t.headlineS, color = c.textPrimary, textAlign = TextAlign.Center)
                 Spacer(Modifier.height(14.gpx))
-                Text(stringResource(R.string.effort_unsettled_why_late, unsettledElapsedText(r)), style = if (narrow) t.labelM else t.bodyL.copy(fontWeight = FontWeight.Normal), color = c.textSecondary, textAlign = TextAlign.Center)
-                Text(stringResource(R.string.effort_unsettled_why_time), style = if (narrow) t.labelM else t.bodyL.copy(fontWeight = FontWeight.Normal), color = c.textSecondary, textAlign = TextAlign.Center)
+                Text(stringResource(R.string.effort_unsettled_why_late, unsettledElapsedText(r)), style = if (narrow) t.labelM else t.bodyL, color = c.textSecondary, textAlign = TextAlign.Center)
+                Text(stringResource(R.string.effort_unsettled_why_time), style = if (narrow) t.labelM else t.bodyL, color = c.textSecondary, textAlign = TextAlign.Center)
                 Column(Modifier.fillMaxWidth().padding(top = if (narrow) 24.gpx else 40.gpx, bottom = if (narrow) 20.gpx else 32.gpx), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(if (narrow) 12.gpx else 16.gpx)) {
                     floatArrayOf(.72f, .54f, .64f).forEach { w -> Box(Modifier.fillMaxWidth(w).height(if (narrow) 12.gpx else 16.gpx).background(c.placeholder, RoundedCornerShape(8.gpx))) }
                 }
