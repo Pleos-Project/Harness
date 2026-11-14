@@ -81,5 +81,41 @@
       {"key": "shared", "label": "공동 경비", "phrase_text": "공동 경비", "price_krw": 69000, "source": "2025 국민여행조사 당일여행 1회 평균 지출",
        "examples": ["공동 경비", "장 본 값", "펜션비", "바베큐장 이용료", "입장료", "물품 구매비"]}
     ]
+  },
+  "preview_bg": {
+    "_doc": "출발 미리보기 코드 배경의 장소 종류(#116, DECISIONS 11/15 '출발 미리보기 배경: 카카오 분류 표'). 검색으로 고른 목적지의 카카오 분류(GET /v1/places의 category_path, 윗칸부터) → 종류. ① 마지막 칸이 leaf에 정확히 있으면 그 종류 ② 아니면 윗칸 가운데 upper에 정확히 있는 칸의 종류 ③ 둘 다 아니면 neutral(길). 이름 속 낱말로는 고르지 않는다. 집 · 회사는 이 표가 아니라 내비 즐겨찾기 구분값(HOME → home, OFFICE → city), 시연 모드는 effort/demo.json scene.preview_bg.kinds. category_path를 아직 안 받는 앱은 category(마지막 칸)로 ①만 본다",
+    "_basis": "카카오가 공개한 전체 분류 목록은 찾지 못했다. 2026-11-15 실제 응답에서 모은 분류 255가지와 장소 30곳 확인 조회 기준. 한 값 안에 종류가 섞인 값은 넣지 않는다(= neutral). 넣지 않은 예: 국립공원 · 국립공원 지구(태안해안 · 변산반도처럼 바닷가 공원이 섞임), 섬(내륙)(자라섬은 강, 오이도 · 월미도는 바다), KTX정차역(정동진역), 도시근린공원(서울숲과 꽃지해안공원이 같은 값), 전망대 · 케이블카 · 유원지 · 캠핑장 · 선착장 · 테마거리 · 공항. 새 값을 보면 한 줄 더한다",
+    "kinds": ["sea", "nature", "city", "home", "neutral"],
+    "leaf": {
+      "해수욕장,해변": "sea", "섬": "sea", "해상국립공원": "sea", "항구,포구": "sea", "부두": "sea", "등대": "sea",
+      "방파제": "sea", "여객선터미널": "sea", "방조제": "sea", "해파랑길": "sea", "남파랑길": "sea", "서해랑길": "sea",
+      "강": "nature", "계곡": "nature", "산": "nature", "산봉우리": "nature", "오름": "nature", "숲": "nature",
+      "자연휴양림": "nature", "수목원,식물원": "nature", "호수": "nature", "저수지": "nature", "폭포": "nature", "연못": "nature",
+      "등산로": "nature", "고개": "nature", "등산정보": "nature",
+      "북한산둘레길": "nature", "지리산둘레길": "nature", "금정산둘레길": "nature", "소백산자락길": "nature"
+    },
+    "upper": {
+      "지하철,전철": "city", "백화점": "city"
+    },
+    "_examples_doc": "앱 판정 함수가 맞춰야 하는 예(서버 참조 구현 places.preview_bg_kind와 같은 결과). 값은 카카오 실제 응답의 category_name을 나눈 것",
+    "examples": [
+      {"name": "꽃지해수욕장", "category_path": ["여행", "관광,명소", "해수욕장,해변"], "kind": "sea"},
+      {"name": "우도", "category_path": ["여행", "관광,명소", "섬"], "kind": "sea"},
+      {"name": "자라섬", "category_path": ["여행", "관광,명소", "섬", "섬(내륙)"], "kind": "neutral"},
+      {"name": "다도해해상국립공원", "category_path": ["여행", "관광,명소", "국립공원", "해상국립공원"], "kind": "sea"},
+      {"name": "태안해안국립공원", "category_path": ["여행", "관광,명소", "국립공원"], "kind": "neutral"},
+      {"name": "대천항", "category_path": ["교통,수송", "교통시설", "항구,포구"], "kind": "sea"},
+      {"name": "북한산", "category_path": ["여행", "관광,명소", "산"], "kind": "nature"},
+      {"name": "아침고요수목원", "category_path": ["여행", "관광,명소", "수목원,식물원"], "kind": "nature"},
+      {"name": "청평호", "category_path": ["여행", "관광,명소", "호수"], "kind": "nature"},
+      {"name": "두물머리", "category_path": ["여행", "관광,명소"], "kind": "neutral"},
+      {"name": "남이섬", "category_path": ["여행", "관광,명소", "유원지"], "kind": "neutral"},
+      {"name": "홍대입구역 2호선", "category_path": ["교통,수송", "지하철,전철", "수도권2호선"], "kind": "city"},
+      {"name": "신세계백화점 강남점", "category_path": ["가정,생활", "백화점", "신세계백화점"], "kind": "city"},
+      {"name": "정동진역", "category_path": ["교통,수송", "기차,철도", "기차역", "KTX정차역"], "kind": "neutral"},
+      {"name": "서울숲", "category_path": ["여행", "공원", "도시근린공원"], "kind": "neutral"},
+      {"name": "서피비치", "category_path": ["음식점", "술집"], "kind": "neutral"},
+      {"name": "분류 없음", "category_path": [], "kind": "neutral"}
+    ]
   }
 }

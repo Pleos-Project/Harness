@@ -140,6 +140,26 @@ def parse_keyword(text: str) -> list[Place]:
     return out
 
 
+# ------------------------------------------------------------ 출발 미리보기 배경의 장소 종류(참조 구현)
+def preview_bg_kind(category_path, table: dict) -> str:
+    """카카오 분류(윗칸부터) → 출발 미리보기 배경 종류. table = constants.json의 preview_bg(#116).
+
+    ① 마지막 칸이 leaf에 정확히 있으면 그 종류 ② 아니면 윗칸 가운데 upper에 정확히 있는 칸의 종류
+    ③ 둘 다 아니면 neutral. 이름 속 낱말로는 고르지 않는다(강남역 · 부산역이 '강' · '산'으로 걸린다).
+    서버 응답에는 쓰지 않는다. 앱(Kotlin)이 같은 표와 같은 순서로 고르고, 이 함수는 표의 examples를 맞추는 기준이다.
+    """
+    path = [str(p) for p in (category_path or ())]
+    if not path:
+        return "neutral"
+    leaf, upper = table.get("leaf", {}), table.get("upper", {})
+    if path[-1] in leaf:
+        return leaf[path[-1]]
+    for seg in reversed(path[:-1]):      # 마지막 칸에 가까운 윗칸부터
+        if seg in upper:
+            return upper[seg]
+    return "neutral"
+
+
 # ------------------------------------------------------------ 카카오 호출
 def fetch_keyword(key: str, query: str, near: tuple[float, float] | None, timeout: float) -> str:
     """키워드 검색 1회 → 응답 본문. near = (lat, lng). 실패하면 PlacesError(kind만)."""
