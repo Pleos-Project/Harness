@@ -1,5 +1,8 @@
 package com.mist.pleos_app.effort
 
+import androidx.annotation.DrawableRes
+import androidx.annotation.StringRes
+import com.mist.pleos_app.R
 import com.mist.pleos_app.engine.EffortConstants
 import com.mist.pleos_app.engine.EffortReceipt
 import com.mist.pleos_app.engine.driveText
@@ -14,14 +17,46 @@ import com.mist.pleos_app.engine.weatherDetail
  * 값은 모두 엔진 영수증 · 출발 기록에서 온다(엔진 표기 함수 driveText · kmText 결과). 화면은 그리기만 한다.
  */
 
-/** 줄 안 작은 움직임(시안 rvFx): 비 · 눈 · 차 막힘 · 시간 막대 · 별. */
-enum class ReviewFx { RAIN, SNOW, JAM, BAR, NIGHT }
+/** 줄 안 작은 움직임(시안 rvFx): 비 · 눈 · 차 막힘 · 예상 시각 넘어감 · 시간 막대 · 별. */
+enum class ReviewFx { RAIN, SNOW, JAM, LATE, BAR, NIGHT }
 
-/** 노고 표정(시안 RV_IMG, BX 'NOGO 캐릭터 모션' 표정 5장 중 4장. 기쁨은 누른 뒤 반응용이라 지금은 안 씀). */
-enum class ReviewPose { FOCUS, SHY, RELIEF, PROUD }
+/**
+ * 노고 표정 → 그림 파일(#162 HANDOFF_v4 6-5, BX 'NOGO 캐릭터 모션' 표정 700 × 754).
+ * BX가 상황별 에셋을 다시 만들면 **여기 파일 이름만** 바꿔 끼운다. 기쁨(`nogo_v_joy`)은 누른 뒤 반응용이라 앱에 넣지 않는다.
+ */
+enum class ReviewPose(@DrawableRes val res: Int, @StringRes val alt: Int) {
+    FOCUS(R.drawable.nogo_v_focus, R.string.effort_review_alt_focus),
+    SHY(R.drawable.nogo_v_shy, R.string.effort_review_alt_shy),
+    RELIEF(R.drawable.nogo_v_relief, R.string.effort_review_alt_relief),
+    PROUD(R.drawable.nogo_v_proud, R.string.effort_review_alt_proud),
+}
 
-/** 몸짓(시안 rv-slump 0.45초 · rv-dip 0.5초). */
-enum class ReviewMotion { SLUMP, DIP }
+/** 몸짓(시안 rv-slump 0.45초 · rv-dip 0.5초 · rv-jump 0.7초). */
+enum class ReviewMotion { SLUMP, DIP, JUMP }
+
+/**
+ * 표정 · 몸짓 → 기준 짝(HANDOFF_v4 6-5 표, 지금 짝은 `[가정]`). 짝을 바꿀 때는 이 표만 고친다.
+ * 키는 기준 줄 key(weather · congestion · delay · night · fatigue).
+ */
+object ReviewCast {
+    /** 시작 · 없었던 줄: 집중 + 숨쉬기. */
+    val idle = ReviewPose.FOCUS
+    /** 있었던 줄. */
+    val byKey: Map<String, Pair<ReviewPose, ReviewMotion>> = mapOf(
+        "weather" to (ReviewPose.SHY to ReviewMotion.SLUMP),
+        "congestion" to (ReviewPose.FOCUS to ReviewMotion.DIP),
+        "delay" to (ReviewPose.SHY to ReviewMotion.SLUMP),
+        "night" to (ReviewPose.FOCUS to ReviewMotion.DIP),
+        "fatigue" to (ReviewPose.RELIEF to ReviewMotion.DIP),
+    )
+    /** 마무리 첫 단계(비 그침 + 땀 닦기). */
+    val finish = ReviewPose.RELIEF to ReviewMotion.DIP
+    /** 다 셈(0.9초 뒤 뿌듯 점프 + 반짝이). */
+    val done = ReviewPose.PROUD to ReviewMotion.JUMP
+
+    fun pose(key: String) = byKey[key]?.first ?: idle
+    fun motion(key: String) = byKey[key]?.second ?: ReviewMotion.DIP
+}
 
 /** 줄 아이콘(앱 CgIcon으로 바꿔 그림). */
 enum class ReviewIcon { RAIN, SNOW, TRAFFIC, DELAY, MOON, HOURGLASS }
@@ -44,9 +79,11 @@ data class ReviewItem(
     val countKm: Boolean = false,
     val icon: ReviewIcon,
     val fx: ReviewFx,
-    val barMark: Float = 0f,   // 시간 막대 눈금 위치(0..1, 시안 72% · 86%)
-    val pose: ReviewPose,
-    val motion: ReviewMotion,
+    val barMark: Float = 0f,   // 시간 막대 눈금 위치(0..1, 시안 70%)
+    val lateFrom: String? = null,  // '예상보다 더' 연출: 예상 도착 시각 "HH:mm"(출발 시각 + 출발 때 ETA)
+    val lateFromMin: Int = 0,      // 같은 시각(하루 안 분). 큰 숫자가 lateFromMin → lateFromMin + countTo 로 넘어간다
+    val pose: ReviewPose = ReviewCast.pose(key),
+    val motion: ReviewMotion = ReviewCast.motion(key),
     val say: CalcSay,          // 세는 동안 머리 아래 노고 문구(옛 계산 연출 문구 그대로, 명준 11/14)
 )
 
@@ -70,15 +107,15 @@ fun reviewItems(trip: OpenTrip, r: EffortReceipt, c: EffortConstants, w: ReviewW
         val word = c.copy.precipWords[wKey] ?: ""
         val wholeText = weatherDetail(wKey, whole = true, c = c)
         val v = when {
-            weatherUnknown -> w.depOnly.format(word)
+            weatherUnknown && trip.weatherDep == wKey -> w.depOnly.format(word)   // 도착 날씨를 못 받음(6-2)
             lines.getValue(wKey).detailText == wholeText -> w.whole.format(word)
             else -> word
         }
         ReviewItem("weather", label(wKey), true, v, icon = if (wKey == "snow") ReviewIcon.SNOW else ReviewIcon.RAIN,
-            fx = if (wKey == "snow") ReviewFx.SNOW else ReviewFx.RAIN, pose = ReviewPose.SHY, motion = ReviewMotion.SLUMP,
+            fx = if (wKey == "snow") ReviewFx.SNOW else ReviewFx.RAIN,
             say = if (wKey == "snow") CalcSay.SNOW else CalcSay.RAIN)
     } else ReviewItem("weather", label("rain"), false, if (weatherUnknown) w.unknown else w.none, icon = ReviewIcon.RAIN,
-        fx = ReviewFx.RAIN, pose = ReviewPose.SHY, motion = ReviewMotion.SLUMP,
+        fx = ReviewFx.RAIN,
         say = if (weatherUnknown) CalcSay.WEATHER_NONE else CalcSay.WEATHER_CLEAR)
 
     val jamLine = lines["congestion"]
@@ -87,16 +124,18 @@ fun reviewItems(trip: OpenTrip, r: EffortReceipt, c: EffortConstants, w: ReviewW
         "congestion", jamLine?.label ?: label("congestion"), jamLine != null,
         when { jamLine == null -> if (jamUnknown) w.unknown else w.none; jamKm != null -> kmText(jamKm); else -> jamLine.detailText ?: w.none },
         countTo = if (jamLine != null && jamKm != null && jamKm >= 1000) roundHalfUp(jamKm / 1000) else 0, countKm = true,
-        icon = ReviewIcon.TRAFFIC, fx = ReviewFx.JAM, pose = ReviewPose.FOCUS, motion = ReviewMotion.DIP,
+        icon = ReviewIcon.TRAFFIC, fx = ReviewFx.JAM,
         say = if (jamLine != null) CalcSay.JAM else CalcSay.JAM_NONE,
     )
 
     val delayLine = lines["delay"]
+    val eta = etaClock(trip)   // 홈 '도착 예상'과 같은 값(출발 + ETA)
     val delay = ReviewItem(
         "delay", delayLine?.label ?: label("delay"), delayLine != null,
         if (delayLine != null) driveText(r.delayMin * 60) else w.none,
         countTo = if (delayLine != null) roundHalfUp(r.delayMin) else 0,
-        icon = ReviewIcon.DELAY, fx = ReviewFx.BAR, barMark = .72f, pose = ReviewPose.SHY, motion = ReviewMotion.SLUMP,
+        icon = ReviewIcon.DELAY, fx = ReviewFx.LATE,
+        lateFrom = eta, lateFromMin = eta?.let { minOfDay(it) } ?: 0,
         say = if (delayLine != null) CalcSay.LATE else CalcSay.LATE_NONE,
     )
 
@@ -105,7 +144,7 @@ fun reviewItems(trip: OpenTrip, r: EffortReceipt, c: EffortConstants, w: ReviewW
         "night", nightLine?.label ?: label("night"), nightLine != null,
         if (nightLine != null) driveText(r.nightMin * 60) else w.none,
         countTo = if (nightLine != null) roundHalfUp(r.nightMin) else 0,
-        icon = ReviewIcon.MOON, fx = ReviewFx.NIGHT, pose = ReviewPose.FOCUS, motion = ReviewMotion.DIP,
+        icon = ReviewIcon.MOON, fx = ReviewFx.NIGHT,
         say = if (nightLine != null) CalcSay.NIGHT else CalcSay.NIGHT_NONE,
     )
 
@@ -113,7 +152,7 @@ fun reviewItems(trip: OpenTrip, r: EffortReceipt, c: EffortConstants, w: ReviewW
     val long = ReviewItem(
         "fatigue", longLine?.label ?: label("fatigue"), longLine != null,
         if (longLine != null) w.longOver else w.none,
-        icon = ReviewIcon.HOURGLASS, fx = ReviewFx.BAR, barMark = .86f, pose = ReviewPose.RELIEF, motion = ReviewMotion.DIP,
+        icon = ReviewIcon.HOURGLASS, fx = ReviewFx.BAR, barMark = .70f,
         say = if (longLine != null) CalcSay.LONG else CalcSay.LONG_NONE,
     )
     return listOf(weather, jam, delay, night, long)
@@ -122,3 +161,12 @@ fun reviewItems(trip: OpenTrip, r: EffortReceipt, c: EffortConstants, w: ReviewW
 /** 다 세기까지 걸리는 시간(시안: 0.6초 뒤 시작, 줄마다 있음 1.3초 · 없음 0.6초 + 0.3초, 마무리 0.9초). 약 10초. */
 fun reviewTotalMs(items: List<ReviewItem>): Long =
     600 + items.sumOf { (if (it.on) REVIEW_ON_MS else REVIEW_OFF_MS) + REVIEW_GAP_MS } + 900
+
+/** "HH:mm" → 하루 안 분. */
+internal fun minOfDay(hhmm: String): Int = hhmm.take(2).toInt() * 60 + hhmm.takeLast(2).toInt()
+
+/** 하루 안 분 → "HH:mm"(24시 넘으면 0시부터). '예상보다 더' 큰 숫자가 넘어가는 사이 시각. */
+fun hhmm(minOfDay: Int): String {
+    val m = Math.floorMod(minOfDay, 24 * 60)
+    return "%02d:%02d".format(m / 60, m % 60)
+}

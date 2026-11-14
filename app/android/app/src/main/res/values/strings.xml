@@ -299,6 +299,7 @@
     <string name="effort_review_whole">%1$s · 내내</string>
     <string name="effort_review_dep_only">출발할 때 %1$s</string>
     <string name="effort_review_long_over">2시간 넘게</string>
+    <string name="effort_review_late_eta">예상 %1$s</string>
     <string name="effort_review_alt_focus">집중한 표정의 노고</string>
     <string name="effort_review_alt_shy">머리를 긁적이며 멋쩍게 웃는 노고</string>
     <string name="effort_review_alt_relief">땀을 닦으며 웃는 노고</string>

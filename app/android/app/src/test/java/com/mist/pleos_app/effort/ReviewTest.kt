@@ -30,6 +30,12 @@ class ReviewTest {
         assertEquals(listOf(ReviewPose.SHY, ReviewPose.FOCUS, ReviewPose.SHY, ReviewPose.FOCUS, ReviewPose.RELIEF), items.map { it.pose })
         // 금액 · 배수 · 퍼센트 없음(AC-F29-1)
         assertTrue(items.none { it.value.contains("%") || it.value.contains("원") || it.value.contains("배") })
+        // 예상보다 더: 예상 도착 시각(출발 16:00 + ETA 105분) → 큰 숫자가 25분 넘어감(HANDOFF_v4 6-4)
+        assertEquals(ReviewFx.LATE, items[2].fx)
+        assertEquals("17:45", items[2].lateFrom)
+        assertEquals("18:10", hhmm(items[2].lateFromMin + items[2].countTo))
+        // 장시간 눈금 70%
+        assertEquals(.70f, items[4].barMark)
         // 약 10초(시안: 있는 줄 1.6초 × 5 + 시작 0.6 + 마무리 0.9)
         assertEquals(9500L, reviewTotalMs(items))
     }
@@ -64,6 +70,31 @@ class ReviewTest {
         val items = reviewItems(half, receiptOf(half, c)!!, c, w)
         assertTrue(items[0].on)
         assertEquals("출발할 때 비", items[0].value)
+    }
+
+    @Test
+    fun castTableIsSingleSource() {
+        // 표정 → 기준 짝(6-5)은 ReviewCast 한곳에서. 기쁨(joy)은 넣지 않는다
+        assertEquals(listOf("FOCUS", "SHY", "RELIEF", "PROUD"), ReviewPose.values().map { it.name })
+        assertEquals(ReviewPose.SHY to ReviewMotion.SLUMP, ReviewCast.byKey["delay"])
+        assertEquals(ReviewPose.PROUD to ReviewMotion.JUMP, ReviewCast.done)
+    }
+
+    @Test
+    fun clockWrapsAfterMidnight() {
+        assertEquals("00:15", hhmm(24 * 60 + 15))
+        val late = r1.copy(departedAt = "2026-11-17T23:30:00+09:00", etaS = 3600.0)
+        assertEquals("00:30", reviewItems(late, receiptOf(late, c)!!, c, w)[2].lateFrom)
+        assertEquals(null, reviewItems(r1.copy(etaS = 0.0), receiptOf(r1.copy(etaS = 0.0), c)!!, c, w)[2].lateFrom)
+    }
+
+    @Test
+    fun departureUnknownArrivalRainIsNotDepartureOnly() {
+        // 출발 날씨를 못 받고 도착만 비 → "출발할 때 비"가 아니다
+        val arrOnly = r1.copy(weatherDep = WEATHER_UNKNOWN)
+        val items = reviewItems(arrOnly, receiptOf(arrOnly, c)!!, c, w)
+        assertTrue(items[0].on)
+        assertEquals("비", items[0].value)
     }
 
     private fun locate(rel: String): File {
