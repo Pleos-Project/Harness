@@ -121,6 +121,8 @@ fun EffortApp(
     val askPayers = screen == EffortScreen.DEPART && askEnter
     // 앱 시작 화면(Design v2 home app-splash, 1.6초) — 처음 켤 때 한 번
     var splash by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(true) }
+    // 알림으로 도착·돌아보기 화면이 먼저 열렸으면 시작 화면은 건너뛴다(나중에 홈으로 와도 1.6초 시작 화면이 다시 뜨지 않게)
+    LaunchedEffect(screen) { if (screen != EffortScreen.HOME) splash = false }
     EffortFrame(driving = driving) {
         when (screen) {
             EffortScreen.HOME -> if (splash) EffortSplash { splash = false } else EffortHomeScreen(
@@ -229,7 +231,7 @@ private fun EffortSettings(
         Column(
             Modifier.padding(start = side, end = side, bottom = if (narrow) 16.gpx else 24.gpx).fillMaxWidth()
                 .background(c.placeholder, RoundedCornerShape(16.gpx)).padding(horizontal = 22.gpx, vertical = 16.gpx),
-            verticalArrangement = Arrangement.spacedBy(6.gpx),
+            verticalArrangement = Arrangement.spacedBy(0.gpx),   // 아티팩트는 <br> 줄바꿈이라 두 줄 사이 간격 없음
         ) { content() }
     }
     Box(Modifier.fillMaxSize()) {
@@ -297,7 +299,6 @@ private fun EffortSettings(
                     CgButton(stringResource(R.string.settings_reset_confirm), { wipe = true }, kind = CgButtonKind.Basic, size = CgSize.S, enabled = recordCount > 0)
                 }
             }
-            Text(stringResource(R.string.effort_settings_note), style = t.labelM, color = c.textTertiary)
         }
         // 기록 초기화 확인(settings-wipe): 짧은 하단 시트. 지우면 홈이 첫 사용 모양으로
         if (wipe) {
