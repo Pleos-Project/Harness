@@ -287,6 +287,13 @@ class FixturesTest {
         assertEquals(listOf("일부 시간은 날씨 정보 없음"), run("R24").notes)   // partial
         assertEquals("비, 주행 내내", run("R25").lines[0].detailText)     // 가운데 같으면 출발 지점
         assertEquals(72.5, run("R26").rainMin, 0.0)                     // 전부 unknown → 절반 규칙
+        // 날씨를 반만 받음(#149): 날씨 줄 하나에 적고 셈은 절반 규칙 그대로, note는 남는다
+        val r38 = run("R38")
+        assertEquals("출발 비 · 도착 정보 없음", r38.lines[0].detailText)
+        assertEquals("도착 날씨를 받지 못해 운전 시간의 앞 절반만 출발 날씨(비)로 셌어요", r38.lines[0].basisText)
+        assertEquals(60.0, r38.rainMin, 0.0)
+        assertEquals(listOf("날씨 정보 없음"), r38.notes)
+        assertEquals("출발 정보 없음 · 도착 눈", run("R39").lines[0].detailText)
         // 계약 응답을 그대로 넘겨도 된다(status는 안 씀)
         val sample = parseObject(File(root, "../contract/samples/weather.trip.ok.response.json").readText())
         val wt = parseWeatherTrip(sample)

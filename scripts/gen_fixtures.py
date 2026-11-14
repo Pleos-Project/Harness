@@ -508,6 +508,16 @@ def effort_fixtures() -> None:
     ]
     cases += midway_cases(r1)
     cases += fatigue_split_cases()
+    cases += [
+        ("R38", "날씨를 반만 받음(출발 비 · 도착 정보 없음): 14:00→16:00, ETA 120분, 맑은 낮, 2명",
+         "도착 날씨를 못 받았으면 1회 관측 규칙 그대로 앞 절반(60분)만 비로 센다 → 0.40 × 60 = 24 → +20%. "
+         "날씨 줄 값은 '출발 비 · 도착 정보 없음', 근거는 반만 셌다는 문장(#149, 명준 11/12 · 효성 11/14). "
+         "note '날씨 정보 없음'은 그대로 남는다(날씨 줄 + 이 note = 반쪽)",
+         effort_input("14:00", "16:00", eta_min=120, wdep="rain", warr="unknown", n=2)),
+        ("R39", "날씨를 반만 받음(출발 정보 없음 · 도착 눈): R38과 같은 주행, 출발 날씨를 못 받고 도착은 눈",
+         "뒤 절반(60분)만 눈으로 센다 → 0.49 × 60 = 29.4 → +25%(24.5를 올림). 줄 값 '출발 정보 없음 · 도착 눈'",
+         effort_input("14:00", "16:00", eta_min=120, wdep="unknown", warr="snow", n=2)),
+    ]
     for fid, title, note, inp in cases:
         write(ROOT / "fixtures/effort" / f"{fid}.json", effort_fixture(fid, title, note, inp))
 

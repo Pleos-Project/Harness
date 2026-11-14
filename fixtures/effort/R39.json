@@ -1,0 +1,78 @@
+{
+  "id": "R39",
+  "title": "날씨를 반만 받음(출발 정보 없음 · 도착 눈): R38과 같은 주행, 출발 날씨를 못 받고 도착은 눈",
+  "note": "뒤 절반(60분)만 눈으로 센다 → 0.49 × 60 = 29.4 → +25%(24.5를 올림). 줄 값 '출발 정보 없음 · 도착 눈'",
+  "input": {
+    "departed_at": "2026-11-17T14:00:00+09:00",
+    "arrived_at": "2026-11-17T16:00:00+09:00",
+    "rest_answer_min": 0,
+    "eta_s": 7200,
+    "congestion_ratio": 0.0,
+    "congestion_m": 0.0,
+    "congestion_s": null,
+    "weather_dep": "unknown",
+    "weather_arr": "snow",
+    "sunrise": "07:13",
+    "sunset": "17:20",
+    "n": 2,
+    "distance_km": null
+  },
+  "expected": {
+    "status": "ok",
+    "status_text": null,
+    "elapsed_limit_min": 240.0,
+    "elapsed_min": 120.0,
+    "drive_min": 120.0,
+    "rest_min": 0.0,
+    "fatigue_segments_min": [
+      120.0
+    ],
+    "congestion_min": 0.0,
+    "delay_min": 0.0,
+    "night_min": 0.0,
+    "rain_min": 0.0,
+    "snow_min": 60.0,
+    "fatigue_excess_min": 0.0,
+    "effort_min": 149.4,
+    "multiplier": 1.25,
+    "lines": [
+      {
+        "key": "snow",
+        "label": "날씨",
+        "add_min": 29.4,
+        "pct": 25,
+        "pct_text": "+25%",
+        "detail_text": "출발 정보 없음 · 도착 눈",
+        "basis_text": "출발 날씨를 받지 못해 운전 시간의 뒤 절반만 도착 날씨(눈)로 셌어요"
+      }
+    ],
+    "notes": [
+      "날씨 정보 없음"
+    ],
+    "footnote_text": null,
+    "drive_text": "2시간",
+    "multiplier_text": "평소보다 1.25배 힘든 길",
+    "headline_text": "오늘 운전 2시간 · 평소보다 1.25배 힘든 길",
+    "distance_text": null,
+    "proposal": {
+      "amount_krw": 26643.0,
+      "amount_approx": 27000,
+      "amount_text": "약 2만 7천 원",
+      "per_person_krw": 13321.5,
+      "per_person_approx": 13000,
+      "per_person_text": "약 1만 3천 원",
+      "driver_share_krw": 13321.5,
+      "a": {
+        "title_text": "오늘 운전을 챙긴다면",
+        "main_text": "한 사람 약 1만 3천 원",
+        "basis_text": "운전 노고 약 2만 7천 원을 운전자 포함 2명이 나눈 값",
+        "wage_text": "최저임금 1분 178원 기준"
+      },
+      "b": {
+        "item": "meal",
+        "text": "오늘은 밥값에서 운전자 빼는 게 어때요",
+        "item_examples": []
+      }
+    }
+  }
+}

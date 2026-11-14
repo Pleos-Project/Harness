@@ -508,6 +508,7 @@ def effort(inp: EffortInput, c: EffortConstants) -> Receipt:
         rain_whole = hp.rain_wall_s >= elapsed
         snow_whole = hp.snow_wall_s >= elapsed
         weather_note = c.copy.text["weather_partial_text"] if hp.unknown else None
+        weather_half = None
     else:
         # 시간대별 입력이 없거나 겹친 조각이 모두 unknown이면 출발·도착 1회 관측, 앞·뒤 절반씩
         half = drive / 2
@@ -517,6 +518,15 @@ def effort(inp: EffortInput, c: EffortConstants) -> Receipt:
         snow_whole = inp.weather_dep == "snow" and inp.weather_arr == "snow"
         weather_note = (c.copy.text["weather_unknown_text"]
                         if inp.weather_dep not in KNOWN_PRECIP or inp.weather_arr not in KNOWN_PRECIP else None)
+        # 날씨를 반만 받음(#149, 명준 11/12): 한쪽은 비·눈인데 다른 쪽을 못 받았으면 날씨 줄 하나에 그 사실을 적는다.
+        # 셈은 위 절반 규칙 그대로(효성 11/14). note는 그대로 두므로, 날씨 줄이 있으면서 이 note가 있으면 반쪽이다
+        dep_known = inp.weather_dep in KNOWN_PRECIP
+        arr_known = inp.weather_arr in KNOWN_PRECIP
+        weather_half = None
+        if dep_known != arr_known:
+            got = inp.weather_dep if dep_known else inp.weather_arr
+            if got in ("rain", "snow"):
+                weather_half = ("dep" if dep_known else "arr", got)
     limit_s = c.fatigue_limit_min * 60
     excess = 0.0
     for g in groups:
@@ -537,7 +547,12 @@ def effort(inp: EffortInput, c: EffortConstants) -> Receipt:
         total += adds[k]
         if adds[k] > 0:
             pct = round_half_up(adds[k] / drive)
-            if k == "rain" or k == "snow":
+            basis = basis_text(k, c)
+            if weather_half is not None and weather_half[1] == k:
+                word = c.copy.precip_words[k]
+                detail = fill(c.copy.line_detail[f"weather_{weather_half[0]}_only_text"], precip=word)
+                basis = fill(c.copy.text[f"weather_{weather_half[0]}_only_basis_text"], precip=word)
+            elif k == "rain" or k == "snow":
                 detail = weather_detail(k, rain_whole if k == "rain" else snow_whole, c, inp.midway is not None)
             elif k == "congestion":
                 detail = congestion_text(congestion_m, inp.congestion_ratio, c)
@@ -547,7 +562,7 @@ def effort(inp: EffortInput, c: EffortConstants) -> Receipt:
                 detail = time_detail("night_text", night, c)
             else:
                 detail = time_detail("fatigue_text", excess, c)   # 구간이 여러 개면 넘긴 시간의 합
-            lines.append(Line(k, c.copy.line_labels[k], adds[k] / 6000, pct, pct_text(pct), detail, basis_text(k, c)))
+            lines.append(Line(k, c.copy.line_labels[k], adds[k] / 6000, pct, pct_text(pct), detail, basis))
     m100 = round_half_up(total / drive) if drive > 0 else 100
 
     notes = []

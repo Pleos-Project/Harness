@@ -408,6 +408,25 @@ def test_hourly_all_unknown_falls_back():
     assert run("R26").notes == []          # 1회 관측은 출발 비·도착 맑음으로 판정됨
 
 
+def test_weather_half_is_one_line():
+    """날씨를 반만 받음(#149, 명준 11/12 · 효성 11/14): 날씨 줄 하나에 적고, 셈은 절반 규칙 그대로."""
+    r38, r39 = run("R38"), run("R39")
+    assert [l.key for l in r38.lines] == ["rain"] and r38.rain_min == 60 and r38.lines[0].pct_text == "+20%"
+    assert r38.lines[0].detail_text == "출발 비 · 도착 정보 없음"
+    assert r38.lines[0].basis_text == "도착 날씨를 받지 못해 운전 시간의 앞 절반만 출발 날씨(비)로 셌어요"
+    assert [l.key for l in r39.lines] == ["snow"] and r39.snow_min == 60
+    assert r39.lines[0].detail_text == "출발 정보 없음 · 도착 눈"
+    assert r39.lines[0].basis_text == "출발 날씨를 받지 못해 운전 시간의 뒤 절반만 도착 날씨(눈)로 셌어요"
+    # note는 그대로 남는다: 날씨 줄이 있으면서 이 note가 있으면 반쪽
+    assert r38.notes == ["날씨 정보 없음"] and r39.notes == ["날씨 정보 없음"]
+    # 둘 다 받았으면 지금까지와 같다(반쪽 문구가 끼어들지 않음)
+    both = run("R38", weather_arr="none")
+    assert both.lines[0].detail_text == "비" and both.notes == [] and both.rain_min == 60
+    # 한쪽이 맑음이고 다른 쪽을 못 받았으면 날씨 줄이 없다(note만)
+    clear = run("R38", weather_dep="none")
+    assert clear.lines == [] and clear.notes == ["날씨 정보 없음"]
+
+
 def test_weather_trip_input_matches_contract_response():
     """앱은 GET /v1/weather/trip 응답을 그대로 넘겨도 된다(status는 엔진이 쓰지 않음). 없으면 지금 규칙."""
     sample = load(ROOT / "contract/samples/weather.trip.ok.response.json")
@@ -698,8 +717,9 @@ DETAIL = re.compile(r"^(\d+km|1km 미만) \(경로의 (\d+%|1% 미만)\)$")
 DRIVE = re.compile(r"^(\d+시간( \d+분)?|\d+분|1분 미만)$")
 TIME = r"(\d+시간( \d+분)?|\d+분|1분 미만)"
 LINE_DETAIL = {   # 줄 값 형식(노고 PRD v1.3 5-1)
-    "rain": re.compile(r"^비(, (주행|지금까지) 내내)?$"),   # 중간 정산이면 '지금까지 내내'(시안 v104)
-    "snow": re.compile(r"^눈(, (주행|지금까지) 내내)?$"),
+    # 중간 정산이면 '지금까지 내내'(시안 v104). 날씨를 반만 받았으면 '출발 비 · 도착 정보 없음'(#149)
+    "rain": re.compile(r"^(비(, (주행|지금까지) 내내)?|출발 비 · 도착 정보 없음|출발 정보 없음 · 도착 비)$"),
+    "snow": re.compile(r"^(눈(, (주행|지금까지) 내내)?|출발 눈 · 도착 정보 없음|출발 정보 없음 · 도착 눈)$"),
     "delay": re.compile(rf"^\+{TIME}$"),
     "night": re.compile(rf"^{TIME}$"),
     "fatigue": re.compile(rf"^2시간 넘긴 {TIME}$"),
