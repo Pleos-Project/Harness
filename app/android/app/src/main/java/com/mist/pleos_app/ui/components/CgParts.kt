@@ -108,8 +108,8 @@ import kotlinx.coroutines.delay
 private val EaseRot = CubicBezierEasing(.65f, 0f, .35f, 1f)
 
 /**
- * 딥 잉크(주야 같음) + 투명도. 값 = `btnFilledText`(라임 위 잉크 글자, 주간 · 야간 모두 #242033).
- * 사진 칸 그늘 · CTA 화살표 원처럼 테마와 상관없이 잉크인 자리에 쓴다(예전 하드코딩 `0x..242033`과 값 같음).
+ * 딥 잉크(주야 같음) + 투명도. 값 = `btnFilledText`(라임 위 잉크 글자, 주간 · 야간 모두 #242135, v4).
+ * 사진 칸 그늘 · CTA 화살표 원처럼 테마와 상관없이 잉크인 자리에 쓴다(v3.1 하드코딩 `0x..242033` 자리, v4는 토큰을 따라 #242135).
  */
 @Composable
 private fun inkAlpha(alpha: Int): Color = Chagok.colors.btnFilledText.copy(alpha = alpha / 255f)
@@ -137,7 +137,7 @@ fun CgWordmark(width: Dp, modifier: Modifier = Modifier, label: String? = null) 
 @Composable
 fun CgAppIcon(size: Dp, modifier: Modifier = Modifier) {
     val c = Chagok.colors
-    val shade = c.textPrimary.copy(alpha = 0x24 / 255f)   // 주간 textPrimary #242033 → 예전 0x24242033과 같음
+    val shade = c.textPrimary.copy(alpha = 0x24 / 255f)   // 주간 textPrimary(v4 #242135)
     androidx.compose.foundation.Image(
         androidx.compose.ui.res.painterResource(if (c.isDark) R.drawable.nogo_icon_ink_gradient else R.drawable.nogo_icon_lime_gradient),
         contentDescription = null,
@@ -467,7 +467,7 @@ private fun CgPreviewPanel(
 @Composable
 private fun CgPhotoPanel(photo: Int?, modifier: Modifier, compact: Boolean, content: @Composable () -> Unit) {
     val shape = RoundedCornerShape(40.gpx)
-    // 사진 위 그늘 · 바탕은 테마와 상관없이 딥 잉크(값 = 예전 0x..242033)
+    // 사진 위 그늘 · 바탕은 테마와 상관없이 딥 잉크(btnFilledText, v4 #242135)
     val shade = if (compact) Brush.verticalGradient(0f to inkAlpha(0x80), .45f to inkAlpha(0xCC), 1f to inkAlpha(0xF2))
     else Brush.horizontalGradient(0f to inkAlpha(0xF2), .34f to inkAlpha(0xD9), .62f to inkAlpha(0x80), 1f to inkAlpha(0x26))
     val glow = inkAlpha(0x33)
@@ -810,13 +810,13 @@ fun CgReceipt(
                             drawIntoCanvas { cv ->
                                 for (i in blurs.indices) {
                                     val b = (blurs[i] + boost * (if (i == 0) 6f else if (i == 1) 18f else 36f)) * density
-                                    val paint = androidx.compose.ui.graphics.Paint().apply { color = Color(0xFFD9F77A).copy(alpha = alphas[i] * a) }
+                                    val paint = androidx.compose.ui.graphics.Paint().apply { color = Color(0xFFC8F04A).copy(alpha = alphas[i] * a) }
                                     paint.asFrameworkPaint().maskFilter = android.graphics.BlurMaskFilter(b, android.graphics.BlurMaskFilter.Blur.NORMAL)
                                     cv.drawRoundRect(0f, 0f, size.width, size.height, r, r, paint)
                                 }
                             }
                             drawRoundRect(
-                                Brush.verticalGradient(0f to Color(0xFFF3FEC9), .45f to Color(0xFFD9F77A), 1f to Color(0xFFB4CF4E)),
+                                Brush.verticalGradient(0f to Color(0xFFE6F5B4), .45f to Color(0xFFC8F04A), 1f to Color(0xFFA6C72E)),
                                 cornerRadius = androidx.compose.ui.geometry.CornerRadius(r), alpha = a,
                             )
                             if (boost > 0f) drawRoundRect(Color.White.copy(alpha = .25f * boost * a), cornerRadius = androidx.compose.ui.geometry.CornerRadius(r))
@@ -1283,7 +1283,7 @@ fun BoxScope.CgNotiPanel(
             Modifier.fillMaxWidth()
                 .shadow(28.gpx, outer, ambientColor = if (c.isDark) Color(0xA6000000) else c.textPrimary.copy(alpha = 0x4D / 255f), spotColor = if (c.isDark) Color(0x66000000) else c.textPrimary.copy(alpha = 0x24 / 255f))
                 .background(rim, outer)
-                .border(1.gpx, if (c.isDark) Color(0x17FFFFFF) else c.textPrimary.copy(alpha = 0x0F / 255f), outer)   // 주간 textPrimary #242033 → 예전 값과 같음
+                .border(1.gpx, if (c.isDark) Color(0x17FFFFFF) else c.textPrimary.copy(alpha = 0x0F / 255f), outer)   // 주간 textPrimary(v4 #242135)
                 .padding(if (compact) 6.gpx else 8.gpx),
         ) {
             Column(

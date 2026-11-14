@@ -277,7 +277,7 @@ internal fun LogoSymbol(size: Dp, pin: String? = null, compact: Boolean = false)
     fun f() = if (reduce) 0f else k.value
     val lift = 4.gpx
     Box(Modifier.size(size), contentAlignment = Alignment.Center) {
-        val shadow = if (c.isDark) Color(0x80000000) else Color(0x4D242033)
+        val shadow = if (c.isDark) Color(0x80000000) else Color(0x4D242135)
         Canvas(Modifier.align(Alignment.BottomCenter).size(size * .62f, size * .09f)) {
             val f = f()
             scale(1f - .1f * f, 1f) { drawOval(Brush.radialGradient(listOf(shadow.copy(alpha = shadow.alpha * (1f - .25f * f)), Color.Transparent), center = center, radius = this.size.width / 2f), size = this.size) }
@@ -309,7 +309,7 @@ internal fun StartButton(size: Dp, label: String, onClick: () -> Unit) {
     val bezel = if (narrow) 18.gpx else 26.gpx   // v104: 440 · 26(분할 300 · 18)
     val ringOut = if (narrow) 9.gpx else 10.gpx
     val ringW = 3.gpx
-    val ringColor = if (c.isDark) Color(0xFFD9F77A) else Color(0xFF8FA930)
+    val ringColor = if (c.isDark) Color(0xFFC8F04A) else Color(0xFF82A01A)   // v4 screens/after.css --ring
     val src = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
     val pressed by src.collectIsPressedAsState()
     val press by animateFloatAsState(if (pressed) 1f else 0f, tween(220, easing = CubicBezierEasing(.32f, .72f, 0f, 1f)), label = "press")
@@ -342,7 +342,7 @@ internal fun StartButton(size: Dp, label: String, onClick: () -> Unit) {
         // 테(Satin Silver, 위 → 아래)
         Box(
             Modifier.size(size).graphicsLayer { val s = 1f - .015f * press; scaleX = s; scaleY = s }
-                .shadow(26.gpx * (1f - .6f * press), CircleShape, ambientColor = Color(0x33242033), spotColor = Color(0x33242033))
+                .shadow(26.gpx * (1f - .6f * press), CircleShape, ambientColor = Color(0x33242135), spotColor = Color(0x33242135))
                 .background(Brush.verticalGradient(0f to c.receiptPrinterHighlight, .18f to c.receiptPrinterMidtone, .7f to c.receiptPrinterShade, 1f to c.receiptPrinterMidtone), CircleShape)
                 .padding(bezel),
             contentAlignment = Alignment.Center,
@@ -350,8 +350,8 @@ internal fun StartButton(size: Dp, label: String, onClick: () -> Unit) {
             // 면: 대각 135° 라임 세 단(로고 lime-gradient와 같음) + 바깥 3px 테두리
             Box(
                 Modifier.fillMaxSize().graphicsLayer { translationY = lift.toPx() * press }
-                    .shadow(12.gpx * (1f - .7f * press), CircleShape, ambientColor = Color(0x38242033), spotColor = Color(0x38242033))
-                    .background(Brush.linearGradient(listOf(Color(0xFFF5FFD2), Color(0xFFD9F77A), Color(0xFFA9C640))), CircleShape)
+                    .shadow(12.gpx * (1f - .7f * press), CircleShape, ambientColor = Color(0x38242135), spotColor = Color(0x38242135))
+                    .background(Brush.linearGradient(listOf(Color(0xFFE8F6BF), Color(0xFFC8F04A), Color(0xFF9BBD25))), CircleShape)
                     .border(3.gpx, Color(0x38171B22), CircleShape),
                 contentAlignment = Alignment.Center,
             ) {

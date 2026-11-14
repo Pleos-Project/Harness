@@ -14,8 +14,8 @@ import com.mist.pleos_app.util.ChagokLog
 /** 조명 상태 한 벌. [switch]는 LightSwitch 이름(OFF·ON·AUTOMATIC…), [color]는 32비트 ARGB(다시 읽으면 알파가 빠진 RGB). */
 data class LightValue(val switch: String, val color: Int)
 
-/** 브랜드 색 #D9F77A(June 11/9 전달, #109 열린 결정 31의 색 값). */
-const val AMBIENT_BRAND_ARGB: Int = 0xFFD9F77A.toInt()
+/** 브랜드 색 = 컬러 v4 라임 #C8F04A(#162 HANDOFF_v4 3절, DECISIONS 11/14 '앰비언트 라이트 색: v4 라임'. 옛 값 #D9F77A). */
+const val AMBIENT_BRAND_ARGB: Int = 0xFFC8F04A.toInt()
 const val LIGHT_ON = "ON"
 
 /** SDK와 맞닿는 곳. 대상 영역은 capabilities가 준 영역 전부(에뮬: 전 좌석 묶음 하나). 콜백은 한 번만. */
