@@ -11,6 +11,11 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -172,10 +177,7 @@ internal fun EffortArriveScreen(ui: EffortUi, onRest: (Int) -> Unit, onPick: (St
                 OfferCard(ui, trip, narrow, onPick, onClose, m.graphicsLayer { alpha = offer.value; translationY = (1f - offer.value) * 16f * density }, offerPlayed = !first)
             }
             if (narrow) {
-                Column(Modifier.weight(1f).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(16.gpx)) {
-                    receipt(Modifier.fillMaxWidth())
-                    card(Modifier.fillMaxWidth())
-                }
+                NarrowReceiptAndCard(Modifier.weight(1f), receipt, card)
             } else {
                 Row(Modifier.weight(1f).fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(24.gpx)) {
                     if (ui.unsettled) Spacer(Modifier.weight(1f)) else receipt(Modifier.weight(1f).fillMaxHeight())
@@ -281,7 +283,8 @@ internal fun ReceiptColumn(
             style = TextStyle(fontSize = (if (narrow) 34 else 42).gsp, lineHeight = (if (narrow) 44 else 54).gsp, fontWeight = FontWeight.Bold),
             color = c.textPrimary, textAlign = TextAlign.Center,
         )
-        Text(
+        // 분할 창은 부제 줄을 숨긴다(시안 .p .paper .ph span {display:none}): 제목 바로 아래에서 항목이 시작
+        if (!narrow) Text(
             midwaySub ?: if (trip.n >= 2) stringResource(R.string.effort_receipt_sub_people, trip.destName, dayText(trip.departedAt), trip.n)
             else stringResource(R.string.effort_receipt_sub_solo, trip.destName, dayText(trip.departedAt)),
             Modifier.fillMaxWidth().padding(top = if (narrow) 4.gpx else 8.gpx),
@@ -492,9 +495,27 @@ private fun ColumnScope.DoneBody(done: ArriveDone, items: List<EffortItem>, narr
     close()
 }
 
-/** 가로 창은 버튼을 카드 아래로 민다. 분할은 쌓기만. */
+/**
+ * 분할 창 영수증 + 금액 카드(도착 · 중간 정산 공용, a-2). 스크롤 열이라 weight가 안 먹어, 영수증 아래 남은 높이를 재서
+ * 카드 최소 높이로 준다(시안 `.arrpg.p .offer{flex:1}`). 카드 안은 [Filler]가 버튼을 맨 아래로 민다. 영수증이 길면 스크롤 그대로.
+ */
 @Composable
-internal fun ColumnScope.Filler(narrow: Boolean) { if (!narrow) Spacer(Modifier.weight(1f)) }
+internal fun NarrowReceiptAndCard(modifier: Modifier, receipt: @Composable (Modifier) -> Unit, card: @Composable (Modifier) -> Unit) {
+    BoxWithConstraints(modifier.fillMaxWidth()) {
+        val gap = 16.gpx
+        var receiptPx by remember { mutableIntStateOf(0) }
+        val density = LocalDensity.current
+        val rest = (maxHeight - with(density) { receiptPx.toDp() } - gap).coerceAtLeast(0.gpx)
+        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(gap)) {
+            receipt(Modifier.fillMaxWidth().onSizeChanged { receiptPx = it.height })
+            card(Modifier.fillMaxWidth().heightIn(min = rest))
+        }
+    }
+}
+
+/** 카드 안 버튼을 아래로 민다. 분할은 카드가 [NarrowReceiptAndCard]에서 최소 높이를 받을 때만 남는 높이가 생긴다. */
+@Composable
+internal fun ColumnScope.Filler(@Suppress("UNUSED_PARAMETER") narrow: Boolean) { Spacer(Modifier.weight(1f)) }
 
 /** 움직임 줄이기(개발자 옵션 애니메이션 배율 0): 연출을 끄고 끝 상태로(HANDOFF_v2 3-2). */
 @Composable
