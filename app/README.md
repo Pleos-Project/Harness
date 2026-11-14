@@ -84,6 +84,8 @@ adb install -r -g app/build/outputs/apk/debug/app-debug.apk        # -g: 권한 
 명세서 8절 신호 표에 없는 것만 적는다.
 - `requestTrip`을 동시에 보내면 응답이 섞이고 늦은 응답도 온다 → 요청 순서가 아니라 응답 `summary.routePoints` 중 DESTINATION의 `poiName`으로 목적지를 맞춘다. 곳당 0.3~0.8초.
 - 경유지가 있으면 `getDestinationInfo`의 남은 거리·통행료가 첫 구간(경유지까지) 기준이다.
+- 안내 중 경유지를 넣으면 `onRouteStarted` 없이 `onRouteCancelled` → 약 9초 뒤 `onWaypointChanged(ADD)`가 온다. 안의 `routeStartInfo.name`은 경유지 이름이다(11/14 에뮬, #145). 앞의 취소를 안내 종료로 보지 않게 새 안내 시작처럼 다룬다.
+- `RouteStartInfo`의 `distance`·`duration`은 화면 표시처럼 반올림돼 온다(300·1800·12000m, 모두 60의 배수 초). 목적지를 바꾸면 새 목적지 값이 온다(11/14 에뮬, #145).
 - `RouteInfo.routeOption`은 내비까지 전달되지 않고, `changeRouteOption`은 받기만 하고 무시된다.
 - 착석은 SDK가 반대로 읽는다(SDK 1 = 앉음, AAOS·콘솔 1 = 빈 좌석, 2 = 앉음) → 설정 `seat_invert`.
 - 기어 P = 규제 없음, D = 속도 0이어도 규제. 규제 중 시스템이 앱을 가린다. adb 설치본은 `distractionOptimized`를 선언해도 가려진다.
