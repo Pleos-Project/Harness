@@ -10,7 +10,11 @@ import com.mist.pleos_app.net.PlaceResult
 import com.mist.pleos_app.net.PlacesStatus
 
 /** 출발 화면 목적지 후보 한 줄: 즐겨찾기·최근 목적지(내비) 또는 검색 결과(서버). */
-data class DestOption(val dest: Destination, val kind: Kind, val category: String? = null, val distanceM: Int? = null) {
+data class DestOption(
+    val dest: Destination, val kind: Kind, val category: String? = null, val distanceM: Int? = null,
+    /** 검색 결과의 카카오 분류 칸(윗칸부터, 출발 미리보기 배경 종류용). 즐겨찾기 · 최근은 비어 있다. */
+    val categoryPath: List<String> = emptyList(),
+) {
     enum class Kind { HOME, OFFICE, BOOKMARK, RECENT, SEARCH }
 
     /** 검색 결과의 현재 위치부터 거리(서버 distance_m) → "104km". 위치를 못 보냈으면 null(정확도순, 거리 칸 비움). */
@@ -28,7 +32,7 @@ fun NaviPlace.toOption() = DestOption(
 )
 
 /** 검색 결과 → 내비 목적지(#57 매핑: name→poiName, address, lat·lng, place_id→poiId). */
-fun PlaceResult.toOption() = DestOption(Destination(placeId, name, lat, lng, address), DestOption.Kind.SEARCH, category, distanceM)
+fun PlaceResult.toOption() = DestOption(Destination(placeId, name, lat, lng, address), DestOption.Kind.SEARCH, category, distanceM, categoryPath)
 
 /**
  * 출발 화면 상태(명세 v0.5 F20). 좌표는 [DestOption.dest] 안에만 있고 메모리에만 둔다(AC-N-4).
@@ -50,7 +54,18 @@ data class DepartUi(
     val previewText: DeparturePreview? = null,
     /** 내비로 길을 보내지 못함(#132 · #118 E1 depart-route-fail): 출발 기록 없이 출발 화면에 남아 [다시 시도]. */
     val routeFailed: Boolean = false,
+    /** 미리보기 배경(F20 코드 배경, HANDOFF_v4 7-4): 출발 날씨(서버 precip, 아직 못 받았으면 null = 맑음). 시연은 시연 출발 날씨. */
+    val bgWeather: String? = null,
+    /** 시연 출발 시각의 시(시연 16:00 → 16). null이면 지금 시각. */
+    val bgHour: Int? = null,
+    /** 시연 데이터의 배경 종류(시연 모드면 null 아님, 칸이 없으면 빈 표). */
+    val bgDemoKinds: Map<String, BgKind>? = null,
+    /** 카카오 분류 → 배경 종류 표(constants.json preview_bg). 못 읽었으면 null = 검색 결과도 중립. */
+    val bgTable: PreviewBgTable? = null,
 ) {
+    /** 고른 목적지의 미리보기 배경. [nowHour] = 지금 시각(시연은 [bgHour]가 이긴다). */
+    fun previewBg(nowHour: Int): PreviewBgSpec? = selected?.let { previewBgOf(it, bgHour ?: nowHour, bgWeather, bgTable, bgDemoKinds) }
+
     /** 목적지를 골랐고 미리보기를 기다리는 중이 아니면 [출발]을 누를 수 있다(미리보기가 실패해도 출발은 막지 않음). */
     val canDepart: Boolean get() = selected != null && !previewing
 }

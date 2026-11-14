@@ -7,6 +7,9 @@ import com.mist.pleos_app.engine.integerOrNull
 import com.mist.pleos_app.engine.parseObject
 import com.mist.pleos_app.engine.str
 import com.mist.pleos_app.engine.strOrNull
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonObject
 import java.time.OffsetDateTime
 import java.time.ZoneId
@@ -68,7 +71,18 @@ data class DemoScene(
     val sunset: String?,
     val restAnswerMin: Int?,
     val midway: DemoMidway? = null,         // 휴게소 중간 정산 장면(#105 demo.json midway). 없으면 시연에서 중간 정산을 숨김
+    /** 출발 미리보기 배경 종류(목적지 이름 → 종류, HANDOFF_v4 7-4). 칸이 없으면 빈 표 = 집 · 회사 말고 모두 중립. */
+    val bgKinds: Map<String, BgKind> = emptyMap(),
 )
+
+/**
+ * 시연 데이터의 배경 종류 칸(#116 효성 · #186): `scene.preview_bg.kinds = {"태안 꽃지해수욕장": "sea", ...}`
+ * (값 = neutral · city · home · sea · nature). 칸이 없거나 모르는 값은 건너뛴다 → 그 목적지는 중립.
+ */
+fun parseDemoBgKinds(scene: JsonObject): Map<String, BgKind> =
+    runCatching { scene["preview_bg"]?.jsonObject?.get("kinds")?.jsonObject }.getOrNull()?.mapNotNull { (name, v) ->
+        bgKindOfId((v as? JsonPrimitive)?.contentOrNull)?.let { name to it }
+    }?.toMap().orEmpty()
 
 /**
  * 시연 중간 정산(F27, 효성 #105): 지금 시각 대신 [at], 내비 남은 거리 대신 [remainM], 날씨 조회 대신 [weatherTrip].
@@ -98,6 +112,7 @@ fun parseDemoScene(text: String): DemoScene {
         sunrise = input.strOrNull("sunrise"),
         sunset = input.strOrNull("sunset"),
         restAnswerMin = input.integerOrNull("rest_answer_min"),
+        bgKinds = parseDemoBgKinds(scene),
         midway = root["midway"]?.let { m ->
             runCatching {
                 val o = m.jsonObject

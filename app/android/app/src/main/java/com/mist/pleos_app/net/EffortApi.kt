@@ -26,6 +26,8 @@ data class PlaceResult(
     val placeId: String,
     val category: String?,
     val distanceM: Int?,
+    /** 카카오 분류의 모든 칸, 윗칸부터(#184 category_path). 출발 미리보기 배경 종류를 고르는 데만 쓴다. 없으면 []. */
+    val categoryPath: List<String> = emptyList(),
 )
 
 enum class PlacesStatus { OK, EMPTY, UNAVAILABLE }
@@ -113,6 +115,7 @@ fun parsePlaces(o: JsonObject): PlacesResult {
             placeId = s("place_id").orEmpty(),
             category = s("category"),
             distanceM = (p["distance_m"] as? JsonPrimitive)?.intOrNull,
+            categoryPath = (p["category_path"] as? JsonArray).orEmpty().mapNotNull { (it as? JsonPrimitive)?.contentOrNull?.takeIf(String::isNotEmpty) },
         )
     }
     // ok인데 목록이 비었으면 empty로 본다
