@@ -1183,6 +1183,12 @@ details ul.nav li.g{font-size:11.5px;font-weight:800;color:var(--ink-3);margin-t
 .arrpg:not(.p) .paper .bc span{font:400 26px/30px var(--font)}
 .arrpg:not(.p) .offer{padding:48px}
 .arrpg:not(.p) .rsheet{bottom:40px}
+/* 11/14 명준 코멘트: 중간 정산을 한 주행(영수증 하단 중간 정산 줄)도 바코드가 잘리지 않게 — 가로 창에서 그 줄이 있을 때만 줄 높이 · 간격을 조금 줄여 바코드 자리(94)를 만듦. 글자 크기 · 분할 창은 그대로 */
+.arrpg:not(.p) .paper:has(.sfold) .rrow{min-height:62px}
+.arrpg:not(.p) .paper:has(.sfold) .rsum{min-height:54px}
+.arrpg:not(.p) .paper:has(.sfold) .rule2{margin:18px 0 12px}
+.arrpg:not(.p) .paper:has(.sfold) .rs1{margin-top:14px;padding-top:12px}
+.arrpg:not(.p) .paper:has(.sfold) .rsum.tot + .sfold{margin-top:18px}
 /* 분할 창도 1~2px */
 .arrpg.p .paper .ph b{font:700 34px/44px var(--font)}
 .arrpg.p .paper .rrow .k,.arrpg.p .paper .rrow .v{font:400 30px/38px var(--font)}

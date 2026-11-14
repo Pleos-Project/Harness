@@ -1,5 +1,5 @@
 /* Design v2(운전 노고 정산) — 아티팩트 시안에서 옮김. 값은 tokens.css의 --cg-* 변수, 크기는 Connect-S 실제 픽셀(1dp = 1px). */
-/* [1차 화면에서 안 씀 · 11/14] 설정의 제안 방식(A/B) 줄을 뺐다(방식 A 고정). 아티팩트 v170에도 이 규칙이 없고, 이 조각은 이력으로만 남김 — 앱에 새로 만들지 않아도 됨 */
+/* [1차 화면에서 안 씀 · 11/14] 설정의 제안 방식(A/B) 줄을 뺐다(방식 A 고정). 아티팩트 v188에도 이 규칙이 없고, 이 조각은 이력으로만 남김 — 앱에 새로 만들지 않아도 됨 */
 .cg-seg{display:flex;gap:4px;padding:6px;border-radius:999px;background:var(--cg-btn-basic);flex:none}
 .cg-sg{height:76px;padding:0 30px;border-radius:999px;display:grid;place-items:center;font:var(--cg-body-l);color:var(--cg-text-tertiary);white-space:nowrap;cursor:pointer;transition:background .24s cubic-bezier(.32,.72,0,1),color .24s cubic-bezier(.32,.72,0,1)}
 .cg-sg.cg-on{background:var(--cg-surface-card);color:var(--cg-text-primary);font-weight:700;box-shadow:var(--cg-shadow-1)}

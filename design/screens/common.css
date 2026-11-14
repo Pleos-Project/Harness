@@ -137,7 +137,7 @@
 .cg-win{position:relative;height:1184px;border-radius:var(--cg-radius-win);overflow:hidden;background:var(--color-background-canvas);border:1px solid var(--cg-line-weak);flex:none}
 .cg-win--land{width:1700px}
 .cg-win--port{width:840px}
-/* 도착 확인 알림 보기 칸(정적 화면 전용 · v170): 시스템 알림은 앱 창 밖 화면 맨 위에 OS가 그린다. 앱 창(순정 내비) 옆에 따로 둔다 */
+/* 도착 확인 알림 보기 칸(정적 화면 전용 · v188): 시스템 알림은 앱 창 밖 화면 맨 위에 OS가 그린다. 앱 창(순정 내비) 옆에 따로 둔다 */
 .cg-sysn-stage{position:relative;width:780px;padding:40px 40px 72px;border-radius:var(--cg-radius-win);background:var(--cg-bg-primary);border:1px dashed var(--cg-line-strong);flex:none}
 .cg-sysn-stage .cg-sysn{position:relative;left:auto;top:auto;z-index:auto}
 .cg-app{position:absolute;inset:0;color:var(--cg-text-primary);font:14px/1.5 var(--cg-font)}
