@@ -1,0 +1,137 @@
+/* Design v2(운전 노고 정산) — 아티팩트 시안에서 옮김. 값은 tokens.css의 --cg-* 변수, 크기는 Connect-S 실제 픽셀(1dp = 1px). */
+/* ── 도착 계산 연출 (영수증 전, 11/7 명준 요청) ──
+   내 차(2D 옆모습)가 항목 체크포인트를 왼→오로 하나씩 들르고, 닿으면 빈 원이 채워지며 원 위에 그 항목 그래픽이 1.75초 나타났다 사라진다.
+   모션 성격 = Playful(ease-out-back 팝) + 차 이동은 ease-in-out 550ms. 흑백 유지(기획 요청), 움직임 줄이기 설정이면 바로 결과 */
+.cg-cprog{font:var(--cg-body-l);color:var(--cg-text-secondary);margin-top:-12px}
+.cg-calc{position:absolute;inset:0;pointer-events:none}
+.cg-ctrack{position:absolute;left:320px;right:240px;top:620px;height:0;border-top:4px solid var(--cg-line-strong)}
+.cg-cfill{position:absolute;left:0;top:-4px;height:4px;width:100%;background:var(--cg-text-primary);transform-origin:0 50%;transform:scaleX(calc(var(--k,0) / (var(--n) - 1)));transition:transform .55s cubic-bezier(.45,0,.25,1);will-change:transform}
+.cg-cn{position:absolute;left:calc(var(--i) / (var(--n) - 1) * 100%);top:-2px;width:0;height:0}
+.cg-cn .cg-dot{position:absolute;left:-30px;top:-30px;width:60px;height:60px;border-radius:50%;border:8px solid var(--cg-line-strong);background:var(--cg-surface-card)}
+.cg-cn.cg-on .cg-dot{background:var(--cg-text-primary);border-color:var(--cg-text-primary);animation:cg-pop .38s cubic-bezier(.175,.885,.32,1.275)}
+.cg-cn.cg-zero .cg-dot{background:var(--cg-text-quaternary);border-color:var(--cg-text-quaternary);animation:cg-pop .38s cubic-bezier(.175,.885,.32,1.275)}
+.cg-cn .cg-lb{position:absolute;left:-150px;width:300px;top:52px;text-align:center;font:var(--cg-body-l);color:var(--cg-text-secondary);white-space:nowrap}
+.cg-cn .cg-vl{position:absolute;left:-150px;width:300px;top:96px;text-align:center;font:var(--cg-title-s);white-space:nowrap;opacity:0;transform:translateY(10px);transition:opacity .25s ease-out,transform .35s cubic-bezier(.175,.885,.32,1.275)}
+.cg-cn.cg-on .cg-vl,.cg-cn.cg-zero .cg-vl{opacity:1;transform:none}
+.cg-cn.cg-zero .cg-vl{font:var(--cg-body-l);color:var(--cg-text-tertiary)}
+.cg-cn .cg-slot{position:absolute;left:-150px;width:300px;bottom:54px;height:240px}
+.cg-cc-car{position:absolute;top:-4px;left:calc(var(--k,0) / (var(--n) - 1) * 100% - var(--st,0px));width:105px;height:43px;transform:translate(calc(-100% - 36px),-100%);transition:translate .55s cubic-bezier(.45,0,.25,1);will-change:transform,translate}
+.cg-cc-o{position:absolute;inset:0}
+.cg-cc-car svg{width:100%;height:100%;overflow:visible;display:block}
+.cg-cc-car::after{content:"";position:absolute;left:12%;right:12%;bottom:-5px;height:5px;border-radius:50%;background:var(--cg-line)}
+.cg-calc.cg-p .cg-cc-car::after{display:none}
+.cg-cc-car.cg-moving svg{animation:cg-bob .32s ease-in-out infinite alternate}
+/* 출발 직전: 뒤로 살짝 웅크렸다(0.2초) 튀어 나감 */
+.cg-cc-car.cg-rev svg{animation:cg-rev .26s cubic-bezier(.3,0,.3,1) forwards;transform-origin:50% 100%}
+/* 출발 자리 = 날씨 원 앞 주차 자리보다 60px 뒤. 튀어 나갈 때만 살짝 지나쳤다 돌아오는 곡선 */
+.cg-cc-car.cg-start{--st:60px}
+.cg-calc.cg-p .cg-cc-car.cg-start{--st:0px}
+.cg-cc-car.cg-launch{transition:translate .46s cubic-bezier(.3,1.3,.5,1)}
+.cg-cc-car.cg-launch svg{animation:cg-jolt .46s cubic-bezier(.2,.8,.3,1)}
+/* 타이어 연기(레퍼런스): 바닥에 붙은 평평한 밑면 + 뭉게뭉게 윗면. 뒷바퀴 접지점에서 뒤로 퍼지며 부풀고, 차가 떠난 자리에 남았다 흩어짐(1.1초) */
+.cg-tsmoke{position:absolute;z-index:1;left:-263px;top:-47px;width:94px;height:43px;pointer-events:none;transform-origin:100% 100%}
+.cg-tsmoke .cg-plume{--fx:60px;position:absolute;inset:0;transform-origin:100% 100%;opacity:0;animation:cg-tire 1.3s linear forwards}
+.cg-tsmoke svg{display:block;width:100%;height:100%;overflow:visible}
+.cg-tsmoke path{fill:var(--cg-surface-card);stroke:var(--cg-text-primary);stroke-width:4;stroke-linejoin:round}
+/* 웅크림 중(바퀴 헛돌기)에 바퀴에서 생겨 → 차가 튀어 나가는 0.46초 동안 접지점이 차를 따라가며 늘어남(--fx) → 차가 떠나면 그 자리에 남아 뒤로 퍼지며 흩어짐 */
+.cg-calc.cg-p .cg-tsmoke{left:-98px;top:-140px;transform:rotate(90deg) scaleY(-1) scale(.62)}
+.cg-calc.cg-p .cg-tsmoke .cg-plume{--fx:0px}
+/* 시동 배기(처음 한 번만, 11/7 명준 스케치): 떨어진 구름이 아니라 배기구에 붙은 한 덩어리 연기가 관에서 밀려 나오듯 부풀어(0~50%),
+   뭉게뭉게 커지며 뒤쪽 위로 떨어져 나가 흩어짐(50~100%). 오른쪽 끝은 열린 선이라 차 뒤범퍼 밑으로 들어가 이어져 보임. 1초 */
+.cg-cc-car{z-index:2}
+.cg-smoke{position:absolute;z-index:1;left:-271px;top:-46px;width:80px;height:44px;pointer-events:none;will-change:translate;transform-origin:80px 30px;scale:.95}
+/* 11/7 명준: 5% 작게(배기구 붙는 점 기준) */
+.cg-smoke.cg-follow{transition:translate .46s cubic-bezier(.3,1.3,.5,1)}
+/* 끊김 없는 배기: 부풀기(scale) · 뒤로 흐르기(translate) · 옅어지기(opacity)를 서로 다른 한 곡선 애니메이션으로 겹침. 키프레임 단계가 없어 중간에 멈칫하지 않음 */
+.cg-smoke .cg-plume{position:absolute;inset:0;transform-origin:80px 30px;will-change:transform,opacity;
+  animation:cg-ex-grow .62s cubic-bezier(.2,.7,.3,1) both,cg-ex-drift 1.15s cubic-bezier(.45,0,.55,1) both,cg-ex-fade .5s .62s cubic-bezier(.4,0,1,1) forwards}
+.cg-smoke svg{display:block;width:100%;height:100%;overflow:visible;transform-origin:100% 68%;animation:cg-billow .4s ease-in-out infinite alternate}
+.cg-smoke path{fill:var(--cg-surface-card);stroke:var(--cg-text-primary);stroke-width:4;stroke-linejoin:round;stroke-linecap:round}
+.cg-calc.cg-p .cg-smoke{left:-95px;top:-126px;transform-origin:80px 30px;transform:rotate(90deg)}
+.cg-cc-car.cg-moving .cg-wh{animation:cg-spin .3s linear infinite}
+.cg-ctot{position:absolute;left:0;right:0;bottom:150px;display:flex;flex-direction:column;align-items:center;gap:8px;opacity:0;transform:translateY(24px) scale(.96)}
+.cg-ctot .cg-t1{font:var(--cg-headline-m)}
+.cg-ctot .cg-t2{font:var(--cg-title-m);color:var(--cg-text-secondary)}
+.cg-calc.cg-done .cg-ctot{opacity:1;transform:none;transition:opacity .35s ease-out,transform .5s cubic-bezier(.175,.885,.32,1.275)}
+.cg-calc.cg-done .cg-cc-car svg{animation:cg-hop .5s cubic-bezier(.3,0,.3,1) 2}
+/* 세로 840: 위→아래 */
+.cg-calc.cg-p .cg-ctrack{left:200px;right:auto;top:352px;bottom:178px;width:0;height:auto;border-top:none;border-left:4px solid var(--cg-line-strong)}
+.cg-calc.cg-p .cg-cfill{left:-4px;top:0;width:4px;height:100%;transform-origin:50% 0;transform:scaleY(calc(var(--k,0) / (var(--n) - 1)))}
+.cg-calc.cg-p .cg-cn{left:-2px;top:calc(var(--i) / (var(--n) - 1) * 100%)}
+.cg-calc.cg-p .cg-cn .cg-dot{left:-26px;top:-26px;width:52px;height:52px;border-width:7px}
+.cg-calc.cg-p .cg-cn .cg-lb{left:52px;width:auto;top:-38px;text-align:left;font:var(--cg-body-m-b)}
+.cg-calc.cg-p .cg-cn .cg-vl{left:52px;width:auto;top:0;text-align:left;font:var(--cg-body-l)}
+.cg-calc.cg-p .cg-cn.cg-zero .cg-vl{font:var(--cg-body-m)}
+.cg-calc.cg-p .cg-cn .cg-slot{left:330px;width:165px;bottom:auto;top:-66px;height:132px}
+.cg-calc.cg-p .cg-slot .cg-fxi{transform:scale(.55);transform-origin:0 0}
+/* 세로 레일: 차를 돌려 앞이 아래, 바퀴가 레일에 닿게 */
+.cg-calc.cg-p .cg-cc-car{left:-4px;top:calc(var(--k,0) / (var(--n) - 1) * 100%);width:32px;height:77px;transform:translate(-100%,calc(-100% - 28px))}
+.cg-calc.cg-p .cg-cc-o{inset:auto;left:50%;top:50%;width:77px;height:32px;margin:-16px 0 0 -38.5px;transform:rotate(-90deg) scaleX(-1)}
+.cg-calc.cg-p .cg-ctot{bottom:28px;left:40px;right:40px;align-items:flex-start}
+.cg-calc.cg-p .cg-ctot .cg-t1{font:var(--cg-headline-s)}
+.cg-calc.cg-p .cg-ctot .cg-t2{font:var(--cg-body-l)}
+/* 항목 그래픽(원 위 300×240). 나타남 ease-out-back → 머묾 → 위로 흩어지며 사라짐, 전체 1.75초 */
+.cg-fx{position:absolute;inset:0;animation:cg-fx 1.75s cubic-bezier(.2,.7,.2,1) forwards;pointer-events:none}
+.cg-fx.cg-still{animation:none}
+.cg-fx.cg-still *{animation-play-state:paused!important}
+.cg-fxi{position:absolute;left:0;top:0;width:300px;height:240px}
+.cg-fx .cg-cloud{position:absolute;left:65px;top:0;width:170px;height:80px;overflow:visible}
+.cg-fx .cg-cloud path{fill:var(--cg-surface-card);stroke:var(--cg-text-primary);stroke-width:5;stroke-linejoin:round}
+.cg-fx .cg-dr{position:absolute;top:86px;width:5px;height:26px;border-radius:3px;background:var(--cg-text-primary);animation:cg-rain .6s ease-in infinite;animation-delay:calc(var(--d) * -1s)}
+.cg-fx .cg-sf{position:absolute;top:84px;width:18px;height:18px;border-radius:50%;background:var(--cg-surface-card);border:4px solid var(--cg-text-primary);animation:cg-snow 1.4s ease-in-out infinite;animation-delay:calc(var(--d) * -1s)}
+.cg-fx .cg-sun{position:absolute;left:118px;top:10px;width:64px;height:64px;border-radius:50%;border:5px solid var(--cg-text-primary);background:var(--cg-surface-card)}
+.cg-fx .cg-sun::before{content:"";position:absolute;inset:-24px;border-radius:50%;border:6px dotted var(--cg-text-tertiary);animation:cg-spin 5s linear infinite}
+.cg-fx .cg-lf{position:absolute;top:60px;width:32px;height:18px;border-radius:0 100% 0 100%;background:var(--cg-text-tertiary);animation:cg-leaf 1.6s ease-in-out infinite;animation-delay:calc(var(--d) * -1s)}
+.cg-fx .cg-jc{position:absolute;top:150px;width:86px;height:36px;animation:cg-crawl 1.75s cubic-bezier(.3,.6,.4,1) forwards}
+.cg-fx .cg-jc svg{width:100%;height:100%;overflow:visible;display:block;animation:cg-jit .16s ease-in-out infinite alternate;animation-delay:calc(var(--d) * -1s)}
+.cg-fx .cg-hk{position:absolute;left:18px;top:-64px;font:800 24px/1 var(--cg-font);background:var(--cg-surface-card);border:3px solid var(--cg-text-primary);border-radius:16px;padding:7px 10px;white-space:nowrap;opacity:0;animation:cg-honk .5s cubic-bezier(.175,.885,.32,1.275) var(--h) forwards}
+.cg-fx .cg-hk::after{content:"";position:absolute;left:18px;bottom:-11px;width:12px;height:12px;background:var(--cg-surface-card);border-right:3px solid var(--cg-text-primary);border-bottom:3px solid var(--cg-text-primary);transform:rotate(45deg)}
+.cg-fx .cg-zc{position:absolute;left:20px;top:150px;width:86px;height:36px;animation:cg-zip 1.1s cubic-bezier(.6,0,.2,1) forwards}
+.cg-fx .cg-zc svg{width:100%;height:100%;overflow:visible;display:block}
+.cg-fx .cg-tg{position:absolute;left:180px;top:60px;font:800 28px/1 var(--cg-font);background:var(--cg-surface-card);border:3px solid var(--cg-text-primary);border-radius:18px;padding:9px 14px;white-space:nowrap;opacity:0;animation:cg-honk .5s cubic-bezier(.175,.885,.32,1.275) .35s forwards}
+.cg-fx .cg-clk{position:absolute;left:95px;top:30px;width:110px;height:110px;border-radius:50%;border:6px solid var(--cg-text-primary);background:var(--cg-surface-card)}
+.cg-fx .cg-clk::after{content:"";position:absolute;left:50%;top:50%;width:14px;height:14px;margin:-7px;border-radius:50%;background:var(--cg-text-primary)}
+.cg-fx .cg-hand{position:absolute;left:50%;top:calc(50% - 38px);width:6px;height:38px;margin-left:-3px;border-radius:3px;background:var(--cg-text-primary);transform-origin:50% 100%;animation:cg-spin .5s cubic-bezier(.4,0,.6,1) 3}
+.cg-fx .cg-moon{position:absolute;left:100px;top:34px;width:96px;height:96px;border-radius:50%;box-shadow:inset -26px 10px 0 0 var(--cg-text-primary);animation:cg-rise 1.2s cubic-bezier(.2,.7,.2,1) both}
+.cg-fx .cg-st{position:absolute;width:20px;height:20px;background:var(--cg-text-primary);clip-path:polygon(50% 0,62% 38%,100% 50%,62% 62%,50% 100%,38% 62%,0 50%,38% 38%);animation:cg-twk .7s ease-in-out infinite alternate;animation-delay:calc(var(--d) * -1s)}
+.cg-fx .cg-hg{position:absolute;left:110px;top:24px;width:80px;height:124px;overflow:visible;animation:cg-flip 1.75s cubic-bezier(.6,0,.2,1) both}
+.cg-fx .cg-hg path{fill:none;stroke:var(--cg-text-primary);stroke-width:6;stroke-linejoin:round;stroke-linecap:round}
+.cg-fx .cg-hg .cg-sand{fill:var(--cg-text-primary);stroke:none}
+.cg-fx .cg-road{position:absolute;left:20px;right:20px;top:192px;height:6px;background:repeating-linear-gradient(90deg,var(--cg-text-tertiary) 0 30px,transparent 30px 52px);animation:cg-road .35s linear infinite}
+.cg-fx .cg-dc{position:absolute;left:107px;top:150px;width:86px;height:36px}
+.cg-fx .cg-dc svg{width:100%;height:100%;overflow:visible;display:block;animation:cg-jit .18s ease-in-out infinite alternate}
+.cg-fx .cg-cnt{position:absolute;left:0;right:0;top:46px;text-align:center;font:var(--cg-headline-m);font-variant-numeric:tabular-nums;white-space:nowrap}
+.cg-fx .cg-cnt small{font:var(--cg-title-s);color:var(--cg-text-secondary);margin-left:6px}
+.cg-fx .cg-none{position:absolute;left:90px;top:110px;font:var(--cg-title-s);color:var(--cg-text-tertiary);background:var(--cg-surface-card);border:3px dashed var(--cg-line-strong);border-radius:20px;padding:10px 24px;animation:cg-honk .45s cubic-bezier(.175,.885,.32,1.275) .1s both}
+.cg-fx.cg-still .cg-hk,.cg-fx.cg-still .cg-tg,.cg-fx.cg-still .cg-none{opacity:1;animation:none}
+/* 계산 연출: 레일·항목을 창 가운데로(11/8 명준 "화면 중앙으로 오도록 정렬") */
+.cg-calc.cg-p .cg-ctrack{left:308px}
+.cg-calc.cg-p .cg-cn .cg-slot{left:250px}
+.cg-calc.cg-p .cg-ctot{align-items:center;text-align:center}
+/* 도착 계산: 뉴트럴 트랙 + 라임 진행 표시 */
+.cg-ctrack,.cg-calc.cg-p .cg-ctrack{border-color:var(--color-progress-track)}
+.cg-cfill{background:var(--color-progress-line)}
+.cg-cn .cg-dot{border-color:var(--color-progress-track);background:var(--color-background-canvas);border-width:6px}
+.cg-calc.cg-p .cg-cn .cg-dot{border-width:5px}
+.cg-cn.cg-on .cg-dot{background:var(--color-progress-indicator);border-color:var(--color-progress-indicator-border);border-width:4px}
+.cg-cn.cg-zero .cg-dot{background:var(--color-text-disabled);border-color:var(--color-text-disabled)}
+/* 크기: 170 × 70 틀(바닥 68 · 그림자 포함) */
+.cg-cc-car{height:43px}
+.cg-cc-car::after,.cg-hero .cg-ill::after{display:none}
+.cg-calc.cg-p .cg-cc-car{width:32px}
+.cg-calc.cg-p .cg-cc-o{width:77px;height:32px;margin:-16px 0 0 -38.5px}
+.cg-fx .cg-jc,.cg-fx .cg-zc,.cg-fx .cg-dc{height:36px;top:150px}
+/* 계산 연출(가로 창): 노고 카를 1.5배로 키워 주인공으로. 앞 범퍼 · 바닥 기준(오른쪽 아래)으로 키워 체크포인트 원과 겹치지 않음 → 배기 · 타이어 연기 붙는 자리도 같이 옮김 */
+.cg-calc:not(.cg-p) .cg-cc-o{transform:translateY(5px) scale(1.275);transform-origin:100% 100%}
+/* 11/9 명준: 1.5배 → 15% 줄임(1.275배) */
+.cg-calc.cg-p .cg-cc-o{transform:rotate(-90deg) scaleX(-1) scale(.85)}
+/* 분할 창도 15% 줄임 */
+.cg-calc:not(.cg-p) .cg-smoke{left:-324px;top:-44px}
+.cg-calc:not(.cg-p) .cg-tsmoke{left:-312px}
+/* 속을 불투명하게 → 선이 원 뒤로 완전히 숨음, 원과 원 사이만 선으로 이어짐 */
+.cg-cn .cg-dot{z-index:1}
+.cg-cn .cg-lb,.cg-cn .cg-vl,.cg-cn .cg-slot{z-index:2}
+.cg-smoke,.cg-tsmoke{display:none!important}
+/* 계산 연출 원 아래 값 두 줄(D1): 시간 / +% · 분할은 한 줄 */
+.cg-cn .cg-vl small{display:block;font:inherit}
+.cg-calc.cg-p .cg-cn .cg-vl small{display:inline;margin-left:10px}
