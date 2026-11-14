@@ -1,6 +1,11 @@
 package com.mist.pleos_app.ui
 
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.Crossfade
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.Easing
@@ -99,8 +104,8 @@ import com.mist.pleos_app.ui.components.CgPlaceLine
 import com.mist.pleos_app.ui.theme.MinTouch
 import com.mist.pleos_app.ui.theme.Chagok
 import com.mist.pleos_app.ui.theme.ChagokColors
+import com.mist.pleos_app.ui.theme.ChagokMotion
 import com.mist.pleos_app.ui.theme.gpx
-import com.mist.pleos_app.ui.theme.gsp
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -120,7 +125,6 @@ private val Lime = Color(0xFFC8F04A)
 private val LimeInk = Color(0xFF242135)
 private val EaseOut = CubicBezierEasing(0f, 0f, .58f, 1f)
 private val EaseInOut = CubicBezierEasing(.42f, 0f, .58f, 1f)
-private val Std = CubicBezierEasing(.2f, 0f, 0f, 1f)
 private val Rise = CubicBezierEasing(.05f, .7f, .1f, 1f)
 private val PopE = CubicBezierEasing(.2f, .7f, .3f, 1f)
 private val JumpE = CubicBezierEasing(.3f, .7f, .4f, 1f)
@@ -250,6 +254,7 @@ internal fun EffortReviewScreen(
         k < 0 -> stringResource(R.string.effort_calc_start)
         else -> sayText(items[k.coerceAtMost(items.lastIndex)].say)
     }
+    val sayRise = with(LocalDensity.current) { 10.gpx.roundToPx() }
     val scope = androidx.compose.runtime.rememberCoroutineScope()
     val skip = {
         if (!done) {
@@ -271,7 +276,14 @@ internal fun EffortReviewScreen(
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.gpx)) {
                     CgPlaceLine(stringResource(R.string.effort_arrive_title, trip.destName), trip.destName, if (narrow) t.titleL else t.headlineM, c.textPrimary)
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.gpx)) {
-                        Crossfade(say, animationSpec = tween(280, easing = Std), label = "say") { s ->
+                        // 아래 줄 문구 전환: 아래에서 10 올라오며 바뀜 0.28초(시안 rv-say)
+                        AnimatedContent(
+                            say, label = "say",
+                            transitionSpec = {
+                                (fadeIn(tween(280, easing = ChagokMotion.Out)) + slideInVertically(tween(280, easing = ChagokMotion.Out)) { sayRise }) togetherWith
+                                    fadeOut(tween(280, easing = ChagokMotion.Out))
+                            },
+                        ) { s ->
                             Text(
                                 s, Modifier.heightIn(min = (if (narrow) 38 else 44).gpx).semantics { liveRegion = LiveRegionMode.Polite },
                                 style = if (narrow) t.bodyL else t.titleM, color = if (done) c.textSecondary else c.textPrimary,
@@ -284,16 +296,16 @@ internal fun EffortReviewScreen(
                 if (!done) GhostButton(stringResource(R.string.effort_calc_skip), skip)
             }
             Row(Modifier.fillMaxWidth().weight(1f)) {
-                // 왼쪽: 노고(가로 820 · 분할 360)
-                Character(
-                    Modifier.width((if (narrow) 360 else 820).gpx).fillMaxHeight(), narrow, reduce, pose, body, { bodyP.value },
+                // 왼쪽: 노고(가로 820). 분할은 캐릭터를 그리지 않고 오른쪽 열이 전체 폭(시안 `.p .rv`: 캐릭터가 잘리기만 해서 뺌)
+                if (!narrow) Character(
+                    Modifier.width(820.gpx).fillMaxHeight(), narrow, reduce, pose, body, { bodyP.value },
                     { glow.value }, { stars.value }, c,
                 )
                 // 오른쪽: 기준 5줄 + 버튼
                 Column(
                     Modifier.weight(1f).fillMaxHeight().padding(
-                        start = (if (narrow) 16 else 40).gpx, top = (if (narrow) 16 else 40).gpx,
-                        end = (if (narrow) 40 else 64).gpx, bottom = (if (narrow) 48 else 96).gpx,
+                        start = 40.gpx, top = (if (narrow) 16 else 40).gpx,
+                        end = (if (narrow) 40 else 64).gpx, bottom = (if (narrow) 40 else 96).gpx,
                     ),
                 ) {
                     val gap = (if (narrow) 6 else 8).gpx
@@ -303,23 +315,29 @@ internal fun EffortReviewScreen(
                             // 영수증("비, 주행 내내")과 어긋났다(11/14 에뮬). 세는 중인 줄만 세는 값
                             val settled = states[i] == RowState.ON || states[i] == RowState.OFF
                             ReviewRow(
-                                Modifier.fillMaxWidth().weight(1f).heightIn(min = (if (narrow) 84 else 112).gpx, max = 170.gpx),
+                                Modifier.fillMaxWidth().weight(1f).heightIn(min = (if (narrow) 104 else 112).gpx, max = 170.gpx),
                                 it, if (settled) (if (it.on) RowState.ON else RowState.OFF) else states[i], if (settled) it.value else shown[i],
                                 { ring[i].value }, { pop[i].value }, { fx[i].value }, i == items.lastIndex, gap, narrow, c,
                             )
                         }
                     }
                     // 버튼(세는 동안 숨김 · 자리는 남김) — 다 세면 아래에서 올라오며 나타남(0.42초, 0.07초 차이)
-                    Row(Modifier.padding(top = (if (narrow) 24 else 40).gpx), horizontalArrangement = Arrangement.spacedBy((if (narrow) 12 else 16).gpx)) {
+                    // 분할: 창 너비로 늘려 [챙겨주기] 2 : [다음에] 1(시안 `.p .rv .rvb`). 혼자는 [영수증 보기] 하나가 전체 폭
+                    Row(
+                        (if (narrow) Modifier.fillMaxWidth() else Modifier).padding(top = (if (narrow) 24 else 40).gpx),
+                        horizontalArrangement = Arrangement.spacedBy((if (narrow) 12 else 16).gpx),
+                    ) {
                         val lift = { a: Animatable<Float, *> -> Modifier.graphicsLayer { alpha = a.value; translationY = (1f - a.value) * 24f } }
                         ReviewButton(
                             stringResource(if (solo) R.string.effort_review_receipt else R.string.effort_review_consent),
                             if (solo) ReviewBtnIcon.RECEIPT else ReviewBtnIcon.HAND_HEART, filled = true, nudge = done && !reduce,
-                            enabled = done, onClick = onConsent, narrow = narrow, modifier = lift(btn[0]),
+                            enabled = done, onClick = onConsent, narrow = narrow,
+                            modifier = (if (narrow) Modifier.weight(if (solo) 1f else 2f) else Modifier).then(lift(btn[0])),
                         )
                         if (!solo) ReviewButton(
                             stringResource(R.string.effort_review_later), null, filled = false, nudge = false,
-                            enabled = done, onClick = onLater, narrow = narrow, modifier = lift(btn[1]),
+                            enabled = done, onClick = onLater, narrow = narrow,
+                            modifier = (if (narrow) Modifier.weight(1f) else Modifier).then(lift(btn[1])),
                         )
                     }
                 }
@@ -354,9 +372,9 @@ private fun GhostButton(text: String, onClick: () -> Unit) {
     val src = remember { MutableInteractionSource() }
     val pressed by src.collectIsPressedAsState()
     Box(
-        Modifier.defaultMinSize(minWidth = 120.gpx, minHeight = 80.gpx.coerceAtLeast(MinTouch))
+        Modifier.defaultMinSize(minWidth = 0.gpx, minHeight = 80.gpx.coerceAtLeast(MinTouch))
             .background(if (pressed) c.btnTertiaryPressed else Color.Transparent, RoundedCornerShape(24.gpx))
-            .clickable(src, indication = null, role = Role.Button, onClick = onClick).padding(horizontal = 30.gpx),
+            .clickable(src, indication = null, role = Role.Button, onClick = onClick).padding(horizontal = 16.gpx),
         contentAlignment = Alignment.Center,
     ) { Text(text, style = Chagok.type.bodyL, color = c.btnTertiaryText, maxLines = 1) }
 }
@@ -459,7 +477,7 @@ private fun ReviewRow(
     ring: () -> Float, pop: () -> Float, fx: () -> Float, last: Boolean, gap: Dp, narrow: Boolean, c: ChagokColors,
 ) {
     val t = Chagok.type
-    val circle = (if (narrow) 64 else 100).gpx
+    val circle = (if (narrow) 88 else 100).gpx
     val d = LocalDensity.current
     val gapPx = with(d) { gap.toPx() }
     val lineColor = if (st == RowState.ON || st == RowState.OFF) c.textPrimary else c.dividerDefault
@@ -473,7 +491,7 @@ private fun ReviewRow(
             drawLine(lineColor, Offset(x, cy + r), Offset(x, cy + size.height + gapPx - r), 2f)
         },
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy((if (narrow) 12 else 24).gpx),
+        horizontalArrangement = Arrangement.spacedBy((if (narrow) 20 else 24).gpx),
     ) {
         // 원
         Box(Modifier.size(circle).graphicsLayer { val s = pop(); scaleX = s; scaleY = s }, contentAlignment = Alignment.Center) {
@@ -496,12 +514,12 @@ private fun ReviewRow(
                 ReviewIcon.RAIN -> CgIcon.Rain; ReviewIcon.SNOW -> CgIcon.Snow; ReviewIcon.TRAFFIC -> CgIcon.Traffic
                 ReviewIcon.DELAY -> CgIcon.Delay; ReviewIcon.MOON -> CgIcon.Moon; ReviewIcon.HOURGLASS -> CgIcon.Hourglass
             }
-            CgIconMark(ic, (if (narrow) 32 else 50).gpx, when (st) { RowState.ON -> LimeInk; RowState.NOW -> c.textPrimary; else -> c.textTertiary })
+            CgIconMark(ic, (if (narrow) 44 else 50).gpx, when (st) { RowState.ON -> LimeInk; RowState.NOW -> c.textPrimary; else -> c.textTertiary })
         }
         // 이름
         Text(
-            it.label, Modifier.width((if (narrow) 124 else 200).gpx),
-            style = if (narrow) t.bodyL.copy(fontWeight = FontWeight.Bold, fontSize = 24.gsp, lineHeight = 32.gsp) else t.titleM,
+            it.label, Modifier.width((if (narrow) 150 else 200).gpx),
+            style = if (narrow) t.bodyL else t.titleM,
             color = if (st == RowState.NOW || st == RowState.ON) c.textPrimary else c.textTertiary, maxLines = 1, softWrap = false,
         )
         // 작은 움직임(세는 줄 · 있음일 때만)
@@ -510,8 +528,8 @@ private fun ReviewRow(
         }
         // 값
         Text(
-            value, Modifier.widthIn(min = (if (narrow) 128 else 220).gpx),
-            style = (if (narrow) t.bodyL.copy(fontWeight = FontWeight.Bold, fontSize = 26.gsp, lineHeight = 34.gsp) else t.titleL)
+            value, Modifier.widthIn(min = (if (narrow) 170 else 220).gpx),
+            style = (if (narrow) t.titleS else t.titleL)
                 .let { s -> if (st == RowState.OFF) s.copy(fontWeight = FontWeight.Normal) else s },
             color = if (st == RowState.OFF) c.textTertiary else c.textPrimary,
             textAlign = TextAlign.End, maxLines = 1, softWrap = false,
@@ -627,7 +645,7 @@ private fun ReviewButton(
     val hh = remember { Triple(PathParser().parsePathString(HH_HAND).toPath(), PathParser().parsePathString(HH_SIL).toPath(), PathParser().parsePathString(HH_HEART).toPath().apply { fillType = PathFillType.EvenOdd }) }
     Row(
         modifier
-            .defaultMinSize(minWidth = 120.gpx, minHeight = (if (narrow) 80 else 100).gpx.coerceAtLeast(MinTouch))
+            .defaultMinSize(minWidth = if (narrow) 0.gpx else 140.gpx, minHeight = (if (narrow) 80 else 100).gpx.coerceAtLeast(MinTouch))
             .drawBehind {
                 if (!active()) return@drawBehind
                 // 라임 물결(box-shadow 0 → 18px 투명, 앞 28%)
@@ -640,7 +658,7 @@ private fun ReviewButton(
             .clickable(src, indication = null, enabled = enabled, role = Role.Button, onClick = onClick)
             .padding(horizontal = (if (narrow) 20 else 38).gpx),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy((if (narrow) 10 else 12).gpx, Alignment.CenterHorizontally),
+        horizontalArrangement = Arrangement.spacedBy((if (narrow) 10 else 16).gpx, Alignment.CenterHorizontally),
     ) {
         val isz = (if (narrow) 28 else 32).gpx
         when (icon) {
