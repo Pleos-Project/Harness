@@ -13,6 +13,8 @@ import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ServiceInfo
+import android.graphics.Bitmap
+import android.graphics.Canvas
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
@@ -24,6 +26,8 @@ import com.mist.pleos_app.effort.GuideEnd
 import com.mist.pleos_app.effort.RouteStart
 import com.mist.pleos_app.effort.isoNow
 import com.mist.pleos_app.util.ChagokLog
+import java.time.OffsetDateTime
+import java.time.format.DateTimeFormatter
 
 /**
  * 주행 중 포그라운드 서비스(DECISIONS 11/12 '주행 중 포그라운드 서비스', F22).
@@ -45,6 +49,8 @@ class TripService : Service() {
         private const val ID_ARRIVE = 2
         private const val EXTRA_DEST = "dest"
         private const val EXTRA_FRESH = "fresh"
+        /** 도착 확인 알림의 [닫기]: 알림만 지운다. 내비·출발 기록·남긴 안내 끝은 그대로(AC-N-6). */
+        private const val ACTION_DISMISS_ARRIVE = "com.mist.pleos_app.trip.DISMISS_ARRIVE"
         private const val PREFS = "trip_service"
         private const val K_KIND = "end_kind"
         private const val K_AT = "end_at"
@@ -153,6 +159,11 @@ class TripService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        if (intent?.action == ACTION_DISMISS_ARRIVE) {
+            nm().cancel(ID_ARRIVE)
+            if (!running) stopSelf()   // 서비스가 이미 끝난 뒤의 [닫기]면 이 호출로 뜬 서비스만 정리
+            return START_NOT_STICKY
+        }
         val dest = intent?.getStringExtra(EXTRA_DEST)
         if (dest == null) { stopSelf(); return START_NOT_STICKY }   // 시스템이 다시 만든 경우 등: 출발 기록은 앱이 다시 보일 때 sync로 맞춘다
         try {
@@ -240,7 +251,7 @@ class TripService : Service() {
         if (p.getString(K_KIND, null) != GUIDE_ARRIVED) p.edit().putString(K_KIND, kind).putString(K_AT, at).apply()   // 도착이 안내 종료보다 강한 근거라 덮어쓰지 않는다
         if (!notified) {
             notified = true
-            nm().notify(ID_ARRIVE, arriveNotification())      // 누르면 노고가 열리고, 남긴 신호 시각으로 도착한다
+            nm().notify(ID_ARRIVE, arriveNotification(kind, at))      // 누르면 노고가 열리고, 남긴 신호 시각으로 도착한다
         }
     }
 
@@ -294,13 +305,47 @@ class TripService : Service() {
             .setContentIntent(openApp())
             .build()
 
-    private fun arriveNotification(): Notification =
-        Notification.Builder(this, CH_ARRIVE)
+    /**
+     * 도착 확인 알림(디자인 v2 arr-noti). OS(Pleos)가 그리고, 앱은 아이콘·제목·본문·버튼·누르면 갈 곳만 정한다.
+     * 도착 신호면 "목적지에 도착했어요"와 장소·신호 시각을 보여 주고, 안내 종료(도착이 아닐 수 있음)는 "도착했나요?"를 유지한다.
+     * 버튼은 [열기](= 알림 누름과 같음) · [닫기](알림만 지움). 앱을 스스로 띄우지 않는다(F22 '알림과 열기').
+     */
+    private fun arriveNotification(kind: String, at: String): Notification {
+        val arrived = kind == GUIDE_ARRIVED
+        val title = getString(if (arrived) R.string.trip_noti_arrive_title_arrived else R.string.trip_noti_arrive_title)
+        val text = if (arrived) getString(R.string.trip_noti_arrive_text_arrived, current?.takeIf { it.isNotBlank() } ?: getString(R.string.trip_noti_dest_fallback), clock(at))
+        else getString(R.string.trip_noti_arrive_text)
+        val b = Notification.Builder(this, CH_ARRIVE)
             .setSmallIcon(R.mipmap.ic_launcher)
-            .setContentTitle(getString(R.string.trip_noti_arrive_title))
-            .setContentText(getString(R.string.trip_noti_arrive_text))
+            .setContentTitle(title)
+            .setContentText(text.substringBefore("\n"))
+            .setStyle(Notification.BigTextStyle().bigText(text))
             .setCategory(Notification.CATEGORY_MESSAGE)
             .setAutoCancel(true)
             .setContentIntent(openApp())
-            .build()
+            .addAction(Notification.Action.Builder(null, getString(R.string.trip_noti_open), openApp()).build())
+            .addAction(Notification.Action.Builder(null, getString(R.string.trip_noti_close), dismissArrive()).build())
+        largeIcon()?.let { b.setLargeIcon(it) }
+        return b.build()
+    }
+
+    private fun dismissArrive(): PendingIntent =
+        PendingIntent.getService(this, 1, Intent(this, TripService::class.java).setAction(ACTION_DISMISS_ARRIVE), PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
+
+    /** 신호 받은 시각(ISO)을 기기 시간대 기준 HH:mm으로. 읽지 못하면 지금 시각. */
+    private fun clock(at: String): String {
+        val fmt = DateTimeFormatter.ofPattern("HH:mm")
+        return runCatching { OffsetDateTime.parse(at).atZoneSameInstant(java.time.ZoneId.systemDefault()).format(fmt) }
+            .getOrElse { java.time.LocalTime.now().format(fmt) }
+    }
+
+    /**
+     * 큰 아이콘 100px. 지금은 라임 그라데이션 앱 아이콘이다.
+     * TODO(PR-3L 로고 v2 머지 뒤): 주간 lime-solid · 야간 ink-solid로 바꾼다(디자인 v2 11/14, 그라데이션 안 씀).
+     */
+    private fun largeIcon(): Bitmap? = runCatching {
+        val d = getDrawable(R.drawable.nogo_icon_lime_gradient) ?: return null
+        val px = (100 * resources.displayMetrics.density).toInt().coerceAtLeast(1)
+        Bitmap.createBitmap(px, px, Bitmap.Config.ARGB_8888).also { bm -> d.setBounds(0, 0, px, px); d.draw(Canvas(bm)) }
+    }.getOrNull()
 }
