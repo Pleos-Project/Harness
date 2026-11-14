@@ -2,6 +2,7 @@ package com.mist.pleos_app.trip
 
 import ai.pleos.playground.navi.data.DestinationArrivedInfo
 import ai.pleos.playground.navi.data.RouteStartInfo
+import ai.pleos.playground.navi.data.WaypointChangedInfo
 import ai.pleos.playground.navi.helper.NaviHelper
 import ai.pleos.playground.navi.helper.listener.NaviHelperEventListener
 import ai.pleos.playground.vehicle.Vehicle
@@ -122,14 +123,11 @@ class TripService : Service() {
     private var failedSent = false
 
     private val listener = object : NaviHelperEventListener {
-        override fun onRouteStarted(routeStartInfo: RouteStartInfo) {
-            main.post {
-                clearGuideEnd(this@TripService); notified = false; opened = false; routeStarted = true
-                stopWaitPark()
-                nm().cancel(ID_ARRIVE)
-                ChagokLog.event("trip_service_guide", "kind" to "started")
-            }
-        }
+        override fun onRouteStarted(routeStartInfo: RouteStartInfo) { main.post { guideRestarted("started") } }
+
+        // 경유지를 넣거나 지우면 onRouteStarted 없이 onRouteCancelled → onWaypointChanged가 온다(11/14 에뮬, #145).
+        // 앞의 취소는 안내 종료가 아니라 경로를 다시 잡은 것이라 새 안내 시작처럼 지운다. 출발 기록은 그대로(name은 경유지 이름)
+        override fun onWaypointChanged(waypointChangedInfo: WaypointChangedInfo) { main.post { guideRestarted("waypoint") } }
 
         // 이벤트가 두 번씩 와도(11/7 실측) 알림은 안내 한 번에 1번. 받은 시각은 콜백이 온 때(#145)
         override fun onDestinationArrived(destinationArrivedInfo: DestinationArrivedInfo) { val at = isoNow(); main.post { guideEnded(GUIDE_ARRIVED, at) } }
@@ -198,6 +196,14 @@ class TripService : Service() {
         } catch (e: Exception) {
             ChagokLog.event("trip_service_navi", "ok" to false, "err" to e.javaClass.simpleName)
         }
+    }
+
+    /** 새 안내가 시작됨(목적지를 바꿈 · 다시 안내 · 경유지 변경) → 앞서 받은 안내 끝과 도착 확인 알림을 지운다. */
+    private fun guideRestarted(kind: String) {
+        clearGuideEnd(this); notified = false; opened = false; routeStarted = true
+        stopWaitPark()
+        nm().cancel(ID_ARRIVE)
+        ChagokLog.event("trip_service_guide", "kind" to kind)
     }
 
     /** 안내 끝. 앱이 보이면 화면 쪽(NaviRepository → 뷰모델)이 처리하니 기억·알림 없이 넘긴다. */

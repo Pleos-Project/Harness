@@ -511,7 +511,7 @@ class EffortViewModel(app: Application, private val saved: SavedStateHandle) : A
         if (lastParked) onCar(true)
     }
 
-    /** 내비가 새 안내를 시작함(목적지를 바꿈 · 다시 안내 등) → 앞서 받은 안내 끝과 질문은 버린다. */
+    /** 내비가 새 안내를 시작함(목적지를 바꿈 · 다시 안내 · 경유지 변경) → 앞서 받은 안내 끝과 질문은 버린다. */
     fun onGuideStarted() {
         if (pendingArrival != null || arriveAsk != null) ChagokLog.event("effort_guide_restart")
         clearGuideEnd(); refresh()
