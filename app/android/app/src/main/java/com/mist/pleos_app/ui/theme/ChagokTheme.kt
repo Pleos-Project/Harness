@@ -1,6 +1,8 @@
 package com.mist.pleos_app.ui.theme
 
+import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
@@ -10,6 +12,7 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -53,6 +56,7 @@ data class ChagokColors(
     // Design v2(11/8, #75) 흑백 와이어가 쓰는 면·선·자리
     val surfaceCard: Color,
     val lineWeak: Color,
+    /** 이름은 그대로 두지만(사용처가 많음) 값 = --color-border-subtle(아티팩트 옛 별칭 --div3). 강한 테두리는 [borderStrong]. */
     val lineStrong: Color,
     val placeholder: Color,
     val placeholderStrong: Color,
@@ -111,6 +115,18 @@ data class ChagokColors(
     val receiptDetailBackground: Color,   // 영수증 근거 펼침 칸
     val skeletonBase: Color,
     val skeletonHighlight: Color,
+    // Design v2 디자인시스템(11/14) — tokens.css v3.1 --color-* 중 앱에 없던 것. 값은 v3.1, v4 교체는 따로(PR-V4).
+    // hover 3종(--color-button-primary-hover · secondary-hover · --color-overlay-hover)은 터치 화면이라 넣지 않는다.
+    val textLink: Color,                  // 글자 링크(--color-text-link)
+    val iconPrimary: Color,               // 기본 아이콘(--color-icon-primary)
+    val fieldForeground: Color,           // 입력칸 글자(--color-field-foreground)
+    val fieldPlaceholder: Color,          // 입력칸 안내 글자(--color-field-placeholder)
+    val receiptPrinterSlot: Color,        // 영수증 출력구 홈(--color-receipt-printer-slot, 주간·야간 같음)
+    val receiptResultText: Color,         // 영수증 결과 글자(--color-receipt-result-text)
+    val statusNeutralBackground: Color,   // 중립 상태 칩 면(--color-status-neutral-background)
+    val statusNeutralForeground: Color,   // 중립 상태 칩 글자(--color-status-neutral-foreground)
+    val overlayPressed: Color,            // 눌림 겹침(--color-overlay-pressed, 값 = btnTertiaryPressed)
+    val reviewRain: Color,                // 돌아보기 비 줄기(아티팩트 --rc, tokens.css에는 없음 · v4와 무관)
     /** 야간 테마인지(로고 · 앱 아이콘처럼 주간 · 야간 그림이 따로 있는 곳에서 고름). */
     val isDark: Boolean = false,
 )
@@ -173,6 +189,11 @@ private val DarkColors = ChagokColors(
     borderStrong = Color(0xFF8B849C), btnTertiaryText = Color(0xFFDEDAE8), btnTertiaryPressed = Color(0x1FFFFFFF),
     surfaceModal = Color(0xFF3A354A), surfaceNotification = Color(0xFF3A354A), sheetBorder = Color(0x00000000),
     receiptDetailBackground = Color(0xFF292538), skeletonBase = Color(0xFF3A354A), skeletonHighlight = Color(0xFF51495F),
+    textLink = Color(0xFFD9F77A), iconPrimary = Color(0xFFF7F5FC),
+    fieldForeground = Color(0xFFF7F5FC), fieldPlaceholder = Color(0xFFAFA8BD),
+    receiptPrinterSlot = Color(0xFF171B22), receiptResultText = Color(0xFFF7F5FC),
+    statusNeutralBackground = Color(0xFF3A354A), statusNeutralForeground = Color(0xFFDEDAE8),
+    overlayPressed = Color(0x1FFFFFFF), reviewRain = Color(0x4DFFFFFF),
     isDark = true,
 )
 
@@ -234,6 +255,11 @@ private val LightColors = ChagokColors(
     borderStrong = Color(0xFF797187), btnTertiaryText = Color(0xFF51495F), btnTertiaryPressed = Color(0x1F242033),
     surfaceModal = Color(0xFFFFFFFF), surfaceNotification = Color(0xFFFFFFFF), sheetBorder = Color(0xFFDEDAE8),
     receiptDetailBackground = Color(0xFFF7F5FC), skeletonBase = Color(0xFFEFEDF5), skeletonHighlight = Color(0xFFDEDAE8),
+    textLink = Color(0xFF445616), iconPrimary = Color(0xFF242033),
+    fieldForeground = Color(0xFF242033), fieldPlaceholder = Color(0xFF6B637B),
+    receiptPrinterSlot = Color(0xFF171B22), receiptResultText = Color(0xFF242033),
+    statusNeutralBackground = Color(0xFFEFEDF5), statusNeutralForeground = Color(0xFF51495F),
+    overlayPressed = Color(0x1F242033), reviewRain = Color(0x59504960),
 )
 
 private val Dark = darkColorScheme(
@@ -353,6 +379,76 @@ val Int.gpx: Dp
 
 val Int.gsp: TextUnit
     @Composable @ReadOnlyComposable get() = with(LocalDensity.current) { this@gsp.toSp() }
+
+/**
+ * 간격 단계(Design v2 디자인시스템 11/14, 4의 배수만). 가이드 px라 쓰는 쪽에서 `ChagokSpace.S24.gpx`.
+ * 화면의 숫자를 이 이름으로 바꾸는 일은 화면 PR이 한다(이 상수만으로는 화면이 바뀌지 않음).
+ */
+object ChagokSpace {
+    /** 글자 줄 사이. */
+    const val S4 = 4
+    /** 작은 묶음 안. */
+    const val S8 = 8
+    /** 칩 사이. */
+    const val S12 = 12
+    /** 버튼 사이 · 분할 창 덩어리 사이. */
+    const val S16 = 16
+    /** 덩어리 사이(가로 창 기본). */
+    const val S24 = 24
+    /** 카드 안쪽. */
+    const val S28 = 28
+    /** 큰 카드 안쪽. */
+    const val S32 = 32
+    /** 앱 안 여백 · 시트 가장자리. */
+    const val S40 = 40
+    /** 홈 인사 ↔ 내 차. */
+    const val S64 = 64
+}
+
+/**
+ * 모서리 단계(Design v2 디자인시스템 11/14). 가이드 px라 `RoundedCornerShape(ChagokRadius.R32.gpx)`.
+ * 알약은 [PILL](50%) — 높이와 상관없이 양 끝이 반원.
+ */
+object ChagokRadius {
+    /** 점선 아이콘 자리. */
+    const val R12 = 12
+    /** S 버튼 · 작은 아이콘 버튼. */
+    const val R16 = 16
+    /** 아이콘 버튼 80. */
+    const val R20 = 20
+    /** M 버튼 · 칩 · 검색칸 · 스테퍼. */
+    const val R24 = 24
+    /** L 버튼 · 카드 · 제안 카드 · 시트. */
+    const val R32 = 32
+    /** 앱 창 · 목적지 카드 바깥 · 미리보기. */
+    const val R40 = 40
+    /** 시스템 알림. */
+    const val R48 = 48
+    /** 알약(아티팩트 999px). */
+    val PILL: Shape = RoundedCornerShape(percent = 50)
+}
+
+/**
+ * 모션 곡선 · 누름 값(Design v2 디자인시스템 11/14, 아티팩트 CSS cubic-bezier 그대로).
+ * transform·opacity만 움직이고, 움직임 줄이기면 끝 모습으로 바로 간다(각 화면의 reduce 분기).
+ * 기존 private 곡선(CgParts `EaseRise` 등)은 PR-2·PR-9가 이 이름으로 옮긴다.
+ */
+object ChagokMotion {
+    /** 돌아보기 나타남(아티팩트 --rv-out). */
+    val Out = CubicBezierEasing(.23f, 1f, .32f, 1f)
+    /** 돌아보기 오가기(아티팩트 --rv-io). */
+    val InOut = CubicBezierEasing(.45f, 0f, .55f, 1f)
+    /** 홈 카드 나타남 0.7초 · 알림 바 내려옴 0.42초 · 스위치. */
+    val Rise = CubicBezierEasing(.32f, .72f, 0f, 1f)
+    /** 시트 나타남 0.38초. */
+    val Sheet = CubicBezierEasing(.2f, .7f, .2f, 1f)
+    /** 팝(살짝 넘쳤다 돌아옴). */
+    val Pop = CubicBezierEasing(.175f, .885f, .32f, 1.275f)
+    /** 카드 · 버튼 눌림 크기. */
+    const val PRESS_SCALE = .985f
+    /** 눌림 면 색 전환 시간(ms). */
+    const val PRESS_COLOR_MS = 120
+}
 
 /** 터치 영역 최소값(Pleos·Android 접근성 48dp). */
 val MinTouch: Dp = 48.dp
