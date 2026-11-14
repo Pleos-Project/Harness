@@ -134,6 +134,8 @@ class EffortViewModel(app: Application, private val saved: SavedStateHandle) : A
     val demoSummary: Pair<String, String>? by lazy { demoScene?.let { sc -> effortConstants?.let { demoSummaryOf(sc, it) } } }
 
     /** 노고 상수·문구(constants.json effort, 빌드 때 fixtures/에서 복사). 없으면 미리보기 문구 없이 진행. */
+    /** 출발 미리보기 배경의 카카오 분류 표(constants.json preview_bg, #187). 못 읽으면 null = 검색 결과도 중립. */
+    private val previewBgTable: PreviewBgTable? = readAsset(app, "data/constants.json")?.let(::parsePreviewBgTable)
     private val effortConstants: EffortConstants? = readAsset(app, "data/constants.json")?.let { t ->
         runCatching { parseEffortConstants(t) }.onFailure { ChagokLog.event("effort_constants_invalid", "err" to it.javaClass.simpleName) }.getOrNull()
     }
@@ -291,11 +293,14 @@ class EffortViewModel(app: Application, private val saved: SavedStateHandle) : A
         justFinished = null
         settleIncluded = false
         open(EffortScreen.DEPART)
-        departFlow.value = DepartUi()
+        departFlow.value = DepartUi(bgTable = previewBgTable)
         askFlow.value = true
         here = null; weatherDep = null
         // 시연: 화면 · 기능은 같고 최근 목적지는 앱 안 시연 목록(내비 · 위치 · 날씨를 부르지 않음)
-        if (source.demo) { demoScene?.let { s -> departFlow.update { it.copy(naviOptions = demoRecents(s)) } }; return }
+        if (source.demo) {
+            demoScene?.let { s -> departFlow.update { it.copy(naviOptions = demoRecents(s), bgWeather = s.weatherDep, bgHour = hourOf(s.departedAt), bgDemoKinds = s.bgKinds) } }
+            return
+        }
         val n = navi ?: return
         departFlow.update { it.copy(naviLoading = true) }
         n.places { list -> departFlow.update { it.copy(naviOptions = list.map { p -> p.toOption() }, naviLoading = false) } }
@@ -303,7 +308,9 @@ class EffortViewModel(app: Application, private val saved: SavedStateHandle) : A
             here = loc
             if (loc == null) { weatherDep = WEATHER_UNKNOWN; return@location }
             viewModelScope.launch {
-                weatherDep = withTimeoutOrNull(NET_TIMEOUT_MS) { withContext(Dispatchers.IO) { api.weather(loc.first, loc.second) } } ?: WEATHER_UNKNOWN
+                val w = withTimeoutOrNull(NET_TIMEOUT_MS) { withContext(Dispatchers.IO) { api.weather(loc.first, loc.second) } } ?: WEATHER_UNKNOWN
+                weatherDep = w
+                departFlow.update { it.copy(bgWeather = w) }   // 미리보기 배경 날씨(비 · 눈)
                 ChagokLog.event("effort_weather", "at" to "dep", "precip" to weatherDep)
             }
         }

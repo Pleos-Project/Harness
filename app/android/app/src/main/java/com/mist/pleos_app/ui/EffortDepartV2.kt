@@ -192,7 +192,8 @@ internal fun EffortDepartScreen(
                         onRetry = { ui.selected?.let(onSelect) },
                         modifier = Modifier.fillMaxWidth().weight(1f),
                         compact = narrow,
-                        photo = placePhotoRes(com.mist.pleos_app.effort.placePhotoOf(selected?.dest?.name)),
+                        // 코드 배경(F20, HANDOFF_v4 7-4): 종류 · 출발 시각(시연은 시연 출발 시각) · 출발 날씨. 지금 시각은 고를 때 한 번 읽는다
+                        bg = remember(selected) { java.time.LocalTime.now().hour }.let { ui.previewBg(it) },
                         onPhoto = true,
                     ) { m ->
                         // 경로 실패면 같은 자리가 [다시 시도](시안 rgo: 누르면 다시 requestRoute = 다시 출발)
@@ -379,14 +380,4 @@ private fun ResultRow(o: DestOption, onPick: (DestOption) -> Unit, meta: String?
         }
         o.distanceText?.let { Text(it, style = Chagok.type.bodyM, color = c.textSecondary, maxLines = 1) }
     }
-}
-
-/** 장소 사진 → drawable(res/drawable-nodpi/place_*.jpg, #118 design/places). */
-private fun placePhotoRes(p: com.mist.pleos_app.effort.PlacePhoto?): Int? = when (p) {
-    com.mist.pleos_app.effort.PlacePhoto.TAEAN -> R.drawable.place_taean
-    com.mist.pleos_app.effort.PlacePhoto.GAPYEONG -> R.drawable.place_gapyeong
-    com.mist.pleos_app.effort.PlacePhoto.YANGPYEONG -> R.drawable.place_yangpyeong
-    com.mist.pleos_app.effort.PlacePhoto.HOME -> R.drawable.place_home
-    com.mist.pleos_app.effort.PlacePhoto.OFFICE -> R.drawable.place_office
-    null -> null
 }

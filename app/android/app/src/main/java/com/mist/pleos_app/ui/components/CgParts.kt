@@ -442,12 +442,12 @@ enum class CgPreviewState { Empty, Loading, Ready, Failed, RouteFailed }   // Ro
 fun CgPreviewPanel(
     state: CgPreviewState, name: String?, stats: List<Pair<String, String>>, note: String?, emptyText: String,
     failText: String, retryLabel: String, onRetry: () -> Unit, modifier: Modifier = Modifier, compact: Boolean = false,
-    photo: Int? = null,          // 목적지 사진(res). null이면 딥 잉크 바탕
-    onPhoto: Boolean = false,    // v3: 고른 목적지 미리보기 = 사진/딥 잉크 바탕 + 흰 글자(HANDOFF_v3 4-2)
+    bg: com.mist.pleos_app.effort.PreviewBgSpec? = null,   // 목적지 코드 배경(F20, HANDOFF_v4 7-4). null이면 딥 잉크 바탕
+    onPhoto: Boolean = false,    // v3: 고른 목적지 미리보기 = 배경/딥 잉크 바탕 + 흰 글자(HANDOFF_v3 4-2)
     cta: @Composable (Modifier) -> Unit,
 ) {
     if (onPhoto && state != CgPreviewState.Empty && name != null) {
-        CgPhotoPanel(photo, modifier, compact) {
+        CgPhotoPanel(bg, modifier, compact) {
             com.mist.pleos_app.ui.theme.ChagokOnPhoto {
                 CgPreviewPanel(state, name, stats, note, emptyText, failText, retryLabel, onRetry, Modifier.fillMaxSize(), compact, onPhoto = false, bare = true, cta = cta)
             }
@@ -457,7 +457,7 @@ fun CgPreviewPanel(
     PreviewPanelBody(state, name, stats, note, emptyText, failText, retryLabel, onRetry, modifier, compact, bare = false, cta = cta)
 }
 
-/** 같은 이름으로 다시 부르는 사진 위 안쪽 칸(면 · 테두리 · 그림자 없음). */
+/** 같은 이름으로 다시 부르는 배경 위 안쪽 칸(면 · 테두리 · 그림자 없음). */
 @Composable
 private fun CgPreviewPanel(
     state: CgPreviewState, name: String?, stats: List<Pair<String, String>>, note: String?, emptyText: String,
@@ -465,20 +465,20 @@ private fun CgPreviewPanel(
     onPhoto: Boolean, bare: Boolean, cta: @Composable (Modifier) -> Unit,
 ) = PreviewPanelBody(state, name, stats, note, emptyText, failText, retryLabel, onRetry, modifier, compact, bare, cta)
 
-/** 사진 배경 + 그늘(가로: 왼쪽 → 오른쪽, 분할: 위 → 아래). 사진은 칸을 꽉 채우고 세로 기준점 60%. */
+/**
+ * 코드 배경(사진 대신, 11/15 명준 · #116) + 그늘(가로: 왼쪽 → 오른쪽, 분할: 위 → 아래). 그늘 · 글자 · 크기는 사진 배경 때와 같다.
+ * 배치: 분할(compact) = 세로(JS layout "port"), 가로 = "land".
+ */
 @Composable
-private fun CgPhotoPanel(photo: Int?, modifier: Modifier, compact: Boolean, content: @Composable () -> Unit) {
+private fun CgPhotoPanel(bg: com.mist.pleos_app.effort.PreviewBgSpec?, modifier: Modifier, compact: Boolean, content: @Composable () -> Unit) {
     val shape = RoundedCornerShape(40.gpx)
-    // 사진 위 그늘 · 바탕은 테마와 상관없이 딥 잉크(btnFilledText, v4 #242135)
+    // 배경 위 그늘 · 바탕은 테마와 상관없이 딥 잉크(btnFilledText, v4 #242135)
     val shade = if (compact) Brush.verticalGradient(0f to inkAlpha(0x80), .45f to inkAlpha(0xCC), 1f to inkAlpha(0xF2))
     else Brush.horizontalGradient(0f to inkAlpha(0xF2), .34f to inkAlpha(0xD9), .62f to inkAlpha(0x80), 1f to inkAlpha(0x26))
     val glow = inkAlpha(0x33)
     Box(modifier.shadow(18.gpx, shape, ambientColor = glow, spotColor = glow).clip(shape).background(inkAlpha(0xFF))) {
-        photo?.let {
-            androidx.compose.foundation.Image(
-                androidx.compose.ui.res.painterResource(it), contentDescription = null, modifier = Modifier.matchParentSize(),
-                contentScale = androidx.compose.ui.layout.ContentScale.Crop, alignment = androidx.compose.ui.BiasAlignment(0f, .2f),
-            )
+        bg?.let {
+            CgPreviewBg(it, land = !compact, reduceMotion = com.mist.pleos_app.ui.rememberReduceMotion(), modifier = Modifier.matchParentSize())
             Box(Modifier.matchParentSize().background(shade))
         }
         content()
