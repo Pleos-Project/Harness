@@ -774,7 +774,7 @@ class EffortViewModel(app: Application, private val saved: SavedStateHandle) : A
     }
 
     /**
-     * [다음에](AC-F29-2): 영수증 · 금액을 보이지 않고 기록 1건(choice = close)을 남긴 뒤 홈.
+     * [다음에](AC-F29-2): 영수증 · 금액을 보이지 않고 기록 1건(choice = later)을 남긴 뒤 홈.
      * 쉰 시간은 묻지 않고 '없음'(0)으로 센다(명세 v0.6 F29 [제안], PRD v2.0 7-5).
      */
     fun later() {
@@ -783,7 +783,7 @@ class EffortViewModel(app: Application, private val saved: SavedStateHandle) : A
         if (trip.restAnswerMin == null) flow.answerRest(0)
         val cur = flow.state.openTrip ?: return
         val r = receiptOf(cur, effortConstants)
-        if (r != null && !isUnsettled(r) && flow.finish(recordOf(cur, r, ui.value.proposal, settingsFlow.value.proposalMethod, CHOICE_CLOSE))) {
+        if (r != null && !isUnsettled(r) && flow.finish(recordOf(cur, r, ui.value.proposal, settingsFlow.value.proposalMethod, CHOICE_LATER))) {
             justFinished = cur.tripId; notifySaved(cur.tripId)
         }
         ChagokLog.event("effort_review_later")
