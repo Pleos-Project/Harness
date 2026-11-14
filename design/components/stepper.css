@@ -6,4 +6,3 @@
 .cg-stepper .cg-btn.cg-ib .cg-ic{width:44px;height:44px}
 .cg-stepper .cg-dv2{width:2px;height:64px;background:var(--cg-line);flex:none}
 .cg-stepper .cg-val{flex:1;min-width:0;text-align:center;font:700 36px/44px var(--cg-font);white-space:nowrap}
-.cg-p .cg-toast.cg-nb .cg-stepper{width:100%}

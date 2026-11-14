@@ -328,15 +328,16 @@ class EffortViewModel(app: Application, private val saved: SavedStateHandle) : A
         searchJob?.cancel()
         if (source.demo) {   // 시연: 서버 대신 앱 안 시연 검색
             val (status, list) = demoScene?.let { demoSearch(q, it) } ?: (PlacesStatus.EMPTY to emptyList())
-            departFlow.update { it.copy(searching = false, searchStatus = status, searchResults = list) }
+            departFlow.update { it.copy(searching = false, searchStatus = status, searchResults = list, searchSentLocation = true) }
             return
         }
-        departFlow.update { it.copy(searching = true, searchStatus = null, searchResults = emptyList()) }
+        val loc = here   // 이번 검색에 보내는 위치(없으면 null → 정확도순 안내)
+        departFlow.update { it.copy(searching = true, searchStatus = null, searchResults = emptyList(), searchSentLocation = loc != null) }
         searchJob = viewModelScope.launch {
-            val r = withTimeoutOrNull(NET_TIMEOUT_MS) { withContext(Dispatchers.IO) { api.places(q, here) } }
+            val r = withTimeoutOrNull(NET_TIMEOUT_MS) { withContext(Dispatchers.IO) { api.places(q, loc) } }
                 ?: PlacesResult(PlacesStatus.UNAVAILABLE, emptyList())
             departFlow.update { it.copy(searching = false, searchStatus = r.status, searchResults = r.places.map { p -> p.toOption() }) }
-            ChagokLog.event("effort_search", "status" to r.status.name, "count" to r.places.size, "here" to (here != null))
+            ChagokLog.event("effort_search", "status" to r.status.name, "count" to r.places.size, "here" to (loc != null))
         }
     }
 

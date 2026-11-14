@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -212,8 +213,11 @@ private fun TodayPickCard(onClick: () -> Unit, ev: Boolean, modifier: Modifier) 
 // ------------------------------------------------------------ 주행 중 가림 (X1). 금액·카드 없음(AC-C-8 주행 중 금액 미터 금지)
 @Composable
 internal fun DrivingCover() {
-    Box(Modifier.fillMaxSize().background(Chagok.colors.bgSecondary), contentAlignment = Alignment.Center) {
-        CgBody(stringResource(R.string.driving_hidden), secondary = true)
+    // Design v2: 가림 면·글자는 driving-lock 토큰(G2 driving). 3줄 구성·아이콘은 명준 답(H-18) 전까지 하지 않는다.
+    // 피봇 전 ChagokApp 경로(`ChagokApp.kt:140`)도 이 함수를 쓰므로 그 화면 색도 같이 바뀐다.
+    val c = Chagok.colors
+    Box(Modifier.fillMaxSize().background(c.drivingLockBackground), contentAlignment = Alignment.Center) {
+        Text(stringResource(R.string.driving_hidden), style = Chagok.type.bodyM, color = c.drivingLockForeground)
     }
 }
 

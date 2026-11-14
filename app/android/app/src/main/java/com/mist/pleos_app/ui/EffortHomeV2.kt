@@ -1,6 +1,8 @@
 package com.mist.pleos_app.ui
 
 import androidx.compose.foundation.clickable
+import com.mist.pleos_app.ui.theme.ChagokMotion
+import com.mist.pleos_app.ui.theme.ChagokSpace
 import com.mist.pleos_app.ui.components.CgBell
 import com.mist.pleos_app.ui.components.CgNoti
 import com.mist.pleos_app.ui.components.CgPlaceLine
@@ -102,7 +104,6 @@ import kotlinx.coroutines.delay
  * 최근 기록 3장(방금 끝난 기록은 맨 위 굵은 테두리). 앱 시작 때 1.6초 시작 화면. 숫자는 저장된 기록·엔진 표기에서만.
  */
 
-private val EaseIn = CubicBezierEasing(.32f, .72f, 0f, 1f)
 private val Idle = CubicBezierEasing(.45f, 0f, .55f, 1f)
 
 @Composable
@@ -124,10 +125,11 @@ internal fun EffortHomeScreen(
     val reduce = rememberReduceMotion()
     val c = Chagok.colors
     val t = Chagok.type
-    val trip = ui.openTrip
+    // 도착한 주행은 홈에 "도착" 표시로 보여 주지 않는다(DECISIONS 11/14 '고르기 전에 나간 도착'). 앱을 다시 열면 EffortApp이 돌아보기부터 연다
+    val trip = ui.openTrip?.takeIf { !it.arrived }
     var quit by rememberSaveable { mutableStateOf(false) }   // 그만두기 확인 시트(v32 home-progress-quit)
     val enter = remember { Animatable(0f) }
-    LaunchedEffect(Unit) { enter.animateTo(1f, tween(700, easing = EaseIn)) }
+    LaunchedEffect(Unit) { enter.animateTo(1f, tween(700, easing = ChagokMotion.Rise)) }
 
     Box(Modifier.fillMaxSize()) {
         Column(Modifier.fillMaxSize()) {
@@ -146,8 +148,6 @@ internal fun EffortHomeScreen(
             )
             // v87: 최근 기록은 홈에서 뺌. 인사 한 덩어리(심볼 + 작은 줄 → 큰 인사 → 버튼)를 가운데에 크게
             val (sub, head) = when {
-                // 고르기 전에 나간 도착: "○○에 도착했어요 · 16:30" / "오늘 운전 영수증이 여기 있어요"
-                trip != null && trip.arrived -> stringResource(R.string.effort_home_arrived_sub, trip.destName, clockText(trip.arrivedAt ?: trip.departedAt)) to stringResource(R.string.effort_home_arrived_head)
                 // 가는 중(정차 때만 보임): "○○으로 가는 중 · 14:20 출발 · 함께 4명" / "잠깐 멈췄네요 여기까지 운전을 세어 볼까요?"
                 trip != null -> stringResource(R.string.effort_home_progress_sub, euro(trip.destName), clockText(trip.departedAt), trip.n) to
                     stringResource(R.string.effort_home_progress_head)
@@ -157,7 +157,7 @@ internal fun EffortHomeScreen(
             val progress = ui.midwayAvailable
             val hero: @Composable () -> Unit = {
                 if (progress) StartButton(if (narrow) 300.gpx else 440.gpx, stringResource(R.string.effort_mid_open), onMidway)
-                else LogoSymbol(if (narrow) 280.gpx else 420.gpx, pin = if (trip?.arrived == true) stringResource(R.string.effort_home_arrived_pin) else null, compact = narrow)
+                else LogoSymbol(if (narrow) 280.gpx else 420.gpx, compact = narrow)
             }
             val text: @Composable () -> Unit = {
                 Column(
@@ -179,7 +179,6 @@ internal fun EffortHomeScreen(
                     Box(Modifier.padding(top = if (narrow) 32.gpx else 44.gpx)) {
                         when {
                             trip == null -> CgCta(stringResource(R.string.effort_home_go), onDepart, compact = narrow, hero = true)
-                            trip.arrived -> CgCta(stringResource(R.string.effort_receipt_open), onReceipt, compact = narrow, hero = true)
                             else -> Column(horizontalAlignment = if (narrow) Alignment.CenterHorizontally else Alignment.Start, verticalArrangement = Arrangement.spacedBy(8.gpx)) {
                                 Row(horizontalArrangement = Arrangement.spacedBy(20.gpx)) {
                                     CgButton(stringResource(R.string.effort_arrive_now), onArrive, size = if (narrow) CgSize.XLC else CgSize.XL)
@@ -278,7 +277,7 @@ internal fun LogoSymbol(size: Dp, pin: String? = null, compact: Boolean = false)
     fun f() = if (reduce) 0f else k.value
     val lift = 4.gpx
     Box(Modifier.size(size), contentAlignment = Alignment.Center) {
-        val shadow = if (c.isDark) Color(0x80000000) else Color(0x4D242033)
+        val shadow = if (c.isDark) Color(0x80000000) else Color(0x4D242135)
         Canvas(Modifier.align(Alignment.BottomCenter).size(size * .62f, size * .09f)) {
             val f = f()
             scale(1f - .1f * f, 1f) { drawOval(Brush.radialGradient(listOf(shadow.copy(alpha = shadow.alpha * (1f - .25f * f)), Color.Transparent), center = center, radius = this.size.width / 2f), size = this.size) }
@@ -310,7 +309,7 @@ internal fun StartButton(size: Dp, label: String, onClick: () -> Unit) {
     val bezel = if (narrow) 18.gpx else 26.gpx   // v104: 440 · 26(분할 300 · 18)
     val ringOut = if (narrow) 9.gpx else 10.gpx
     val ringW = 3.gpx
-    val ringColor = if (c.isDark) Color(0xFFD9F77A) else Color(0xFF8FA930)
+    val ringColor = if (c.isDark) Color(0xFFC8F04A) else Color(0xFF82A01A)   // v4 screens/after.css --ring
     val src = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
     val pressed by src.collectIsPressedAsState()
     val press by animateFloatAsState(if (pressed) 1f else 0f, tween(220, easing = CubicBezierEasing(.32f, .72f, 0f, 1f)), label = "press")
@@ -343,7 +342,7 @@ internal fun StartButton(size: Dp, label: String, onClick: () -> Unit) {
         // 테(Satin Silver, 위 → 아래)
         Box(
             Modifier.size(size).graphicsLayer { val s = 1f - .015f * press; scaleX = s; scaleY = s }
-                .shadow(26.gpx * (1f - .6f * press), CircleShape, ambientColor = Color(0x33242033), spotColor = Color(0x33242033))
+                .shadow(26.gpx * (1f - .6f * press), CircleShape, ambientColor = Color(0x33242135), spotColor = Color(0x33242135))
                 .background(Brush.verticalGradient(0f to c.receiptPrinterHighlight, .18f to c.receiptPrinterMidtone, .7f to c.receiptPrinterShade, 1f to c.receiptPrinterMidtone), CircleShape)
                 .padding(bezel),
             contentAlignment = Alignment.Center,
@@ -351,17 +350,17 @@ internal fun StartButton(size: Dp, label: String, onClick: () -> Unit) {
             // 면: 대각 135° 라임 세 단(로고 lime-gradient와 같음) + 바깥 3px 테두리
             Box(
                 Modifier.fillMaxSize().graphicsLayer { translationY = lift.toPx() * press }
-                    .shadow(12.gpx * (1f - .7f * press), CircleShape, ambientColor = Color(0x38242033), spotColor = Color(0x38242033))
-                    .background(Brush.linearGradient(listOf(Color(0xFFF5FFD2), Color(0xFFD9F77A), Color(0xFFA9C640))), CircleShape)
+                    .shadow(12.gpx * (1f - .7f * press), CircleShape, ambientColor = Color(0x38242135), spotColor = Color(0x38242135))
+                    .background(Brush.linearGradient(listOf(Color(0xFFE8F6BF), Color(0xFFC8F04A), Color(0xFF9BBD25))), CircleShape)
                     .border(3.gpx, Color(0x38171B22), CircleShape),
                 contentAlignment = Alignment.Center,
             ) {
-                // 심볼(viewBox 14 12 116 120): 손은 그대로, 운전대만 제 중심(95.4, 42.2)을 축으로 돎
+                // 심볼(viewBox 14 12 116 120, 로고 v2): 손은 그대로, 운전대만 제 중심(93.7, 39.55)을 축으로 돎
                 Box(Modifier.fillMaxSize(.58f).padding(top = 0.gpx)) {
                     androidx.compose.foundation.Image(
                         androidx.compose.ui.res.painterResource(R.drawable.nogo_startbtn_wheel), null,
                         Modifier.matchParentSize().drawWithContent {   // 그리기 단계에서 돌림(홈 로고와 같은 이유)
-                            rotate(if (reduce) 0f else turn, Offset(this.size.width * .702f, this.size.height * .252f)) { this@drawWithContent.drawContent() }
+                            rotate(if (reduce) 0f else turn, Offset(this.size.width * .6871f, this.size.height * .2296f)) { this@drawWithContent.drawContent() }
                         },
                     )
                     androidx.compose.foundation.Image(androidx.compose.ui.res.painterResource(R.drawable.nogo_startbtn_hand), null, Modifier.matchParentSize())
@@ -371,18 +370,32 @@ internal fun StartButton(size: Dp, label: String, onClick: () -> Unit) {
     }
 }
 
-/** 앱 시작 화면(1.6초): 원 안의 내 차 · 이름 · "준비하고 있어요" + 점 세 개. */
+/**
+ * 앱 시작 화면(1.6초): 앱 아이콘 · 워드마크 · "준비하고 있어요" + 점 세 개(글자–점 12, G2 app-splash).
+ * 등장(Design v2): 아이콘·워드마크가 각각 아래 24 → 제자리 + 투명 → 보임, 0.6초 [ChagokMotion.Rise], 워드마크는 80ms 늦게.
+ * 움직임 줄이기면 끝 모습으로 바로 둔다. 타이머는 시작 화면 길이(1.6초) 하나뿐이다.
+ */
 @Composable
 internal fun EffortSplash(onDone: () -> Unit) {
     val c = Chagok.colors
+    val reduce = rememberReduceMotion()
+    val icon = remember { Animatable(if (reduce) 1f else 0f) }
+    val mark = remember { Animatable(if (reduce) 1f else 0f) }
     LaunchedEffect(Unit) { delay(1600); onDone() }
+    LaunchedEffect(Unit) { if (!reduce) icon.animateTo(1f, tween(SPLASH_RISE_MS, easing = ChagokMotion.Rise)) }
+    LaunchedEffect(Unit) { if (!reduce) { delay(SPLASH_MARK_DELAY_MS.toLong()); mark.animateTo(1f, tween(SPLASH_RISE_MS, easing = ChagokMotion.Rise)) } }
     Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(24.gpx, Alignment.CenterVertically)) {
         // v3 시작 화면: 앱 아이콘 192 + 워드마크 228 × 72 + 준비 중(HANDOFF_v3 2절)
-        CgAppIcon(192.gpx)
-        CgWordmark(228.gpx, label = stringResource(R.string.effort_home_logo))
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.gpx)) {
+        Box(Modifier.graphicsLayer { alpha = icon.value; translationY = (1f - icon.value) * 24f * density }) { CgAppIcon(192.gpx) }
+        Box(Modifier.graphicsLayer { alpha = mark.value; translationY = (1f - mark.value) * 24f * density }) {
+            CgWordmark(228.gpx, label = stringResource(R.string.effort_home_logo))
+        }
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(ChagokSpace.S12.gpx)) {
             Text(stringResource(R.string.effort_home_loading), style = Chagok.type.bodyM, color = c.textTertiary)
             CgLoadingDots(c.textTertiary)
         }
     }
 }
+
+private const val SPLASH_RISE_MS = 600
+private const val SPLASH_MARK_DELAY_MS = 80

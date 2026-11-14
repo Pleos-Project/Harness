@@ -176,7 +176,7 @@
     <string name="effort_arrive_title">%1$s에 도착했어요</string>
     <string name="effort_arrive_people">함께 탄 사람 %1$d명</string>
     <string name="effort_arrive_solo">혼자 운전</string>
-    <string name="effort_receipt_title">오늘 주행 영수증</string>
+    <string name="effort_receipt_title">오늘 운전, 고생했어요</string>
     <string name="effort_receipt_sub_place">%1$s · %2$s</string>
     <!-- 정리하지 못함 이유 · 안내(#118 arrive-unsettled 시안 문구) -->
     <string name="effort_unsettled_why_late">출발하고 %1$s이 지나서 열었어요</string>
@@ -299,10 +299,17 @@
     <string name="effort_review_whole">%1$s · 내내</string>
     <string name="effort_review_dep_only">출발할 때 %1$s</string>
     <string name="effort_review_long_over">2시간 넘게</string>
+    <string name="effort_review_late_eta">예상 %1$s</string>
     <string name="effort_review_alt_focus">집중한 표정의 노고</string>
     <string name="effort_review_alt_shy">머리를 긁적이며 멋쩍게 웃는 노고</string>
     <string name="effort_review_alt_relief">땀을 닦으며 웃는 노고</string>
     <string name="effort_review_alt_proud">뿌듯하게 웃는 노고</string>
+    <string name="effort_review_alt_rainall">비 오는 길에 한숨 쉬는 노고</string>
+    <string name="effort_review_alt_rain">젖은 머리를 짚으며 비를 맞는 노고</string>
+    <string name="effort_review_alt_jam">막힌 길에 두 손을 들어 으쓱하는 노고</string>
+    <string name="effort_review_alt_late">예상보다 길어진 길에 지친 노고</string>
+    <string name="effort_review_alt_night">졸린 눈으로 밤길을 달리는 노고</string>
+    <string name="effort_review_alt_long">오래 달려 한숨 쉬는 노고</string>
     <string name="effort_calc_none">없음</string>
     <string name="effort_calc_unknown">정보 없음</string>
     <string name="effort_calc_say_rain">쏟아지는 비를 뚫고 달린 시간 세는 중…</string>
@@ -336,17 +343,13 @@
     <string name="effort_offer_done_note">더 할 일은 없어요</string>
     <!-- 중간 정산(F27, Design v2 v41 screens/midway.html). 문구는 시안 그대로(임시, 명준) -->
     <string name="effort_mid_open">지금까지의 노고 보기</string>
-    <string name="effort_mid_title">지금까지의 노고</string>
-    <string name="effort_mid_people">가는 중 · 함께 %1$d명</string>
     <string name="effort_mid_receipt_title">오늘 주행 영수증</string>
     <string name="effort_mid_receipt_sub">%1$s 출발 · 아직 가는 중 · %2$d명</string>
     <string name="effort_mid_receipt_sub_solo">%1$s 출발 · 아직 가는 중 · 혼자</string>
-    <string name="effort_mid_people_solo">가는 중 · 혼자 운전</string>
     <string name="effort_mid_cap_short">지금까지</string>
     <string name="effort_mid_solo_note">혼자 운전이라 영수증만 보여 드려요</string>
     <string name="effort_mid_short">여기까지도 수고하셨어요</string>
     <string name="effort_mid_short_note">아직 짧아서 따로 제안하지 않아요</string>
-    <string name="effort_mid_cap">%1$s 출발 · 지금까지</string>
     <string name="effort_mid_a_title">지금까지를 챙긴다면</string>
     <string name="effort_mid_note">좋아요를 누르면 여기까지 기록해 두고, 도착하면 이 몫은 빼고 알려 드려요</string>
     <string name="effort_mid_b_sub">기본은 %1$s. 고르면 여기까지 기록해 두고, 도착하면 이 몫은 빼고 알려 드려요</string>
@@ -380,7 +383,6 @@
     <string name="effort_settings_wipe_none">남은 기록이 없어요</string>
     <string name="effort_settings_wipe_title">기록을 모두 지울까요?</string>
     <string name="effort_settings_wipe_body">지운 기록은 되돌릴 수 없어요</string>
-    <string name="effort_settings_note">개발·시연용 설정이에요 · 좌표 없이 이 차에만 저장돼요</string>
     <string name="effort_settings_method">제안 방식</string>
     <string name="effort_settings_method_a">방식 A · 돈으로 환산</string>
     <string name="effort_settings_method_b">방식 B · 한 번 빼 주기</string>

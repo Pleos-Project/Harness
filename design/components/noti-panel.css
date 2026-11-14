@@ -4,8 +4,8 @@
 /* ── 알림 창(11/9 명준): 종 아래로 내려오는 아코디언 · 두 겹 테(바깥 테 + 안쪽 판) · 넓게 번지는 옅은 그림자 · 확인만 ── */
 .cg-ncatch{position:absolute;inset:0;z-index:6}
 .cg-npanel{--nr:40px;position:absolute;z-index:7;top:132px;right:40px;width:600px;padding:8px;border-radius:var(--nr);
-  background:color-mix(in srgb,var(--color-surface-raised) 62%,transparent);box-shadow:0 0 0 1px #2420330F,0 48px 96px -28px #2420334D,0 14px 28px -10px #24203324;transform-origin:calc(100% - 132px) 0}
-.cg-npanel .cg-ncaret{position:absolute;top:-9px;right:120px;width:24px;height:24px;border-radius:5px;transform:rotate(45deg);background:inherit;box-shadow:-1px -1px 0 0 #2420330F}
+  background:color-mix(in srgb,var(--color-surface-raised) 62%,transparent);box-shadow:0 0 0 1px #2421350F,0 48px 96px -28px #2421354D,0 14px 28px -10px #24213524;transform-origin:calc(100% - 132px) 0}
+.cg-npanel .cg-ncaret{position:absolute;top:-9px;right:120px;width:24px;height:24px;border-radius:5px;transform:rotate(45deg);background:inherit;box-shadow:-1px -1px 0 0 #2421350F}
 .cg-npanel .cg-nin{position:relative;border-radius:calc(var(--nr) - 8px);background:var(--color-surface-raised);padding:28px 30px 22px;box-shadow:inset 0 1px 1px #FFFFFFB3}
 .cg-npanel .cg-nhd{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 4px 14px}
 .cg-npanel .cg-nhd b{font:700 26px/32px var(--cg-font);color:var(--color-text-tertiary);letter-spacing:.02em}

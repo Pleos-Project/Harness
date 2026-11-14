@@ -1,6 +1,4 @@
 /* Design v2(운전 노고 정산) — 아티팩트 시안에서 옮김. 값은 tokens.css의 --cg-* 변수, 크기는 Connect-S 실제 픽셀(1dp = 1px). */
-.cg-toast.cg-nb .cg-nh .cg-t1{font:800 36px/44px var(--cg-font)}
-.cg-toast.cg-nb .cg-nh .cg-t2{font:400 26px/34px var(--cg-font);color:var(--cg-text-tertiary)}
 .cg-rrow{display:grid;grid-template-columns:200px minmax(0,1fr) 120px 28px;align-items:center;column-gap:16px;min-height:100px;border-bottom:1px dashed var(--cg-line-strong);cursor:pointer}
 .cg-rrow .cg-k{font:var(--cg-body-m);color:var(--cg-text-secondary)}
 .cg-rrow .cg-v{font:var(--cg-body-l);min-width:0}
@@ -17,9 +15,6 @@
 .cg-rnone > span{display:flex;flex-direction:column;gap:4px;min-width:0}
 .cg-rnone b{font:var(--cg-body-m-b);color:var(--cg-text-primary)}
 .cg-rnone small{font:var(--cg-label-m);color:var(--cg-text-tertiary)}
-.cg-restq{display:flex;flex-direction:column;gap:14px;padding:0 0 24px;margin-bottom:20px;border-bottom:1px dashed var(--cg-line-strong)}
-.cg-restq .cg-k{font:var(--cg-body-l)}
-.cg-restq .cg-k small{font:var(--cg-label-m);color:var(--cg-text-tertiary);margin-left:14px}
 .cg-p .cg-rrow{grid-template-columns:128px minmax(0,1fr) 92px 22px;column-gap:10px;min-height:60px}
 .cg-p .cg-rrow .cg-k{font:var(--cg-label-m)}
 .cg-p .cg-rrow .cg-v{font:var(--cg-body-m-b)}
@@ -31,19 +26,8 @@
 .cg-p .cg-rnone .cg-ico{width:24px;height:24px}
 .cg-p .cg-rnone b{font:var(--cg-label-m);font-weight:700}
 .cg-p .cg-rnone small{font:var(--cg-label-s)}
-.cg-p .cg-restq{gap:8px;padding:0 0 14px;margin-bottom:10px}
-.cg-p .cg-restq .cg-k{font:var(--cg-body-m-b)}
-.cg-p .cg-restq .cg-k small{font:var(--cg-label-s)}
-.cg-p .cg-restq .cg-chip.cg-sm{padding:0 18px}
-.cg-restline{display:flex;align-items:center;gap:16px;padding:0 0 18px;margin-bottom:18px;border-bottom:1px dashed var(--cg-line-strong)}
-.cg-restline .cg-k{font:var(--cg-body-m);color:var(--cg-text-secondary)}
-.cg-restline b{font:var(--cg-body-l);margin-right:auto}
-.cg-p .cg-restline{padding:0 0 10px;margin-bottom:10px}
-.cg-p .cg-restline .cg-k{font:var(--cg-label-m)}
-.cg-p .cg-restline b{font:var(--cg-body-m-b)}
 /* ── 영수증 = 출력 종이(11/7 명준 레퍼런스: 프린터 슬롯 + 지그재그 끝 종이 + 이중선 + 항목/값 2단 + 소계·합계 + 바코드). 흑백 ── */
 .cg-rcol{flex:1.15;display:flex;flex-direction:column;min-width:0;min-height:0}
-.cg-rcol .cg-restq,.cg-rcol .cg-restline{background:var(--cg-surface-card);border:2px solid var(--cg-line-strong);border-radius:24px;padding:16px 24px;margin:0 0 16px;flex:none}
 .cg-prn{position:relative;z-index:2;flex:none;height:60px;border-radius:20px;background:var(--cg-btn-basic);border:2px solid var(--cg-line-strong);box-shadow:var(--cg-shadow-1)}
 .cg-prn i{position:absolute;left:44px;right:44px;top:50%;height:8px;margin-top:-4px;border-radius:4px;background:var(--cg-text-primary)}
 .cg-paperwrap{flex:1;min-height:0;margin:-30px 56px 0;overflow:hidden;display:flex;flex-direction:column;filter:drop-shadow(0 6px 12px #0000001f)}
@@ -73,7 +57,6 @@
 .cg-paper .cg-bars{display:block;flex:none;width:100%;height:56px;background:repeating-linear-gradient(90deg,var(--cg-text-primary) 0 3px,transparent 3px 6px,var(--cg-text-primary) 6px 7px,transparent 7px 11px,var(--cg-text-primary) 11px 15px,transparent 15px 17px,var(--cg-text-primary) 17px 18px,transparent 18px 23px)}
 .cg-paper .cg-bc span{font:var(--cg-label-m);letter-spacing:.1em;white-space:nowrap}
 .cg-p .cg-rcol{flex:none}
-.cg-p .cg-rcol .cg-restq,.cg-p .cg-rcol .cg-restline{padding:10px 16px;margin-bottom:10px}
 .cg-p .cg-prn{height:40px;border-radius:14px}
 .cg-p .cg-prn i{left:28px;right:28px;height:6px;margin-top:-3px}
 .cg-p .cg-paperwrap{flex:none;margin:-20px 28px 0}
@@ -161,20 +144,9 @@
 .cg-paper .cg-sfold small{font:var(--cg-label-s);color:var(--cg-text-tertiary)}
 .cg-paper .cg-sfold .cg-chev{width:12px;height:12px;border-right:3px solid var(--cg-text-tertiary);border-bottom:3px solid var(--cg-text-tertiary);transform:rotate(45deg);margin:-6px 0 0 12px;flex:none}
 .cg-paper .cg-sfold.cg-on .cg-chev{transform:rotate(-135deg);margin-top:6px}
-.cg-paper .cg-sbox{flex:none;background:var(--cg-placeholder);border-radius:16px;padding:12px 18px;display:flex;flex-direction:column;gap:6px;font:var(--cg-label-m);color:var(--cg-text-secondary);margin:6px 0 4px}
-.cg-paper .cg-sbox>div{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
-.cg-paper .cg-sbox b{font:var(--cg-body-m-b);color:var(--cg-text-primary);white-space:nowrap}
-.cg-paper .cg-sbox .cg-srem{padding-top:6px;border-top:1px solid var(--cg-line-strong)}
-.cg-paper .cg-sbox .cg-srem span{color:var(--cg-text-primary);font:var(--cg-body-m-b)}
-.cg-paper .cg-sbox .cg-srem b{font:var(--cg-body-l)}
-.cg-paper .cg-sbox small{font:var(--cg-label-s);color:var(--cg-text-tertiary)}
-.cg-play .cg-sbox{animation:cg-up .28s cubic-bezier(.2,.7,.2,1) both}
 .cg-paper.cg-sopen .cg-bc{display:none}
 .cg-paper.cg-sopen .cg-rrow{min-height:46px}
 .cg-paper.cg-sopen .cg-rsum{min-height:40px}
-.cg-p .cg-paper .cg-sbox{padding:8px 12px;gap:4px;font:var(--cg-label-s)}
-.cg-p .cg-paper .cg-sbox b,.cg-p .cg-paper .cg-sbox .cg-srem span{font:var(--cg-label-m);font-weight:700}
-.cg-p .cg-paper .cg-sbox .cg-srem b{font:var(--cg-body-m-b)}
 /* 영수증: 줄 높이·글자를 키워 제안 카드 위 빈 곳을 채움 */
 .cg-p .cg-paper .cg-ph b{font:var(--cg-title-s)}
 .cg-p .cg-paper .cg-rrow{grid-template-columns:140px minmax(0,1fr) 84px 18px;min-height:54px}
@@ -189,7 +161,7 @@
 .cg-paperwrap{--cg-surface-card:var(--color-receipt-paper)}
 .cg-paper{background:var(--color-receipt-paper);--cg-line-strong:var(--color-receipt-rule)}
 .cg-paper .cg-rule2{border-color:var(--color-text-secondary)}
-.cg-paper .cg-rrow .cg-wy,.cg-paper .cg-sbox{background:var(--color-receipt-detail-background)}
+.cg-paper .cg-rrow .cg-wy{background:var(--color-receipt-detail-background)}
 .cg-paper .cg-bars{background:repeating-linear-gradient(90deg,var(--color-text-primary) 0 3px,transparent 3px 6px,var(--color-text-primary) 6px 7px,transparent 7px 11px,var(--color-text-primary) 11px 15px,transparent 15px 17px,var(--color-text-primary) 17px 18px,transparent 18px 23px)}
 .cg-paper .cg-bc span{color:var(--color-text-secondary)}
 /* 합계 A안: "합계"는 기본 글자, 결과 문장만 볼드 + 글자 아래 40% 마커(문장 길이를 따라감, 줄이 바뀌어도 줄마다 이어짐) */
@@ -203,8 +175,8 @@
    정지 화면(다 나온 뒤) = 켜진 상태 · 계산 전(.off) = 꺼짐. 움직임은 .print(도착 · 기록 상세에 들어온 그 한 번)에서만 ── */
 .cg-prn i{overflow:visible}
 .cg-prn i::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;
-  background:linear-gradient(180deg,#F3FEC9 0%,#D9F77A 45%,#B4CF4E 100%);
-  box-shadow:0 0 0 1px #A9C64099,0 0 8px #D9F77ACC,0 0 22px #D9F77A80,0 0 44px #D9F77A33}
+  background:linear-gradient(180deg,#E6F5B4 0%,#C8F04A 45%,#A6C72E 100%);
+  box-shadow:0 0 0 1px #9BBD2599,0 0 8px #C8F04ACC,0 0 22px #C8F04A80,0 0 44px #C8F04A33}
 .cg-prn.cg-off i::after{opacity:0;box-shadow:none}
 /* ── 영수증 합계 바뀜(11/9 명준): 종이가 나오면 처음엔 "평소보다 1.57배 힘든 길", 출력구 불이 켜지고 1초쯤 뒤 "약 3만 6천 원"으로 굴러 바뀜.
    두 글을 같은 칸에 겹쳐 두고(오른쪽 정렬) 마커는 글마다. 정지 화면(다 나온 뒤) = 금액. 움직임은 .print(들어온 그 한 번)에서만 ── */

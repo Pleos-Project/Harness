@@ -108,16 +108,17 @@ import kotlinx.coroutines.delay
 private val EaseRot = CubicBezierEasing(.65f, 0f, .35f, 1f)
 
 /**
- * 딥 잉크(주야 같음) + 투명도. 값 = `btnFilledText`(라임 위 잉크 글자, 주간 · 야간 모두 #242033).
- * 사진 칸 그늘 · CTA 화살표 원처럼 테마와 상관없이 잉크인 자리에 쓴다(예전 하드코딩 `0x..242033`과 값 같음).
+ * 딥 잉크(주야 같음) + 투명도. 값 = `btnFilledText`(라임 위 잉크 글자, 주간 · 야간 모두 #242135, v4).
+ * 사진 칸 그늘 · CTA 화살표 원처럼 테마와 상관없이 잉크인 자리에 쓴다(v3.1 하드코딩 `0x..242033` 자리, v4는 토큰을 따라 #242135).
  */
 @Composable
 private fun inkAlpha(alpha: Int): Color = Chagok.colors.btnFilledText.copy(alpha = alpha / 255f)
 
 // ------------------------------------------------------------ 아이콘
 /**
- * 선으로 그리는 Pleos 에셋 4종(뒤로 · + · − · 화살표) + 펼침 · 자리, 그리고 Phosphor Bold 23종(#118 design/icons/phosphor, MIT).
- * Phosphor는 res/drawable/ic_ph_*.xml 벡터이고 색은 쓰는 자리 글자색으로 칠한다(HANDOFF_v3 3절).
+ * Pleos 에셋 4종(뒤로 · + · − · 화살표, Pleos design assets 2.1.5 `design/icons/pleos` → res/drawable/ic_pl_*.xml, Design v2 PR-3),
+ * Phosphor Bold(#118 design/icons/phosphor, MIT → res/drawable/ic_ph_*.xml), 그리고 선으로 그리는 펼침 · 자리.
+ * 벡터는 모두 색을 쓰는 자리 글자색으로 칠한다(HANDOFF_v3 3절).
  */
 /** 워드마크 Nogo(`design/brand/nogo_wordmark_deepink.svg`, 152 × 48 기준). 색 = brandWordmark(주간 딥 잉크 · 야간 라임). */
 @Composable
@@ -130,24 +131,27 @@ fun CgWordmark(width: Dp, modifier: Modifier = Modifier, label: String? = null) 
 }
 
 /**
- * 앱 아이콘 타일(`design/brand/nogo_icon_*-gradient.svg`): 주간 라임 · 야간 잉크 그라디언트. 시작 화면 192.
+ * 앱 아이콘 타일(`design/brand/nogo_icon_*-gradient.svg`, 로고 v2 · 모서리 48에서 10.68): 주간 라임 · 야간 잉크 그라디언트. 시작 화면 192.
  * 그림자는 주간만(아티팩트 `.screen.dark .splash .appicon{filter:none}`).
  */
 @Composable
 fun CgAppIcon(size: Dp, modifier: Modifier = Modifier) {
     val c = Chagok.colors
-    val shade = c.textPrimary.copy(alpha = 0x24 / 255f)   // 주간 textPrimary #242033 → 예전 0x24242033과 같음
+    val shade = c.textPrimary.copy(alpha = 0x24 / 255f)   // 주간 textPrimary(v4 #242135)
     androidx.compose.foundation.Image(
         androidx.compose.ui.res.painterResource(if (c.isDark) R.drawable.nogo_icon_ink_gradient else R.drawable.nogo_icon_lime_gradient),
         contentDescription = null,
         modifier = modifier.size(size).then(
-            if (c.isDark) Modifier else Modifier.shadow(8.gpx, RoundedCornerShape(size * 44f / 144f), ambientColor = shade, spotColor = shade),
+            if (c.isDark) Modifier else Modifier.shadow(8.gpx, RoundedCornerShape(size * 10.68f / 48f), ambientColor = shade, spotColor = shade),
         ),
     )
 }
 
-enum class CgIcon(@androidx.annotation.DrawableRes val res: Int? = null) {
-    Back, Arrow, Plus, Minus, Chevron, Placeholder,
+/** [pleos] = Pleos 에셋(아이콘 버튼 안 56 · 작으면 44). 아니면 Phosphor(48 · 40). res 없음 = 선으로 그림. */
+enum class CgIcon(@androidx.annotation.DrawableRes val res: Int? = null, val pleos: Boolean = false) {
+    Back(R.drawable.ic_pl_back_56, true), Arrow(R.drawable.ic_pl_arrow_40, true),
+    Plus(R.drawable.ic_pl_plus_56, true), Minus(R.drawable.ic_pl_minus_44, true),
+    Chevron, Placeholder,
     Receipt(R.drawable.ic_ph_receipt), Gear(R.drawable.ic_ph_gear_six), Users(R.drawable.ic_ph_users_three),
     Search(R.drawable.ic_ph_magnifying_glass), Mic(R.drawable.ic_ph_microphone),
     House(R.drawable.ic_ph_house), Briefcase(R.drawable.ic_ph_briefcase), Recent(R.drawable.ic_ph_clock_counter_clockwise),
@@ -159,7 +163,7 @@ enum class CgIcon(@androidx.annotation.DrawableRes val res: Int? = null) {
     Bell(R.drawable.ic_ph_bell), BellRinging(R.drawable.ic_ph_bell_ringing), CarProfile(R.drawable.ic_ph_car_profile),
 }
 
-/** 에셋 아이콘을 선으로 그린다(design/icons/pleos). 에셋에 없는 아이콘은 점선 자리(Placeholder). */
+/** 벡터 아이콘(Pleos · Phosphor)은 painterResource + tint. 펼침(Chevron)과 점선 자리(Placeholder)만 선으로 그린다. */
 @Composable
 fun CgIconMark(icon: CgIcon, size: Dp, color: Color, modifier: Modifier = Modifier) {
     icon.res?.let { r ->
@@ -168,21 +172,7 @@ fun CgIconMark(icon: CgIcon, size: Dp, color: Color, modifier: Modifier = Modifi
     }
     Canvas(modifier.size(size).graphicsLayer { if (icon == CgIcon.Placeholder) alpha = .45f }) {
         val w = this.size.width
-        val sw = w * .1f
         when (icon) {
-            CgIcon.Back -> {
-                drawLine(color, Offset(w * .62f, w * .18f), Offset(w * .3f, w * .5f), sw, StrokeCap.Round)
-                drawLine(color, Offset(w * .3f, w * .5f), Offset(w * .62f, w * .82f), sw, StrokeCap.Round)
-            }
-            CgIcon.Arrow -> {
-                drawLine(color, Offset(w * .35f, w * .15f), Offset(w * .7f, w * .5f), w * .12f, StrokeCap.Round)
-                drawLine(color, Offset(w * .7f, w * .5f), Offset(w * .35f, w * .85f), w * .12f, StrokeCap.Round)
-            }
-            CgIcon.Plus -> {
-                drawLine(color, Offset(w * .2f, w * .5f), Offset(w * .8f, w * .5f), sw, StrokeCap.Round)
-                drawLine(color, Offset(w * .5f, w * .2f), Offset(w * .5f, w * .8f), sw, StrokeCap.Round)
-            }
-            CgIcon.Minus -> drawLine(color, Offset(w * .2f, w * .5f), Offset(w * .8f, w * .5f), sw, StrokeCap.Round)
             CgIcon.Chevron -> {
                 drawLine(color, Offset(0f, w * .3f), Offset(w * .5f, w * .8f), w * .25f, StrokeCap.Round)
                 drawLine(color, Offset(w * .5f, w * .8f), Offset(w, w * .3f), w * .25f, StrokeCap.Round)
@@ -207,8 +197,8 @@ fun CgIconButton(label: String, icon: CgIcon, onClick: () -> Unit, modifier: Mod
             .semantics { contentDescription = label },
         contentAlignment = Alignment.Center,
     ) {
-        // Pleos 선 아이콘(뒤로 · + · −)은 56(작으면 44), Phosphor 벡터는 아티팩트 .btn.ib .ico.pi 48(작으면 40)
-        val px = if (icon.res != null) (if (small) 40 else 48) else (if (small) 44 else 56)
+        // Pleos 에셋(뒤로 · + · −)·선 아이콘은 56(작으면 44), Phosphor 벡터는 아티팩트 .btn.ib .ico.pi 48(작으면 40)
+        val px = if (icon.res != null && !icon.pleos) (if (small) 40 else 48) else (if (small) 44 else 56)
         CgIconMark(icon, px.gpx * (if (icon == CgIcon.Placeholder) .7f else 1f), if (enabled) c.textPrimary else c.textTertiary)
     }
 }
@@ -477,7 +467,7 @@ private fun CgPreviewPanel(
 @Composable
 private fun CgPhotoPanel(photo: Int?, modifier: Modifier, compact: Boolean, content: @Composable () -> Unit) {
     val shape = RoundedCornerShape(40.gpx)
-    // 사진 위 그늘 · 바탕은 테마와 상관없이 딥 잉크(값 = 예전 0x..242033)
+    // 사진 위 그늘 · 바탕은 테마와 상관없이 딥 잉크(btnFilledText, v4 #242135)
     val shade = if (compact) Brush.verticalGradient(0f to inkAlpha(0x80), .45f to inkAlpha(0xCC), 1f to inkAlpha(0xF2))
     else Brush.horizontalGradient(0f to inkAlpha(0xF2), .34f to inkAlpha(0xD9), .62f to inkAlpha(0x80), 1f to inkAlpha(0x26))
     val glow = inkAlpha(0x33)
@@ -820,13 +810,13 @@ fun CgReceipt(
                             drawIntoCanvas { cv ->
                                 for (i in blurs.indices) {
                                     val b = (blurs[i] + boost * (if (i == 0) 6f else if (i == 1) 18f else 36f)) * density
-                                    val paint = androidx.compose.ui.graphics.Paint().apply { color = Color(0xFFD9F77A).copy(alpha = alphas[i] * a) }
+                                    val paint = androidx.compose.ui.graphics.Paint().apply { color = Color(0xFFC8F04A).copy(alpha = alphas[i] * a) }
                                     paint.asFrameworkPaint().maskFilter = android.graphics.BlurMaskFilter(b, android.graphics.BlurMaskFilter.Blur.NORMAL)
                                     cv.drawRoundRect(0f, 0f, size.width, size.height, r, r, paint)
                                 }
                             }
                             drawRoundRect(
-                                Brush.verticalGradient(0f to Color(0xFFF3FEC9), .45f to Color(0xFFD9F77A), 1f to Color(0xFFB4CF4E)),
+                                Brush.verticalGradient(0f to Color(0xFFE6F5B4), .45f to Color(0xFFC8F04A), 1f to Color(0xFFA6C72E)),
                                 cornerRadius = androidx.compose.ui.geometry.CornerRadius(r), alpha = a,
                             )
                             if (boost > 0f) drawRoundRect(Color.White.copy(alpha = .25f * boost * a), cornerRadius = androidx.compose.ui.geometry.CornerRadius(r))
@@ -862,13 +852,14 @@ fun CgReceipt(
 fun CgReceiptRow(
     label: String, detail: String, pct: String, basis: String?, expanded: Boolean, onClick: () -> Unit,
     compact: Boolean = false, extra: String? = null, hi: Float = 0f,
+    minHeight: Int = 70,                        // 가로 · 중간 정산 줄이 있는 영수증은 62(HANDOFF_v4 7-2)
 ) {
     val c = Chagok.colors
     val t = Chagok.type
     val plain = receiptPlain(compact)
     Column(Modifier.fillMaxWidth().background(c.skeletonHighlight.copy(alpha = c.skeletonHighlight.alpha * hi), RoundedCornerShape(8.gpx))) {
         Row(
-            Modifier.fillMaxWidth().heightIn(min = if (compact) 56.gpx else 70.gpx).then(if (basis != null) Modifier.clickable(role = Role.Button, onClick = onClick) else Modifier),
+            Modifier.fillMaxWidth().heightIn(min = if (compact) 56.gpx else minHeight.gpx).then(if (basis != null) Modifier.clickable(role = Role.Button, onClick = onClick) else Modifier),
             verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.gpx),
         ) {
             Text(label, Modifier.width(if (compact) 140.gpx else 240.gpx), style = plain, color = c.textPrimary)
@@ -901,13 +892,14 @@ fun CgReceiptRow(
 fun CgReceiptSum(
     label: String, value: String, compact: Boolean = false, total: Boolean = false, hi: Float = 0f,
     onValue: (() -> Unit)? = null, valueLabel: String? = null, trailing: @Composable () -> Unit = {},
+    minHeight: Int = 60,                       // 가로 · 중간 정산 줄이 있는 영수증은 54(HANDOFF_v4 7-2)
     amount: String? = null,                    // v92 합계 끝 글 = "약 3만 6천 원"(엔진 값). null이면 배수만
     flip: () -> Triple<Float, Float, Float> = { Triple(1f, 1f, 1f) },   // (배수 나감, 금액 들어옴, 금액 마커) 0..1. 정지 화면 = 금액
 ) {
     val c = Chagok.colors
     val plain = receiptPlain(compact)
     Row(
-        Modifier.fillMaxWidth().heightIn(min = if (compact) 46.gpx else 60.gpx).padding(top = if (total && !compact) 6.gpx else 0.gpx)
+        Modifier.fillMaxWidth().heightIn(min = if (compact) 46.gpx else minHeight.gpx).padding(top = if (total && !compact) 6.gpx else 0.gpx)
             .background(c.skeletonHighlight.copy(alpha = c.skeletonHighlight.alpha * hi), RoundedCornerShape(8.gpx)),
         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.gpx),
     ) {
@@ -959,13 +951,14 @@ fun CgReceiptSum(
 fun CgSettleFold(
     main: String, alt: String, altLabel: String, value: String, swapKey: Boolean, onSwap: () -> Unit,
     compact: Boolean = false, reduce: Boolean = false, enabled: Boolean = true,
+    topGap: Int = 28,                          // 합계와의 간격. 가로 영수증은 18(HANDOFF_v4 7-2)
 ) {
     val c = Chagok.colors
     val line = c.lineStrong
     val ease = ChagokMotion.Rise
     val dur = if (reduce) 0 else 380
     Row(
-        Modifier.fillMaxWidth().padding(top = 28.gpx)
+        Modifier.fillMaxWidth().padding(top = topGap.gpx)
             .drawBehind { drawLine(line, Offset(0f, 0f), Offset(size.width, 0f), strokeWidth = 2f.gpxPx(this), pathEffect = PathEffect.dashPathEffect(floatArrayOf(8f, 6f))) }
             .padding(top = 10.gpx),
         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.gpx),
@@ -1290,7 +1283,7 @@ fun BoxScope.CgNotiPanel(
             Modifier.fillMaxWidth()
                 .shadow(28.gpx, outer, ambientColor = if (c.isDark) Color(0xA6000000) else c.textPrimary.copy(alpha = 0x4D / 255f), spotColor = if (c.isDark) Color(0x66000000) else c.textPrimary.copy(alpha = 0x24 / 255f))
                 .background(rim, outer)
-                .border(1.gpx, if (c.isDark) Color(0x17FFFFFF) else c.textPrimary.copy(alpha = 0x0F / 255f), outer)   // 주간 textPrimary #242033 → 예전 값과 같음
+                .border(1.gpx, if (c.isDark) Color(0x17FFFFFF) else c.textPrimary.copy(alpha = 0x0F / 255f), outer)   // 주간 textPrimary(v4 #242135)
                 .padding(if (compact) 6.gpx else 8.gpx),
         ) {
             Column(
