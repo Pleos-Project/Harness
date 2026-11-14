@@ -546,7 +546,7 @@ def kma_ncst(lat: float, lng: float, pty: str, base_date: str, base_time: str, r
 
 
 # 카카오 로컬 키워드 검색 응답 모양(query=두물머리, 11/7 실호출의 이름·주소·id·x·y 그대로). 계약 샘플을 만들 때만 쓴다.
-# 첫 곳은 도로명 주소가 없어 지번 주소로, 둘째 곳은 도로명 주소로 나간다. 분류는 category_name 마지막 칸, 거리는 x·y를 보낸 호출의 값.
+# 첫 곳은 도로명 주소가 없어 지번 주소로, 둘째 곳은 도로명 주소로 나간다. 분류는 category_name 마지막 칸(category)과 모든 칸(category_path), 거리는 x·y를 보낸 호출의 값.
 KAKAO_DUMUL_DOCS = [
     {"id": "7845373", "place_name": "두물머리", "address_name": "경기 양평군 양서면 양수리", "road_address_name": "",
      "category_name": "여행 > 관광,명소", "x": "127.315829778049", "y": "37.5328127891601", "distance": "23671"},

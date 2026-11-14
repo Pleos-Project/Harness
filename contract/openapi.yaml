@@ -5,7 +5,7 @@ info:
   description: |
     운전 노고 정산(명세 v0.5, #46): 앱이 부르는 엔드포인트는 세 가지다.
     - GET /v1/weather (0.4.0): 출발·도착 지점의 강수 형태(명세 v0.5 12절)
-    - GET /v1/places (0.5.0): 출발 화면 목적지 검색, 카카오 로컬 키워드 검색 대행(노고 PRD v1.3 8장, #56)
+    - GET /v1/places (0.5.0): 출발 화면 목적지 검색, 카카오 로컬 키워드 검색 대행(노고 PRD v1.3 8장, #56). 11/15 category_path 추가(#116)
     - GET /v1/weather/trip (0.6.0): 도착 때 한 번, 출발~도착 1시간 조각마다 두 지점의 강수(#63)
     노고·금액·제안은 앱 로컬에서 계산한다. 좌표·시각·검색어는 그 조회에만 쓰고 서버는 저장·캐시·로그하지 않는다(AC-N-4).
 
@@ -277,7 +277,7 @@ components:
     Place:
       type: object
       additionalProperties: false
-      required: [name, address, lat, lng, place_id, category, distance_m]
+      required: [name, address, lat, lng, place_id, category, distance_m, category_path]
       description: '카카오 로컬 장소 하나. 앱은 RouteInfo(poiName=name, address, latitude=lat, longitude=lng, poiId=place_id)로 넘긴다'
       properties:
         name: { type: string, description: '카카오 place_name', examples: ['두물머리'] }
@@ -294,6 +294,11 @@ components:
           minimum: 0
           description: '현재 위치에서의 거리(m, 카카오 distance). 현재 위치(lat·lng)를 안 보냈으면 null'
           examples: [23671]
+        category_path:
+          type: array
+          items: { type: string, minLength: 1 }
+          description: '카카오 category_name의 모든 칸, 윗칸부터("교통,수송 > 지하철,전철 > 수도권2호선" → ["교통,수송", "지하철,전철", "수도권2호선"]). 마지막 칸은 category와 같다. 분류가 없으면 []. 출발 미리보기 배경의 장소 종류를 고르는 데 쓴다(#116)'
+          examples: [['여행', '관광,명소', '해수욕장,해변'], ['교통,수송', '지하철,전철', '수도권2호선'], []]
     Places:
       type: object
       additionalProperties: false
