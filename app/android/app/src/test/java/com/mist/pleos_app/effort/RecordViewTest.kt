@@ -20,6 +20,19 @@ class RecordViewTest {
         .copy(arrivedAt = scene.arrivedAt, weatherArr = scene.weatherArr, restAnswerMin = 0, depLat = 37.40, depLng = 127.11)
 
     @Test
+    fun closeChoiceHidesAmountInDetail() {
+        // 효성 11/15(#181): [다음에](later) 주행만 기록 상세 합계를 배수까지만. 혼자 · 짧은 주행(제안 없음) · 챙겨주기(본 뒤 [닫기] = close 포함)는 총액까지
+        val r = EffortRecord("t1", "2026-11-17", "태안 꽃지해수욕장", 130.0, 1.57, 204.0, "A", "한 사람 약 9천 원", "accept", "", n = 4)
+        assertEquals(true, recordShowsAmount(r))
+        assertFalse(recordShowsAmount(r.copy(choice = CHOICE_LATER)))
+        assertEquals(true, recordShowsAmount(r.copy(choice = CHOICE_CLOSE)))
+        assertEquals(true, isClosedChoice(CHOICE_LATER))
+        assertEquals(true, isClosedChoice(CHOICE_CLOSE))
+        assertFalse(isClosedChoice(CHOICE_ACCEPT))
+        assertEquals(true, recordShowsAmount(r.copy(choice = "", suggestion = null, n = 1)))
+    }
+
+    @Test
     fun logLineLikeDesign() {
         // 시안: "2시간 10분 · 평소보다 1.57배 · 함께 4명", "1시간 · 평소 같은 길 · 함께 2명"(1.00은 엔진 문구)
         val r = EffortRecord("t1", "2026-11-17", "태안 꽃지해수욕장", 130.0, 1.57, 204.0, "A", "한 사람 약 9천 원", "accept", "", n = 4)

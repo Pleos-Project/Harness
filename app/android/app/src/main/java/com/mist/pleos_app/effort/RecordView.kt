@@ -26,6 +26,13 @@ fun recordLogLine(r: EffortRecord, c: EffortConstants?): String {
 fun recordReceiptOf(r: EffortRecord, c: EffortConstants?): EffortReceipt? =
     if (r.choice == CHOICE_UNSETTLED) null else r.trip?.let { receiptOf(it, c) }
 
+/**
+ * 기록 상세에서 합계를 금액(총액)까지 보여 줄지(효성 11/15, #181 · DECISIONS '기록 상세의 합계 금액').
+ * [다음에]를 누른 주행은 배수까지만 — 누르지 않았는데 기록에서 금액이 보이면 "누른 뒤에만 금액"(PRD 7-5)이 깨진다.
+ * 혼자 탄 주행 · 아주 짧은 주행 · [운전자 챙겨주기]를 누른 주행(금액을 본 뒤 [닫기] 포함)은 도착 때와 같이 총액까지.
+ */
+fun recordShowsAmount(r: EffortRecord): Boolean = r.choice != CHOICE_LATER
+
 /** 정리하지 못한 주행의 목록·카드 표기(명준 #75 11/9: 목록과 상세에 "정리하지 못함"). */
 const val UNSETTLED_LABEL = "정리하지 못함"
 

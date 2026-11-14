@@ -256,6 +256,7 @@ internal fun ReceiptColumn(
     showRest: Boolean = midwaySub == null,   // 쉰 시간 줄. 중간 정산도 묻게 되어(#118 10-3 ⑥) 중간 정산 화면이 true로 넘긴다
     print: PrintSeq? = null,    // 출력 연출(#118 v90~v94). null = 끝 상태(불 켜짐 · 합계 금액)
     arrive: Boolean = false,    // 도착 화면 가로만 종이 틀이 다르다(Design v2 .arrpg). 중간 정산 · 기록 상세는 그대로
+    showAmount: Boolean = true, // false면 합계는 배수까지만(기록 상세의 [다음에] 주행, #181 효성 11/15)
 ) {
     val c = Chagok.colors
     val t = Chagok.type
@@ -341,7 +342,7 @@ internal fun ReceiptColumn(
         r.distanceText?.let { CgReceiptSum(stringResource(R.string.effort_receipt_distance), it, compact = narrow, minHeight = sumMin) }
         // v92 · v94: 처음 배수 → 불 켜지고 1.5초 뒤 금액으로 굴러 바뀜(끝 = 금액, 화면 읽기 = "약 3만 6천 원 · 평소보다 …")
         CgReceiptSum(stringResource(R.string.effort_receipt_total), r.multiplierText, compact = narrow, total = true, hi = hi("total"), minHeight = sumMin,
-            amount = receiptAmountText(r, ui.constants), flip = print?.flip ?: { Triple(1f, 1f, 1f) })
+            amount = if (showAmount) receiptAmountText(r, ui.constants) else null, flip = print?.flip ?: { Triple(1f, 1f, 1f) })
         // #118: 중간 정산을 한 주행이면 합계 아래 "운전 노고 전체 · 약 3만 6천 원" + 작은 줄 "중간 정산 있음 ⇅"(누르면 자리 바꿈)
         val fold = ui.settleFold
         if (fold != null && midwaySub == null && editable) {

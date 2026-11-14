@@ -72,7 +72,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import com.mist.pleos_app.R
 import com.mist.pleos_app.effort.CHOICE_ACCEPT
-import com.mist.pleos_app.effort.CHOICE_CLOSE
 import com.mist.pleos_app.effort.EffortRecord
 import com.mist.pleos_app.effort.EffortUi
 import com.mist.pleos_app.effort.OpenTrip
@@ -259,7 +258,7 @@ internal fun EffortHomeScreen(
 internal fun recordNoteText(r: EffortRecord, ui: EffortUi): String = when {
     r.choice == com.mist.pleos_app.effort.CHOICE_UNSETTLED -> stringResource(R.string.effort_home_rec_unsettled)
     r.choice == CHOICE_ACCEPT -> listOfNotNull(r.suggestion?.removePrefix("한 사람 ")?.let { stringResource(R.string.effort_home_rec_per, it) }, stringResource(R.string.effort_offer_like)).joinToString(" · ")
-    r.choice == CHOICE_CLOSE -> stringResource(R.string.effort_home_rec_closed)
+    com.mist.pleos_app.effort.isClosedChoice(r.choice) -> stringResource(R.string.effort_home_rec_closed)
     else -> stringResource(R.string.effort_home_rec_item, ui.items.firstOrNull { it.key == r.choice }?.phraseText ?: r.choice)
 }
 

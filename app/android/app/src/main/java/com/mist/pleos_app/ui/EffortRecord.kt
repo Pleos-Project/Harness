@@ -37,7 +37,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import com.mist.pleos_app.R
 import com.mist.pleos_app.app.Settings
 import com.mist.pleos_app.effort.CHOICE_ACCEPT
-import com.mist.pleos_app.effort.CHOICE_CLOSE
 import com.mist.pleos_app.effort.EffortRecord
 import com.mist.pleos_app.effort.EffortUi
 import com.mist.pleos_app.effort.dayText
@@ -119,6 +118,7 @@ internal fun EffortRecordScreen(ui: EffortUi, onBack: () -> Unit) {
             if (receipt != null && trip != null) ReceiptColumn(
                 trip, receipt, ui, narrow, reduce = true, paperShift = seq.paper.value, open = open, print = seq,
                 onToggle = { k -> open = if (open == k) null else k }, onChangeRest = {}, modifier = m, editable = false,
+                showAmount = com.mist.pleos_app.effort.recordShowsAmount(r),
             )
         }
         val card: @Composable (Modifier) -> Unit = { m0 ->
@@ -131,7 +131,9 @@ internal fun EffortRecordScreen(ui: EffortUi, onBack: () -> Unit) {
                     Text(receipt?.multiplierText ?: r.headlineText, style = (if (narrow) t.titleL else t.headlineS).copy(lineBreak = androidx.compose.ui.text.style.LineBreak.Heading), color = c.textPrimary)
                 }
                 // 11/9 명준: 금액 밑줄(도착과 같은 .ul) 뒤 줄바꿈 → 아래 줄 운전 시간 · 거리 · 인원, 밑줄과 아래 줄 사이 8(분할 6)
-                val amt = receipt?.proposal?.amountText ?: receipt?.let { com.mist.pleos_app.effort.receiptAmountText(it, ui.constants) }
+                // [다음에] 주행은 금액 밑줄 줄도 뺀다(#181 효성 11/15)
+                val amt = if (!com.mist.pleos_app.effort.recordShowsAmount(r)) null
+                else receipt?.proposal?.amountText ?: receipt?.let { com.mist.pleos_app.effort.receiptAmountText(it, ui.constants) }
                 Column(verticalArrangement = Arrangement.spacedBy(if (narrow) 6.gpx else 8.gpx)) {
                     amt?.let { DayAmountUnderline(stringResource(R.string.effort_record_amount, it), narrow) }
                     Text(dayEffortLine(r, null), style = if (narrow) t.labelM else t.bodyM, color = c.textSecondary)
@@ -189,7 +191,7 @@ private fun choiceLine(r: EffortRecord, ui: EffortUi): String {
         r.suggestion == null && (r.n ?: 2) < 2 -> withMethod(stringResource(R.string.effort_record_choice_solo))
         r.suggestion == null -> stringResource(R.string.effort_record_choice_none)
         r.choice == CHOICE_ACCEPT -> withMethod(stringResource(R.string.effort_record_choice_accept, r.suggestion))
-        r.choice == CHOICE_CLOSE -> withMethod(stringResource(R.string.effort_record_choice_close))
+        com.mist.pleos_app.effort.isClosedChoice(r.choice) -> withMethod(stringResource(R.string.effort_record_choice_close))
         else -> withMethod(stringResource(R.string.effort_record_choice_item, ui.items.firstOrNull { it.key == r.choice }?.phraseText ?: r.choice))
     }
 }
