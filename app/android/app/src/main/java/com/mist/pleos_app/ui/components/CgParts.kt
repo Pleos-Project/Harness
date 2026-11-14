@@ -53,6 +53,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Brush
@@ -343,11 +344,12 @@ fun CgProgressPill(text: String, onClick: () -> Unit, modifier: Modifier = Modif
 // ------------------------------------------------------------ search-field
 /** 검색 한 줄(`components/search-field`, Text Field 100 알약): 가로 1040 가운데, 입력 중이면 테두리 3 + [지우기](v3: 면 없는 글자 버튼, 인원 알림 [닫기]와 같은 규칙). */
 @Composable
-fun CgSearchField(query: String, hint: String, clearLabel: String, onQuery: (String) -> Unit, onSearch: () -> Unit, onClear: () -> Unit, compact: Boolean = false) {
+fun CgSearchField(query: String, hint: String, clearLabel: String, onQuery: (String) -> Unit, onSearch: () -> Unit, onClear: () -> Unit, compact: Boolean = false, disabled: Boolean = false) {
     val c = Chagok.colors
-    val active = query.isNotEmpty()
+    val active = query.isNotEmpty() && !disabled
     val shape = RoundedCornerShape(50.gpx)
-    Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+    // 흐림(.hsearch.cg-dis): 투명도 .45 · 누르거나 입력할 수 없음(인터넷 없음, depart-offline)
+    Box(Modifier.fillMaxWidth().alpha(if (disabled) 0.45f else 1f), contentAlignment = Alignment.Center) {
         Row(
             (if (compact) Modifier.fillMaxWidth() else Modifier.width(1040.gpx))
                 .height(if (compact) 88.gpx else 100.gpx)
@@ -363,7 +365,7 @@ fun CgSearchField(query: String, hint: String, clearLabel: String, onQuery: (Str
                 val fs = if (compact) Chagok.type.bodyL else Chagok.type.titleS
                 if (query.isEmpty()) Text(hint, style = fs, color = c.textTertiary, maxLines = 1)
                 BasicTextField(
-                    value = query, onValueChange = { onQuery(it.take(100)) }, singleLine = true,
+                    value = query, onValueChange = { onQuery(it.take(100)) }, singleLine = true, enabled = !disabled,
                     textStyle = fs.copy(color = c.textPrimary), cursorBrush = SolidColor(c.fieldCaret),
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search), keyboardActions = KeyboardActions(onSearch = { onSearch() }),
                     modifier = Modifier.fillMaxWidth().semantics { contentDescription = hint },
@@ -1130,6 +1132,26 @@ fun CgBanner(text: String, modifier: Modifier = Modifier, warn: Boolean = false,
     ) {
         icon?.let { CgIconMark(it, 32.gpx, fg) }
         Text(text, style = if (warn) Chagok.type.bodyMB else Chagok.type.bodyM, color = fg)
+    }
+}
+
+/**
+ * 인터넷 없음 알약(`components/notice` .cg-offl): 가운데 정렬 · 글 길이만큼만 · 아이콘 28 · 간격 14.
+ * 가로는 높이 64 · 좌우 28 · Body M Bold 한 줄, 분할은 높이 52 · 좌우 18 · Label M 줄바꿈 허용. 색은 status-warning.
+ */
+@Composable
+fun CgOfflinePill(text: String, icon: CgIcon, compact: Boolean, modifier: Modifier = Modifier) {
+    val c = Chagok.colors
+    Box(modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+        Row(
+            Modifier.height(if (compact) 52.gpx else 64.gpx)
+                .background(c.statusWarningBackground, RoundedCornerShape(999.gpx))
+                .padding(horizontal = if (compact) 18.gpx else 28.gpx),
+            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.gpx),
+        ) {
+            CgIconMark(icon, 28.gpx, c.statusWarningForeground)
+            Text(text, style = if (compact) Chagok.type.labelM else Chagok.type.bodyMB, color = c.statusWarningForeground, maxLines = if (compact) 2 else 1, softWrap = compact)
+        }
     }
 }
 
