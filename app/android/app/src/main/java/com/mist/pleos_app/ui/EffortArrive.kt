@@ -294,7 +294,10 @@ internal fun ReceiptColumn(
         }
         // 정보 없음(날씨 · 정체): 목록 맨 위, 이름 · 값을 나누고 누르면 더하지 않은 까닭(아티팩트 calc terms.unshift)
         val cp = ui.constants?.copy?.text
+        // 날씨를 반만 받았으면(#149) 날씨 줄이 "출발 비 · 도착 정보 없음"으로 이미 말하므로 '날씨 정보 없음' 줄은 따로 그리지 않는다
+        val weatherHalf = r.lines.any { it.key == "rain" || it.key == "snow" }
         r.notes.forEach { note ->
+            if (weatherHalf && note == cp?.get("weather_unknown_text")) return@forEach
             val jam = note == cp?.get("congestion_unknown_text")
             val k = "na:$note"
             CgReceiptRow(
