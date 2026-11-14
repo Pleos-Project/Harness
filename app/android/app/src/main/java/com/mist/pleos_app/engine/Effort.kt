@@ -471,6 +471,8 @@ fun effort(inp: EffortInput, c: EffortConstants): EffortReceipt {
     val rainWhole: Boolean
     val snowWhole: Boolean
     val weatherNote: String?
+    // 날씨를 반만 받음(#149): (받은 쪽 "dep"|"arr", 그 날씨 "rain"|"snow"). 1회 관측 규칙에서만 생긴다
+    var weatherHalf: Pair<String, String>? = null
     if (hp != null && hp.known) {
         // 시간대별(#63): 강수 분 = 벽시계 겹침 × T/경과(밤길과 같은 방식). unknown 조각은 가산 0
         rain = hp.rainWallS * drive / elapsed
@@ -489,6 +491,14 @@ fun effort(inp: EffortInput, c: EffortConstants): EffortReceipt {
             c.copy.text.getValue("weather_unknown_text")
         } else {
             null
+        }
+        // 한쪽은 비·눈인데 다른 쪽을 못 받았으면 날씨 줄 하나에 그 사실을 적는다(명준 11/12). 셈은 위 절반 규칙 그대로(효성 11/14).
+        // note는 그대로 두므로, 날씨 줄이 있으면서 이 note가 있으면 반쪽이다
+        val depKnown = inp.weatherDep in KNOWN_PRECIP
+        val arrKnown = inp.weatherArr in KNOWN_PRECIP
+        if (depKnown != arrKnown) {
+            val got = if (depKnown) inp.weatherDep else inp.weatherArr
+            if (got == "rain" || got == "snow") weatherHalf = (if (depKnown) "dep" else "arr") to got
         }
     }
     val limitS = c.fatigueLimitMin * 60
@@ -511,14 +521,24 @@ fun effort(inp: EffortInput, c: EffortConstants): EffortReceipt {
         total += a
         if (a > 0) {
             val pct = roundHalfUp(a / drive)
+            val half = weatherHalf?.takeIf { it.second == k }
             val detail = when (k) {
-                "rain", "snow" -> weatherDetail(k, if (k == "rain") rainWhole else snowWhole, c, inp.midway != null)
+                "rain", "snow" -> if (half != null) {
+                    fill(c.copy.lineDetail.getValue("weather_${half.first}_only_text"), "precip" to c.copy.precipWords.getValue(k))
+                } else {
+                    weatherDetail(k, if (k == "rain") rainWhole else snowWhole, c, inp.midway != null)
+                }
                 "congestion" -> congestionText(congestionM, inp.congestionRatio, c)
                 "delay" -> timeDetail("delay_text", delay, c)
                 "night" -> timeDetail("night_text", night, c)
                 else -> timeDetail("fatigue_text", excess, c)   // 구간이 여러 개면 넘긴 시간의 합
             }
-            lines.add(EffortLine(k, c.copy.lineLabels.getValue(k), a / 6000, pct, pctText(pct), detail, basisText(k, c)))
+            val basis = if (half != null) {
+                fill(c.copy.text.getValue("weather_${half.first}_only_basis_text"), "precip" to c.copy.precipWords.getValue(k))
+            } else {
+                basisText(k, c)
+            }
+            lines.add(EffortLine(k, c.copy.lineLabels.getValue(k), a / 6000, pct, pctText(pct), detail, basis))
         }
     }
     val m100 = if (drive > 0) roundHalfUp(total / drive) else 100
