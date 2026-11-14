@@ -380,7 +380,6 @@
     <string name="effort_settings_wipe_none">남은 기록이 없어요</string>
     <string name="effort_settings_wipe_title">기록을 모두 지울까요?</string>
     <string name="effort_settings_wipe_body">지운 기록은 되돌릴 수 없어요</string>
-    <string name="effort_settings_note">개발·시연용 설정이에요 · 좌표 없이 이 차에만 저장돼요</string>
     <string name="effort_settings_method">제안 방식</string>
     <string name="effort_settings_method_a">방식 A · 돈으로 환산</string>
     <string name="effort_settings_method_b">방식 B · 한 번 빼 주기</string>
