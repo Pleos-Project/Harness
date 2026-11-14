@@ -88,7 +88,7 @@
   --cg-shadow-1: 0 6px 24px rgba(0,0,0,.08); --cg-shadow-2: 0 2px 2px rgba(0,0,0,.08), 0 8px 32px rgba(0,0,0,.16); --cg-shadow-3: 0 2px 4px rgba(0,0,0,.20), 0 20px 40px rgba(0,0,0,.24);
 }
 
-/* ═══ Nogo 컬러 v4 역할 토큰(11/14 · Design v2 아티팩트 v191이 기준. v3.1에서 키 컬러만 딥 잉크 #242135 · 라임 #C8F04A로 바꾸고 나머지는 v3.1 관계대로) ═══
+/* ═══ Nogo 컬러 v4 역할 토큰(11/14 · Design v2 아티팩트 v193이 기준. v3.1에서 키 컬러만 딥 잉크 #242135 · 라임 #C8F04A로 바꾸고 나머지는 v3.1 관계대로) ═══
  * --color-* = Nogo 역할 토큰(주간 = :root, 야간 = prefers-color-scheme:dark / data-theme="dark").
  * 화면 CSS가 예전에 쓰던 별칭(--cg-text-primary · --cg-surface-card …)은 앱 창(.cg-a-land · .cg-a-p1) 안에서 이 역할 토큰으로 다시 연결된다(screens/common.css).
  * --pl-* = 플랫폼 영역(순정 내비 · 시스템 키보드)이 앱 창에 겹칠 때 Pleos 원래 값으로 되돌리는 값.

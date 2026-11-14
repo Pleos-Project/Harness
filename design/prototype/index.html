@@ -1715,6 +1715,12 @@ details ul.nav li.g{font-size:11.5px;font-weight:800;color:var(--ink-3);margin-t
 @keyframes rv-fill{to{clip-path:inset(0 0 0 0 round 7px)}}
 @media (prefers-reduced-motion:reduce){.rv .rvc,.rv .rvst,.rv .rvf i{animation:none!important}.rv .rvw.now .rvring circle{animation:none;stroke-dashoffset:0}.rv .rvi.pop{animation:none}}
 
+
+/* 11/15 명준: 분할 기록 목록 — 줄을 창 높이로 늘리지 않고 내용만큼(가로 · 기존 줄과 같은 칸), 많으면 목록 안 스크롤 */
+.pg.p .logl{flex:0 1 auto;min-height:0;overflow-y:auto}
+.pg.p .logr{flex:none;padding:18px 24px}
+/* 11/15: 인원 1명이면 [−] 흐리게 잠금(앱 기본값과 같게) */
+.pbar .pst .btn.ib.dis{opacity:.32;pointer-events:none}
 </style>
 
 <div class="top">
@@ -1870,18 +1876,18 @@ function calc(s){
   if(!t.auto&&s.rest==null) return {pending:true,t};
   const Q=t.auto?0:RESTQ[s.rest], T=t.el-Q;
   const N=t.auto?t.nE:Math.round(t.nE*T/t.el);         /* 2순위: 경과 중 밤 × T/경과 */
-  const R=t.wx&&t.wx!=="?"?T:0, C=t.cp?t.cp/100*T:0;   /* 정체 분 ≈ 정체 비율 × 운전 시간(효성 결정, PRD 변경표) */
+  const R=t.wx&&t.wx!=="?"?(t.wx2==="?"?T/2:T):0, C=t.cp?t.cp/100*T:0;   /* 정체 분 ≈ 정체 비율 × 운전 시간(효성 결정, PRD 변경표) */
   let D=T-t.eta; if(D<t.eta*0.1) D=0;                   /* ETA의 10% 미만이면 0 */
   const split=!t.auto&&Q>=15;                            /* 2순위·15분 이상: 가운데 한 번 쉰 것으로 [T/2, T/2] */
   const F=split?2*Math.max(0,T/2-120)*0.125:Math.max(0,T-120)*0.125;
   const wr=t.wx==="눈"?0.49:0.40;
   const terms=[
-    {k:"날씨",v:t.wx2==="?"?`출발 ${t.wx} · 도착 정보 없음`:`${t.wx}, ${t.mid?"지금까지":"주행"} 내내`,a:wr*R,why:(t.wx2==="?"?`도착 날씨는 불러오지 못해 출발 때 날씨(${t.wx})로 셌어요 · `:"")+`${t.wx} 오는 날은 운전 부담이 ${Math.round(wr*100)}% 늘어요 · 시뮬레이터 30명 연구(2026)`},
+    {k:"날씨",v:t.wx2==="?"?`출발 ${t.wx} · 도착 정보 없음`:`${t.wx}, ${t.mid?"지금까지":"주행"} 내내`,a:wr*R,why:(t.wx2==="?"?`도착 날씨를 받지 못해 운전 시간의 앞 절반만 출발 날씨(${t.wx})로 셌어요 · `:"")+`${t.wx} 오는 날은 운전 부담이 ${Math.round(wr*100)}% 늘어요 · 시뮬레이터 30명 연구(2026)`},
     {k:"정체 구간",v:`${t.jk}km`,det:`출발 때 내비가 안내한 경로의 ${t.cp}%가 붐볐어요`,a:0.27*C,why:"차가 붐비는 길은 운전 부담이 27% 늘어요 · 교통 밀도 연구(LSU 2015)"},
     {k:"예상보다 더",v:`+${hm(D)}`,m:D,a:0.27*D,why:t.mid?`출발 때 내비 예상으로는 여기까지 ${hm(t.eta)}였어요(지금까지 거리 비율) · 정체와 같은 27%를 써요`:`출발 때 예상한 ${hm(t.eta)}보다 늘어난 시간이에요 · 정체와 같은 27%를 써요`},
     {k:"밤길",v:hm(N),m:N,a:0.04*N,why:"밤 운전은 부담이 4% 늘어요 · 운전자 50명 시뮬레이터 연구(2025)"},
     {k:"장시간",v:`2시간 넘긴 ${hm(T-120)}`,m:T-120,a:F,why:"2시간 운전하면 15분 쉬게 한 법 기준이에요 · 화물자동차 운수사업법 시행규칙 제21조"}
-  ].filter(x=>x.a>0).map(x=>{const lt=x.a/T*100<1,pc=Math.max(1,Math.round(x.a/T*100));return {...x,pc,lt,pt:lt?"+1% 미만":"+"+pc+"%"}});   /* 값이 0인 줄 생략 */
+  ].filter(x=>x.a>0).map(x=>{const p0=Math.round(x.a/T*100),lt=p0===0,pc=Math.max(1,p0);   /* 11/15: 엔진 pct_text와 같게 — 정수 % 반올림, 어림이 0일 때만 +1% 미만 */return {...x,pc,lt,pt:lt?"+1% 미만":"+"+pc+"%"}});   /* 값이 0인 줄 생략 */
   if(t.cp===null) terms.unshift({k:"정체 구간",v:"정체 정보 없음",a:0,pc:0,na:true,why:"출발 때 내비에서 정체 정보를 받지 못해 이번에는 더하지 않았어요"});
   if(t.wx==="?") terms.unshift({k:"날씨",v:"정보 없음",a:0,pc:0,na:true,why:"날씨를 불러오지 못해 이번에는 더하지 않았어요"});
   const noko=T+terms.reduce((a,x)=>a+x.a,0), amt=noko*UNIT, n=Math.max(1,s.people);
@@ -1898,7 +1904,7 @@ const multTxt=m=>m<1.005?"평소 같은 길":`평소보다 ${m.toFixed(2)}배 �
 /* ───────── 부품 ───────── */
 /* o.ic = Pleos 에셋 아이콘(back·plus·minus·arrow), o.ico = 에셋에 없는 아이콘 자리(점선 상자), o.end = 아이콘을 글자 뒤에 */
 const B=(label,o={})=>{const i=o.ic?`<i class="ic ic-${o.ic}"></i>`:o.ico?(typeof o.ico==="string"?`<i class="ico pi pi-${o.ico}" aria-hidden="true"></i>`:`<i class="ico" title="아이콘 자리"></i>`):"";
-  return `<span class="btn ${o.cls||""}" ${o.go?`data-go="${o.go}"`:""} ${o.act?`data-act="${o.act}"`:""} ${o.anno?`data-anno="${o.anno}"`:""} ${o.aria?`aria-label="${o.aria}"`:""}>${o.end?"":i}${label}${o.end?i:""}</span>`};
+  return `<span class="btn ${o.cls||""}" ${o.go?`data-go="${o.go}"`:""} ${o.act?`data-act="${o.act}"`:""} ${o.anno?`data-anno="${o.anno}"`:""} ${o.aria?`aria-label="${o.aria}"`:""} ${o.dis?`aria-disabled="true"`:""}>${o.end?"":i}${label}${o.end?i:""}</span>`};
 /* D2(11/12 명준): 문장 속 장소 이름만 말줄임하고 뒤 문구 · 시각 · 인원은 늘 보이게 */
 const PN=(nm,rest)=>`<span class="pnl"><span class="pn">${nm}</span><span class="pr">${rest.startsWith(" ")?"&nbsp;"+rest.slice(1):rest}</span></span>`;   /* 뒤 문구 첫 칸 띄어쓰기는 flex 안에서 사라지므로 nbsp */
 const HD=(title,o={})=>`<div class="hd" data-anno="${o.back?"Title · Depth 80":"Title · Main 80"}">${o.back?B("",{cls:"ib plain",act:"back",ic:"back",aria:"뒤로",anno:"Icon Button 80 · Plain · 뒤로"}):""}<span class="${o.back?"ttl":"name"}">${title}</span>${o.right||""}</div>`;
@@ -1910,7 +1916,7 @@ function peopleAlert(p,s){
   const man=s.toast==="S"?!!s.splitTouched:s.split!==s.detected;   /* 손으로 나눠 낼 인원을 바꿈 */
   return `<div class="pbar${man?" man":""}" data-anno="인원 확인 알림 · 높이 96(분할 88) · 폭은 목적지 검색 줄과 같음(1040, 분할 758) · 검색 줄에 걸치지 않음 · 앱 안, 저절로 안 사라짐">
     <div class="pt"><b>${man?s.split+"명이 낼게요":s.toast==="S"?"몇 명이 함께 타나요?":s.detected+"명이 탔어요"}</b><small>${s.split===1?"혼자 운전하면 제안 없이 영수증만 보여 드려요":man?(s.toast==="S"?"직접 고른 인원으로 나눠요":`감지는 ${s.detected}명 · ${s.split}명으로 나눠요`):s.toast==="S"?"좌석 센서를 읽지 못했어요 · 나눠 낼 인원을 골라 주세요":"좌석 센서로 감지했어요 · 나눠 낼 인원을 맞춰 주세요"}</small></div>
-    <div class="pst" data-anno="Stepper">${B("",{cls:"ib plain",act:"split-",ic:"minus",aria:"줄이기"})}<span class="v">${s.split}명</span>${B("",{cls:"ib plain",act:"split+",ic:"plus",aria:"늘리기"})}</div>
+    <div class="pst" data-anno="Stepper">${B("",{cls:"ib plain"+(s.split<=1?" dis":""),act:s.split<=1?"":"split-",dis:s.split<=1,ic:"minus",aria:"줄이기"})}<span class="v">${s.split}명</span>${B("",{cls:"ib plain",act:"split+",ic:"plus",aria:"늘리기"})}</div>
     <i class="pdv"></i><span class="tbtn pri" data-act="toastOk" data-anno="글자 버튼 · 진한 색 = 확인">확인</span><span class="tbtn" data-act="toastClose" data-anno="글자 버튼 · 옅은 색 = 닫기(감지 인원 그대로)">닫기</span>
   </div>`;
 }
@@ -2106,7 +2112,7 @@ function receipt(p,s,c){
   if(c.pending) return `<div class="rcol" data-anno="오늘 운전 영수증 · 계산 전">${rq}<div class="prn off" aria-hidden="true"><i></i></div><div class="paperwrap"><div class="paper wait"><span class="cap">${s.restUI==="sheet"?(c.t.mid?"지금까지 운전을 정리하는 중이에요":"오늘 운전을 정리하는 중이에요"):"쉰 시간을 고르면 영수증이 나와요"}</span></div></div></div>`;
   const rows=c.terms.map((r,i)=>`<div class="rrow${s.why===i?" unfold":""}${chg(r)?" chg":""}" data-act="why${i}"><span class="k">${r.k}</span><span class="v">${r.v}${r.sub?`<small>${r.sub}</small>`:""}</span><span class="pc${r.lt?" lt":""}">${r.na?"—":r.pt}</span><i class="chev"></i>${s.why===i?`<span class="wy" data-anno="% 드롭다운 펼침 · 내용 + 한 줄 설명(출처 · 계산 방식은 화면에 안 보임, 11/9 명준)">${r.det?`<b>${r.det}</b>`:""}<span>${r.why.split(" · ")[0]}</span></span>`:""}</div>`).join("");
   return `<div class="rcol" data-anno="오늘 운전 영수증 (5-1) · 출력 종이 형태 · 값이 0인 줄 생략">${rq}${slot}<div class="paperwrap"><div class="paper${s.setOpen&&c.settled?" sopen":""}">
-    <div class="ph"><b>${c.t.mid||s.ro?"오늘 주행 영수증":"오늘 운전, 고생했어요"}</b><span>${c.t.mid?"14:20 출발 · 아직 가는 중":c.t.place+" · "+(c.t.date||"11월 10일")} · ${s.people>1?s.people+"명":"혼자"}</span></div>
+    <div class="ph"><b>${c.t.mid?"오늘 주행 영수증":"오늘 운전, 고생했어요"}</b><span>${c.t.mid?"14:20 출발 · 아직 가는 중":c.t.place+" · "+(c.t.date||"11월 10일")} · ${s.people>1?s.people+"명":"혼자"}</span></div>
     <i class="rule2"></i>
     <div class="rhd"><span>항목</span><span>더한 몫</span></div>
     ${rows||`<div class="rnone" data-anno="가산 0개일 때 · 수월한 길이어도 운전한 시간은 센다는 한 줄(11/11 명준, 11/12 확정 문구)"><i class="ico pi pi-sun" aria-hidden="true"></i><span><b>비·정체·밤길 없이 달렸어요</b><small>더할 조건은 없고, 운전한 시간만큼 셌어요</small></span></div>`}
@@ -2132,7 +2138,7 @@ function arrive(p,s){
   if(s.unsettled){
     const hd=HD(PN(TRIPS.main.place,"에 도착했어요"),{right:`<span class="cap">${s.people<=1?"혼자 운전":"함께 탄 사람 "+s.people+"명"}</span>`});
     return `<div class="pg${p?" p":""}">${hd}<div class="uns" data-anno="정리하지 못함(#68·#71) · 경과가 상한을 넘음 · 숫자·쉰 시간·제안 없음">
-      <div class="vpaper"><div class="ph"><b>오늘 주행 영수증</b><span>${TRIPS.main.place} · 11월 10일</span></div><i class="rule2"></i>
+      <div class="vpaper"><div class="ph"><b>오늘 운전, 고생했어요</b><span>${TRIPS.main.place} · 11월 10일</span></div><i class="rule2"></i>
         <div class="vmsg"><b data-anno="엔진 문구 effort.copy.unsettled_text">이번 주행은 정리하지 못했어요</b><span>출발하고 14시간이 지나서 열었어요<br>도착한 시간을 알 수 없어 이번에는 세지 않았어요</span></div>
         <div class="vlines" aria-hidden="true">${[72,54,64].map(w=>`<i style="width:${w}%"></i>`).join("")}</div>
         <span class="vnote">도착해서 바로 열거나, 가는 중에 [도착했어요]를 누르면 정리할 수 있어요</span></div>
@@ -2279,7 +2285,7 @@ const SCREENS=[
    st:["제목 \"3명이 낼게요\"(숫자는 스테퍼 값 그대로)","설명 \"감지는 4명 · 3명으로 나눠요\"","인원을 바꿔도 알림이 다시 떨어지는 효과 없음(처음 뜰 때만)"],
    ck:[["ok","11/8 명준 코멘트"],["q","\"N명이 낼게요\"는 PRD 8장 문구 밖 — 기획 확인"]]},
   {g:"출발하기 · 출발 화면",id:"depart-people-solo",r:"depart",tag:"인원 1명까지 내림",s:{toast:"B",people:1,split:1},desc:"−로 1명까지 내리면 설명 줄이 \"혼자 운전하면 제안 없이 영수증만 보여 드려요\"로 바뀐다.",
-   st:["[−] 1명 [+] · 설명 \"혼자 운전하면 제안 없이 영수증만 보여 드려요\"(세로 창은 설명 줄 숨김)"],ck:[["ok","[신규] 누른 뒤 · −로 1명"],["ok","분기 '혼자 탄 주행'을 출발 전에 미리 알려 줌"]]},
+   st:["[−] 1명 [+] · 1명이면 [−]는 흐리게 잠김(투명도 .32 · 누를 수 없음, 11/15 앱 기본값) · 설명 \"혼자 운전하면 제안 없이 영수증만 보여 드려요\"(세로 창은 설명 줄 숨김)"],ck:[["ok","[신규] 누른 뒤 · −로 1명"],["ok","분기 '혼자 탄 주행'을 출발 전에 미리 알려 줌"]]},
   {g:"출발하기 · 출발 화면",id:"depart-sensor",r:"depart",tag:"좌석 센서 못 읽음",s:{toast:"S",people:1,split:1,sensorFail:true},desc:"좌석 센서 값을 못 읽으면 감지 인원 없이 직접 고르게 묻는다.",
    st:["\"몇 명이 함께 타나요?\" · \"좌석 센서를 읽지 못했어요 · 나눠 낼 인원을 골라 주세요\" · [−] 1명 [+]","인원 알약 \"인원 확인 필요\"(분할 \"확인 필요\", D9)"],ck:[["ok","[신규] 에러 · 좌석 센서"],["q","닫기를 누르면 1명(혼자)으로 볼지 — 지금 시안은 고른 값 그대로"]]},
   {g:"출발하기 · 출발 화면",id:"depart-empty",r:"depart",tag:"목적지 카드 없음",s:{noFav:true},desc:"즐겨찾기·최근 목적지가 없으면 카드 자리에 이유와 방법을 한 줄로 알려 준다.",
@@ -2360,7 +2366,7 @@ const SCREENS=[
   {g:"도착 · 쉰 시간 묻기 (짧은 하단 시트 · 11/7 확정)",id:"rest-changed",r:"arrive",tag:"고른 순간 값 바뀜",s:{ab:"A",rest:2,prevRest:0},desc:"시트에서 30분을 고르면 시트가 닫히고, 바뀐 줄(운전 시간 · 예상보다 더 · 장시간 · 밤길 · 합계)이 잠깐 회색 바탕으로 표시됐다 사라진다.",
    st:["바뀐 값만 회색 바탕(프로토타입에서 1.8초 동안 옅어짐)","2시간 10분 → 1시간 40분, 1.57배 → 1.53배 등"],ck:[["ok","[신규] 누른 뒤 · 쉰 시간 선택 → 영수증 값이 바뀌는 순간"]]},
   {g:"도착 · 방식 A 결과",id:"arrive-a",r:"arrive",tag:"영수증 + 금액",s:{ab:"A"},desc:"쉰 시간을 고르고 나면 왼쪽에 오늘 운전 영수증, 오른쪽에 \"오늘 운전을 챙긴다면 · 한 사람 약 9천 원\"을 함께 보여 준다.",
-   st:["맨 위: 중간에 쉰 시간 · 없음 · 바꾸기","영수증 = 프린터 슬롯에서 나온 종이(레퍼런스): 제목 \"오늘 주행 영수증\"(11/8 명준: 기본 고정. 조건별 제목안은 보관) · 이중선 · 항목 | 더한 몫 · 소계(운전 시간 2시간 10분 · 거리 104km) · 합계 \"평소보다 1.57배 힘든 길\" · 바코드 · 지그재그 끝","계산 연출 뒤 종이가 슬롯에서 1.1초에 걸쳐 내려오고, 제안 카드는 0.9초 뒤 올라옴","줄: 날씨 비 +40% · 정체 구간 38km +10%(경로의 36% · 기준은 % 드롭다운 안, 11/8 명준: 시연값으로) · 예상보다 더 +25분 +5% · 밤길 50분 +2% · 장시간 2시간 넘긴 10분 +1% · 거리 104km(표시만)","제목 \"오늘 운전을 챙긴다면\" · 큰 숫자 \"한 사람 약 9천 원\"","근거 \"운전 노고 약 3만 6천 원을 운전자 포함 4명이 나눈 값 · 최저임금 1분 178원 기준\"","좋아요 · 닫기(같은 크기)"],
+   st:["맨 위: 중간에 쉰 시간 · 없음 · 바꾸기","영수증 = 프린터 슬롯에서 나온 종이(레퍼런스): 제목 \"오늘 운전, 고생했어요\"(11/15 명준: 도착 · 기록 상세 · 정리하지 못함 통일, 중간 정산만 \"오늘 주행 영수증\". 조건별 제목안은 보관) · 이중선 · 항목 | 더한 몫 · 소계(운전 시간 2시간 10분 · 거리 104km) · 합계 \"평소보다 1.57배 힘든 길\" · 바코드 · 지그재그 끝","계산 연출 뒤 종이가 슬롯에서 1.1초에 걸쳐 내려오고, 제안 카드는 0.9초 뒤 올라옴","줄: 날씨 비 +40% · 정체 구간 38km +10%(경로의 36% · 기준은 % 드롭다운 안, 11/8 명준: 시연값으로) · 예상보다 더 +25분 +5% · 밤길 50분 +2% · 장시간 2시간 넘긴 10분 +1% · 거리 104km(표시만)","제목 \"오늘 운전을 챙긴다면\" · 큰 숫자 \"한 사람 약 9천 원\"","근거 \"운전 노고 약 3만 6천 원을 운전자 포함 4명이 나눈 값 · 최저임금 1분 178원 기준\"","좋아요 · 닫기(같은 크기)"],
    ck:[["ok","5-2 확정 문구 그대로"],["ok","데이터 → 수치 → 제안이 한 화면(5-4)"],["ok","방식 B로 넘어가는 버튼 없음(v1.3)"],["q","\"받아들이기\" 버튼 글자는 디자인이 정함 → \"좋아요\"로 제안"],AT,CG]},
   {g:"도착 · 방식 A 결과",id:"arrive-a-why",r:"arrive",tag:"근거 펼침",s:{ab:"A",why:0},desc:"영수증 줄을 누르면 그 조건의 근거(연구·법령 한 줄)가 펼쳐진다. 다시 누르면 접힌다.",
    st:["날씨 줄 펼침: \"비 오는 날은 운전 부담이 40% 늘어요 · 시뮬레이터 30명 연구(2026)\"","줄마다 펼침 표시(꺾쇠)","거리 줄은 가산이 없어 펼치지 않음"],
@@ -2382,15 +2388,15 @@ const SCREENS=[
   {g:"도착 · 예외 상태",id:"arrive-clear",r:"arrive",tag:"0인 줄 생략",s:{trip:"clear",people:2},desc:"맑은 낮 1시간이면 가산 줄이 모두 0이라 생략하고, 머리줄은 \"평소 같은 길\"로 보여 준다.",
    st:["오늘 운전 1시간 · 평소 같은 길","\"비·정체·밤길 없이 달렸어요\" + \"더할 조건은 없고, 운전한 시간만큼 셌어요\" + 거리 52km","방식 A: 한 사람 약 5천 원 · 운전 노고 약 1만 1천 원을 운전자 포함 2명이 나눈 값"],
    ck:[["ok","값이 0인 줄 생략(5-1)"],["ok","5-2 크기 확인 표(맑은 낮 1시간 · 2명 = 약 5천 원)와 같음"],["q","배수 1.00일 때 \"평소 같은 길\"은 디자인 문구"],["ok","쉰 시간은 늘 물음(S4 · 11/12) · 영수증에 \"중간에 쉰 시간 없음\" 줄"]]},
-  {g:"도착 · 예외 상태",id:"arrive-wxhalf",r:"arrive",tag:"출발 비 · 도착 날씨 모름",s:{ab:"A",trip:"wxhalf"},desc:"11/12 명준 결정(D7): 출발 때는 비, 도착 날씨를 못 받으면 날씨 줄을 하나로 합쳐 \"출발 비 · 도착 정보 없음\"으로 쓴다. 펼치면 출발 날씨로 셌다는 이유가 나온다.",
-   st:["날씨 줄: 출발 비 · 도착 정보 없음 · +40%","펼침: 도착 날씨는 불러오지 못해 출발 때 날씨(비)로 셌어요"],ck:[["ok","D7 확정 · 날씨 줄 하나"],["q","도착 날씨를 모를 때 출발 날씨로 셀지 · 더하지 않을지 엔진(효성) 확인"]]},
+  {g:"도착 · 예외 상태",id:"arrive-wxhalf",r:"arrive",tag:"출발 비 · 도착 날씨 모름",s:{ab:"A",trip:"wxhalf"},desc:"11/12 명준 결정(D7): 출발 때는 비, 도착 날씨를 못 받으면 날씨 줄을 하나로 합쳐 \"출발 비 · 도착 정보 없음\"으로 쓴다. 펼치면 앞 절반만 출발 날씨로 셌다는 이유가 나온다(11/15 효성 #179 셈 · 명준 문구 확정).",
+   st:["날씨 줄: 출발 비 · 도착 정보 없음 · +20%(앞 절반만 · 합계 약 3만 2천 원)","펼침: 도착 날씨를 받지 못해 운전 시간의 앞 절반만 출발 날씨(비)로 셌어요"],ck:[["ok","D7 확정 · 날씨 줄 하나"],["ok","셈 = 1회 관측 절반 규칙, 앞 절반만 가산(효성 11/14 · #179)"],["ok","근거 문구 확정(명준 11/15 · constants.json weather_dep_only_basis_text)"]]},
   {g:"도착 · 예외 상태",id:"arrive-solo",r:"arrive",tag:"혼자 탄 주행",s:{people:1},desc:"나눠 낼 인원이 1이면 영수증만 보여 주고 제안은 하지 않는다.",
    st:["영수증 그대로(쉰 시간 · 없음)","\"혼자 운전했어요 · 나눌 사람이 없어 제안은 하지 않아요\" · 닫기"],
    ck:[["q","열린 결정 6: 기본값(영수증만)으로 그림"]]},
   {g:"도착 · 예외 상태",id:"arrive-nodata",r:"arrive",tag:"날씨·정체 정보 없음",s:{ab:"A",trip:"nodata"},desc:"날씨 조회와 출발 때 정체 정보가 실패하면 그 줄을 \"정보 없음\"으로 두고 더하지 않는다. 도착을 막지 않는다.",
    st:["날씨 · 정보 없음 · —","정체 구간 · 정체 정보 없음 · —","펼치면 \"날씨를 불러오지 못해 이번에는 더하지 않았어요\""],ck:[["ok","[신규] 에러 · 날씨 조회 실패 / 정체 정보 없음(유저 플로우 3장)"],["q","정체 정보 없음은 '줄 생략'도 가능 — 시안은 표시"]]},
   {g:"도착 · 예외 상태",id:"arrive-unsettled",r:"arrive",tag:"정리하지 못함",s:{unsettled:true},desc:"출발하고 너무 오래 지나 앱을 열면(경과 > max(ETA × 2, ETA + 60분) 또는 12시간) 계산 연출 없이 바로 이 화면이 뜬다. 숫자·쉰 시간·제안은 없고 [홈으로]만 있다.",
-   st:["빈 영수증 종이: 제목은 흐리게, 가운데 \"이번 주행은 정리하지 못했어요\"(엔진 문구)","이유 두 줄: \"출발하고 14시간이 지나서 열었어요 · 도착한 시간을 알 수 없어 이번에는 세지 않았어요\"","회색 빈 줄 3개(숫자 자리) · 안내 \"도착해서 바로 열거나, 가는 중에 [도착했어요]를 누르면 정리할 수 있어요\"","[홈으로](L 채움) → 홈 · 최근 기록에 \"정리하지 못함\""],
+   st:["빈 영수증 종이: 제목 \"오늘 운전, 고생했어요\"(11/15 통일)는 흐리게, 가운데 \"이번 주행은 정리하지 못했어요\"(엔진 문구)","이유 두 줄: \"출발하고 14시간이 지나서 열었어요 · 도착한 시간을 알 수 없어 이번에는 세지 않았어요\"","회색 빈 줄 3개(숫자 자리) · 안내 \"도착해서 바로 열거나, 가는 중에 [도착했어요]를 누르면 정리할 수 있어요\"","[홈으로](L 채움) → 홈 · 최근 기록에 \"정리하지 못함\""],
    ck:[["ok","#68·#71 · June #75 '정리하지 못함'"],["ok","제안 없음 · 기록은 선택 없이 출발만 닫음(F26 예외)"],["q","\"14시간\"은 시연 예시 — 실제 경과로 채움"]]},
   {g:"도착 뒤 · 홈 · 알림",id:"home-after",r:"home",tag:"홈 · 방금 끝난 기록",s:{hs:"after"},desc:"제안을 고르거나 닫으면 홈으로 돌아온다. 기록이 저장되면 위 바 종 아이콘에 빨간 점이 붙고, 종을 누르면 내려오는 알림 창 맨 위에 저장 문구가 들어간다(11/9 명준, 소리 · 팝업 · 재촉 없음).",
    st:["위 바: 기록 · Nogo · 알림(빨간 점) · 설정","인사는 기본과 같음","종을 누르면 알림 창 맨 위에 \"태안 꽃지해수욕장 기록을 남겼어요\"(새 알림)"],
@@ -2399,10 +2405,10 @@ const SCREENS=[
    st:["창: 폭 600(분할 520) · 종 아래 꼬리 · 두 겹 테(바깥 테 + 안쪽 판)","머리: \"알림\" + 새 알림이면 \"새 알림 1\"(라임)","줄: 아이콘 원 · \"태안 꽃지해수욕장 기록을 남겼어요\" · 방금(빨간 점) / 지난 줄은 날짜","아래: \"기록은 왼쪽 위에서 볼 수 있어요\""],
    ck:[["ok","11/9 명준: 기록 상세 같은 새 페이지가 아니라 아코디언처럼 내려오는 창"],["ok","딤 없음 · 소리 · 재촉 없음"],["q","알림을 몇 개까지 · 며칠 남길지 — 기획 확인"]]},
   {g:"기록",id:"log",r:"log",tag:"주행 기록 목록",s:{},desc:"홈 위 바 기록 아이콘을 누르면 주행 기록이 최근 순 목록으로 나온다. 줄을 누르면 그날 상세로 간다(11/8 명준). 고른 것은 상세에서만 보인다(11/9).",
-   st:["제목 \"주행 기록\" + 뒤로","줄: 날짜 · 목적지(굵게) · 운전 시간 · 배수 · 함께 n명 · ›(고른 것은 상세에서)","아래: \"좌표 없이 수치와 고른 것만 이 차에 남아요\""],
+   st:["제목 \"주행 기록\" + 뒤로","줄: 날짜 · 목적지(굵게) · 운전 시간 · 배수 · 함께 n명 · ›(고른 것은 상세에서)","분할 840: 줄 높이는 내용만큼(창 높이로 늘리지 않음, 11/15 명준) · 많으면 목록 안에서 스크롤","아래: \"좌표 없이 수치와 고른 것만 이 차에 남아요\""],
    ck:[["ok","Q-2026-11-08-01 명준 답: 최근 기록 → 목록 → 상세"],["ok","좌표 없음(8장)"],["q","몇 건까지 남길지(지금 3건 예시) — 기획 확인"]]},
   {g:"기록",id:"log-detail",r:"logd",tag:"기록 상세",s:{ro:true,rec:0},desc:"목록에서 한 줄을 누르면 그날 영수증과 노고 값, 그날 고른 것을 다시 본다. 쉰 시간 바꾸기는 없고 근거 펼침만 된다.",
-   st:["제목 \"11월 10일 · 태안 꽃지해수욕장\" + 뒤로","왼쪽: 그날 영수증","오른쪽: \"그날의 노고 · 평소보다 1.57배 힘든 길 · 운전 노고 약 3만 6천 원 · 운전 2시간 10분 · 104km · 함께 4명\" / \"그날 고른 것 · 방식 A · 한 사람 약 9천 원 · 좋아요를 눌렀어요\" · 닫기"],
+   st:["제목 \"11월 10일 · 태안 꽃지해수욕장\" + 뒤로","왼쪽: 그날 영수증(제목 \"오늘 운전, 고생했어요\", 11/15 통일)","오른쪽: \"그날의 노고 · 평소보다 1.57배 힘든 길 · 운전 노고 약 3만 6천 원 · 운전 2시간 10분 · 104km · 함께 4명\" / \"그날 고른 것 · 방식 A · 한 사람 약 9천 원 · 좋아요를 눌렀어요\" · 닫기"],
    ck:[["ok","Q-2026-11-08-01 명준 답: 상세 = 그때의 영수증 + 노고 값"]]},
   {g:"설정",id:"settings",r:"settings",tag:"설정",s:{},desc:"홈 위 바 오른쪽 아이콘으로 연다. 시연 고정 모드, 단가 출처, 기록 초기화. 바꾼 값은 바로 다른 화면에 적용된다(S20). 11/14 명준: 제안 방식은 A로 고정이라 제안 방식 줄을 빼고, 아래 안내 문구도 뺐다.",
    st:["시연 고정 모드: 스위치(켜면 검은 바탕 · 화면에는 표시 없음)","단가 출처: \"최저임금 1분 178원 기준\" ⌄","기록 초기화: \"이 차에 남은 주행 기록 3건을 지워요\" · [지우기]"],
