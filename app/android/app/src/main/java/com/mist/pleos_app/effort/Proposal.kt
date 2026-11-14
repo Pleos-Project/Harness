@@ -24,6 +24,15 @@ sealed interface ProposalView {
 
 const val CHOICE_ACCEPT = "accept"
 const val CHOICE_CLOSE = "close"
+/**
+ * 돌아보기 [다음에](AC-F29-2): 영수증 · 금액을 보지 않고 끝냄. 도착 화면 [닫기](금액을 본 뒤 닫음, close)와 나눈다.
+ * 기록 상세에서 금액을 숨기는 기준이다(효성 11/15, #181). 홈 · 기록의 "닫음" 표시는 close와 같게 쓴다.
+ * 이 값 전에 남긴 [다음에] 기록은 close로 남아 있어 구분할 수 없다(그 기록은 총액까지 보인다).
+ */
+const val CHOICE_LATER = "later"
+
+/** close · later 둘 다 "제안을 고르지 않고 닫음"으로 보이는 표시용. */
+fun isClosedChoice(choice: String?): Boolean = choice == CHOICE_CLOSE || choice == CHOICE_LATER
 /** 정리하지 못함(#68)을 닫음: 영수증·제안 없이 기록만(명준 #75 11/9). */
 const val CHOICE_UNSETTLED = "unsettled"
 
