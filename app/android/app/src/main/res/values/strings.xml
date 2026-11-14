@@ -355,7 +355,7 @@
     <string name="effort_mid_b_sub">기본은 %1$s. 고르면 여기까지 기록해 두고, 도착하면 이 몫은 빼고 알려 드려요</string>
     <string name="effort_mid_a_done">좋아요, 여기까지 기록해 뒀어요</string>
     <string name="effort_mid_b_done">여기까지는 %1$s에서 운전자 빼기로 했어요</string>
-    <string name="effort_mid_done_note">도착하면 전체를 다시 세고, 이 몫은 빼고 알려 드려요</string>
+    <string name="effort_mid_done_note">도착하면 전체를 다시 세고,\n이 몫은 빼고 알려 드려요</string>
     <string name="effort_mid_keep">계속 가기</string>
     <string name="effort_mid_none">여기까지는 영수증만 보여 드릴게요</string>
     <string name="effort_mid_none_why">도착하면 전체를 세어 알려 드려요</string>

@@ -544,10 +544,10 @@ private fun PreviewPanelBody(
         // 분할 `.home.dp.p .pv`: 여백 위아래 20 · 좌우 24, 글 묶음과 CTA 사이 12, 글 묶음 안 14
         Column(
             (if (bare) modifier else modifier.cgElevation(1, shape).background(c.surfaceCard, shape).border(2.gpx, c.line, shape)).padding(horizontal = 24.gpx, vertical = 20.gpx),
-            verticalArrangement = Arrangement.spacedBy(12.gpx),
+            verticalArrangement = Arrangement.SpaceBetween,   // 칸이 남는 높이를 채우면 글은 위, CTA는 맨 아래(시안 .pv flex column)
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(14.gpx), content = body)
-            cta(Modifier.fillMaxWidth())
+            cta(Modifier.fillMaxWidth().padding(top = 12.gpx))
         }
     }
 }

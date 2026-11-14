@@ -94,10 +94,7 @@ internal fun EffortMidwayScreen(ui: EffortUi, onPick: (String) -> Unit, onClose:
         }
         val card: @Composable (Modifier) -> Unit = { mod -> MidwayCard(m, ui.items, narrow, onPick, onClose, mod.graphicsLayer { alpha = seq.offer.value; translationY = (1f - seq.offer.value) * 16f * density }, solo = trip.n < 2, settledBefore = trip.settlements.isNotEmpty()) }
         if (narrow) {
-            Column(Modifier.weight(1f).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(16.gpx)) {
-                receipt(Modifier.fillMaxWidth())
-                card(Modifier.fillMaxWidth())
-            }
+            NarrowReceiptAndCard(Modifier.weight(1f), receipt, card)
         } else {
             Row(Modifier.weight(1f).fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(24.gpx)) {
                 if (showPaper) receipt(Modifier.weight(1f).fillMaxHeight()) else Spacer(Modifier.weight(1f))
