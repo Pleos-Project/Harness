@@ -34,25 +34,25 @@ internal data class IllustColors(
 )
 
 internal val IllustDay = IllustColors(
-    car = Color(0xFFD9F77A), carShade = Color(0xFFC2DF5C), carHi = Color(0xFFF3FEC9), carLine = Color(0xFFA6C246),
-    inkCar = Color(0xFF242033), inkCarShade = Color(0xFF1B1828), inkCarHi = Color(0xFF4A445C), inkCarLine = Color(0xFF3A354A),
-    inkGlass = Color(0xFF4A4560), inkGlassTop = Color(0xFF6B637B), inkTrim = Color(0xFF121019), inkHead = Color(0xFFD9F77A),
-    glass = Color(0xFF2E2A3D), glassTop = Color(0xFF4A4560), glassHi = Color(0x59FFFFFF), trim = Color(0xFF242033), head = Color(0xFFFFFFFF), well = Color(0xFF16131F),
-    tire = Color(0xFF242033), tireEdge = Color(0xFF242033), tireHi = Color(0xFF51495F),
-    rim = Color(0xFFCBD2DB), rimHi = Color(0xFFEDF1F6), rimShade = Color(0xFF8994A3), rimDark = Color(0xFF3E4754), cap = Color(0xFFD9F77A),
-    tail = Color(0xFFF78F92), tailHi = Color(0xFFFFADAD), ground = Color(0x29242033),
-    other = Color(0xFFFFFFFF), otherShade = Color(0xFFE6E3EF), otherLine = Color(0xFFC9C3D6), otherGlass = Color(0xFFAFA8BD),
+    car = Color(0xFFC8F04A), carShade = Color(0xFFB3D737), carHi = Color(0xFFE6F5B4), carLine = Color(0xFF98BA28),
+    inkCar = Color(0xFF242135), inkCarShade = Color(0xFF1A1829), inkCarHi = Color(0xFF49445D), inkCarLine = Color(0xFF39354B),
+    inkGlass = Color(0xFF494562), inkGlassTop = Color(0xFF6A637C), inkTrim = Color(0xFF12101A), inkHead = Color(0xFFC8F04A),
+    glass = Color(0xFF2D2A3E), glassTop = Color(0xFF494562), glassHi = Color(0x59FFFFFF), trim = Color(0xFF242135), head = Color(0xFFFFFFFF), well = Color(0xFF151320),
+    tire = Color(0xFF242135), tireEdge = Color(0xFF242135), tireHi = Color(0xFF504960),
+    rim = Color(0xFFCBD2DB), rimHi = Color(0xFFEDF1F6), rimShade = Color(0xFF8994A3), rimDark = Color(0xFF3E4754), cap = Color(0xFFC8F04A),
+    tail = Color(0xFFF78F92), tailHi = Color(0xFFFFADAD), ground = Color(0x29242135),
+    other = Color(0xFFFFFFFF), otherShade = Color(0xFFE5E3F0), otherLine = Color(0xFFC8C3D7), otherGlass = Color(0xFFAEA8BE),
 )
 
 internal val IllustNight = IllustColors(
-    car = Color(0xFFD9F77A), carShade = Color(0xFFBFD95F), carHi = Color(0xFFF3FEC9), carLine = Color(0xFF9CB743),
-    inkCar = Color(0xFF242033), inkCarShade = Color(0xFF1B1828), inkCarHi = Color(0xFF4A445C), inkCarLine = Color(0xFF3A354A),
-    inkGlass = Color(0xFF4A4560), inkGlassTop = Color(0xFF6B637B), inkTrim = Color(0xFF121019), inkHead = Color(0xFFD9F77A),
-    glass = Color(0xFF2E2A3D), glassTop = Color(0xFF4A4560), glassHi = Color(0x59FFFFFF), trim = Color(0xFF242033), head = Color(0xFFFFFFFF), well = Color(0xFF0E0C14),
-    tire = Color(0xFF16131F), tireEdge = Color(0xFF5C546B), tireHi = Color(0xFF5C546B),
-    rim = Color(0xFFA5AFBC), rimHi = Color(0xFFEDF1F6), rimShade = Color(0xFF626D7D), rimDark = Color(0xFF3E4754), cap = Color(0xFFD9F77A),
+    car = Color(0xFFC8F04A), carShade = Color(0xFFB0D33A), carHi = Color(0xFFE6F5B4), carLine = Color(0xFF8EAF26),
+    inkCar = Color(0xFF242135), inkCarShade = Color(0xFF1A1829), inkCarHi = Color(0xFF49445D), inkCarLine = Color(0xFF39354B),
+    inkGlass = Color(0xFF494562), inkGlassTop = Color(0xFF6A637C), inkTrim = Color(0xFF12101A), inkHead = Color(0xFFC8F04A),
+    glass = Color(0xFF2D2A3E), glassTop = Color(0xFF494562), glassHi = Color(0x59FFFFFF), trim = Color(0xFF242135), head = Color(0xFFFFFFFF), well = Color(0xFF0E0C14),
+    tire = Color(0xFF151320), tireEdge = Color(0xFF5B546C), tireHi = Color(0xFF5B546C),
+    rim = Color(0xFFA5AFBC), rimHi = Color(0xFFEDF1F6), rimShade = Color(0xFF626D7D), rimDark = Color(0xFF3E4754), cap = Color(0xFFC8F04A),
     tail = Color(0xFFF78F92), tailHi = Color(0xFFFFADAD), ground = Color(0x66000000),
-    other = Color(0xFF51495F), otherShade = Color(0xFF464055), otherLine = Color(0xFF3A354A), otherGlass = Color(0xFF312C40),
+    other = Color(0xFF504960), otherShade = Color(0xFF454056), otherLine = Color(0xFF39354B), otherGlass = Color(0xFF302C41),
 )
 
 internal fun illustOf(dark: Boolean) = if (dark) IllustNight else IllustDay
