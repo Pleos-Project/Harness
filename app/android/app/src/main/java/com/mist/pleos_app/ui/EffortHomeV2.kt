@@ -355,12 +355,12 @@ internal fun StartButton(size: Dp, label: String, onClick: () -> Unit) {
                     .border(3.gpx, Color(0x38171B22), CircleShape),
                 contentAlignment = Alignment.Center,
             ) {
-                // 심볼(viewBox 14 12 116 120): 손은 그대로, 운전대만 제 중심(95.4, 42.2)을 축으로 돎
+                // 심볼(viewBox 14 12 116 120, 로고 v2): 손은 그대로, 운전대만 제 중심(93.7, 39.55)을 축으로 돎
                 Box(Modifier.fillMaxSize(.58f).padding(top = 0.gpx)) {
                     androidx.compose.foundation.Image(
                         androidx.compose.ui.res.painterResource(R.drawable.nogo_startbtn_wheel), null,
                         Modifier.matchParentSize().drawWithContent {   // 그리기 단계에서 돌림(홈 로고와 같은 이유)
-                            rotate(if (reduce) 0f else turn, Offset(this.size.width * .702f, this.size.height * .252f)) { this@drawWithContent.drawContent() }
+                            rotate(if (reduce) 0f else turn, Offset(this.size.width * .6871f, this.size.height * .2296f)) { this@drawWithContent.drawContent() }
                         },
                     )
                     androidx.compose.foundation.Image(androidx.compose.ui.res.painterResource(R.drawable.nogo_startbtn_hand), null, Modifier.matchParentSize())
