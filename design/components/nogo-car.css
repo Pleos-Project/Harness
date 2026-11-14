@@ -1,9 +1,6 @@
 /* Design v2(운전 노고 정산) — 아티팩트 시안에서 옮김. 값은 tokens.css의 --cg-* 변수, 크기는 Connect-S 실제 픽셀(1dp = 1px). */
-.cg-car .cg-cb{fill:var(--cg-surface-card);stroke:var(--cg-text-primary);stroke-width:5;stroke-linejoin:round}
-.cg-car .cg-cw{fill:var(--cg-placeholder-strong);stroke:var(--cg-text-primary);stroke-width:3;stroke-linejoin:round}
 .cg-car .cg-wh{transform-box:fill-box;transform-origin:center}
 .cg-car .cg-wh circle{fill:var(--cg-text-primary)}
-.cg-car .cg-wh .cg-hub{fill:var(--cg-surface-card)}
 .cg-car .cg-wh rect{fill:var(--cg-surface-card)}
 /* ── 노고 카 v3.1 하이파이 (11/9): 코나 옆모습 · 차체 세로 그라데이션(하이라이트 → 기본 → 아래 그늘) · 유리 그라데이션 · Satin Silver 투톤 휠 ──
    주간 = 딥 잉크 차체, 야간 = 라임 차체. 차체 색은 변수 한 벌(--k-*)로 바꿈 */

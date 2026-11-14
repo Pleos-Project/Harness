@@ -15,17 +15,8 @@
 .cg-offer .cg-big + .cg-why{margin-top:8px}
 .cg-offer .cg-cap2 + .cg-head{margin-top:-10px}
 .cg-offer .cg-head + .cg-note{margin-top:-6px}
-.cg-offer .cg-note + .cg-opts{margin-top:16px}
 .cg-offer .cg-bts{display:flex;gap:16px}
 .cg-offer .cg-bts .cg-btn{flex:1}
-/* 방식 B 항목 = Basic Button L 100(고르면 바로 받아들이기). 기본값 = 채움 */
-.cg-opts{display:flex;flex-direction:column;gap:12px}
-.cg-opt{display:flex;align-items:center;gap:16px;min-height:100px;padding:0 36px;border-radius:32px;background:var(--cg-btn-basic);color:var(--cg-text-primary);cursor:pointer}
-.cg-opt:active{background:var(--cg-btn-basic-pressed)}
-.cg-opt b{font:var(--cg-title-s);margin-right:auto;white-space:nowrap}
-.cg-opt small{font:var(--cg-body-m);color:var(--cg-text-secondary);white-space:nowrap}
-.cg-opt.cg-def{background:var(--cg-btn-filled);color:var(--cg-btn-filled-text)}
-.cg-opt.cg-def small{color:inherit;opacity:.72}
 .cg-p .cg-offer{flex:1;padding:22px 24px;gap:12px}
 .cg-p .cg-offer .cg-head{font:var(--cg-title-l)}
 .cg-p .cg-offer .cg-big{font:var(--cg-headline-s)}
@@ -36,21 +27,9 @@
 .cg-p .cg-offer .cg-big + .cg-why{margin-top:4px}
 .cg-p .cg-offer .cg-cap2 + .cg-head{margin-top:-6px}
 .cg-p .cg-offer .cg-head + .cg-note{margin-top:-4px}
-.cg-p .cg-offer .cg-note + .cg-opts{margin-top:8px}
-.cg-p .cg-opts{flex-direction:row}
-.cg-p .cg-opt{flex:1;min-width:0;flex-direction:column;justify-content:center;align-items:flex-start;gap:2px;min-height:96px;padding:8px 20px;border-radius:24px}
-.cg-p .cg-opt b{font:var(--cg-body-l);margin:0}
-.cg-p .cg-opt small{font:var(--cg-label-s);white-space:normal}
 .cg-odiv{display:block;height:2px;background:var(--cg-line);margin:14px 0;flex:none}
 .cg-play .cg-offer.cg-still .cg-why .cg-ul{animation:none}
-.cg-opt b.cg-rot{display:block;height:1.25em;line-height:1.25em;overflow:hidden;margin-right:auto}
-.cg-opt b.cg-rot .cg-rl{display:flex;flex-direction:column;animation:cg-rot 12s cubic-bezier(.65,0,.35,1) infinite}
-.cg-opt b.cg-rot i{font-style:normal;display:block;height:1.25em;white-space:nowrap}
-.cg-opt.cg-def{background:var(--color-selection-background);color:var(--color-selection-foreground);box-shadow:inset 0 0 0 2px var(--color-selection-border)}
-.cg-opt.cg-def:active{background:var(--color-selection-pressed)}
-.cg-opt.cg-def small{color:inherit;opacity:.72}
 .cg-offer .cg-head.cg-ok{color:var(--color-text-primary)}
 /* 큰 숫자 길이 규칙(D4): 표시 금액 10만 원 이상 또는 큰 숫자 줄 15자 이상 → 한 단계 작게(가로 Headline M · 분할 Title L) */
 .cg-offer .cg-big.cg-sm{font:var(--cg-headline-m)}
 .cg-p .cg-offer .cg-big.cg-sm{font:var(--cg-title-l)}
-.cg-p .cg-opts{flex-direction:column}

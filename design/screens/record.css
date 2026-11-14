@@ -8,16 +8,15 @@
 .cg-p .cg-logr{padding:18px 24px}
 .cg-p .cg-logr b{font:var(--cg-body-m-b)}
 .cg-p .cg-logr span{font:var(--cg-label-m)}
+.cg-logr .cg-chev{width:12px;height:12px;border-right:3px solid var(--cg-text-tertiary);border-bottom:3px solid var(--cg-text-tertiary);transform:rotate(-45deg);flex:none}
 /* 주행 기록 목록(11/8 명준: 최근 기록 → 목록 → 상세) */
 .cg-logr{flex-direction:row;align-items:center;gap:28px;cursor:pointer}
 .cg-logr:active{background:var(--cg-btn-basic-pressed)}
 .cg-logr .cg-ld{font:var(--cg-body-m);color:var(--cg-text-tertiary);width:150px;flex:none}
 .cg-logr .cg-lm{display:flex;flex-direction:column;gap:4px;flex:1;min-width:0;color:var(--cg-text-primary)}
-.cg-logr .cg-lr{font:var(--cg-body-m);color:var(--cg-text-secondary);white-space:nowrap}
 .cg-p .cg-logr{display:grid;grid-template-columns:1fr auto;grid-template-areas:"ld ch" "lm ch" "lr ch";gap:2px 16px}
 .cg-p .cg-logr .cg-ld{grid-area:ld;width:auto;font:var(--cg-label-m)}
 .cg-p .cg-logr .cg-lm{grid-area:lm}
-.cg-p .cg-logr .cg-lr{grid-area:lr;font:var(--cg-label-m);white-space:normal}
 .cg-p .cg-logr .cg-chev{grid-area:ch;align-self:center}
 /* 기록(자리): 목록을 아래까지 */
 .cg-pg.cg-p .cg-logl{flex:1;min-height:0;display:flex;flex-direction:column}

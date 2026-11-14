@@ -1,0 +1,183 @@
+/* Design v2(운전 노고 정산) — 아티팩트 시안에서 옮김. 값은 tokens.css의 --cg-* 변수, 크기는 Connect-S 실제 픽셀(1dp = 1px). */
+/* ───────── 돌아보기 바탕(.thx) · 비 — 옛 '오늘 운전 수고했어요'(11/13 · Legacy)에서 이어 씀 ───────── */
+.cg-thx{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;padding:40px;text-align:center;word-break:keep-all}
+.cg-thx .cg-sub{position:relative;z-index:1}
+/* 비 오는 날 인터랙션(11/13 명준): 화면 전체에 비스듬히 떨어지는 빗줄기 + 발밑 물 고리. 글자 뒤로 깔리고 위 · 아래는 흐려짐 */
+.cg-thx{--rc:#50496059}
+.cg-thx .cg-rain{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:0;-webkit-mask:linear-gradient(transparent,#000 10%,#000 82%,transparent);mask:linear-gradient(transparent,#000 10%,#000 82%,transparent)}
+.cg-thx .cg-rain i{position:absolute;top:-80px;width:3px;height:var(--l);border-radius:2px;background:linear-gradient(transparent,var(--rc));transform:translate(0,0) rotate(12deg);animation:thx-rain var(--d) linear var(--dl) infinite}
+@keyframes thx-rain{to{transform:translate(-290px,1360px) rotate(12deg)}}
+.cg-thx .cg-sub{margin-top:12px;font:500 30px/40px var(--cg-font);color:var(--color-text-secondary);letter-spacing:-.005em;white-space:nowrap;max-width:100%;min-width:0;display:flex;justify-content:center}
+/* 홈 작은 줄(hdesc)과 같은 글꼴 */
+.cg-p .cg-thx .cg-sub{font:500 24px/32px var(--cg-font)}
+/* ── 11/14 명준: 도착 · 오늘 운전 돌아보기 — 계산 연출 + 수고했어요를 한 화면으로. 왼쪽 캐릭터 · 오른쪽 배경 없는 기준 5줄(세로).
+   캐릭터 표정 5장과 모션(숨쉬기 · 갸웃 · 찌그러졌다 펴기 · 점프 + 반짝이)은 BX 캐릭터 모션 시안, 조건별 포즈 6장(기본 1번 · v191)은 BX 캐릭터 바리에이션에서 가져옴. UI는 Design v2 톤 ── */
+.cg-thx.cg-rv{display:grid;grid-template-columns:820px minmax(0,1fr);grid-template-rows:auto minmax(0,1fr);align-items:stretch;justify-content:stretch;padding:0;text-align:left;overflow:hidden}
+.cg-p .cg-thx.cg-rv{grid-template-columns:360px minmax(0,1fr)}
+.cg-rv{--rv-out:cubic-bezier(0.23, 1, 0.32, 1);--rv-io:cubic-bezier(0.45, 0, 0.55, 1)}
+/* 11/14 명준: 돌아보기 움직임 곡선 2개로 묶음 — 나타남 · 자리 잡음 = rv-out, 화면 안 오감 · 반복 = rv-io, 진행 표시 = linear · 키프레임 안 animation-timing-function은 var()가 안 먹어 같은 숫자를 직접 적음(rv-lift · rv-jme) */
+.cg-rv .cg-rain{transition:opacity .6s ease}
+.cg-rv .cg-rvtop{grid-column:1/-1;position:relative;z-index:2;padding:40px 40px 0}
+/* 11/14 명준 코멘트: 도착 머리를 옛 계산 연출처럼 왼쪽 위로 */
+.cg-rv .cg-rvtop .cg-sub{margin:8px 0 0;justify-content:flex-start}
+.cg-rv .cg-rvtop .cg-hd .cg-name{font:var(--cg-headline-m)}
+/* 11/14 명준 코멘트: 글자 키움 → 한 단계 내림(Headline M 56/72, 60에서 디자인 시스템상 가장 가까운 작은 단계) · 분할은 Title L 그대로 */
+.cg-p .cg-rv .cg-rvtop .cg-hd .cg-name{font:var(--cg-title-l)}
+.cg-p .cg-rv .cg-rvtop .cg-sub{font:500 24px/32px var(--cg-font)}
+.cg-rv .cg-rvl{position:relative;z-index:1;min-width:0;grid-row:2}
+.cg-rv{--rvglow:#C8F04A66}
+.cg-rv .cg-rvg{position:absolute;left:50%;bottom:140px;width:760px;height:760px;margin-left:-380px;border-radius:50%;background:radial-gradient(closest-side,var(--rvglow),transparent);opacity:0;transition:opacity .8s ease;pointer-events:none}
+.cg-p .cg-rv .cg-rvg{width:460px;height:460px;margin-left:-230px;bottom:250px}
+.cg-rv.cg-won .cg-rvg{opacity:1}
+.cg-rv .cg-rvc{position:absolute;left:50%;bottom:0;height:840px;aspect-ratio:700/754;translate:-50% 0;transform-origin:50% 92%;-webkit-mask:linear-gradient(to top,transparent 0,#000 9%);mask:linear-gradient(to top,transparent 0,#000 9%)}
+.cg-p .cg-rv .cg-rvc{height:480px;bottom:170px}
+.cg-rv .cg-rvc img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;object-position:50% 100%;opacity:0;transition:opacity .22s ease}
+.cg-rv .cg-rvc img.cg-on{opacity:1}
+.cg-rv .cg-rvc.cg-breathe{animation:rv-breathe 3.2s var(--rv-io) infinite}
+.cg-rv .cg-rvc.cg-slump{animation:rv-slump .45s var(--rv-out) forwards}
+.cg-rv .cg-rvc.cg-dip{animation:rv-dip .5s var(--rv-out)}
+.cg-rv .cg-rvc.cg-jump{animation:rv-jump .7s var(--rv-out)}
+.cg-rv .cg-rvst{position:absolute;width:6%;aspect-ratio:1;opacity:0;pointer-events:none;overflow:visible}
+.cg-rv .cg-rvst path{fill:#C8F04A;stroke:#242135;stroke-width:1.5;paint-order:stroke}
+.cg-rv .cg-rvst.cg-go{animation:rv-star .8s var(--rv-out) forwards}
+.cg-rv .cg-rvst.cg-still{opacity:1;transform:translate(calc(var(--dx) * .5),calc(var(--dy) * .5)) scale(.9) rotate(20deg)}
+.cg-rv .cg-rvr{position:relative;z-index:1;grid-row:2;display:flex;flex-direction:column;align-items:flex-start;min-width:0;min-height:0;padding:40px 64px 96px 40px}
+.cg-p .cg-rv .cg-rvr{padding:16px 40px 48px 16px}
+.cg-rv .cg-rvtop .cg-rvsay{min-height:40px;white-space:nowrap;color:var(--color-text-primary)}
+/* 11/14 명준 코멘트: 노고 문구를 도착 머리 바로 아래에 · 다 세면 오늘 운전 ○시간 ○분 · N명(회색) */
+.cg-rv .cg-rvtop .cg-rvsay{min-height:44px;font:var(--cg-title-m)}
+.cg-rv .cg-rvtop .cg-rvsay.cg-fin{color:var(--color-text-secondary)}
+.cg-p .cg-rv .cg-rvtop .cg-rvsay{min-height:38px;font:var(--cg-body-l)}
+.cg-rv .cg-rvr .cg-sub{margin:8px 0 0;max-width:100%;justify-content:flex-start}
+.cg-p .cg-rv .cg-rvr .cg-sub{font:500 24px/32px var(--cg-font)}
+.cg-rv .cg-rvr .cg-h{margin:0;max-width:100%;font:var(--cg-headline-s);display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+/* 11/14 명준 코멘트: 한 단계 줄여(Headline S 48/64) 한 줄 · 넘치면 kwrap(어절 안 안 끊음 · 줄 균형) 두 줄 · 그래도 넘치면 둘째 줄 끝 … */
+.cg-p .cg-rv .cg-rvr .cg-h{font:var(--cg-title-l)}
+.cg-rv .cg-rvrows{position:relative;margin-top:0;width:100%;flex:1 1 auto;min-height:0;display:flex;flex-direction:column;gap:8px}
+.cg-p .cg-rv .cg-rvrows{margin-top:0;gap:6px}
+.cg-rv .cg-rvrail{display:none;position:absolute;left:35px;top:52px;bottom:52px;width:2px;background:var(--color-border-subtle)}
+.cg-p .cg-rv .cg-rvrail{left:27px;top:40px;bottom:40px}
+.cg-rv .cg-rvrail b{position:absolute;left:0;top:0;width:100%;height:calc(var(--rp,0) * 100%);background:var(--color-text-primary);transition:height .5s var(--rv-out)}
+.cg-rv .cg-rvw{position:relative;display:grid;grid-template-columns:100px 200px minmax(0,1fr) minmax(220px,max-content);align-items:center;column-gap:24px;flex:1 1 0;min-height:112px;max-height:170px}
+/* 11/14 명준 코멘트: 버튼 위 여백까지 줄을 늘리고 조금 키움 */
+.cg-rv .cg-rvw:not(:last-child)::before{content:"";position:absolute;left:49px;top:calc(50% + 50px);width:2px;height:calc(100% - 100px + 8px);background:var(--color-border-subtle);transition:background .3s}
+.cg-rv .cg-rvw.cg-on:not(:last-child)::before,.cg-rv .cg-rvw.cg-off:not(:last-child)::before{background:var(--color-text-primary)}
+.cg-p .cg-rv .cg-rvw{grid-template-columns:64px 124px minmax(0,1fr) minmax(128px,max-content);column-gap:12px;min-height:84px}
+.cg-p .cg-rv .cg-rvw:not(:last-child)::before{left:31px;top:calc(50% + 32px);height:calc(100% - 64px + 6px)}
+.cg-rv .cg-rvi{position:relative;width:100px;height:100px;border-radius:50%;display:grid;place-items:center;background:var(--color-background-canvas);box-shadow:inset 0 0 0 2px var(--color-border-subtle);color:var(--color-text-tertiary);transition:background .2s,box-shadow .2s,color .2s}
+.cg-p .cg-rv .cg-rvi{width:64px;height:64px}
+.cg-rv .cg-rvi .cg-ico.cg-pi{width:50px;height:50px}
+.cg-p .cg-rv .cg-rvi .cg-ico.cg-pi{width:32px;height:32px}
+.cg-p .cg-rv .cg-rvf.cg-rain i{width:3px;height:22px}
+.cg-p .cg-rv .cg-rvf.cg-night i{width:16px;height:16px}
+.cg-rv .cg-rvk{font:var(--cg-title-m);color:var(--color-text-tertiary);white-space:nowrap;transition:color .2s}
+.cg-p .cg-rv .cg-rvk{font:700 24px/32px var(--cg-font)}
+.cg-rv .cg-rvv{font:var(--cg-title-l);color:var(--color-text-primary);white-space:nowrap;font-variant-numeric:tabular-nums;text-align:right}
+.cg-p .cg-rv .cg-rvv{font:700 26px/34px var(--cg-font)}
+.cg-rv .cg-rvf{position:relative;align-self:stretch;height:100%;min-width:0;overflow:hidden;opacity:0;transition:opacity .25s}
+.cg-rv .cg-rvw.cg-on .cg-rvi{box-shadow:none;color:#242135}
+.cg-rv .cg-rvi::after{content:"";position:absolute;inset:0;border-radius:50%;background:#C8F04A;opacity:0}
+/* 11/14 명준 코멘트: 아래에서 차오름 → 테두리가 다 차면 라임으로 딱 바뀌며 가볍게 뿅 */
+.cg-rv .cg-rvw.cg-on .cg-rvi::after{opacity:1}
+.cg-rv .cg-rvw.cg-on .cg-rvi.cg-pop{animation:rv-pop2 .32s var(--rv-out)}
+.cg-rv .cg-rvi .cg-ico{position:relative;z-index:2}
+.cg-rv .cg-rvring{position:absolute;inset:0;width:100%;height:100%;rotate:-90deg;overflow:visible;pointer-events:none;z-index:1;opacity:0}
+.cg-rv .cg-rvring circle{fill:none;stroke:var(--color-text-primary);stroke-width:3;stroke-linecap:round;stroke-dasharray:100;stroke-dashoffset:100}
+.cg-rv .cg-rvw.cg-on .cg-rvring{opacity:0;transition:opacity .16s ease .18s}
+.cg-rv .cg-rvw.cg-on .cg-rvring circle{stroke-dashoffset:0}
+@keyframes rv-ring{to{stroke-dashoffset:0}}
+.cg-rv .cg-rvw.cg-off .cg-rvi{box-shadow:none;outline:2px dashed var(--color-border-subtle);outline-offset:-2px}
+.cg-rv .cg-rvw.cg-off .cg-rvv{font-weight:400;color:var(--color-text-tertiary)}
+.cg-rv .cg-rvf i{position:absolute}
+.cg-rv .cg-rvf.cg-rain i{top:-34px;width:4px;height:30px;border-radius:2px;background:var(--rc);transform:rotate(12deg);animation:rv-fall .7s linear infinite;animation-delay:var(--dl)}
+.cg-rv .cg-rvf.cg-rain.cg-snow i{width:14px;height:14px;border-radius:50%;animation-duration:1.4s}
+/* 11/14 명준(/motion-design): 정체 구간 = 실제 정차 — 앞차 2대는 서 있고(브레이크등 켜짐) 내 차가 달려와 급히 멈추며 앞이 살짝 숙여짐(0~0.63초) → 맨 앞부터 0.09초 간격으로 한 칸 조금 갔다 섬(0.52~0.96초, 갈 때 브레이크등 꺼짐) · 글자 없음 · transform만 움직임 */
+.cg-rv .cg-rvf.cg-jam{--cw:50px;--ch:20px;--cgap:5px;--crp:10px;--cin:-96px}
+.cg-p .cg-rv .cg-rvf.cg-jam{--cw:66px;--ch:26.4px;--cgap:6px;--crp:12px;--cin:-160px}
+.cg-rv .cg-rvf.cg-jam .cg-jc{position:absolute;top:calc(50% - var(--ch) / 2);left:calc(100% - (var(--k) + 1) * (var(--cw) + var(--cgap)));width:var(--cw);height:var(--ch);color:var(--color-text-tertiary);transform:translateX(calc(var(--crp) * -1));transform-origin:26% 100%;animation:rv-jcreep 260ms var(--rv-io) calc(520ms + var(--k) * 90ms) both}
+.cg-rv .cg-rvf.cg-jam .cg-jc.cg-me{color:var(--color-text-primary);animation:rv-jme 960ms linear both}
+.cg-rv .cg-rvf.cg-jam .cg-jc svg{display:block;width:100%;height:100%;overflow:visible}
+.cg-rv .cg-rvf.cg-jam .cg-jb,.cg-rv .cg-rvf.cg-jam .cg-jt{fill:currentColor}
+.cg-rv .cg-rvf.cg-jam .cg-jt{stroke:var(--color-background-canvas);stroke-width:1.6}
+.cg-rv .cg-rvf.cg-jam .cg-jw{fill:var(--color-background-canvas);opacity:.55}
+.cg-rv .cg-rvf.cg-jam .cg-bk{left:-1px;top:44%;width:9%;height:17%;border-radius:2px;background:var(--color-illust-tail-hi);box-shadow:0 0 5px 1px var(--color-illust-tail);animation:rv-jbk 260ms linear calc(520ms + var(--k) * 90ms) both}
+.cg-rv .cg-rvf.cg-jam .cg-jc.cg-me .cg-bk{animation:rv-jmebk 960ms linear both}
+.cg-rv .cg-rvf.cg-jam .cg-jq.cg-done .cg-jc,.cg-rv .cg-rvf.cg-jam .cg-jq.cg-done .cg-bk{animation:none;transform:none;opacity:1}
+@keyframes rv-jcreep{from{transform:translateX(calc(var(--crp) * -1))}to{transform:translateX(0)}}
+@keyframes rv-jbk{0%{opacity:1}12%{opacity:.15}85%{opacity:.15}100%{opacity:1}}
+@keyframes rv-jme{0%{transform:translateX(var(--cin)) rotate(0);animation-timing-function:cubic-bezier(0.23, 1, 0.32, 1)}
+  43.75%{transform:translateX(calc(var(--crp) * -1)) rotate(0);animation-timing-function:cubic-bezier(0.23, 1, 0.32, 1)}
+  52%{transform:translateX(calc(var(--crp) * -1)) rotate(2.5deg);animation-timing-function:cubic-bezier(0.23, 1, 0.32, 1)}
+  65.6%{transform:translateX(calc(var(--crp) * -1)) rotate(0)}
+  72.9%{transform:translateX(calc(var(--crp) * -1)) rotate(0);animation-timing-function:cubic-bezier(0.45, 0, 0.55, 1)}
+  100%{transform:translateX(0) rotate(0)}}
+@keyframes rv-jmebk{0%{opacity:.15}39%{opacity:1}72.9%{opacity:1}77%{opacity:.15}97%{opacity:.15}100%{opacity:1}}
+.cg-rv .cg-rvf.cg-tbar i.cg-t,.cg-rv .cg-rvf.cg-tbar i.cg-f{left:0;right:8px;top:calc(50% - 7px);height:14px;border-radius:7px}
+.cg-rv .cg-rvf.cg-tbar i.cg-t{background:var(--color-border-subtle)}
+.cg-rv .cg-rvf.cg-tbar i.cg-f{background:linear-gradient(90deg,var(--color-text-tertiary) 0 var(--m),#C8F04A var(--m));clip-path:inset(0 100% 0 0 round 7px);animation:rv-fill 1.2s linear forwards}
+/* 원 테두리(linear)와 같은 진행 표시 */
+.cg-rv .cg-rvf.cg-tbar i.cg-m{left:var(--m);top:calc(50% - 22px);width:3px;height:44px;background:var(--color-text-primary)}
+/* 11/14 명준: '예상보다 더' = 예상 도착 시각을 큰 숫자가 넘어감(장시간 막대와 구분) */
+.cg-rv .cg-rvf.cg-late{display:flex;align-items:center}
+.cg-rv .cg-rvf.cg-late .cg-lt{display:flex;flex-direction:column;align-items:flex-start;gap:2px}
+.cg-rv .cg-rvf.cg-late .cg-lt0{position:relative;font:400 24px/32px var(--cg-font);color:var(--color-text-tertiary);font-variant-numeric:tabular-nums;white-space:nowrap}
+.cg-rv .cg-rvf.cg-late .cg-lt0::after{content:"";position:absolute;left:0;right:0;top:calc(50% - 1px);height:2px;background:currentColor;transform:scaleX(0);transform-origin:left center}
+.cg-rv .cg-rvf.cg-late .cg-lt1{position:relative;z-index:0;font:var(--cg-title-m);color:var(--color-text-tertiary);font-variant-numeric:tabular-nums;white-space:nowrap;transition:color 200ms var(--rv-out)}
+.cg-rv .cg-rvf.cg-late .cg-lt1::after{content:"";position:absolute;z-index:-1;left:-4px;right:-4px;bottom:4px;height:40%;border-radius:4px;background:#C8F04A;transform:scaleX(0);transform-origin:left center}
+.cg-rv .cg-rvf.cg-late .cg-lt.cg-go .cg-lt0::after{transform:scaleX(1);transition:transform 280ms var(--rv-out)}
+.cg-rv .cg-rvf.cg-late .cg-lt.cg-go .cg-lt1{color:var(--color-text-primary)}
+.cg-rv .cg-rvf.cg-late .cg-lt.cg-go .cg-lt1::after{transform:scaleX(1);transition:transform 320ms var(--rv-out) 800ms}
+.cg-rv .cg-rvf.cg-late .cg-lt.cg-done .cg-lt0::after,.cg-rv .cg-rvf.cg-late .cg-lt.cg-done .cg-lt1::after{transform:scaleX(1)}
+.cg-rv .cg-rvf.cg-late .cg-lt.cg-done .cg-lt1{color:var(--color-text-primary)}
+.cg-p .cg-rv .cg-rvf.cg-late .cg-lt0{font:400 22px/28px var(--cg-font)}
+.cg-p .cg-rv .cg-rvf.cg-late .cg-lt1{font:700 30px/38px var(--cg-font)}
+.cg-rv .cg-rvf.cg-night i{width:22px;height:22px;background:var(--color-text-primary);clip-path:polygon(50% 0,62% 38%,100% 50%,62% 62%,50% 100%,38% 62%,0 50%,38% 38%);animation:cg-twk .7s var(--rv-io) infinite alternate;animation-delay:var(--dl)}
+.cg-rv .cg-rvbts{margin-top:40px;flex:none;display:flex;align-items:center;gap:16px;max-width:100%}
+/* 11/14 명준 코멘트: 닫기 빼고 [운전자 챙겨주기] 옆에 [다음에] */
+.cg-rv .cg-rvbts.cg-wait{visibility:hidden}
+/* 11/14 명준 코멘트: 세는 동안 버튼 숨김(자리는 남겨 줄이 안 흔들림) → 다 세면 나타남 */
+.cg-rv .cg-rvbts .cg-btn{margin:0}
+.cg-rv .cg-rvbts .cg-btn .cg-ico.cg-pi{width:32px;height:32px;flex:none}
+/* 11/14 명준: [운전자 챙겨주기] 글자 왼쪽 아이콘(손 위 하트 · 혼자면 영수증) */
+.cg-p .cg-rv .cg-rvbts .cg-btn .cg-ico.cg-pi{width:28px;height:28px}
+/* 11/14 명준 코멘트: [운전자 챙겨주기]가 살짝씩 눈에 띄게 — 나타난 1.2초 뒤부터 3.2초마다 라임 물결 한 번 + 손 위 하트가 잠깐 떴다가 내려앉음(11/14 명준 코멘트: 두근 대신 · 튀지 않게, 혼자면 영수증 아이콘이 살짝 뜸). 누르면 · 동작 줄이기면 멈춤 */
+.cg-rv{--nudge:#C8F04AB3}
+.cg-rv.cg-won .cg-rvgo:not(.cg-off)::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;box-shadow:0 0 0 0 var(--nudge);animation:rv-nudge 3.2s var(--rv-out) 1.2s infinite}
+.cg-rv .cg-rvgo .cg-hhh{--lift:-64px;--lsc:1.12;transform-box:fill-box;transform-origin:50% 70%}
+/* 11/14 명준 코멘트: 거의 안 보임 → 34 → 64(32px 아이콘에서 약 8px) + 뜰 때 1.12배 */
+/* 아이콘 256 단위 · 32px 아이콘에서 약 4px */
+.cg-rv .cg-rvgo .cg-ico.cg-pi:not(.cg-hh){--lift:-3px}
+.cg-rv.cg-won .cg-rvgo:not(.cg-off) .cg-hhh,.cg-rv.cg-won .cg-rvgo:not(.cg-off) .cg-ico.cg-pi:not(.cg-hh){animation:rv-lift 3.2s 1.2s infinite}
+.cg-rv.cg-won .cg-rvgo:active::after,.cg-rv.cg-won .cg-rvgo:active .cg-ico.cg-pi,.cg-rv.cg-won .cg-rvgo:active .cg-hhh{animation:none}
+@keyframes rv-nudge{0%{box-shadow:0 0 0 0 var(--nudge)}28%{box-shadow:0 0 0 18px transparent}100%{box-shadow:0 0 0 18px transparent}}
+@keyframes rv-lift{0%{transform:translateY(0) scale(1);animation-timing-function:cubic-bezier(0.23, 1, 0.32, 1)}16%{transform:translateY(var(--lift)) scale(var(--lsc,1));animation-timing-function:cubic-bezier(0.45, 0, 0.55, 1)}26%{transform:translateY(calc(var(--lift) * .92)) scale(var(--lsc,1));animation-timing-function:cubic-bezier(0.45, 0, 0.55, 1)}44%,100%{transform:translateY(0) scale(1)}}
+.cg-p .cg-rv.cg-won .cg-rvgo:not(.cg-off)::after{animation-name:rv-nudge-p}
+@keyframes rv-nudge-p{0%{box-shadow:0 0 0 0 var(--nudge)}28%{box-shadow:0 0 0 12px transparent}100%{box-shadow:0 0 0 12px transparent}}
+.cg-p .cg-rv .cg-rvbts .cg-btn.cg-l{height:80px;border-radius:24px;padding:0 20px;gap:10px;min-width:0;font:var(--cg-body-l)}
+.cg-p .cg-rv .cg-rvbts{gap:12px;margin-top:24px}
+/* 11/14 명준 코멘트: 분할 창에서 [운전자 챙겨주기]는 함께 탄 사람이 누르는 일이 많은데 왼쪽(운전석 쪽) 끝에 몰려 있었음 → 버튼 줄을 창 너비로 늘리고 챙겨주기 2 : 다음에 1. 앱이 가운데 칸이면 챙겨주기가 화면 가운데를 넘어 조수석 쪽까지, 오른쪽 칸이면 그대로 조수석 앞 */
+.cg-p .cg-rv .cg-rvbts{align-self:stretch;width:auto}
+.cg-p .cg-rv .cg-rvbts .cg-btn.cg-l{flex:1 1 0}
+.cg-p .cg-rv .cg-rvbts .cg-btn.cg-l.cg-rvgo{flex:2 1 0}
+/* 11/14 명준 코멘트: 분할 창(840)에서는 캐릭터를 빼고 기준 5줄(계산 움직임)만 창 너비에 맞춰 크게 — 캐릭터가 잘리기만 했음 */
+.cg-p .cg-thx.cg-rv{grid-template-columns:minmax(0,1fr)}
+.cg-p .cg-rv .cg-rvl{display:none}
+.cg-p .cg-rv .cg-rvr{padding:16px 40px 40px 40px}
+.cg-p .cg-rv .cg-rvrows{gap:6px}
+.cg-p .cg-rv .cg-rvw{grid-template-columns:88px 150px minmax(0,1fr) minmax(170px,max-content);column-gap:20px;min-height:104px;max-height:170px}
+.cg-p .cg-rv .cg-rvw:not(:last-child)::before{left:43px;top:calc(50% + 44px);height:calc(100% - 88px + 6px)}
+.cg-p .cg-rv .cg-rvi{width:88px;height:88px}
+.cg-p .cg-rv .cg-rvi .cg-ico.cg-pi{width:44px;height:44px}
+.cg-p .cg-rv .cg-rvk{font:700 30px/38px var(--cg-font)}
+.cg-p .cg-rv .cg-rvv{font:700 32px/40px var(--cg-font)}
+.cg-p .cg-rv .cg-rvf.cg-rain i{width:4px;height:26px}
+.cg-p .cg-rv .cg-rvf.cg-night i{width:20px;height:20px}
+.cg-p .cg-rv .cg-rvf.cg-tbar i.cg-m{top:calc(50% - 18px);height:36px}
+@keyframes rv-breathe{0%,100%{transform:translateY(0) scale(1,1)}50%{transform:translateY(-.9%) scale(1.005,.995)}}
+@keyframes rv-slump{0%{transform:none}40%{transform:rotate(-3deg)}70%{transform:rotate(1.5deg)}100%{transform:rotate(-1deg)}}
+@keyframes rv-dip{0%{transform:scale(1,1)}35%{transform:translateY(1.5%) scale(1.035,.95)}70%{transform:translateY(-.6%) scale(.99,1.02)}100%{transform:none}}
+@keyframes rv-jump{0%{transform:none}18%{transform:translateY(1%) scale(1.05,.93)}48%{transform:translateY(-7%) scale(.96,1.05)}78%{transform:translateY(0) scale(1.04,.96)}100%{transform:none}}
+@keyframes rv-star{0%{opacity:0;transform:translate(0,0) scale(.2) rotate(0)}30%{opacity:1}100%{opacity:0;transform:translate(var(--dx),var(--dy)) scale(1.1) rotate(40deg)}}
+@keyframes rv-pop2{0%{transform:scale(1)}40%{transform:scale(1.14)}100%{transform:scale(1)}}
+@keyframes rv-fall{from{translate:0 0}to{translate:-22px 180px}}
+@keyframes rv-fill{to{clip-path:inset(0 0 0 0 round 7px)}}

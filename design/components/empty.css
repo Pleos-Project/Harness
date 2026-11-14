@@ -4,4 +4,4 @@
 .cg-recempty span{font:var(--cg-body-m);color:var(--cg-text-tertiary)}
 .cg-recempty.cg-dc{height:300px}
 .cg-home.cg-p .cg-recempty{height:200px}
-.cg-recempty,.cg-pv.cg-empty,.cg-fx .cg-none{border-color:var(--color-border-strong)}
+.cg-recempty,.cg-pv.cg-empty{border-color:var(--color-border-strong)}

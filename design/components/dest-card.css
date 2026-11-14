@@ -20,7 +20,7 @@
 .cg-home.cg-p .cg-hcard .cg-go{height:60px;font:var(--cg-body-m-b);padding:0 6px 0 22px}
 .cg-home.cg-p .cg-hcard .cg-go .cg-ar{width:48px;height:48px}
 .cg-hcard.cg-on{background:var(--color-selection-halo)}
-.cg-hcard.cg-on .cg-in{background:var(--color-selection-background);box-shadow:inset 0 0 0 2px var(--color-selection-border),0 10px 28px #2420332e}
+.cg-hcard.cg-on .cg-in{background:var(--color-selection-background);box-shadow:inset 0 0 0 2px var(--color-selection-border),0 10px 28px #2421352E}
 .cg-hcard.cg-on .cg-nm,.cg-hcard.cg-on .cg-tag{color:var(--color-selection-foreground)}
 .cg-hcard.cg-on .cg-mt{color:var(--color-selection-foreground);opacity:.72}
 .cg-hcard .cg-in{transition:background .26s cubic-bezier(.32,.72,0,1),box-shadow .26s cubic-bezier(.32,.72,0,1)}
