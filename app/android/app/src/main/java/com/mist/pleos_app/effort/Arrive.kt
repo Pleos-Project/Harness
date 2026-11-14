@@ -138,6 +138,13 @@ fun guideEndAction(trip: OpenTrip, kind: String, at: String): GuideEndAction = w
 }
 
 /**
+ * 촬영용 도착 신호(시연 영상 5번 컷, debug 빌드에서만 부른다)를 받아들일지. 시연 주행이 가는 중이고 도착 신호일 때만 그 시각을 돌려준다.
+ * 실제 주행은 [guideEndAction]이 그대로 맡는다(여기서 null).
+ */
+fun demoShootArrival(trip: OpenTrip, e: GuideEnd): String? =
+    if (trip.demo && !trip.arrived && e.kind == GUIDE_ARRIVED) e.at else null
+
+/**
  * 주행이 끊겼다 이어진 뒤(출발 기록은 있는데 주행 중 서비스가 없음 — 시동이 완전히 꺼졌다 켜짐 등, 11/13 에뮬)의 판정.
  * 내비 안내도 사라져 "안내 안 함"으로 답하므로 다시 보임(RESUME)으로 보면 휴게소가 도착이 된다. 그래서 묻는다.
  * 내비가 아직 안내 중이고 남은 거리가 있으면 중간 정차라 묻지 않는다. 출발 직후·시연도 묻지 않는다.
