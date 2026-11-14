@@ -1135,6 +1135,26 @@ fun CgBanner(text: String, modifier: Modifier = Modifier, warn: Boolean = false,
     }
 }
 
+/**
+ * 인터넷 없음 알약(`components/notice` .cg-offl): 가운데 정렬 · 글 길이만큼만 · 아이콘 28 · 간격 14.
+ * 가로는 높이 64 · 좌우 28 · Body M Bold 한 줄, 분할은 높이 52 · 좌우 18 · Label M 줄바꿈 허용. 색은 status-warning.
+ */
+@Composable
+fun CgOfflinePill(text: String, icon: CgIcon, compact: Boolean, modifier: Modifier = Modifier) {
+    val c = Chagok.colors
+    Box(modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+        Row(
+            Modifier.height(if (compact) 52.gpx else 64.gpx)
+                .background(c.statusWarningBackground, RoundedCornerShape(999.gpx))
+                .padding(horizontal = if (compact) 18.gpx else 28.gpx),
+            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.gpx),
+        ) {
+            CgIconMark(icon, 28.gpx, c.statusWarningForeground)
+            Text(text, style = if (compact) Chagok.type.labelM else Chagok.type.bodyMB, color = c.statusWarningForeground, maxLines = if (compact) 2 else 1, softWrap = compact)
+        }
+    }
+}
+
 /** 점선 테두리 3px. */
 fun Modifier.cgDashed(radius: Dp, color: Color): Modifier = this.drawBehind {
     drawRoundRect(color, cornerRadius = CornerRadius(radius.toPx()), style = Stroke(3f, pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 8f))))

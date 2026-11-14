@@ -46,6 +46,7 @@ import com.mist.pleos_app.effort.DepartUi
 import com.mist.pleos_app.effort.DestOption
 import com.mist.pleos_app.net.PlacesStatus
 import com.mist.pleos_app.ui.components.CgBanner
+import com.mist.pleos_app.ui.components.CgOfflinePill
 import com.mist.pleos_app.ui.components.CgCta
 import com.mist.pleos_app.ui.components.CgDestCard
 import com.mist.pleos_app.ui.components.CgDivider
@@ -135,7 +136,7 @@ internal fun EffortDepartScreen(
                 },
             )
             // 인터넷 없음(depart-offline): 위 바 아래 경고 알약 · 검색 한 줄은 흐리게 막는다
-            if (offline) CgBanner(stringResource(R.string.effort_offline_banner), Modifier.padding(top = if (narrow) 20.gpx else ChagokSpace.S28.gpx), warn = true, icon = CgIcon.WifiSlash)
+            if (offline) CgOfflinePill(stringResource(R.string.effort_offline_banner), CgIcon.WifiSlash, compact = narrow, modifier = Modifier.padding(top = 20.gpx))
             // 위 바 → 검색 28(분할 20)
             Box(Modifier.padding(top = if (narrow) 20.gpx else ChagokSpace.S28.gpx)) {
                 CgSearchField(ui.query, stringResource(R.string.effort_search_hint), stringResource(R.string.effort_search_clear), onQuery, search, onClearSearch, compact = narrow, disabled = offline)
