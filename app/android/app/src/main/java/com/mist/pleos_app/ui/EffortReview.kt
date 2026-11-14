@@ -299,9 +299,13 @@ internal fun EffortReviewScreen(
                     val gap = (if (narrow) 6 else 8).gpx
                     Column(Modifier.fillMaxWidth().weight(1f), verticalArrangement = Arrangement.spacedBy(gap)) {
                         items.forEachIndexed { i, it ->
+                            // 다 센 줄은 지금 영수증 값으로 그린다: 도착 날씨가 3초 뒤에 오면 세는 동안의 값("출발할 때 비")이 남아
+                            // 영수증("비, 주행 내내")과 어긋났다(11/14 에뮬). 세는 중인 줄만 세는 값
+                            val settled = states[i] == RowState.ON || states[i] == RowState.OFF
                             ReviewRow(
                                 Modifier.fillMaxWidth().weight(1f).heightIn(min = (if (narrow) 84 else 112).gpx, max = 170.gpx),
-                                it, states[i], shown[i], { ring[i].value }, { pop[i].value }, { fx[i].value }, i == items.lastIndex, gap, narrow, c,
+                                it, if (settled) (if (it.on) RowState.ON else RowState.OFF) else states[i], if (settled) it.value else shown[i],
+                                { ring[i].value }, { pop[i].value }, { fx[i].value }, i == items.lastIndex, gap, narrow, c,
                             )
                         }
                     }
