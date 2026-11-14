@@ -26,3 +26,5 @@
 .cg-a-p1 .cg-pbar .cg-tbtn{height:64px;padding:0 12px;font:var(--cg-body-l)}
 .cg-a-p1 .cg-pbar .cg-tbtn + .cg-tbtn{margin-left:-8px}
 .cg-pbar,.cg-toast{background:var(--color-surface-notification);border-color:var(--color-border-subtle)}
+/* 11/15(v193): 인원 1명이면 [−] 흐리게 잠금(투명도 .32 · 누를 수 없음, aria-disabled) */
+.cg-pbar .cg-pst .cg-btn.cg-ib.cg-dis{opacity:.32;pointer-events:none}
