@@ -30,3 +30,6 @@
 .cg-pg.cg-p .cg-logr .cg-chev{grid-area:ch;align-self:center}
 /* 기록 목록 스크롤(D6) · 분할 방식 B 항목 세로(D8) */
 .cg-pg > .cg-logl{flex:0 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain}
+/* 11/15 명준(v193): 분할 기록 목록 — 줄을 창 높이로 늘리지 않고 내용만큼(기존 줄과 같은 칸), 많으면 목록 안에서 스크롤 */
+.cg-pg.cg-p .cg-logl{flex:0 1 auto;min-height:0;overflow-y:auto}
+.cg-pg.cg-p .cg-logr{flex:none;padding:18px 24px}

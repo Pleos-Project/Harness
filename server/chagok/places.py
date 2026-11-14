@@ -6,6 +6,8 @@ GET /v1/places?query=&lat=&lng= (main.py)가 부른다. 앱은 고른 결과의 
 
 - 결과는 최대 10곳. 이름이 비슷한 결과를 목록에서 구분하도록 category(카카오 분류 마지막 칸)와
   distance_m(현재 위치를 보냈을 때 카카오가 준 거리)을 같이 준다(June 제안 #57, 효성 결정 11/7).
+- category_path는 카카오 분류의 모든 칸이다(윗칸부터). 출발 미리보기 배경의 장소 종류를 고르는 데 쓴다(#116, 11/15).
+  카카오가 준 값을 나눠 그대로 돌려줄 뿐, 새로 밖으로 보내는 값은 없다.
 - 검색은 됐는데 결과가 없으면 빈 목록 + status "empty",
   키 없음·연결 실패·카카오 오류·3초 초과는 빈 목록 + "unavailable"(둘 다 200).
 - 현재 위치(lat·lng)를 같이 받으면 카카오에 x·y로 넘겨 가까운 곳이 위로 오게 한다. 정렬은 accuracy 그대로 둔다.
@@ -53,6 +55,12 @@ class Place:
     place_id: str       # 카카오 장소 id → RouteInfo.poiId
     category: str | None = None     # 카카오 category_name 마지막 칸("여행 > 관광,명소" → "관광,명소"). 없으면 None
     distance_m: int | None = None   # 현재 위치에서의 거리(m). 현재 위치를 안 보냈으면 카카오가 빈 값 → None
+    # 카카오 category_name의 모든 칸, 윗칸부터("여행 > 관광,명소" → ("여행", "관광,명소")). 없으면 ()
+    # 지하철역·기차역은 마지막 칸이 노선 이름("수도권2호선")이라 윗칸("지하철,전철")이 있어야 종류를 안다(#116)
+    category_path: tuple[str, ...] = ()
+
+    def public(self) -> dict:
+        return {**asdict(self), "category_path": list(self.category_path)}
 
 
 @dataclass(frozen=True)
@@ -63,7 +71,7 @@ class Result:
 
     def public(self) -> dict:
         """GET /v1/places 응답 본문. err는 싣지 않는다."""
-        return {"status": self.status, "places": [asdict(p) for p in self.places]}
+        return {"status": self.status, "places": [p.public() for p in self.places]}
 
 
 def unavailable(err: str) -> Result:
@@ -77,6 +85,11 @@ def _coord(v, lo: float, hi: float) -> float | None:
     except (TypeError, ValueError):
         return None
     return f if math.isfinite(f) and lo <= f <= hi else None
+
+
+def _category_path(v) -> tuple[str, ...]:
+    """'교통,수송 > 지하철,전철 > 수도권2호선' → ('교통,수송', '지하철,전철', '수도권2호선'). 빈 칸은 버린다."""
+    return tuple(p for p in (s.strip() for s in str(v or "").split(">")) if p)
 
 
 def _category(v) -> str | None:
@@ -120,7 +133,8 @@ def parse_keyword(text: str) -> list[Place]:
         if not name or not pid or lat is None or lng is None:
             continue
         address = str(d.get("road_address_name") or "").strip() or str(d.get("address_name") or "").strip()
-        out.append(Place(name, address, lat, lng, pid, _category(d.get("category_name")), _distance_m(d.get("distance"))))
+        cat = d.get("category_name")
+        out.append(Place(name, address, lat, lng, pid, _category(cat), _distance_m(d.get("distance")), _category_path(cat)))
         if len(out) == MAX_RESULTS:
             break
     return out

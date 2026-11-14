@@ -43,10 +43,12 @@ def keyword(docs=None, total=None) -> dict:
 
 EXPECTED = [
     {"name": "두물머리", "address": "경기 양평군 양서면 양수리", "lat": 37.5328127891601, "lng": 127.315829778049,
-     "place_id": "7845373", "category": "관광,명소", "distance_m": 23671},   # 도로명 주소가 없으면 지번 주소
+     "place_id": "7845373", "category": "관광,명소", "distance_m": 23671,    # 도로명 주소가 없으면 지번 주소
+     "category_path": ["여행", "관광,명소"]},
     {"name": "양서농협 두물머리로컬푸드직매장", "address": "경기 양평군 양서면 두물머리길 38",
      "lat": 37.54082012837359, "lng": 127.31911437324305, "place_id": "2141791502",
-     "category": "하나로마트", "distance_m": 24417},                       # 분류는 마지막 칸
+     "category": "하나로마트", "distance_m": 24417,                        # 분류는 마지막 칸
+     "category_path": ["가정,생활", "슈퍼마켓", "대형슈퍼", "하나로마트"]},        # 윗칸부터 모든 칸(#116)
 ]
 
 
@@ -69,7 +71,7 @@ def body(obj) -> FakeResp:
 
 # ------------------------------------------------------------ 응답 해석
 def test_parse_ok_maps_fields():
-    assert [vars(p) for p in PL.parse_keyword(json.dumps(keyword(), ensure_ascii=False))] == EXPECTED
+    assert [p.public() for p in PL.parse_keyword(json.dumps(keyword(), ensure_ascii=False))] == EXPECTED
 
 
 def test_parse_caps_at_ten():
@@ -98,6 +100,20 @@ def test_parse_without_location_distance_is_null():
 def test_parse_category_last_part(category_name, category):
     out = PL.parse_keyword(json.dumps(keyword([dict(DOCS[0], category_name=category_name)]), ensure_ascii=False))
     assert out[0].category == category
+
+
+@pytest.mark.parametrize("category_name, path", [
+    ("교통,수송 > 지하철,전철 > 수도권2호선", ["교통,수송", "지하철,전철", "수도권2호선"]),   # 마지막 칸만으로는 역인 줄 모른다
+    ("여행 > 관광,명소 > 섬 > 섬(내륙)", ["여행", "관광,명소", "섬", "섬(내륙)"]),
+    ("주차장", ["주차장"]), ("", []), (None, []), ("음식점 > ", ["음식점"]), (" > 음식점 >  > 카페 ", ["음식점", "카페"]),
+])
+def test_parse_category_path_all_parts(category_name, path):
+    """category_path는 윗칸부터 모든 칸, 빈 칸은 버린다. 응답에서는 목록으로 나간다(#116)."""
+    out = PL.parse_keyword(json.dumps(keyword([dict(DOCS[0], category_name=category_name)]), ensure_ascii=False))
+    assert list(out[0].category_path) == path
+    assert out[0].public()["category_path"] == path
+    if path and category_name and not category_name.rstrip().endswith(">"):
+        assert out[0].category == path[-1]
 
 
 @pytest.mark.parametrize("distance, distance_m", [
