@@ -15,7 +15,7 @@
 - 시안에 없는 앱 요소가 기능(AC 번호가 있는 것)이면 반영 PR이 지우지 않고 "확인 필요"로 남긴다. 디자이너가 다음 디자인 PR에서 자리를 정한다.
 - 화면 시안은 `design/screens/<화면>.html`(+ 같은 이름 `.css`), 상태가 여럿이면 한 파일 안에 `data-state="기본|정산 닫음|…"` 블록으로 나눈다. 부품은 `design/components/`.
 
-### 시안 ↔ 앱 파일 대응표 (반영 PR이 고칠 곳) — Design v2(운전 노고 정산, 11/8 · 11/14 v188에서 앱 파일 이름 최신화)
+### 시안 ↔ 앱 파일 대응표 (반영 PR이 고칠 곳) — Design v2(운전 노고 정산, 11/8 · 11/14 v191에서 앱 파일 이름 최신화)
 | 시안 | 앱(Compose) | 비고 |
 |---|---|---|
 | `screens/home.html` | `ui/EffortHomeV2.kt` | 시작 화면 · 기본 · 방금 끝난 기록 · 알림 펼침. 위 바 = 기록 · 워드마크 · 알림 · 설정. 로고 · 워드마크 v2(11/14) |
@@ -78,7 +78,7 @@
   `sea lake river mountain park city island drive`, `<n>` = 1부터.
 - 같은 장소는 늘 같은 그림: 앱이 장소 ID로 변형을 고른다(Kotlin `illustrationName`). 변형 수를 바꾸면 PR에 적는다.
 - 실제 장소 사진인 척하지 않는다. 아이콘은 48dp 그리드 SVG, `design/icons/<name>.svg`(Pleos 에셋 = `icons/pleos/`, 그 밖 = Phosphor Bold `icons/phosphor/`, MIT). 로고·앱 아이콘(512px PNG)은 `design/brand/`. 장소 사진(출발 미리보기 배경, 임시)은 `design/places/<key>.jpg` + `CREDITS.md`.
-- 노고 캐릭터(오늘 운전 돌아보기, 11/14)는 `design/illustrations/character/nogo_v_<표정>.webp`(700 × 754, 표정 focus · shy · relief · proud · joy). BX 'NOGO 캐릭터 모션' 시안에서 내보낸 것이고, BX가 상황별 모션 에셋으로 다시 넘기면 같은 이름 규칙으로 바꾼다.
+- 노고 캐릭터(오늘 운전 돌아보기, 11/14)는 `design/illustrations/character/nogo_v_<이름>.webp`(모두 700 × 754 같은 틀). 표정 5장 focus · shy · relief · proud · joy(BX 'NOGO 캐릭터 모션' 시안) + 조건별 포즈 `nogo_v_<조건>_1`(rain · rainall · jam · late · night · long, BX '노고 캐릭터 바리에이션'). 조건마다 기본 1번만 쓰고, 2번(`_2`, 수치가 심할 때 더 심한 얼굴)은 기준을 정하면 같은 이름 규칙으로 더한다.
 - 레포에는 **앱이 쓰는 내보낸 파일(SVG·PNG)만** 둔다. 원본(피그마·AI·PSD)은 피그마·드라이브에.
 
 ### BX 파일 올리기
@@ -116,5 +116,5 @@ Co-authored-by: <BX 디자이너 이름> <GitHub에 쓸 이메일>
 ## 6. 프로토타입 (`design/prototype/`)
 - 디자인 아티팩트(Design v2) 원본 사본이다. JS로 화면을 그리고 눌러 볼 수 있으며, 계산 연출 · 영수증 출력 같은 움직임을 실제로 재생한다. **예시·참고용**이며 자동 반영 대상이 아니다(2절 "JS 없음" 규칙의 예외).
 - 화면 생김새의 기준은 `screens/`, 흐름·움직임의 기준은 `HANDOFF_v2.md` → `HANDOFF_v3.md` → `HANDOFF_v4.md`(뒤 판이 앞 판 위에 바뀐 것). 셋이 어긋나면 디자이너가 맞춘다.
-- 최신 아티팩트: https://claude.ai/artifact/MnKCLMKHXYrZqX72A2rgS9 (링크가 레포보다 앞설 수 있음 — 레포에 들어온 판이 넘긴 판, 11/14 기준 v188)
+- 최신 아티팩트: https://claude.ai/artifact/MnKCLMKHXYrZqX72A2rgS9 (링크가 레포보다 앞설 수 있음 — 레포에 들어온 판이 넘긴 판, 11/14 기준 v191)
 

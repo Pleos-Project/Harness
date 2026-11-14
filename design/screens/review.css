@@ -11,7 +11,7 @@
 /* 홈 작은 줄(hdesc)과 같은 글꼴 */
 .cg-p .cg-thx .cg-sub{font:500 24px/32px var(--cg-font)}
 /* ── 11/14 명준: 도착 · 오늘 운전 돌아보기 — 계산 연출 + 수고했어요를 한 화면으로. 왼쪽 캐릭터 · 오른쪽 배경 없는 기준 5줄(세로).
-   캐릭터 표정 5장과 모션(숨쉬기 · 갸웃 · 찌그러졌다 펴기 · 점프 + 반짝이)은 BX 캐릭터 모션 시안에서 가져옴. UI는 Design v2 톤 ── */
+   캐릭터 표정 5장과 모션(숨쉬기 · 갸웃 · 찌그러졌다 펴기 · 점프 + 반짝이)은 BX 캐릭터 모션 시안, 조건별 포즈 6장(기본 1번 · v191)은 BX 캐릭터 바리에이션에서 가져옴. UI는 Design v2 톤 ── */
 .cg-thx.cg-rv{display:grid;grid-template-columns:820px minmax(0,1fr);grid-template-rows:auto minmax(0,1fr);align-items:stretch;justify-content:stretch;padding:0;text-align:left;overflow:hidden}
 .cg-p .cg-thx.cg-rv{grid-template-columns:360px minmax(0,1fr)}
 .cg-rv{--rv-out:cubic-bezier(0.23, 1, 0.32, 1);--rv-io:cubic-bezier(0.45, 0, 0.55, 1)}
