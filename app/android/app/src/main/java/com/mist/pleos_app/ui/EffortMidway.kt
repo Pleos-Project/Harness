@@ -24,6 +24,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import kotlinx.coroutines.delay
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -68,13 +69,19 @@ internal fun EffortMidwayScreen(ui: EffortUi, onPick: (String) -> Unit, onClose:
     val since = if (trip.n >= 2) stringResource(R.string.effort_mid_receipt_sub, clockText(trip.departedAt), trip.n)
     else stringResource(R.string.effort_mid_receipt_sub_solo, clockText(trip.departedAt))
     // #118 10-3 ⑥(명준 11/12): 중간 정산도 도착과 같은 시트로 쉰 시간을 묻는다. 고르기 전에는 "지금까지 운전을 정리하는 중이에요" · "확인 중"
-    if (m.needsRest) { RestPending(stringResource(R.string.effort_rest_pending_mid), ui.restAnswers, narrow, onRest); return }
+    // HANDOFF_v4 7-1: 쉰 시간을 고르기 전에도 도착과 같이 영수증(쉰 시간 '없음' 기준)과 카드를 먼저 보여 주고, 출력이 끝난 뒤 시트가 늦게 올라온다
     var sheet by rememberSaveable(m.at) { mutableStateOf(false) }
     // 위 바("지금까지의 노고")는 없앴다(Design v2). 시스템 뒤로는 그대로 닫기
     BackHandler { onClose() }
     // 출력 연출: 도착과 같은 순서(종이 → 제안 카드 → 불빛 → 금액). 이 중간 정산을 처음 열 때만
     val reduce = rememberReduceMotion()
-    val seq = rememberPrintSeq(key = m.at, play = !reduce && m.choice == null && !MidwayPrinted.contains(m.at)) { MidwayPrinted += m.at }
+    val first = remember(m.at) { !reduce && m.choice == null && !MidwayPrinted.contains(m.at) }
+    val needsRest = m.needsRest
+    val seq = rememberPrintSeq(key = m.at, play = first) {
+        MidwayPrinted += m.at
+        // 쉰 시간 시트: 처음이면 출력 뒤 0.2초(도착 .rsheet.late와 같음), 다시 열면 바로
+        if (needsRest) { if (first) delay(200); sheet = true }
+    }
     Box(Modifier.fillMaxSize()) {
     Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(if (narrow) 16.gpx else 24.gpx)) {
         val receipt: @Composable (Modifier) -> Unit = { mod ->
@@ -154,7 +161,7 @@ private fun MidwayCard(
                 // v104 mid-a: (묻는 줄 · 큰 숫자 한 덩어리) → 근거 28 → 안내 → 아래로 버튼. 위 캡션("14:20 출발 · 지금까지")은 없앰
                 Column {
                     Column(verticalArrangement = Arrangement.spacedBy(if (narrow) 4.gpx else 8.gpx)) {
-                        Text(stringResource(R.string.effort_mid_a_title), style = if (narrow) t.bodyL else t.titleM, color = c.textSecondary)
+                        // 머리 줄 "지금까지를 챙긴다면"은 그리지 않는다(DECISIONS 11/14 '금액 카드 머리 줄', effort_mid_a_title 안 씀)
                         // 큰 숫자 길이 규칙(#118 D4), 그래도 넘치면 한 단계 더
                         val small = if (narrow) t.titleL else t.headlineM
                         var bigStyle by remember(view.screen.mainText) { mutableStateOf(if (com.mist.pleos_app.effort.bigNumberSmall(view.screen.mainText)) small else big) }

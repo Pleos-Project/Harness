@@ -852,13 +852,14 @@ fun CgReceipt(
 fun CgReceiptRow(
     label: String, detail: String, pct: String, basis: String?, expanded: Boolean, onClick: () -> Unit,
     compact: Boolean = false, extra: String? = null, hi: Float = 0f,
+    minHeight: Int = 70,                        // 가로 · 중간 정산 줄이 있는 영수증은 62(HANDOFF_v4 7-2)
 ) {
     val c = Chagok.colors
     val t = Chagok.type
     val plain = receiptPlain(compact)
     Column(Modifier.fillMaxWidth().background(c.skeletonHighlight.copy(alpha = c.skeletonHighlight.alpha * hi), RoundedCornerShape(8.gpx))) {
         Row(
-            Modifier.fillMaxWidth().heightIn(min = if (compact) 56.gpx else 70.gpx).then(if (basis != null) Modifier.clickable(role = Role.Button, onClick = onClick) else Modifier),
+            Modifier.fillMaxWidth().heightIn(min = if (compact) 56.gpx else minHeight.gpx).then(if (basis != null) Modifier.clickable(role = Role.Button, onClick = onClick) else Modifier),
             verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.gpx),
         ) {
             Text(label, Modifier.width(if (compact) 140.gpx else 240.gpx), style = plain, color = c.textPrimary)
@@ -891,13 +892,14 @@ fun CgReceiptRow(
 fun CgReceiptSum(
     label: String, value: String, compact: Boolean = false, total: Boolean = false, hi: Float = 0f,
     onValue: (() -> Unit)? = null, valueLabel: String? = null, trailing: @Composable () -> Unit = {},
+    minHeight: Int = 60,                       // 가로 · 중간 정산 줄이 있는 영수증은 54(HANDOFF_v4 7-2)
     amount: String? = null,                    // v92 합계 끝 글 = "약 3만 6천 원"(엔진 값). null이면 배수만
     flip: () -> Triple<Float, Float, Float> = { Triple(1f, 1f, 1f) },   // (배수 나감, 금액 들어옴, 금액 마커) 0..1. 정지 화면 = 금액
 ) {
     val c = Chagok.colors
     val plain = receiptPlain(compact)
     Row(
-        Modifier.fillMaxWidth().heightIn(min = if (compact) 46.gpx else 60.gpx).padding(top = if (total && !compact) 6.gpx else 0.gpx)
+        Modifier.fillMaxWidth().heightIn(min = if (compact) 46.gpx else minHeight.gpx).padding(top = if (total && !compact) 6.gpx else 0.gpx)
             .background(c.skeletonHighlight.copy(alpha = c.skeletonHighlight.alpha * hi), RoundedCornerShape(8.gpx)),
         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.gpx),
     ) {
@@ -949,13 +951,14 @@ fun CgReceiptSum(
 fun CgSettleFold(
     main: String, alt: String, altLabel: String, value: String, swapKey: Boolean, onSwap: () -> Unit,
     compact: Boolean = false, reduce: Boolean = false, enabled: Boolean = true,
+    topGap: Int = 28,                          // 합계와의 간격. 가로 영수증은 18(HANDOFF_v4 7-2)
 ) {
     val c = Chagok.colors
     val line = c.lineStrong
     val ease = ChagokMotion.Rise
     val dur = if (reduce) 0 else 380
     Row(
-        Modifier.fillMaxWidth().padding(top = 28.gpx)
+        Modifier.fillMaxWidth().padding(top = topGap.gpx)
             .drawBehind { drawLine(line, Offset(0f, 0f), Offset(size.width, 0f), strokeWidth = 2f.gpxPx(this), pathEffect = PathEffect.dashPathEffect(floatArrayOf(8f, 6f))) }
             .padding(top = 10.gpx),
         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.gpx),
