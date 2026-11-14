@@ -116,8 +116,9 @@ private fun inkAlpha(alpha: Int): Color = Chagok.colors.btnFilledText.copy(alpha
 
 // ------------------------------------------------------------ 아이콘
 /**
- * 선으로 그리는 Pleos 에셋 4종(뒤로 · + · − · 화살표) + 펼침 · 자리, 그리고 Phosphor Bold 23종(#118 design/icons/phosphor, MIT).
- * Phosphor는 res/drawable/ic_ph_*.xml 벡터이고 색은 쓰는 자리 글자색으로 칠한다(HANDOFF_v3 3절).
+ * Pleos 에셋 4종(뒤로 · + · − · 화살표, Pleos design assets 2.1.5 `design/icons/pleos` → res/drawable/ic_pl_*.xml, Design v2 PR-3),
+ * Phosphor Bold(#118 design/icons/phosphor, MIT → res/drawable/ic_ph_*.xml), 그리고 선으로 그리는 펼침 · 자리.
+ * 벡터는 모두 색을 쓰는 자리 글자색으로 칠한다(HANDOFF_v3 3절).
  */
 /** 워드마크 Nogo(`design/brand/nogo_wordmark_deepink.svg`, 152 × 48 기준). 색 = brandWordmark(주간 딥 잉크 · 야간 라임). */
 @Composable
@@ -146,8 +147,11 @@ fun CgAppIcon(size: Dp, modifier: Modifier = Modifier) {
     )
 }
 
-enum class CgIcon(@androidx.annotation.DrawableRes val res: Int? = null) {
-    Back, Arrow, Plus, Minus, Chevron, Placeholder,
+/** [pleos] = Pleos 에셋(아이콘 버튼 안 56 · 작으면 44). 아니면 Phosphor(48 · 40). res 없음 = 선으로 그림. */
+enum class CgIcon(@androidx.annotation.DrawableRes val res: Int? = null, val pleos: Boolean = false) {
+    Back(R.drawable.ic_pl_back_56, true), Arrow(R.drawable.ic_pl_arrow_40, true),
+    Plus(R.drawable.ic_pl_plus_56, true), Minus(R.drawable.ic_pl_minus_44, true),
+    Chevron, Placeholder,
     Receipt(R.drawable.ic_ph_receipt), Gear(R.drawable.ic_ph_gear_six), Users(R.drawable.ic_ph_users_three),
     Search(R.drawable.ic_ph_magnifying_glass), Mic(R.drawable.ic_ph_microphone),
     House(R.drawable.ic_ph_house), Briefcase(R.drawable.ic_ph_briefcase), Recent(R.drawable.ic_ph_clock_counter_clockwise),
@@ -159,7 +163,7 @@ enum class CgIcon(@androidx.annotation.DrawableRes val res: Int? = null) {
     Bell(R.drawable.ic_ph_bell), BellRinging(R.drawable.ic_ph_bell_ringing), CarProfile(R.drawable.ic_ph_car_profile),
 }
 
-/** 에셋 아이콘을 선으로 그린다(design/icons/pleos). 에셋에 없는 아이콘은 점선 자리(Placeholder). */
+/** 벡터 아이콘(Pleos · Phosphor)은 painterResource + tint. 펼침(Chevron)과 점선 자리(Placeholder)만 선으로 그린다. */
 @Composable
 fun CgIconMark(icon: CgIcon, size: Dp, color: Color, modifier: Modifier = Modifier) {
     icon.res?.let { r ->
@@ -168,21 +172,7 @@ fun CgIconMark(icon: CgIcon, size: Dp, color: Color, modifier: Modifier = Modifi
     }
     Canvas(modifier.size(size).graphicsLayer { if (icon == CgIcon.Placeholder) alpha = .45f }) {
         val w = this.size.width
-        val sw = w * .1f
         when (icon) {
-            CgIcon.Back -> {
-                drawLine(color, Offset(w * .62f, w * .18f), Offset(w * .3f, w * .5f), sw, StrokeCap.Round)
-                drawLine(color, Offset(w * .3f, w * .5f), Offset(w * .62f, w * .82f), sw, StrokeCap.Round)
-            }
-            CgIcon.Arrow -> {
-                drawLine(color, Offset(w * .35f, w * .15f), Offset(w * .7f, w * .5f), w * .12f, StrokeCap.Round)
-                drawLine(color, Offset(w * .7f, w * .5f), Offset(w * .35f, w * .85f), w * .12f, StrokeCap.Round)
-            }
-            CgIcon.Plus -> {
-                drawLine(color, Offset(w * .2f, w * .5f), Offset(w * .8f, w * .5f), sw, StrokeCap.Round)
-                drawLine(color, Offset(w * .5f, w * .2f), Offset(w * .5f, w * .8f), sw, StrokeCap.Round)
-            }
-            CgIcon.Minus -> drawLine(color, Offset(w * .2f, w * .5f), Offset(w * .8f, w * .5f), sw, StrokeCap.Round)
             CgIcon.Chevron -> {
                 drawLine(color, Offset(0f, w * .3f), Offset(w * .5f, w * .8f), w * .25f, StrokeCap.Round)
                 drawLine(color, Offset(w * .5f, w * .8f), Offset(w, w * .3f), w * .25f, StrokeCap.Round)
@@ -207,8 +197,8 @@ fun CgIconButton(label: String, icon: CgIcon, onClick: () -> Unit, modifier: Mod
             .semantics { contentDescription = label },
         contentAlignment = Alignment.Center,
     ) {
-        // Pleos 선 아이콘(뒤로 · + · −)은 56(작으면 44), Phosphor 벡터는 아티팩트 .btn.ib .ico.pi 48(작으면 40)
-        val px = if (icon.res != null) (if (small) 40 else 48) else (if (small) 44 else 56)
+        // Pleos 에셋(뒤로 · + · −)·선 아이콘은 56(작으면 44), Phosphor 벡터는 아티팩트 .btn.ib .ico.pi 48(작으면 40)
+        val px = if (icon.res != null && !icon.pleos) (if (small) 40 else 48) else (if (small) 44 else 56)
         CgIconMark(icon, px.gpx * (if (icon == CgIcon.Placeholder) .7f else 1f), if (enabled) c.textPrimary else c.textTertiary)
     }
 }
