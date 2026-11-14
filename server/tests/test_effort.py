@@ -413,10 +413,10 @@ def test_weather_half_is_one_line():
     r38, r39 = run("R38"), run("R39")
     assert [l.key for l in r38.lines] == ["rain"] and r38.rain_min == 60 and r38.lines[0].pct_text == "+20%"
     assert r38.lines[0].detail_text == "출발 비 · 도착 정보 없음"
-    assert r38.lines[0].basis_text == "도착 날씨는 불러오지 못했어요 · 운전 시간의 앞 절반만 출발 때 날씨(비)로 셌어요"
+    assert r38.lines[0].basis_text == "도착 날씨를 받지 못해 운전 시간의 앞 절반만 출발 날씨(비)로 셌어요"
     assert [l.key for l in r39.lines] == ["snow"] and r39.snow_min == 60
     assert r39.lines[0].detail_text == "출발 정보 없음 · 도착 눈"
-    assert r39.lines[0].basis_text == "출발 날씨는 불러오지 못했어요 · 운전 시간의 뒤 절반만 도착 때 날씨(눈)로 셌어요"
+    assert r39.lines[0].basis_text == "출발 날씨를 받지 못해 운전 시간의 뒤 절반만 도착 날씨(눈)로 셌어요"
     # note는 그대로 남는다: 날씨 줄이 있으면서 이 note가 있으면 반쪽
     assert r38.notes == ["날씨 정보 없음"] and r39.notes == ["날씨 정보 없음"]
     # 둘 다 받았으면 지금까지와 같다(반쪽 문구가 끼어들지 않음)

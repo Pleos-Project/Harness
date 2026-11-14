@@ -290,7 +290,7 @@ class FixturesTest {
         // 날씨를 반만 받음(#149): 날씨 줄 하나에 적고 셈은 절반 규칙 그대로, note는 남는다
         val r38 = run("R38")
         assertEquals("출발 비 · 도착 정보 없음", r38.lines[0].detailText)
-        assertEquals("도착 날씨는 불러오지 못했어요 · 운전 시간의 앞 절반만 출발 때 날씨(비)로 셌어요", r38.lines[0].basisText)
+        assertEquals("도착 날씨를 받지 못해 운전 시간의 앞 절반만 출발 날씨(비)로 셌어요", r38.lines[0].basisText)
         assertEquals(60.0, r38.rainMin, 0.0)
         assertEquals(listOf("날씨 정보 없음"), r38.notes)
         assertEquals("출발 정보 없음 · 도착 눈", run("R39").lines[0].detailText)
