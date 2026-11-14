@@ -66,7 +66,8 @@ data class TripPreview(val etaS: Int, val distanceM: Int, val congestionRatio: D
  * NaviHelper로 순정 내비 경로 안내를 연다(명세 F8, Pleos 05·12번 문서, 실측 예제 SdkCheckActivity).
  * - 출발을 누를 때만 연결한다(initialize → onConnected → addListener → requestRoute).
  * - 성공 판정은 onRouteStarted(실측 약 9초 뒤). onRoutingCompleted는 실측에서 오지 않았다(Pleos README 「확인되지 않은 것」).
- * - 화면이 가려지면(onStop) 리스너를 빼고 release한다(AC-C-2: 백그라운드 콜백 0건).
+ * - 화면이 가려지면(onStop) 리스너를 빼고 release한다(AC-C-2: 화면 쪽 백그라운드 콜백 0건).
+ *   주행 중 안내 끝은 주행 중 포그라운드 서비스(TripService)가 따로 받는다(명세 v0.6 AC-C-2 예외).
  * - 경유지(requestRouteWithWaypoints)·trip 기록(F8 pending, 장부)은 P6에서 붙인다.
  */
 class NaviRepository(context: Context) : DefaultLifecycleObserver {
