@@ -176,7 +176,7 @@
     <string name="effort_arrive_title">%1$s에 도착했어요</string>
     <string name="effort_arrive_people">함께 탄 사람 %1$d명</string>
     <string name="effort_arrive_solo">혼자 운전</string>
-    <string name="effort_receipt_title">오늘 주행 영수증</string>
+    <string name="effort_receipt_title">오늘 운전, 고생했어요</string>
     <string name="effort_receipt_sub_place">%1$s · %2$s</string>
     <!-- 정리하지 못함 이유 · 안내(#118 arrive-unsettled 시안 문구) -->
     <string name="effort_unsettled_why_late">출발하고 %1$s이 지나서 열었어요</string>

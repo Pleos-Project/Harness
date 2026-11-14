@@ -270,6 +270,10 @@ internal fun ReceiptColumn(
         }
     }
     val hi = { k: String -> if (k in changed) flash.value else 0f }
+    // 가로 도착 영수증에 중간 정산 줄이 있으면 줄 높이 · 간격을 줄여 바코드 자리(94)를 만든다(HANDOFF_v4 7-2, arrive.css .cg-paper:has(.cg-sfold))
+    val tight = arrive && !narrow && midwaySub == null && editable && ui.settleFold != null
+    val rowMin = if (tight) 62 else 70
+    val sumMin = if (tight) 54 else 60
     CgReceipt(modifier, compact = narrow, shift = paperShift, fill = !narrow, scroll = !narrow, light = { print?.light?.value ?: 1f }, arrive = arrive && !narrow) {
         // v3 5-5: 머리 700 42/54(분할 34/44) · 아래 줄 "장소 · 날짜 · n명"(혼자면 "혼자") 400 30/38
         Text(
@@ -283,7 +287,7 @@ internal fun ReceiptColumn(
             Modifier.fillMaxWidth().padding(top = if (narrow) 4.gpx else 8.gpx),
             style = if (narrow) t.bodyM else TextStyle(fontSize = 30.gsp, lineHeight = 38.gsp), color = c.textTertiary, textAlign = TextAlign.Center,
         )
-        CgDoubleRule(Modifier.padding(top = if (narrow) 8.gpx else if (arrive) 28.gpx else 24.gpx, bottom = if (narrow) 4.gpx else if (arrive) 18.gpx else 16.gpx))
+        CgDoubleRule(Modifier.padding(top = if (narrow) 8.gpx else if (tight) 18.gpx else if (arrive) 28.gpx else 24.gpx, bottom = if (narrow) 4.gpx else if (tight) 12.gpx else if (arrive) 18.gpx else 16.gpx))
         if (!narrow) Row(Modifier.fillMaxWidth().padding(top = 4.gpx, bottom = 12.gpx)) {
             Text(stringResource(R.string.effort_receipt_col_item), Modifier.weight(1f), style = TextStyle(fontSize = 32.gsp, lineHeight = 40.gsp, fontWeight = FontWeight.Bold), color = c.textPrimary)
             Text(stringResource(R.string.effort_receipt_col_add), style = TextStyle(fontSize = 32.gsp, lineHeight = 40.gsp), color = c.textSecondary)
@@ -314,23 +318,23 @@ internal fun ReceiptColumn(
             CgReceiptRow(
                 line.label, line.detailText.orEmpty(), line.pctText, basisFirst(line.basisText), expanded = open == line.key,
                 onClick = { onToggle(line.key) }, compact = narrow,
-                extra = if (line.key == "congestion") r.footnoteText else null, hi = hi(line.key),
+                extra = if (line.key == "congestion") r.footnoteText else null, hi = hi(line.key), minHeight = rowMin,
             )
         }
         if (editable && midwaySub == null && ui.weatherPending) Text(stringResource(R.string.effort_weather_pending), Modifier.padding(vertical = 8.gpx), style = t.labelM, color = c.textTertiary)
 
         // 소계: 운전 시간 · 중간에 쉰 시간 [바꾸기] · 거리 → 합계
-        CgDashedRule(Modifier.padding(top = if (narrow) 4.gpx else 20.gpx, bottom = if (narrow) 4.gpx else 18.gpx))
-        CgReceiptSum(stringResource(R.string.effort_receipt_drive), r.driveText, compact = narrow, hi = hi("drive"))
+        CgDashedRule(Modifier.padding(top = if (narrow) 4.gpx else if (tight) 14.gpx else 20.gpx, bottom = if (narrow) 4.gpx else if (tight) 12.gpx else 18.gpx))
+        CgReceiptSum(stringResource(R.string.effort_receipt_drive), r.driveText, compact = narrow, hi = hi("drive"), minHeight = sumMin)
         val restLabel = ui.restAnswers.firstOrNull { it.first == (trip.restAnswerMin ?: 0) }?.second ?: ""
         // v3 5-5: [바꾸기] 버튼 대신 값을 누르면 쉰 시간 시트가 다시 열림
         if (showRest) CgReceiptSum(
             stringResource(R.string.effort_receipt_rest), restLabel, compact = narrow, hi = hi("rest"),
-            onValue = if (editable && ui.done == null) onChangeRest else null, valueLabel = stringResource(R.string.effort_receipt_rest_change_label),
+            onValue = if (editable && ui.done == null) onChangeRest else null, valueLabel = stringResource(R.string.effort_receipt_rest_change_label), minHeight = sumMin,
         )
-        r.distanceText?.let { CgReceiptSum(stringResource(R.string.effort_receipt_distance), it, compact = narrow) }
+        r.distanceText?.let { CgReceiptSum(stringResource(R.string.effort_receipt_distance), it, compact = narrow, minHeight = sumMin) }
         // v92 · v94: 처음 배수 → 불 켜지고 1.5초 뒤 금액으로 굴러 바뀜(끝 = 금액, 화면 읽기 = "약 3만 6천 원 · 평소보다 …")
-        CgReceiptSum(stringResource(R.string.effort_receipt_total), r.multiplierText, compact = narrow, total = true, hi = hi("total"),
+        CgReceiptSum(stringResource(R.string.effort_receipt_total), r.multiplierText, compact = narrow, total = true, hi = hi("total"), minHeight = sumMin,
             amount = receiptAmountText(r, ui.constants), flip = print?.flip ?: { Triple(1f, 1f, 1f) })
         // #118: 중간 정산을 한 주행이면 합계 아래 "운전 노고 전체 · 약 3만 6천 원" + 작은 줄 "중간 정산 있음 ⇅"(누르면 자리 바꿈)
         val fold = ui.settleFold
@@ -342,7 +346,7 @@ internal fun ReceiptColumn(
                 main = if (inc) incL else all, alt = if (inc) all else stringResource(R.string.effort_settle_has),
                 altLabel = stringResource(if (inc) R.string.effort_settle_to_all else R.string.effort_settle_to_inc),
                 value = if (inc) fold.incValue else fold.allValue, swapKey = inc, onSwap = onSettleSwap,
-                compact = narrow, reduce = reduce, enabled = ui.done == null,
+                compact = narrow, reduce = reduce, enabled = ui.done == null, topGap = if (tight) 18 else 28,
             )
         }
         if (!narrow && open == null) CgBarcode(receiptCode(trip, r), Modifier.padding(top = 22.gpx))
@@ -411,7 +415,7 @@ private fun OfferCard(ui: EffortUi, trip: OpenTrip, narrow: Boolean, onPick: (St
                 // 11/9 명준 위계: 묻는 줄(작게, title-m · textSecondary) + 결과 숫자(크게)는 한 덩어리, 근거는 한 칸 띄움
                 // 묻는 줄과 큰 숫자 사이 8(분할 4), 큰 숫자와 근거 사이 28(분할 16)
                 Column(verticalArrangement = Arrangement.spacedBy(if (narrow) 4.gpx else 8.gpx)) {
-                    Text(view.screen.titleText, style = if (narrow) t.bodyL else t.titleM, color = c.textSecondary)
+                    // 머리 줄(엔진 titleText "오늘 운전을 챙긴다면")은 그리지 않는다: 큰 숫자부터(DECISIONS 11/14 '금액 카드 머리 줄')
                     // 큰 숫자 길이 규칙(#118 D4): 10만 원 이상 · 15자 이상이면 한 단계 작게(가로 Headline M · 분할 Title L).
                     // 그래도 카드 폭을 넘치면 "원"이 잘리지 않게 한 단계 더
                     val small = if (narrow) t.titleL else t.headlineM
@@ -469,14 +473,14 @@ private fun ColumnScope.DoneBody(done: ArriveDone, items: List<EffortItem>, narr
     val cap = if (narrow) t.labelM else t.bodyM
     // 작은 머리(.cap2) + 제목 한 덩어리 → .why(txt2) → .note "더 할 일은 없어요"(txt3) → 아래로 [닫기]
     val (capT, headT, whyT) = when (val v = done.proposal) {
-        is ProposalView.A -> Triple(v.screen.titleText, stringResource(R.string.effort_offer_a_done), v.screen.mainText)
+        is ProposalView.A -> Triple(null, stringResource(R.string.effort_offer_a_done), v.screen.mainText)
         else -> {
             val phrase = items.firstOrNull { it.key == done.choice }?.phraseText ?: done.choice
             Triple(stringResource(R.string.effort_offer_b_done_head), stringResource(R.string.effort_offer_b_done, phrase), stringResource(R.string.effort_offer_b_done_sub))
         }
     }
     Column(verticalArrangement = Arrangement.spacedBy(if (narrow) 6.gpx else 10.gpx)) {
-        Text(capT, style = cap, color = c.textTertiary)
+        capT?.let { Text(it, style = cap, color = c.textTertiary) }
         Text(headT, style = head, color = c.textPrimary)
     }
     Text(whyT, style = why, color = c.textSecondary)

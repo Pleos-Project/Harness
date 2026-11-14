@@ -125,7 +125,8 @@ internal fun EffortHomeScreen(
     val reduce = rememberReduceMotion()
     val c = Chagok.colors
     val t = Chagok.type
-    val trip = ui.openTrip
+    // 도착한 주행은 홈에 "도착" 표시로 보여 주지 않는다(DECISIONS 11/14 '고르기 전에 나간 도착'). 앱을 다시 열면 EffortApp이 돌아보기부터 연다
+    val trip = ui.openTrip?.takeIf { !it.arrived }
     var quit by rememberSaveable { mutableStateOf(false) }   // 그만두기 확인 시트(v32 home-progress-quit)
     val enter = remember { Animatable(0f) }
     LaunchedEffect(Unit) { enter.animateTo(1f, tween(700, easing = ChagokMotion.Rise)) }
@@ -147,8 +148,6 @@ internal fun EffortHomeScreen(
             )
             // v87: 최근 기록은 홈에서 뺌. 인사 한 덩어리(심볼 + 작은 줄 → 큰 인사 → 버튼)를 가운데에 크게
             val (sub, head) = when {
-                // 고르기 전에 나간 도착: "○○에 도착했어요 · 16:30" / "오늘 운전 영수증이 여기 있어요"
-                trip != null && trip.arrived -> stringResource(R.string.effort_home_arrived_sub, trip.destName, clockText(trip.arrivedAt ?: trip.departedAt)) to stringResource(R.string.effort_home_arrived_head)
                 // 가는 중(정차 때만 보임): "○○으로 가는 중 · 14:20 출발 · 함께 4명" / "잠깐 멈췄네요 여기까지 운전을 세어 볼까요?"
                 trip != null -> stringResource(R.string.effort_home_progress_sub, euro(trip.destName), clockText(trip.departedAt), trip.n) to
                     stringResource(R.string.effort_home_progress_head)
@@ -158,7 +157,7 @@ internal fun EffortHomeScreen(
             val progress = ui.midwayAvailable
             val hero: @Composable () -> Unit = {
                 if (progress) StartButton(if (narrow) 300.gpx else 440.gpx, stringResource(R.string.effort_mid_open), onMidway)
-                else LogoSymbol(if (narrow) 280.gpx else 420.gpx, pin = if (trip?.arrived == true) stringResource(R.string.effort_home_arrived_pin) else null, compact = narrow)
+                else LogoSymbol(if (narrow) 280.gpx else 420.gpx, compact = narrow)
             }
             val text: @Composable () -> Unit = {
                 Column(
@@ -180,7 +179,6 @@ internal fun EffortHomeScreen(
                     Box(Modifier.padding(top = if (narrow) 32.gpx else 44.gpx)) {
                         when {
                             trip == null -> CgCta(stringResource(R.string.effort_home_go), onDepart, compact = narrow, hero = true)
-                            trip.arrived -> CgCta(stringResource(R.string.effort_receipt_open), onReceipt, compact = narrow, hero = true)
                             else -> Column(horizontalAlignment = if (narrow) Alignment.CenterHorizontally else Alignment.Start, verticalArrangement = Arrangement.spacedBy(8.gpx)) {
                                 Row(horizontalArrangement = Arrangement.spacedBy(20.gpx)) {
                                     CgButton(stringResource(R.string.effort_arrive_now), onArrive, size = if (narrow) CgSize.XLC else CgSize.XL)

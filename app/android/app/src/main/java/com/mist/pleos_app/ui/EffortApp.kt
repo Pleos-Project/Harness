@@ -111,6 +111,10 @@ fun EffortApp(
     // F22 도착: 기어가 바뀔 때, 그리고 화면이 다시 보일 때(이벤트, 폴링 없음). 운전석 문은 보지 않는다(DECISIONS 11/13)
     val shown by vm.shown.collectAsStateWithLifecycle()
     LaunchedEffect(parked, shown) { vm.onCar(parked) }
+    // 고르기 전에 나간 도착(DECISIONS 11/14): 앱을 다시 열면(화면이 다시 보일 때) 홈 대신 그 주행의 돌아보기부터 이어진다.
+    // 이미 [운전자 챙겨주기]를 눌렀거나 정리하지 못한 주행은 영수증으로(openArrived). 앱을 스스로 띄우지는 않는다(보일 때만)
+    val arrivedOpen = ui.openTrip?.arrived == true
+    LaunchedEffect(shown, arrivedOpen) { if (arrivedOpen && screen == EffortScreen.HOME && !driving) vm.openArrived() }
     // F28 앰비언트 라이트(구두 합의 11/9): 앱이 보이는 동안(정차) 늘 브랜드 색으로 켜 둔다. 주행으로 바뀌면(X1)·가려지면(onStop)
     // 차량 쪽이 그 자리에서 되돌리고, 기어 P로 다시 보이면 다시 켠다. 설정(S20)을 다시 켜도 다시 켠다
     LaunchedEffect(shown, driving, settings.ambientLight) {
