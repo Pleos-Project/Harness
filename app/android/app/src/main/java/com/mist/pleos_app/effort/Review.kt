@@ -29,13 +29,20 @@ enum class ReviewPose(@DrawableRes val res: Int, @StringRes val alt: Int) {
     SHY(R.drawable.nogo_v_shy, R.string.effort_review_alt_shy),
     RELIEF(R.drawable.nogo_v_relief, R.string.effort_review_alt_relief),
     PROUD(R.drawable.nogo_v_proud, R.string.effort_review_alt_proud),
+    // 조건별 포즈(v191, 명준 11/14). 조건마다 기본 1번 한 장만 쓴다(2번은 DECISIONS 열린 결정 33)
+    RAIN_ALL(R.drawable.nogo_v_rainall_1, R.string.effort_review_alt_rainall),
+    RAIN_DEP(R.drawable.nogo_v_rain_1, R.string.effort_review_alt_rain),
+    JAM(R.drawable.nogo_v_jam_1, R.string.effort_review_alt_jam),
+    LATE(R.drawable.nogo_v_late_1, R.string.effort_review_alt_late),
+    NIGHT(R.drawable.nogo_v_night_1, R.string.effort_review_alt_night),
+    LONG(R.drawable.nogo_v_long_1, R.string.effort_review_alt_long),
 }
 
 /** 몸짓(시안 rv-slump 0.45초 · rv-dip 0.5초 · rv-jump 0.7초). */
 enum class ReviewMotion { SLUMP, DIP, JUMP }
 
 /**
- * 표정 · 몸짓 → 기준 짝(HANDOFF_v4 6-5 표, 지금 짝은 `[가정]`). 짝을 바꿀 때는 이 표만 고친다.
+ * 표정 · 몸짓 → 기준 짝(HANDOFF_v4 6-5 표, DECISIONS 11/14 '노고 캐릭터'). 짝을 바꿀 때는 이 표만 고친다.
  * 키는 기준 줄 key(weather · congestion · delay · night · fatigue).
  */
 object ReviewCast {
@@ -43,12 +50,18 @@ object ReviewCast {
     val idle = ReviewPose.FOCUS
     /** 있었던 줄. */
     val byKey: Map<String, Pair<ReviewPose, ReviewMotion>> = mapOf(
-        "weather" to (ReviewPose.SHY to ReviewMotion.SLUMP),
-        "congestion" to (ReviewPose.FOCUS to ReviewMotion.DIP),
-        "delay" to (ReviewPose.SHY to ReviewMotion.SLUMP),
-        "night" to (ReviewPose.FOCUS to ReviewMotion.DIP),
-        "fatigue" to (ReviewPose.RELIEF to ReviewMotion.DIP),
+        "weather" to (ReviewPose.RAIN_ALL to ReviewMotion.SLUMP),   // 눈 · 출발할 때 비 · 일부 구간 비는 weatherPose가 바꾼다
+        "congestion" to (ReviewPose.JAM to ReviewMotion.DIP),
+        "delay" to (ReviewPose.LATE to ReviewMotion.SLUMP),
+        "night" to (ReviewPose.NIGHT to ReviewMotion.DIP),
+        "fatigue" to (ReviewPose.LONG to ReviewMotion.DIP),
     )
+    /** 날씨 줄 포즈(6-5): 비 · 내내 = RAIN_ALL, 출발할 때 비(도착 날씨 못 받음) = RAIN_DEP, 눈 = SHY(눈 포즈 아직 없음). 몸짓은 모두 slump. */
+    fun weatherPose(snow: Boolean, whole: Boolean) = when {
+        snow -> ReviewPose.SHY
+        whole -> ReviewPose.RAIN_ALL
+        else -> ReviewPose.RAIN_DEP   // 출발할 때 비 · 일부 구간 비(시안 값 없음, 정할 것: 담당 확인)
+    }
     /** 마무리 첫 단계(비 그침 + 땀 닦기). */
     val finish = ReviewPose.RELIEF to ReviewMotion.DIP
     /** 다 셈(0.9초 뒤 뿌듯 점프 + 반짝이). */
@@ -106,12 +119,14 @@ fun reviewItems(trip: OpenTrip, r: EffortReceipt, c: EffortConstants, w: ReviewW
     val weather = if (wKey != null) {
         val word = c.copy.precipWords[wKey] ?: ""
         val wholeText = weatherDetail(wKey, whole = true, c = c)
+        val isWhole = lines.getValue(wKey).detailText == wholeText
         val v = when {
             weatherUnknown && trip.weatherDep == wKey -> w.depOnly.format(word)   // 도착 날씨를 못 받음(6-2)
-            lines.getValue(wKey).detailText == wholeText -> w.whole.format(word)
+            isWhole -> w.whole.format(word)
             else -> word
         }
-        ReviewItem("weather", label(wKey), true, v, icon = if (wKey == "snow") ReviewIcon.SNOW else ReviewIcon.RAIN,
+        ReviewItem("weather", label(wKey), true, v,
+            pose = ReviewCast.weatherPose(snow = wKey == "snow", whole = isWhole && !(weatherUnknown && trip.weatherDep == wKey)), icon = if (wKey == "snow") ReviewIcon.SNOW else ReviewIcon.RAIN,
             fx = if (wKey == "snow") ReviewFx.SNOW else ReviewFx.RAIN,
             say = if (wKey == "snow") CalcSay.SNOW else CalcSay.RAIN)
     } else ReviewItem("weather", label("rain"), false, if (weatherUnknown) w.unknown else w.none, icon = ReviewIcon.RAIN,
