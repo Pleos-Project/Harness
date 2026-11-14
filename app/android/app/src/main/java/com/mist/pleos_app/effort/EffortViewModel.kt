@@ -69,6 +69,8 @@ interface TripKeeper {
     val running: Boolean
     /** 보내기 전에 내비가 이미 안내 중이었음 → 서비스가 첫 취소를 이전 안내의 것으로 본다(#132). */
     fun expectOldCancel(v: Boolean) {}
+    /** 앱이 안 보이는 동안 서비스가 받은 목적지 변경(F22, AC-F22-10)을 1번 가져온다. */
+    fun takeRouteStart(): RouteStart? = null
 }
 
 /** 내비 안내 끝([GUIDE_ARRIVED]·[GUIDE_CANCELLED])과 받은 시각(ISO). */
@@ -371,6 +373,7 @@ class EffortViewModel(app: Application, private val saved: SavedStateHandle) : A
         val trip = departTrip(newTripId(), source.departedAt(), sel.dest, payersFor(seats), ui.preview, weatherDep ?: WEATHER_UNKNOWN, here)
         val opened = flow.depart(trip)
         tripKeeper?.takeGuideEnd()                   // 지난 주행에서 남은 안내 끝은 버린다
+        tripKeeper?.takeRouteStart()                 // 지난 주행에서 남은 목적지 변경도 버린다
         clearGuideEnd()
         syncTrip(fresh = true)                       // 내비가 덮기 전에(앱이 보이는 동안) 서비스를 띄운다
         lastRoute = sel.dest
@@ -473,6 +476,8 @@ class EffortViewModel(app: Application, private val saved: SavedStateHandle) : A
         val live = flow.phase == EffortPhase.DRIVING && trip != null && !trip.demo && !source.demo
         val keeper = tripKeeper
         // 안 보이는 동안 서비스가 받은 안내 끝(기본 배치). 서비스를 다시 띄우기(syncTrip) 전에 본다
+        // 안 보이는 동안 목적지를 바꿨으면 출발 기록부터 다시 잡는다(F22 · AC-F22-10). 안내 끝보다 먼저(도착이 새 기준으로 계산되게)
+        keeper?.takeRouteStart()?.let { if (live) applyRouteStart(it) }
         val ended = keeper?.takeGuideEnd()
         // 경로 요청 실패(#132): 노고가 가려진 뒤 서비스가 알아챔 → 출발 화면으로
         if (live && ended?.kind == GUIDE_ROUTE_FAILED) { ChagokLog.event("effort_guide_end", "kind" to ended.kind, "from" to "service"); onRouteFailed(); return }
@@ -511,10 +516,21 @@ class EffortViewModel(app: Application, private val saved: SavedStateHandle) : A
         if (lastParked) onCar(true)
     }
 
-    /** 내비가 새 안내를 시작함(목적지를 바꿈 · 다시 안내 · 경유지 변경) → 앞서 받은 안내 끝과 질문은 버린다. */
-    fun onGuideStarted() {
+    /**
+     * 내비가 새 안내를 시작함(목적지를 바꿈 · 다시 안내 · 경유지 변경) → 앞서 받은 안내 끝과 질문은 버린다.
+     * [rs]는 `onRouteStarted`의 새 안내(경유지 변경은 null). 목적지 이름이 다르면 출발 기록을 다시 잡는다(F22 · AC-F22-10).
+     */
+    fun onGuideStarted(rs: RouteStart? = null) {
         if (pendingArrival != null || arriveAsk != null) ChagokLog.event("effort_guide_restart")
-        clearGuideEnd(); refresh()
+        clearGuideEnd()
+        if (rs != null) applyRouteStart(rs)
+        refresh()
+    }
+
+    /** 주행 중 목적지 변경 반영. 실제 주행 중일 때만, 새 이름이 다를 때만(EffortFlow.retarget). 바뀌면 상주 알림 제목도 맞춘다. */
+    private fun applyRouteStart(rs: RouteStart) {
+        if (flow.phase != EffortPhase.DRIVING || source.demo) return
+        if (flow.retarget(rs)) { syncTrip(); refresh() }
     }
 
     /**

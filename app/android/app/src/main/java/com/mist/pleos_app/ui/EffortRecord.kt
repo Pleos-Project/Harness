@@ -176,17 +176,21 @@ private fun dayEffortLine(r: EffortRecord, amountText: String?): String = listOf
     r.n?.let { stringResource(R.string.effort_record_people, it) },
 ).joinToString(" · ")
 
-/** 그날 고른 것: "방식 A · 한 사람 약 9천 원 · 좋아요를 눌렀어요" / "방식 B · 커피값에서 운전자 빼기로 했어요" / 닫기 / 제안 없음. */
+/**
+ * 그날 고른 것: "한 사람 약 9천 원 · 좋아요를 눌렀어요" / "커피값에서 운전자 빼기로 했어요" / 닫기 / 제안 없음.
+ * 방식 B를 보여 줄 때만 앞에 "방식 A · "를 붙인다(1차는 숨김, 명세 v0.6 F26 · S20).
+ */
 @Composable
 private fun choiceLine(r: EffortRecord, ui: EffortUi): String {
     val method = stringResource(if (r.method == Settings.METHOD_B) R.string.effort_record_method_b else R.string.effort_record_method_a)
+    val withMethod = { body: String -> if (Settings.METHOD_B_SHOWN) "$method · $body" else body }
     return when {
         r.choice == com.mist.pleos_app.effort.CHOICE_UNSETTLED -> stringResource(R.string.effort_record_choice_unsettled)
-        r.suggestion == null && (r.n ?: 2) < 2 -> stringResource(R.string.effort_record_choice_solo, method)
+        r.suggestion == null && (r.n ?: 2) < 2 -> withMethod(stringResource(R.string.effort_record_choice_solo))
         r.suggestion == null -> stringResource(R.string.effort_record_choice_none)
-        r.choice == CHOICE_ACCEPT -> stringResource(R.string.effort_record_choice_accept, method, r.suggestion)
-        r.choice == CHOICE_CLOSE -> stringResource(R.string.effort_record_choice_close, method)
-        else -> stringResource(R.string.effort_record_choice_item, method, ui.items.firstOrNull { it.key == r.choice }?.phraseText ?: r.choice)
+        r.choice == CHOICE_ACCEPT -> withMethod(stringResource(R.string.effort_record_choice_accept, r.suggestion))
+        r.choice == CHOICE_CLOSE -> withMethod(stringResource(R.string.effort_record_choice_close))
+        else -> withMethod(stringResource(R.string.effort_record_choice_item, ui.items.firstOrNull { it.key == r.choice }?.phraseText ?: r.choice))
     }
 }
 

@@ -84,7 +84,7 @@ class NaviRepository(context: Context) : DefaultLifecycleObserver {
     /** 내비가 안내를 끝냄("arrived" · "cancelled"). 앱이 보이는 동안(나란히 배치)만 온다. 메인 스레드로 넘긴다(DECISIONS 11/12). */
     var onGuideEnd: ((String) -> Unit)? = null
     /** 내비가 새 안내를 시작함(경유지 변경 포함). 메인 스레드로 넘긴다. */
-    var onGuideStart: (() -> Unit)? = null
+    var onGuideStart: ((com.mist.pleos_app.effort.RouteStart?) -> Unit)? = null
     /**
      * 경로 요청(requestRoute)이 실패함(#132, E1). 11/13 에뮬 실측: 오프라인이면 `onError`는 오지 않고, 요청 0.3초 뒤
      * `onRouteCancelled`가 온 다음 내비가 앱을 덮고 "경로 탐색 오류" 창을 띄운다(0.5초에 onStop).
@@ -115,14 +115,15 @@ class NaviRepository(context: Context) : DefaultLifecycleObserver {
             ChagokLog.event("navi_route_started")
             // 기본 배치에서는 이 콜백 전에 앱이 멈춰 여기 오지 않는다. 여기 왔다면 앱이 보이는 것(나란히 배치) → 정체 목록을 묻는다
             startCongestion()
-            main.post { onGuideStart?.invoke() }
+            val rs = com.mist.pleos_app.effort.RouteStart(routeStartInfo.name, routeStartInfo.duration, com.mist.pleos_app.effort.isoNow())
+            main.post { onGuideStart?.invoke(rs) }
         }
 
         // 경유지 변경: onRouteStarted 없이 onRouteCancelled → onWaypointChanged가 온다(11/14 에뮬, #145). 앞의 취소로 띄운 질문을 닫는다.
         // 출발 상태·정체 목록은 건드리지 않는다(같은 주행, 경로만 다시 잡음)
         override fun onWaypointChanged(waypointChangedInfo: WaypointChangedInfo) {
             ChagokLog.event("navi_waypoint_changed", "cmd" to waypointChangedInfo.cmdType.name)
-            main.post { onGuideStart?.invoke() }
+            main.post { onGuideStart?.invoke(null) }   // name은 경유지 이름이라 목적지 변경으로 보지 않는다
         }
 
         // 안내 끝(11/12 실측): 기본 배치에서는 앱이 동결돼 오지 않고, 나란히 배치에서만 바로 온다. 이벤트가 두 번 와도 뷰모델이 한 번만 도착 처리한다

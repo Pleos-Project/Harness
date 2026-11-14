@@ -203,6 +203,25 @@ class ArriveTest {
         assertEquals(CHOICE_UNSETTLED, f.recent().single().choice)
     }
 
+    /** 주행 중 목적지 변경(명세 v0.6 F22, AC-F22-10): 새 이름이 다를 때만 이름·기준 ETA를 다시 잡는다. */
+    @Test fun retargetOnlyWhenNameDiffers() {
+        val trip = OpenTrip("t1", "2026-11-17T16:00:00+09:00", "코엑스", 2, 1800.0, routeM = 14000.0, congestionRatio = 0.3)
+        // 같은 이름(첫 안내 · [아직이에요] 뒤 재안내): 그대로
+        assertNull(retargetOf(trip, RouteStart("코엑스", 1500, "2026-11-17T16:20:00+09:00")))
+        assertNull(retargetOf(trip, RouteStart("  ", 1500, "2026-11-17T16:20:00+09:00")))
+        // 다른 이름: eta = 경과 20분(1200초) + 새 duration 8400초, 경로 거리 · 정체는 출발 때 값
+        val next = retargetOf(trip, RouteStart("안목해변", 8400, "2026-11-17T16:20:00+09:00"))!!
+        assertEquals("안목해변", next.destName)
+        assertEquals(9600.0, next.etaS, 0.0)
+        assertEquals(14000.0, next.routeM!!, 0.0)
+        assertEquals(0.3, next.congestionRatio!!, 0.0)
+        // duration이 없으면 이름만
+        assertEquals(1800.0, retargetOf(trip, RouteStart("안목해변", 0, "2026-11-17T16:20:00+09:00"))!!.etaS, 0.0)
+        // 시연 · 도착 뒤는 그대로
+        assertNull(retargetOf(trip.copy(demo = true), RouteStart("안목해변", 8400, "2026-11-17T16:20:00+09:00")))
+        assertNull(retargetOf(trip.copy(arrivedAt = "2026-11-17T16:30:00+09:00"), RouteStart("안목해변", 8400, "2026-11-17T16:20:00+09:00")))
+    }
+
     private fun locate(rel: String): File {
         var dir: File? = File("").absoluteFile
         while (dir != null) {

@@ -28,6 +28,22 @@ fun isMidStop(g: GuideState?): Boolean = g != null && (g.remainM ?: 0) > 0 && g.
  */
 fun arrivalByGuide(g: GuideState?): Boolean = g != null && !isMidStop(g)
 
+/** 내비 새 안내 시작(`onRouteStarted`)의 목적지 이름 · 예상 시간(초, `RouteStartInfo.duration`) · 받은 시각(ISO). */
+data class RouteStart(val name: String, val durationS: Int, val at: String)
+
+/**
+ * 주행 중 목적지 변경(명세 v0.6 F22 '목적지 변경', AC-F22-10). 새 안내의 이름이 출발 기록의 목적지와 **다를 때만** 다시 잡는다:
+ * `dest_name` = 새 이름, `eta_s` = (받은 시각 − 출발 시각) + 새 `duration`. `route_m`·정체 값은 출발 때 값 그대로.
+ * 이름이 같으면(첫 안내, [아직이에요] 뒤 재안내, 같은 목적지로 다시 안내) null — 다시 잡으면 늦어진 시간이 기준에 흡수돼
+ * "예상보다 더" 줄이 사라진다(June #152). 시연·도착 뒤·빈 이름도 null. `duration`이 없으면(0 이하) 이름만 바꾼다.
+ */
+fun retargetOf(trip: OpenTrip, r: RouteStart): OpenTrip? {
+    val name = r.name.trim()
+    if (trip.demo || trip.arrived || name.isEmpty() || name == trip.destName) return null
+    val elapsed = (epochS(r.at) - epochS(trip.departedAt)).coerceAtLeast(0)
+    return trip.copy(destName = name, etaS = if (r.durationS > 0) (elapsed + r.durationS).toDouble() else trip.etaS)
+}
+
 /**
  * 출발 기록 → 엔진 입력(명세 v0.5 F23). 도착 전이면 null.
  * - 쉰 시간 답이 아직 없으면 엔진이 0으로 본다(영수증 화면에서 고르면 다시 계산)

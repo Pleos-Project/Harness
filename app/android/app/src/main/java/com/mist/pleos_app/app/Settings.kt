@@ -32,6 +32,11 @@ data class Settings(
         const val DEFAULT_MOCK_FUEL_PCT = 50
         const val METHOD_A = "A"
         const val METHOD_B = "B"
+        /**
+         * 방식 B를 화면에 보여 줄지(명세 v0.6 F25 · S20 · 18절 3). 1차 제출은 방식 A만이라 false:
+         * 설정의 전환 항목과 기록 상세의 "방식 A/B" 표시를 숨기고, 저장된 값이 B여도 A로 읽는다. 엔진·화면 코드·fixtures는 그대로 둔다.
+         */
+        const val METHOD_B_SHOWN = false
         val MODELS = listOf("grandeur_25", "grandeur_hev", "avante_hev", "tucson_hev", "ioniq5_lr", "ioniq6_lr")
     }
 }
@@ -60,7 +65,7 @@ class PrefsSettingsStore(context: Context) : SettingsStore {
         mockFuelPct = p.getInt("mock_fuel_pct", Settings.DEFAULT_MOCK_FUEL_PCT),
         seatInvert = p.getBoolean("seat_invert", true),
         demoFixed = p.getBoolean("demo_fixed_mode", true),
-        proposalMethod = p.getString("proposal_method", null)?.takeIf { it == Settings.METHOD_B } ?: Settings.METHOD_A,
+        proposalMethod = p.getString("proposal_method", null)?.takeIf { it == Settings.METHOD_B && Settings.METHOD_B_SHOWN } ?: Settings.METHOD_A,
         ambientLight = p.getBoolean("ambient_light", true),
     )
 

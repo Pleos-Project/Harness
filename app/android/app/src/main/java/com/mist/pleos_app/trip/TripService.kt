@@ -21,6 +21,7 @@ import com.mist.pleos_app.R
 import com.mist.pleos_app.effort.GUIDE_ARRIVED
 import com.mist.pleos_app.effort.GUIDE_ROUTE_FAILED
 import com.mist.pleos_app.effort.GuideEnd
+import com.mist.pleos_app.effort.RouteStart
 import com.mist.pleos_app.effort.isoNow
 import com.mist.pleos_app.util.ChagokLog
 
@@ -47,6 +48,9 @@ class TripService : Service() {
         private const val PREFS = "trip_service"
         private const val K_KIND = "end_kind"
         private const val K_AT = "end_at"
+        private const val K_RS_NAME = "route_name"
+        private const val K_RS_DUR = "route_duration_s"
+        private const val K_RS_AT = "route_at"
 
         /** 앱 화면이 보이는지(MainActivity onStart·onStop). 보이면 안내 끝은 화면 쪽 리스너가 처리하니 알림을 올리지 않는다. */
         @Volatile var appVisible = false
@@ -73,6 +77,18 @@ class TripService : Service() {
 
         private fun clearGuideEnd(context: Context) { prefs(context).edit().remove(K_KIND).remove(K_AT).apply() }
 
+        /** 앱이 안 보이는 동안 받은 목적지 변경(F22, AC-F22-10)을 1번 넘기고 지운다. 프로세스가 끝나도 남는다. */
+        fun takeRouteStart(context: Context): RouteStart? {
+            val p = prefs(context)
+            val name = p.getString(K_RS_NAME, null)
+            val at = p.getString(K_RS_AT, null)
+            val dur = p.getInt(K_RS_DUR, 0)
+            clearRouteStart(context)
+            return if (name != null && at != null) RouteStart(name, dur, at) else null
+        }
+
+        private fun clearRouteStart(context: Context) { prefs(context).edit().remove(K_RS_NAME).remove(K_RS_DUR).remove(K_RS_AT).apply() }
+
         /** 앱이 보이면 도착 확인 알림은 할 일이 끝났으니 내린다(MainActivity onStart). */
         fun onAppShown(context: Context) {
             runCatching { context.getSystemService(NotificationManager::class.java).cancel(ID_ARRIVE) }
@@ -87,7 +103,7 @@ class TripService : Service() {
             val app = context.applicationContext
             val intent = Intent(app, TripService::class.java)
             if (destName == null) {
-                clearGuideEnd(app)
+                clearGuideEnd(app); clearRouteStart(app)
                 if (running) app.stopService(intent)
                 return
             }
@@ -114,7 +130,10 @@ class TripService : Service() {
     private var failedSent = false
 
     private val listener = object : NaviHelperEventListener {
-        override fun onRouteStarted(routeStartInfo: RouteStartInfo) { main.post { guideRestarted("started") } }
+        override fun onRouteStarted(routeStartInfo: RouteStartInfo) {
+            val rs = RouteStart(routeStartInfo.name, routeStartInfo.duration, isoNow())
+            main.post { guideRestarted("started"); routeStarted(rs) }
+        }
 
         // 경유지를 넣거나 지우면 onRouteStarted 없이 onRouteCancelled → onWaypointChanged가 온다(11/14 에뮬, #145).
         // 앞의 취소는 안내 종료가 아니라 경로를 다시 잡은 것이라 새 안내 시작처럼 지운다. 출발 기록은 그대로(name은 경유지 이름)
@@ -185,6 +204,20 @@ class TripService : Service() {
         clearGuideEnd(this); notified = false; opened = false; routeStarted = true
         nm().cancel(ID_ARRIVE)
         ChagokLog.event("trip_service_guide", "kind" to kind)
+    }
+
+    /**
+     * 새 안내의 목적지가 지금 목적지와 다르면(주행 중 목적지 변경, F22 · AC-F22-10) 이름 · duration · 받은 시각을 기기에 남기고
+     * 상주 알림 제목을 바꾼다. 출발 기록은 앱이 보일 때 뷰모델이 다시 잡는다. 같은 이름(첫 안내 · 재안내)은 남기지 않는다.
+     */
+    private fun routeStarted(rs: RouteStart) {
+        val name = rs.name.trim()
+        val same = name.isEmpty() || name == current
+        ChagokLog.event("trip_service_route", "same" to same, "duration" to (rs.durationS > 0))   // 이름은 남기지 않는다(AC-C-10)
+        if (same) return
+        prefs(this).edit().putString(K_RS_NAME, name).putInt(K_RS_DUR, rs.durationS).putString(K_RS_AT, rs.at).apply()
+        current = name
+        runCatching { nm().notify(ID_TRIP, tripNotification(name)) }
     }
 
     /** 안내 끝. 앱이 보이면 화면 쪽(NaviRepository → 뷰모델)이 처리하니 기억·알림 없이 넘긴다. */
