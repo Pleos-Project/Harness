@@ -1,6 +1,8 @@
 package com.mist.pleos_app.ui
 
 import androidx.compose.foundation.clickable
+import com.mist.pleos_app.ui.theme.ChagokMotion
+import com.mist.pleos_app.ui.theme.ChagokSpace
 import com.mist.pleos_app.ui.components.CgBell
 import com.mist.pleos_app.ui.components.CgNoti
 import com.mist.pleos_app.ui.components.CgPlaceLine
@@ -102,7 +104,6 @@ import kotlinx.coroutines.delay
  * 최근 기록 3장(방금 끝난 기록은 맨 위 굵은 테두리). 앱 시작 때 1.6초 시작 화면. 숫자는 저장된 기록·엔진 표기에서만.
  */
 
-private val EaseIn = CubicBezierEasing(.32f, .72f, 0f, 1f)
 private val Idle = CubicBezierEasing(.45f, 0f, .55f, 1f)
 
 @Composable
@@ -127,7 +128,7 @@ internal fun EffortHomeScreen(
     val trip = ui.openTrip
     var quit by rememberSaveable { mutableStateOf(false) }   // 그만두기 확인 시트(v32 home-progress-quit)
     val enter = remember { Animatable(0f) }
-    LaunchedEffect(Unit) { enter.animateTo(1f, tween(700, easing = EaseIn)) }
+    LaunchedEffect(Unit) { enter.animateTo(1f, tween(700, easing = ChagokMotion.Rise)) }
 
     Box(Modifier.fillMaxSize()) {
         Column(Modifier.fillMaxSize()) {
@@ -371,18 +372,32 @@ internal fun StartButton(size: Dp, label: String, onClick: () -> Unit) {
     }
 }
 
-/** 앱 시작 화면(1.6초): 원 안의 내 차 · 이름 · "준비하고 있어요" + 점 세 개. */
+/**
+ * 앱 시작 화면(1.6초): 앱 아이콘 · 워드마크 · "준비하고 있어요" + 점 세 개(글자–점 12, G2 app-splash).
+ * 등장(Design v2): 아이콘·워드마크가 각각 아래 24 → 제자리 + 투명 → 보임, 0.6초 [ChagokMotion.Rise], 워드마크는 80ms 늦게.
+ * 움직임 줄이기면 끝 모습으로 바로 둔다. 타이머는 시작 화면 길이(1.6초) 하나뿐이다.
+ */
 @Composable
 internal fun EffortSplash(onDone: () -> Unit) {
     val c = Chagok.colors
+    val reduce = rememberReduceMotion()
+    val icon = remember { Animatable(if (reduce) 1f else 0f) }
+    val mark = remember { Animatable(if (reduce) 1f else 0f) }
     LaunchedEffect(Unit) { delay(1600); onDone() }
+    LaunchedEffect(Unit) { if (!reduce) icon.animateTo(1f, tween(SPLASH_RISE_MS, easing = ChagokMotion.Rise)) }
+    LaunchedEffect(Unit) { if (!reduce) { delay(SPLASH_MARK_DELAY_MS.toLong()); mark.animateTo(1f, tween(SPLASH_RISE_MS, easing = ChagokMotion.Rise)) } }
     Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(24.gpx, Alignment.CenterVertically)) {
         // v3 시작 화면: 앱 아이콘 192 + 워드마크 228 × 72 + 준비 중(HANDOFF_v3 2절)
-        CgAppIcon(192.gpx)
-        CgWordmark(228.gpx, label = stringResource(R.string.effort_home_logo))
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.gpx)) {
+        Box(Modifier.graphicsLayer { alpha = icon.value; translationY = (1f - icon.value) * 24f * density }) { CgAppIcon(192.gpx) }
+        Box(Modifier.graphicsLayer { alpha = mark.value; translationY = (1f - mark.value) * 24f * density }) {
+            CgWordmark(228.gpx, label = stringResource(R.string.effort_home_logo))
+        }
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(ChagokSpace.S12.gpx)) {
             Text(stringResource(R.string.effort_home_loading), style = Chagok.type.bodyM, color = c.textTertiary)
             CgLoadingDots(c.textTertiary)
         }
     }
 }
+
+private const val SPLASH_RISE_MS = 600
+private const val SPLASH_MARK_DELAY_MS = 80
