@@ -1,13 +1,13 @@
-# 차곡 (Chagok, 가제) — 정산 기준을 차가 대신 잡아 준다
+# 노고 (코드 이름 Chagok) — 정산 기준을 차가 대신 잡아 준다
 
 현대자동차그룹 Pleos Connect 차량용 앱 공모전 출품작. 차 앱(AAOS·Kotlin·Jetpack Compose) + 보조 서버 모노레포.
 
 **11/7 운전 노고 정산으로 전면 피봇했다(#46).**
-- 동승 주행이 끝나면 운전 시간과 "평소보다 ○배 힘든 길"을 영수증으로 보여 준다.
-- 그 위에 금액("오늘 운전을 챙긴다면", 방식 A)이나 한 번 빼 주기(방식 B)를 서로 다른 화면으로 제안한다.
-- 기준 문서는 `docs/PRD_노고정산_v1.3.md`·`docs/기능명세서_v0.5.md`이고, 수식 근거는 #47에 있다.
+- 동승 주행이 끝나면 도착 확인 알림으로 열고, 계산 연출 뒤 "오늘 운전 수고했어요"를 보여 준다.
+- 같이 탄 사람이 [챙겨줄게요]를 누르면 영수증(운전 시간과 "평소보다 ○배 힘든 길")과 금액("오늘 운전을 챙긴다면", 방식 A)을 보여 준다. 한 번 빼 주기(방식 B)는 1차 화면에서 숨겼다.
+- 기준 문서는 `docs/PRD_노고정산_v2.0.md`·`docs/기능명세서_v0.6.md`이고, 수식 근거는 #47에 있다. 결정이 나면 이 두 문서를 같이 고친다(DECISIONS 11/14).
 - 아래 설명 중 잔고·카드·장부(`engine.py`·`cards.py`·fixture D·L·T)는 피봇 전 흐름이고, 정리하기 전까지 남아 있다.
-"차곡"은 가제다. 이름이 바뀌어도 코드 안의 `chagok`·`cg-` 같은 식별자는 변수명처럼 그대로 둔다(DECISIONS 열린 결정 22).
+제품 이름은 노고다(11/13 확정). 코드 안의 `chagok`·`cg-` 같은 식별자는 변수명처럼 그대로 둔다(DECISIONS 11/14 '제품 이름').
 일정: 11/7 개발 핸드오프 · 11/10 원티드 4차 시연 · 11/15 1차 제출 · 12/3~4 2차 PT.
 
 ## 실행
@@ -57,12 +57,12 @@ adb forward tcp:8088 tcp:8088 && make replay   # Virtual Console로 PT 6단계 �
 | 1 | 백엔드 · AI · 서버 | 효성 | @hyos0415 | `server/`, `fixtures/`, `contract/` 계약, Kotlin `engine/` 수식, `scripts/` 생성·검사 도구 | 점수 함수·이유 한 줄, 어림 추정기, 정산 수식, 블라인드 검수(11/11), PT 기준 데모 데이터, 기술지원 질문 |
 | 2 | 안드로이드 | June(준) | @june0103 | `app/android/`(화면·SDK 연동·엔진 연결), `contract/permissions.md`, `scripts/replay.sh` | 시연 빌드, Virtual Console 시나리오, 글레오 캡처(11/7) |
 | 3 | UI·UX 디자인 · 기획(PM) | 명준 | @thvlou | `design/` 토큰·컴포넌트·규칙, BX 파일 레포 반영, `DECISIONS.md` 정리, 열린 결정 중 기획 항목 | 화면 확정본, PT 6단계 스크립트, 인터뷰, 기획서 |
-| 4 | 영상 디자인 | — | @EditBin | 레포 작업은 거의 없음. 시연 장면은 명세 v0.5 12절 순서를 따름(`scripts/replay.sh pt`는 피봇 전 흐름이라 쓰지 않음, 노고 화면이 나오기 전까지는 목업) | 시연 영상, 숏폼 3편, 주행 중·폰 공유 목업 |
+| 4 | 영상 디자인 | — | @EditBin | 레포 작업은 거의 없음. 시연 장면은 명세 v0.6 12절 순서를 따름(`scripts/replay.sh pt`는 피봇 전 흐름이라 쓰지 않음, 노고 화면이 나오기 전까지는 목업) | 시연 영상, 숏폼 3편, 주행 중·폰 공유 목업 |
 | 5 | BX 디자인 | — | 없음(가입하면 추가) | 직접 작업 없음. 내보낸 파일을 피그마·드라이브로 넘기면 명준이 `design/illustrations/`·`icons/`·`brand/`에 올리고, 커밋에 `Co-authored-by:`로 BX를 함께 적는다 | 로고, 테마 일러스트(8 × 3~4), 아이콘, 앞면·스택 카드 비주얼, 기록 지도, 키 컬러 |
 
 **시작점**
-- **효성**: `docs/기능명세서_v0.5.md` 7~9절 → 노고 엔진 `server/chagok/effort.py` ↔ Kotlin `engine/Effort.kt`(#52) → 12절 날씨 서버(#53) → `DECISIONS.md` 열린 결정 24
-- **June**: `app/README.md` → `docs/기능명세서_v0.5.md` 4~6절(F20~F22)·11절 신호 표 → 열린 결정 1·20·21
-- **명준**: `docs/PRD_노고정산_v1.3.md` → `DECISIONS.md` 열린 결정 19·22·24~26 → `design/RULES.md`(Claude Code에 읽히고 `design/`에 PR, `cd design && python -m http.server`로 `preview.html` 확인)
-- **영상**: `docs/기능명세서_v0.5.md` 12절 시연 순서(노고 화면이 나오기 전까지는 목업), 화면 구석 "시연용 값" 표기(AC-C-7) 유지
+- **효성**: `docs/기능명세서_v0.6.md` 7~9절 → 노고 엔진 `server/chagok/effort.py` ↔ Kotlin `engine/Effort.kt`(#52) → 12절 날씨 서버(#53) → `DECISIONS.md` 열린 결정 24
+- **June**: `app/README.md` → `docs/기능명세서_v0.6.md` 4~6절(F20~F22·F29)·11절 신호 표 → 열린 결정 1·20·21
+- **명준**: `docs/PRD_노고정산_v2.0.md` 7장 → `DECISIONS.md` 열린 결정 19 → `design/RULES.md`(Claude Code에 읽히고 `design/`에 PR, `cd design && python -m http.server`로 `preview.html` 확인)
+- **영상**: `docs/기능명세서_v0.6.md` 12절 시연 순서(노고 화면이 나오기 전까지는 목업). 시연 고정 모드는 설정에서 켠다(AC-C-7)
 - **BX**: `design/RULES.md` 3절의 파일 이름·크기 규칙대로 내보내 명준에게 전달 → 열린 결정 12·13
