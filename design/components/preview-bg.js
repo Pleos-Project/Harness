@@ -1,15 +1,19 @@
 /* 노고 출발 미리보기 코드 배경(11/15 명준) — 아티팩트 v195 BG 엔진과 같은 코드. 사진 · 서버 호출 없음.
  * 앱(Compose Canvas)으로 옮길 때 이 파일이 기준이다(HANDOFF_v4 7-4). 정적 화면에서는 canvas.cg-pvbg를 찾아 그린다.
  * 고르는 규칙
- *   종류: 즐겨찾기 HOME → home · OFFICE → city / 검색 결과 → 카카오 category_name 마지막 칸이 BG_CAT과 정확히 같을 때만
- *         / 시연 데이터 → 직접 적은 종류(BG_DEMO) / 그 밖(분류 없음 · 표에 없음 · 최근 · 그 밖 즐겨찾기) → neutral(길)
+ *   종류: 즐겨찾기 HOME → home · OFFICE → city / 검색 결과 → fixtures/constants.json preview_bg(효성 #187):
+ *         ① category_path 마지막 칸이 leaf에 있으면 그 종류 ② 아니면 윗칸 가운데 upper에 있는 칸 ③ 아니면 neutral
+ *         / 시연 모드 → fixtures/effort/demo.json scene.preview_bg.kinds(#186) / 그 밖(최근 · 그 밖 즐겨찾기) → neutral(길)
+ *   표의 기준은 constants.json이다. 아래 BG_LEAF · BG_UPPER는 정적 화면용 사본(값이 바뀌면 같이 맞춘다)
  *   시간대: 출발 시각(미리보기는 지금) 6~16시 day · 17~19시 dusk · 그 밖 night
  *   날씨: 출발 날씨 clear · cloud · rain · snow (rain · snow는 보이는 동안만 움직임, 동작 줄이기면 멈춤)
  *   같은 목적지 = 이름으로 씨앗(hash) → 늘 같은 모습
  * data-k = 종류, data-t = 시간대(auto = 지금 시각), data-w = 날씨, data-n = 목적지 이름 */
 (function(){
-const BG_CAT={"해수욕장,해변":"sea","산":"nature","호수":"nature","수목원,식물원":"nature","숲":"nature"};   /* 확인된 값만 넣은 초안 */
-const BG_DEMO={"태안 꽃지해수욕장":"sea","양평 두물머리":"nature","가평 아침고요수목원":"nature"};
+const BG_LEAF={"해수욕장,해변":"sea","섬":"sea","해상국립공원":"sea","항구,포구":"sea","부두":"sea","등대":"sea","방파제":"sea","여객선터미널":"sea","방조제":"sea","해파랑길":"sea","남파랑길":"sea","서해랑길":"sea","강":"nature","계곡":"nature","산":"nature","산봉우리":"nature","오름":"nature","숲":"nature","자연휴양림":"nature","수목원,식물원":"nature","호수":"nature","저수지":"nature","폭포":"nature","연못":"nature","등산로":"nature","고개":"nature","등산정보":"nature","북한산둘레길":"nature","지리산둘레길":"nature","금정산둘레길":"nature","소백산자락길":"nature"}, BG_UPPER={"지하철,전철":"city","백화점":"city"};   /* = fixtures/constants.json preview_bg 사본 */
+const kindOf=(o)=>{/* o = {nav:"HOME"|"OFFICE"|null, path:[카카오 분류, 윗칸부터], demo:시연 종류|null} — 앱 판정 함수의 참조 */
+  if(o.nav==="HOME")return"home";if(o.nav==="OFFICE")return"city";if(o.demo)return o.demo;const p=o.path||[];if(!p.length)return"neutral";
+  return BG_LEAF[p[p.length-1]]||p.slice(0,-1).map(c=>BG_UPPER[c]).find(Boolean)||"neutral"};
 const bgTod=h=>h>=6&&h<=16?"day":h>=17&&h<=19?"dusk":"night";
 const WATER=/강|호수|두물머리|계곡|저수지|댐/;
 /* ── 색 ── */
@@ -200,5 +204,5 @@ function draw(root){(root||document).querySelectorAll("canvas.cg-pvbg,canvas.pvb
 const t0=performance.now();(function loop(now){if(!RM.matches&&!document.hidden){const tt=(now-t0)/1000,vh=innerHeight;for(const e of live){if(!e.cv.isConnected){live.delete(e);continue}const r=e.cv.getBoundingClientRect();if(r.bottom>0&&r.top<vh)e.f(tt)}}requestAnimationFrame(loop)})(t0);
 const start=()=>{draw(document);new MutationObserver(()=>draw(document)).observe(document.body,{childList:true,subtree:true})};
 document.readyState==="loading"?document.addEventListener("DOMContentLoaded",start):start();
-window.NogoPreviewBg={scene,precip,hash,draw,BG_CAT,BG_DEMO,bgTod};
+window.NogoPreviewBg={scene,precip,hash,draw,kindOf,BG_LEAF,BG_UPPER,bgTod};
 })();
