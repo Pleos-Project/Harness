@@ -1,0 +1,15 @@
+/* Design v2(운전 노고 정산) — 아티팩트 시안에서 옮김. 값은 tokens.css의 --cg-* 변수, 크기는 Connect-S 실제 픽셀(1dp = 1px). */
+.cg-cta{align-self:flex-start;display:inline-flex;align-items:center;gap:20px;height:100px;padding:0 12px 0 40px;border-radius:999px;background:var(--cg-btn-filled);color:var(--cg-btn-filled-text);font:var(--cg-title-s);cursor:pointer;white-space:nowrap;flex:none;margin-top:12px}
+.cg-cta .cg-ar{width:76px;height:76px;border-radius:50%;background:#ffffff26;display:grid;place-items:center}
+.cg-cta .cg-ic{width:40px;height:40px}
+.cg-cta:active{transform:scale(.98)}
+.cg-cta.cg-off{background:var(--cg-btn-disabled);color:var(--cg-text-quaternary);border:2px solid var(--cg-line);pointer-events:none}
+.cg-cta.cg-off .cg-ar{background:var(--cg-placeholder)}
+.cg-cta .cg-dots{margin-right:24px}
+.cg-home.cg-p .cg-cta{height:80px;font:var(--cg-body-l);padding:0 8px 0 28px}
+.cg-home.cg-p .cg-cta .cg-ar{width:60px;height:60px}
+.cg-cta{background:var(--color-button-primary-fill);color:var(--color-button-primary-foreground)}
+.cg-cta:active{background:var(--color-button-primary-pressed)}
+.cg-cta .cg-ar,.cg-hcard .cg-go .cg-ar{background:#24213514}
+.cg-cta.cg-off{background:var(--color-button-disabled-fill);color:var(--color-button-disabled-foreground);border-color:transparent}
+.cg-cta.cg-off .cg-ar{background:transparent}

@@ -1,7 +1,7 @@
 """F5 한 장 + 스택 + 교체 세션.
 
-앱의 오프라인 데모 모드(app/shared/chagok-engine.js 의 createDemoServer)가 이 파일과 같은 규칙을 갖고,
-fixtures/cards/*.json 으로 둘을 대조한다. 여기를 바꾸면 JS도 같은 PR에서 바꾼다.
+앱의 오프라인 데모 모드(Kotlin app/android/app/src/main/java/com/mist/pleos_app/engine/DemoServer.kt)가 이 파일과 같은 규칙을 갖고,
+fixtures/cards/*.json 으로 둘을 대조한다. 여기를 바꾸면 Kotlin도 같은 PR에서 바꾼다.
 
 데모 고정 모드: 같은 입력 → 같은 출력. 후보 풀은 fixtures/candidates_demo.json.
 실서비스 모드(TourAPI 캐시 + 경로 API)는 candidates만 바꿔 넣는다.

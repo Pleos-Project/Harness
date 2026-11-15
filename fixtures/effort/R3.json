@@ -1,0 +1,76 @@
+{
+  "id": "R3",
+  "title": "180분 쉬지 않음(쉰 시간 없음, ETA 170분, 맑음·낮, 2명)",
+  "note": "장시간 (180 − 120) × 0.125 = 7.5 → 187.5 → 1.04배. 예상보다 더 10분 < ETA의 10%(17분) → 0",
+  "input": {
+    "departed_at": "2026-11-17T10:00:00+09:00",
+    "arrived_at": "2026-11-17T13:00:00+09:00",
+    "rest_answer_min": 0,
+    "eta_s": 10200,
+    "congestion_ratio": 0.0,
+    "congestion_m": 0.0,
+    "congestion_s": null,
+    "weather_dep": "none",
+    "weather_arr": "none",
+    "sunrise": "07:13",
+    "sunset": "17:20",
+    "n": 2,
+    "distance_km": null
+  },
+  "expected": {
+    "status": "ok",
+    "status_text": null,
+    "elapsed_limit_min": 340.0,
+    "elapsed_min": 180.0,
+    "drive_min": 180.0,
+    "rest_min": 0.0,
+    "fatigue_segments_min": [
+      180.0
+    ],
+    "congestion_min": 0.0,
+    "delay_min": 0.0,
+    "night_min": 0.0,
+    "rain_min": 0.0,
+    "snow_min": 0.0,
+    "fatigue_excess_min": 60.0,
+    "effort_min": 187.5,
+    "multiplier": 1.04,
+    "lines": [
+      {
+        "key": "fatigue",
+        "label": "장시간",
+        "add_min": 7.5,
+        "pct": 4,
+        "pct_text": "+4%",
+        "detail_text": "2시간 넘긴 1시간",
+        "basis_text": "2시간을 넘겨 이어서 운전한 시간에 더해요 · 2시간 운전하면 15분 쉬도록 한 법령 기준(화물자동차 운수사업법 시행규칙)"
+      }
+    ],
+    "notes": [],
+    "footnote_text": null,
+    "drive_text": "3시간",
+    "multiplier_text": "평소보다 1.04배 힘든 길",
+    "headline_text": "오늘 운전 3시간 · 평소보다 1.04배 힘든 길",
+    "distance_text": null,
+    "proposal": {
+      "amount_krw": 33437.5,
+      "amount_approx": 33000,
+      "amount_text": "약 3만 3천 원",
+      "per_person_krw": 16718.75,
+      "per_person_approx": 17000,
+      "per_person_text": "약 1만 7천 원",
+      "driver_share_krw": 16718.75,
+      "a": {
+        "title_text": "오늘 운전을 챙긴다면",
+        "main_text": "한 사람 약 1만 7천 원",
+        "basis_text": "운전 노고 약 3만 3천 원을 운전자 포함 2명이 나눈 값",
+        "wage_text": "최저임금 1분 178원 기준"
+      },
+      "b": {
+        "item": "meal",
+        "text": "오늘은 밥값에서 운전자 빼는 게 어때요",
+        "item_examples": []
+      }
+    }
+  }
+}

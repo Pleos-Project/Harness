@@ -1,5 +1,8 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
+    alias(libs.plugins.kotlin.compose)
 }
 
 android {
@@ -14,10 +17,34 @@ android {
         targetSdk = 36
         versionCode = 1
         versionName = "0.1.0"
+        // 서버 주소(app/README 3절). release = HTTPS 도메인 하나(AC-N-3)
+        buildConfigField("String", "API_BASE_URL", "\"https://api.rangeleft.com\"")
+    }
+
+    // release 서명(#176): app/android/keystore.properties(커밋 안 함)가 있을 때만 쓴다.
+    // 없으면(CI 등) 서명 없는 release가 나온다. 키·비밀번호는 저장소에 넣지 않는다.
+    val keystoreProps = rootProject.file("keystore.properties").takeIf { it.exists() }?.let { f ->
+        Properties().apply { f.inputStream().use { load(it) } }
+    }
+    signingConfigs {
+        if (keystoreProps != null) {
+            create("release") {
+                storeFile = rootProject.file(keystoreProps.getProperty("storeFile"))
+                storePassword = keystoreProps.getProperty("storePassword")
+                keyAlias = keystoreProps.getProperty("keyAlias")
+                keyPassword = keystoreProps.getProperty("keyPassword")
+            }
+        }
     }
 
     buildTypes {
+        debug {
+            // 에뮬 → PC 로컬 서버(make dev). 배포 서버로 시험할 때만 -PchagokApi=https://api.rangeleft.com
+            val api = (project.findProperty("chagokApi") as String?) ?: "http://10.0.2.2:8000"
+            buildConfigField("String", "API_BASE_URL", "\"$api\"")
+        }
         release {
+            signingConfigs.findByName("release")?.let { signingConfig = it }
             optimization {
                 enable = false
             }
@@ -29,18 +56,44 @@ android {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
+    buildFeatures {
+        compose = true
+        buildConfig = true
+    }
 }
+// fixtures/constants.json(차종 표·기본 단가)·candidates_demo.json(오프라인 데모 후보) → assets/data/
+// Kotlin 엔진(com.mist.pleos_app.engine)이 읽는다. 사본은 커밋하지 않는다(단일 출처는 fixtures/).
+val repoFixtures = rootProject.file("../../fixtures")
+val syncChagokData by tasks.registering(Copy::class) {
+    // effort/demo.json = 시연 데이터(명세 v0.5 12절): 데모 고정 모드에서 assets/data/effort/demo.json으로 읽는다
+    from(repoFixtures) { include("constants.json", "candidates_demo.json", "effort/demo.json") }
+    into(layout.projectDirectory.dir("src/main/assets/data"))
+}
+tasks.named("preBuild") { dependsOn(syncChagokData) }
 
-// app/shared/chagok-engine.js → assets/chagok/engine.js (빌드 때 복사, 사본은 커밋하지 않음)
-val syncChagokEngine by tasks.registering(Copy::class) {
-    from(rootProject.file("../shared/chagok-engine.js")) { rename { "engine.js" } }
-    into(layout.projectDirectory.dir("src/main/assets/chagok"))
+// 엔진 JUnit(FixturesTest)이 fixtures/ 를 읽으므로 fixture가 바뀌면 테스트를 다시 돌린다.
+// 결과는 테스트마다 로그에 찍고, 실패하면 어느 fixture의 어느 값이 다른지 전체 메시지를 보여 준다.
+tasks.withType<Test>().configureEach {
+    inputs.dir(repoFixtures).withPropertyName("chagokFixtures")
+    testLogging {
+        events("passed", "skipped", "failed")
+        exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
+    }
 }
-tasks.named("preBuild") { dependsOn(syncChagokEngine) }
 
 dependencies {
     implementation(libs.pleos.vehicle)
     implementation(libs.pleos.navihelper)
-    implementation(libs.androidx.webkit)
+    implementation(libs.kotlinx.serialization.json)   // 엔진 JSON(계약·assets 데이터·장부 저장)
+
+    implementation(platform(libs.androidx.compose.bom))
+    implementation(libs.androidx.compose.ui)
+    implementation(libs.androidx.compose.material3)
+    implementation(libs.androidx.compose.ui.tooling.preview)
+    implementation(libs.androidx.activity.compose)
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
+    implementation(libs.androidx.lifecycle.runtime.compose)
+    debugImplementation(libs.androidx.compose.ui.tooling)   // @Preview
+
     testImplementation(libs.junit)
 }

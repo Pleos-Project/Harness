@@ -1,0 +1,85 @@
+{
+  "id": "R35",
+  "title": "R34와 같은 주행 + 11:00 중간 정산(답 30분): 정산 시각에서만 끊음",
+  "note": "중간 정산이 있으면 Q는 T에서 빼기만(쉰 곳 = 그 휴게소). 구간 = 벽시계 × (T ÷ E) = 60 × 210/240 = 52.5, 180 × 210/240 = 157.5 → 장시간 37.5분 '2시간 넘긴 38분' +2% → 214.6875 → 1.02배. 금액 38,285.94 → 약 3만 8천, 남은 38,285.94 − 10,700(11:00 정산, 60분·60km 영수증) = 27,585.94 → 한 사람 약 1만 4천, 운전자 몫 → 밥",
+  "input": {
+    "departed_at": "2026-11-17T10:00:00+09:00",
+    "arrived_at": "2026-11-17T14:00:00+09:00",
+    "rest_answer_min": 30,
+    "eta_s": 12000,
+    "congestion_ratio": 0.0,
+    "congestion_m": 0.0,
+    "congestion_s": null,
+    "weather_dep": "none",
+    "weather_arr": "none",
+    "sunrise": "07:13",
+    "sunset": "17:20",
+    "n": 2,
+    "distance_km": null,
+    "settlements": [
+      {
+        "at": "2026-11-17T11:00:00+09:00",
+        "remain_krw": 10700.0
+      }
+    ]
+  },
+  "expected": {
+    "status": "ok",
+    "status_text": null,
+    "elapsed_limit_min": 400.0,
+    "elapsed_min": 240.0,
+    "drive_min": 210.0,
+    "rest_min": 30.0,
+    "fatigue_segments_min": [
+      52.5,
+      157.5
+    ],
+    "congestion_min": 0.0,
+    "delay_min": 0.0,
+    "night_min": 0.0,
+    "rain_min": 0.0,
+    "snow_min": 0.0,
+    "fatigue_excess_min": 37.5,
+    "effort_min": 214.6875,
+    "multiplier": 1.02,
+    "lines": [
+      {
+        "key": "fatigue",
+        "label": "장시간",
+        "add_min": 4.6875,
+        "pct": 2,
+        "pct_text": "+2%",
+        "detail_text": "2시간 넘긴 38분",
+        "basis_text": "2시간을 넘겨 이어서 운전한 시간에 더해요 · 2시간 운전하면 15분 쉬도록 한 법령 기준(화물자동차 운수사업법 시행규칙)"
+      }
+    ],
+    "notes": [],
+    "footnote_text": null,
+    "drive_text": "3시간 30분",
+    "multiplier_text": "평소보다 1.02배 힘든 길",
+    "headline_text": "오늘 운전 3시간 30분 · 평소보다 1.02배 힘든 길",
+    "distance_text": null,
+    "proposal": {
+      "amount_krw": 38285.9375,
+      "amount_approx": 38000,
+      "amount_text": "약 3만 8천 원",
+      "per_person_krw": 13792.96875,
+      "per_person_approx": 14000,
+      "per_person_text": "약 1만 4천 원",
+      "driver_share_krw": 13792.96875,
+      "a": {
+        "title_text": "오늘 운전을 챙긴다면",
+        "main_text": "한 사람 약 1만 4천 원",
+        "basis_text": "남은 운전 노고 약 2만 8천 원을 운전자 포함 2명이 나눈 값",
+        "wage_text": "최저임금 1분 178원 기준"
+      },
+      "b": {
+        "item": "meal",
+        "text": "오늘은 밥값에서 운전자 빼는 게 어때요",
+        "item_examples": []
+      },
+      "settled_krw": 10700.0,
+      "remain_krw": 27585.9375
+    }
+  }
+}

@@ -1,0 +1,85 @@
+{
+  "id": "R11",
+  "title": "새벽 출발: 05:30→08:00, 쉰 시간 없음, 일출 07:13, ETA 150분, 맑음, 2명",
+  "note": "전날 일몰 ~ 그날 일출 구간과 겹친 05:30~07:13 = 103분이 밤길 → 4.12. 장시간 30 × 0.125 = 3.75",
+  "input": {
+    "departed_at": "2026-11-17T05:30:00+09:00",
+    "arrived_at": "2026-11-17T08:00:00+09:00",
+    "rest_answer_min": 0,
+    "eta_s": 9000,
+    "congestion_ratio": 0.0,
+    "congestion_m": 0.0,
+    "congestion_s": null,
+    "weather_dep": "none",
+    "weather_arr": "none",
+    "sunrise": "07:13",
+    "sunset": "17:20",
+    "n": 2,
+    "distance_km": null
+  },
+  "expected": {
+    "status": "ok",
+    "status_text": null,
+    "elapsed_limit_min": 300.0,
+    "elapsed_min": 150.0,
+    "drive_min": 150.0,
+    "rest_min": 0.0,
+    "fatigue_segments_min": [
+      150.0
+    ],
+    "congestion_min": 0.0,
+    "delay_min": 0.0,
+    "night_min": 103.0,
+    "rain_min": 0.0,
+    "snow_min": 0.0,
+    "fatigue_excess_min": 30.0,
+    "effort_min": 157.87,
+    "multiplier": 1.05,
+    "lines": [
+      {
+        "key": "night",
+        "label": "밤길",
+        "add_min": 4.12,
+        "pct": 3,
+        "pct_text": "+3%",
+        "detail_text": "1시간 43분",
+        "basis_text": "밤 운전은 부담이 4% 늘어요 · 트럭 운전자 50명 시뮬레이터 연구(Fitri 2025)"
+      },
+      {
+        "key": "fatigue",
+        "label": "장시간",
+        "add_min": 3.75,
+        "pct": 3,
+        "pct_text": "+3%",
+        "detail_text": "2시간 넘긴 30분",
+        "basis_text": "2시간을 넘겨 이어서 운전한 시간에 더해요 · 2시간 운전하면 15분 쉬도록 한 법령 기준(화물자동차 운수사업법 시행규칙)"
+      }
+    ],
+    "notes": [],
+    "footnote_text": null,
+    "drive_text": "2시간 30분",
+    "multiplier_text": "평소보다 1.05배 힘든 길",
+    "headline_text": "오늘 운전 2시간 30분 · 평소보다 1.05배 힘든 길",
+    "distance_text": null,
+    "proposal": {
+      "amount_krw": 28153.483333333334,
+      "amount_approx": 28000,
+      "amount_text": "약 2만 8천 원",
+      "per_person_krw": 14076.741666666667,
+      "per_person_approx": 14000,
+      "per_person_text": "약 1만 4천 원",
+      "driver_share_krw": 14076.741666666667,
+      "a": {
+        "title_text": "오늘 운전을 챙긴다면",
+        "main_text": "한 사람 약 1만 4천 원",
+        "basis_text": "운전 노고 약 2만 8천 원을 운전자 포함 2명이 나눈 값",
+        "wage_text": "최저임금 1분 178원 기준"
+      },
+      "b": {
+        "item": "meal",
+        "text": "오늘은 밥값에서 운전자 빼는 게 어때요",
+        "item_examples": []
+      }
+    }
+  }
+}

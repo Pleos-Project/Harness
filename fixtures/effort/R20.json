@@ -1,0 +1,101 @@
+{
+  "id": "R20",
+  "title": "도착 상한 경계(12시간, 같음 → 영수증): ETA 400분, 08:00→20:00(경과 720분), 맑음, 2명",
+  "note": "max(400 × 2, 400 + 60) = 800분보다 12시간(720분)이 먼저 걸림 → 상한 720. 경과 720 = 상한 → 영수증",
+  "input": {
+    "departed_at": "2026-11-17T08:00:00+09:00",
+    "arrived_at": "2026-11-17T20:00:00+09:00",
+    "rest_answer_min": 0,
+    "eta_s": 24000,
+    "congestion_ratio": 0.0,
+    "congestion_m": 0.0,
+    "congestion_s": null,
+    "weather_dep": "none",
+    "weather_arr": "none",
+    "sunrise": "07:13",
+    "sunset": "17:20",
+    "n": 2,
+    "distance_km": null
+  },
+  "expected": {
+    "status": "ok",
+    "status_text": null,
+    "elapsed_limit_min": 720.0,
+    "elapsed_min": 720.0,
+    "drive_min": 720.0,
+    "rest_min": 0.0,
+    "fatigue_segments_min": [
+      720.0
+    ],
+    "congestion_min": 0.0,
+    "delay_min": 320.0,
+    "night_min": 160.0,
+    "rain_min": 0.0,
+    "snow_min": 0.0,
+    "fatigue_excess_min": 600.0,
+    "effort_min": 887.8,
+    "multiplier": 1.23,
+    "lines": [
+      {
+        "key": "delay",
+        "label": "예상보다 더",
+        "add_min": 86.4,
+        "pct": 12,
+        "pct_text": "+12%",
+        "detail_text": "+5시간 20분",
+        "basis_text": "예상보다 늦어진 시간은 정체와 같은 값으로 쳐요 · 예상 못 한 지연이 더 힘들다는 통근 연구(Wener·Evans 2011)"
+      },
+      {
+        "key": "night",
+        "label": "밤길",
+        "add_min": 6.4,
+        "pct": 1,
+        "pct_text": "+1%",
+        "detail_text": "2시간 40분",
+        "basis_text": "밤 운전은 부담이 4% 늘어요 · 트럭 운전자 50명 시뮬레이터 연구(Fitri 2025)"
+      },
+      {
+        "key": "fatigue",
+        "label": "장시간",
+        "add_min": 75.0,
+        "pct": 10,
+        "pct_text": "+10%",
+        "detail_text": "2시간 넘긴 10시간",
+        "basis_text": "2시간을 넘겨 이어서 운전한 시간에 더해요 · 2시간 운전하면 15분 쉬도록 한 법령 기준(화물자동차 운수사업법 시행규칙)"
+      }
+    ],
+    "notes": [],
+    "footnote_text": null,
+    "drive_text": "12시간",
+    "multiplier_text": "평소보다 1.23배 힘든 길",
+    "headline_text": "오늘 운전 12시간 · 평소보다 1.23배 힘든 길",
+    "distance_text": null,
+    "proposal": {
+      "amount_krw": 158324.33333333334,
+      "amount_approx": 158000,
+      "amount_text": "약 15만 8천 원",
+      "per_person_krw": 79162.16666666667,
+      "per_person_approx": 79000,
+      "per_person_text": "약 7만 9천 원",
+      "driver_share_krw": 79162.16666666667,
+      "a": {
+        "title_text": "오늘 운전을 챙긴다면",
+        "main_text": "한 사람 약 7만 9천 원",
+        "basis_text": "운전 노고 약 15만 8천 원을 운전자 포함 2명이 나눈 값",
+        "wage_text": "최저임금 1분 178원 기준"
+      },
+      "b": {
+        "item": "shared",
+        "text": "오늘은 공동 경비에서 운전자 빼는 게 어때요",
+        "item_examples": [
+          "공동 경비",
+          "장 본 값",
+          "펜션비",
+          "바베큐장 이용료",
+          "입장료",
+          "물품 구매비"
+        ]
+      }
+    }
+  }
+}

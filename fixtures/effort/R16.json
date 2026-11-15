@@ -1,0 +1,119 @@
+{
+  "id": "R16",
+  "title": "도착 상한 경계(같음 → 영수증): R1에서 도착만 19:30(경과 210분 = ETA 105 × 2)",
+  "note": "상한 = max(105 × 2, 105 + 60) = 210분. 경과가 상한과 같으면 영수증(status ok)",
+  "input": {
+    "departed_at": "2026-11-17T16:00:00+09:00",
+    "arrived_at": "2026-11-17T19:30:00+09:00",
+    "rest_answer_min": 0,
+    "eta_s": 6300,
+    "congestion_ratio": 0.36,
+    "congestion_m": 37548.0,
+    "congestion_s": null,
+    "weather_dep": "rain",
+    "weather_arr": "rain",
+    "sunrise": "07:13",
+    "sunset": "17:20",
+    "n": 4,
+    "distance_km": 104.3
+  },
+  "expected": {
+    "status": "ok",
+    "status_text": null,
+    "elapsed_limit_min": 210.0,
+    "elapsed_min": 210.0,
+    "drive_min": 210.0,
+    "rest_min": 0.0,
+    "fatigue_segments_min": [
+      210.0
+    ],
+    "congestion_min": 75.6,
+    "delay_min": 105.0,
+    "night_min": 130.0,
+    "rain_min": 210.0,
+    "snow_min": 0.0,
+    "fatigue_excess_min": 90.0,
+    "effort_min": 359.212,
+    "multiplier": 1.71,
+    "lines": [
+      {
+        "key": "rain",
+        "label": "날씨",
+        "add_min": 84.0,
+        "pct": 40,
+        "pct_text": "+40%",
+        "detail_text": "비, 주행 내내",
+        "basis_text": "비 오는 날은 운전 부담이 40% 늘어요 · 시뮬레이터 30명 연구(Frontiers in Neuroscience 2026)"
+      },
+      {
+        "key": "congestion",
+        "label": "정체 구간",
+        "add_min": 20.412,
+        "pct": 10,
+        "pct_text": "+10%",
+        "detail_text": "38km (경로의 36%)",
+        "basis_text": "차가 붐비는 길은 운전 부담이 27% 늘어요 · 시뮬레이터 연구(Shakouri, LSU 2015)"
+      },
+      {
+        "key": "delay",
+        "label": "예상보다 더",
+        "add_min": 28.35,
+        "pct": 14,
+        "pct_text": "+14%",
+        "detail_text": "+1시간 45분",
+        "basis_text": "예상보다 늦어진 시간은 정체와 같은 값으로 쳐요 · 예상 못 한 지연이 더 힘들다는 통근 연구(Wener·Evans 2011)"
+      },
+      {
+        "key": "night",
+        "label": "밤길",
+        "add_min": 5.2,
+        "pct": 2,
+        "pct_text": "+2%",
+        "detail_text": "2시간 10분",
+        "basis_text": "밤 운전은 부담이 4% 늘어요 · 트럭 운전자 50명 시뮬레이터 연구(Fitri 2025)"
+      },
+      {
+        "key": "fatigue",
+        "label": "장시간",
+        "add_min": 11.25,
+        "pct": 5,
+        "pct_text": "+5%",
+        "detail_text": "2시간 넘긴 1시간 30분",
+        "basis_text": "2시간을 넘겨 이어서 운전한 시간에 더해요 · 2시간 운전하면 15분 쉬도록 한 법령 기준(화물자동차 운수사업법 시행규칙)"
+      }
+    ],
+    "notes": [],
+    "footnote_text": "출발 때 내비가 안내한 경로의 36%가 붐볐어요",
+    "drive_text": "3시간 30분",
+    "multiplier_text": "평소보다 1.71배 힘든 길",
+    "headline_text": "오늘 운전 3시간 30분 · 평소보다 1.71배 힘든 길",
+    "distance_text": "104km",
+    "proposal": {
+      "amount_krw": 64059.473333333335,
+      "amount_approx": 64000,
+      "amount_text": "약 6만 4천 원",
+      "per_person_krw": 16014.868333333334,
+      "per_person_approx": 16000,
+      "per_person_text": "약 1만 6천 원",
+      "driver_share_krw": 48044.605,
+      "a": {
+        "title_text": "오늘 운전을 챙긴다면",
+        "main_text": "한 사람 약 1만 6천 원",
+        "basis_text": "운전 노고 약 6만 4천 원을 운전자 포함 4명이 나눈 값",
+        "wage_text": "최저임금 1분 178원 기준"
+      },
+      "b": {
+        "item": "shared",
+        "text": "오늘은 공동 경비에서 운전자 빼는 게 어때요",
+        "item_examples": [
+          "공동 경비",
+          "장 본 값",
+          "펜션비",
+          "바베큐장 이용료",
+          "입장료",
+          "물품 구매비"
+        ]
+      }
+    }
+  }
+}

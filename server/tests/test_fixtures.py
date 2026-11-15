@@ -1,4 +1,4 @@
-"""fixtures/ 가 엔진·서버와 일치하는지. 앱(app/shared/test)도 같은 JSON을 읽는다.
+"""fixtures/ 가 엔진·서버와 일치하는지. 앱(Kotlin FixturesTest)도 같은 JSON을 읽는다.
 
 1부: 명세서 AC 숫자를 손으로 검산한 값(엔진 출력과 독립된 기대값)
 2부: fixture 전수 — app_local → request → 서버 응답이 저장된 기대값과 같은가
@@ -30,20 +30,21 @@ def load(p):
     return json.loads(p.read_text(encoding="utf-8"))
 
 
-def ev(level=80, rr=326_000, cap=77.4):
+def ev(level=80, rr=245_000, cap=77.4):
     return E.Vehicle("ev", level, cap, EFF, 300, remaining_range_m=rr)
 
 
 # ---------------------------------------------------------------- 1부: 손 검산 (명세서 AC와 1:1)
 def test_ac_f2_1_radius_d1_d2():
-    assert abs(E.compute_range(ev()).radius_km - 106) < 2
-    assert abs(E.compute_range(ev(35, 143_000)).radius_km - 36) < 2
+    # PT 콘솔 값(DECISIONS): D1 245km → 반경 75, D2 100km → 반경 19 (명세 AC-F2-1의 326·143km를 대체)
+    assert abs(E.compute_range(ev()).radius_km - 75) < 1
+    assert abs(E.compute_range(ev(35, 100_000)).radius_km - 19.2) < 0.5
 
 
 def test_ac_f1_1_balance_krw_rounding():
     r = E.compute_range(ev())
     assert r.balance_krw == 19_000  # 18,576 → 반올림
-    assert r.balance_text == "배터리에 1만 9천 원어치 · 약 326km"
+    assert r.balance_text == "배터리에 1만 9천 원어치 · 약 245km"
 
 
 def test_ac_f1_2_assembled_fallback():
@@ -71,7 +72,15 @@ def test_ac_f2_3_overnight_minus_11_5km():
 
 
 def test_ac_f9_1_charge_text():
-    assert E.charge_amount(50, 80, 77.4, 300)[2] == "방금 약 7천 원어치 충전"
+    assert E.charge_amount(20, 80, 77.4, 300)[2] == "방금 약 1만 4천 원어치 충전"
+
+
+def test_f9_full_tank_amount():
+    """PRD v1.3 F9 '가득': (100 − 25) ÷ 100 × 60L = 45L × 1,856 = 83,520 → 8만 4천."""
+    assert E.full_tank_amount(25, 60, 1856) == (45.0, 84_000, "약 8만 4천 원")
+    assert E.full_tank_amount(100, 60, 1856) == (0.0, 0, "1천 원 미만")      # 이미 가득 → '0 원' 금지
+    assert E.full_tank_amount(120, 60, 1856)[:2] == (0.0, 0)                # 100 넘는 값은 0으로
+    assert E.full_tank_amount(99.5, 60, 1856)[1:] == (1_000, "약 1천 원")   # 0.3L × 1,856 = 556.8 → 1천(반올림)
 
 
 def test_d5_settle_text():
@@ -183,7 +192,8 @@ def test_swap_follows_visible_stack_order():
 def test_swap_after_recall_uses_latest_vehicle_values():
     d2 = load(ROOT / "fixtures/cards/D2.json")
     card = d2["expected_swaps"][0]["card"]
-    assert not card["display"]["zero_extra"] or card["route_km"] * 2 <= 93  # D2 가용 93km 안일 때만 0원
+    usable = d2["app_local"]["expected"]["usable_km"]
+    assert not card["display"]["zero_extra"] or card["route_km"] * 2 <= usable  # D2 가용 거리 안일 때만 0원
 
 
 def test_reason_never_mentions_parking():

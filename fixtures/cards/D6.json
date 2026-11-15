@@ -1,20 +1,20 @@
 {
   "id": "D6",
-  "title": "PT 1단계 충전 직후: SOC 50 → 80, 집 단가 300 → 바로 한 장",
-  "note": "23.22kWh × 300 = 6,966 → 7,000 (AC-F9-1). 이어서 F2 기본값으로 /v1/cards → D1과 같은 picked.",
+  "title": "PT 1단계 충전 직후: SOC 20 → 80, 집 단가 300 → 바로 한 장",
+  "note": "46.44kWh × 300 = 13,932 → 14,000 (AC-F9-1, DECISIONS 열린 결정 8 해결). 이어서 F2 기본값으로 /v1/cards → D1과 같은 picked.",
   "virtual_console": {
     "charge_on": true,
     "PUT /vehicle/ev-battery?field=soc&value=": 80,
     "charge_off": true
   },
-  "charge_start_soc": 50,
+  "charge_start_soc": 20,
   "charge_end_soc": 80,
   "capacity_kwh": 77.4,
   "price": 300,
   "expected": {
-    "kwh": 23.22,
-    "krw": 7000,
-    "text": "방금 약 7천 원어치 충전",
+    "kwh": 46.44,
+    "krw": 14000,
+    "text": "방금 약 1만 4천 원어치 충전",
     "then": "D1"
   }
 }

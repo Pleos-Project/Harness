@@ -1,0 +1,80 @@
+/* Design v2(운전 노고 정산) — 아티팩트 시안에서 옮김. 값은 tokens.css의 --cg-* 변수, 크기는 Connect-S 실제 픽셀(1dp = 1px). */
+/* ── 도착: 영수증(5-1) + 제안(5-2 / 5-3)을 한 화면에 (5-4 "근거가 보인다") ── */
+.cg-arr{flex:1;min-height:0;display:flex;gap:24px}
+.cg-p .cg-arr{flex-direction:column;gap:16px}
+.cg-play .cg-arr.cg-print .cg-why .cg-ul{animation-delay:1.5s}
+/* 출력 연출: 종이가 슬롯에서 1.1초에 걸쳐 내려오고, 제안 카드는 종이가 거의 나온 뒤 올라온다 */
+.cg-arr.cg-print .cg-paperwrap > .cg-paper,.cg-arr.cg-print .cg-paperwrap::after{animation:cg-print 1.1s cubic-bezier(.25,.8,.3,1) both}
+.cg-arr.cg-print .cg-offer{animation:cg-offer .45s cubic-bezier(.2,.7,.2,1) .9s both}
+.cg-arr .cg-offer{flex:0 0 640px}
+.cg-p .cg-arr .cg-offer{flex:1 1 auto}
+/* 도착 · 정리하지 못함 */
+.cg-uns{flex:1;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:32px}
+.cg-vpaper{width:960px;max-width:100%;background:var(--cg-surface-card);border:2px solid var(--cg-line-strong);border-radius:32px;box-shadow:var(--cg-shadow-2);padding:52px 64px 40px;display:flex;flex-direction:column;align-items:stretch;gap:0}
+.cg-vpaper .cg-ph{display:flex;flex-direction:column;align-items:center;gap:4px;text-align:center}
+.cg-vpaper .cg-ph b{font:var(--cg-title-l);color:var(--cg-text-quaternary)}
+.cg-vpaper .cg-ph span{font:var(--cg-label-m);color:var(--cg-text-quaternary)}
+.cg-vpaper .cg-rule2{display:block;height:8px;border-top:2px solid var(--cg-line-strong);border-bottom:2px solid var(--cg-line-strong);margin:22px 0 34px}
+.cg-vmsg{display:flex;flex-direction:column;align-items:center;gap:14px;text-align:center}
+.cg-vmsg b{font:var(--cg-headline-s)}
+.cg-vmsg span{font:var(--cg-body-l);color:var(--cg-text-secondary)}
+.cg-vlines{display:flex;flex-direction:column;align-items:center;gap:16px;margin:40px 0 32px}
+.cg-vlines i{display:block;height:16px;border-radius:8px;background:var(--cg-placeholder)}
+.cg-vnote{font:var(--cg-label-m);color:var(--cg-text-tertiary);text-align:center}
+.cg-uns .cg-bts{display:flex;gap:16px}
+.cg-pg.cg-p .cg-uns{justify-content:flex-start;gap:20px}
+.cg-pg.cg-p .cg-vpaper{padding:30px 26px 24px}
+.cg-pg.cg-p .cg-vpaper .cg-ph b{font:var(--cg-body-l)}
+.cg-pg.cg-p .cg-vpaper .cg-rule2{margin:12px 0 20px}
+.cg-pg.cg-p .cg-vmsg b{font:var(--cg-title-m)}
+.cg-pg.cg-p .cg-vmsg span{font:var(--cg-label-m)}
+.cg-pg.cg-p .cg-vlines{margin:24px 0 20px;gap:12px}
+.cg-pg.cg-p .cg-vlines i{height:12px}
+.cg-pg.cg-p .cg-uns .cg-bts{align-self:stretch}
+.cg-pg.cg-p .cg-uns .cg-bts .cg-btn{flex:1}
+/* 시연 표시 · 값 바뀐 순간 */
+.cg-chg{background:var(--cg-placeholder-strong);box-shadow:-12px 0 0 var(--cg-placeholder-strong),12px 0 0 var(--cg-placeholder-strong);border-radius:8px}
+.cg-play .cg-chg{animation:cg-chg 1.8s ease-out forwards}
+.cg-vlines i{background:var(--color-skeleton-base)}
+/* ── 도착 화면(11/9 명준): 위 제목 줄 삭제 → 영수증 · 제안이 위로 커짐. 영수증 줄 간격 · 글자 2px씩 여유 있게, 인원은 영수증 제목 아래 "장소 · 날짜 · n명" ── */
+.cg-arrpg:not(.cg-p) .cg-paperwrap{margin:-30px 40px 0}
+.cg-arrpg:not(.cg-p) .cg-prn{height:68px;border-radius:22px}
+.cg-arrpg:not(.cg-p) .cg-paper{padding:56px 64px 26px}
+.cg-arrpg:not(.cg-p) .cg-paper .cg-ph{gap:8px}
+.cg-arrpg:not(.cg-p) .cg-paper .cg-ph b{font:700 42px/54px var(--cg-font)}
+.cg-arrpg:not(.cg-p) .cg-paper .cg-ph span{font:400 30px/38px var(--cg-font)}
+.cg-arrpg:not(.cg-p) .cg-paper .cg-rule2{margin:28px 0 18px}
+.cg-arrpg:not(.cg-p) .cg-paper .cg-rhd{font:700 32px/40px var(--cg-font);padding:4px 0 12px}
+.cg-arrpg:not(.cg-p) .cg-paper .cg-rhd span:last-child{font:400 32px/40px var(--cg-font)}
+.cg-arrpg:not(.cg-p) .cg-paper .cg-rrow{grid-template-columns:240px minmax(0,1fr) 130px 28px;min-height:70px}
+.cg-arrpg:not(.cg-p) .cg-paper .cg-rrow .cg-k,.cg-arrpg:not(.cg-p) .cg-paper .cg-rrow .cg-v,.cg-arrpg:not(.cg-p) .cg-paper .cg-rnone{font:400 32px/40px var(--cg-font)}
+.cg-arrpg:not(.cg-p) .cg-paper .cg-rrow .cg-pc{font:700 34px/42px var(--cg-font)}
+.cg-arrpg:not(.cg-p) .cg-paper .cg-rsum{min-height:60px;font:400 32px/40px var(--cg-font)}
+.cg-arrpg:not(.cg-p) .cg-paper .cg-rsum b{font:700 34px/42px var(--cg-font)}
+.cg-arrpg:not(.cg-p) .cg-paper .cg-rs1{margin-top:20px;padding-top:18px}
+.cg-arrpg:not(.cg-p) .cg-paper .cg-rsum.cg-tot{margin-top:6px}
+.cg-arrpg:not(.cg-p) .cg-paper .cg-rsum.cg-tot span{font:700 34px/42px var(--cg-font)}
+.cg-arrpg:not(.cg-p) .cg-paper .cg-rsum.cg-tot b{font:800 38px/48px var(--cg-font)}
+.cg-arrpg:not(.cg-p) .cg-paper .cg-bc{margin-top:22px}
+.cg-arrpg:not(.cg-p) .cg-paper .cg-bars{height:56px}
+.cg-arrpg:not(.cg-p) .cg-paper .cg-bc span{font:400 26px/30px var(--cg-font)}
+.cg-arrpg:not(.cg-p) .cg-offer{padding:48px}
+.cg-arrpg:not(.cg-p) .cg-rsheet{bottom:40px}
+/* 11/14 명준 코멘트: 중간 정산을 한 주행(영수증 하단 중간 정산 줄)도 바코드가 잘리지 않게 — 가로 창에서 그 줄이 있을 때만 줄 높이 · 간격을 조금 줄여 바코드 자리(94)를 만듦. 글자 크기 · 분할 창은 그대로 */
+.cg-arrpg:not(.cg-p) .cg-paper:has(.cg-sfold) .cg-rrow{min-height:62px}
+.cg-arrpg:not(.cg-p) .cg-paper:has(.cg-sfold) .cg-rsum{min-height:54px}
+.cg-arrpg:not(.cg-p) .cg-paper:has(.cg-sfold) .cg-rule2{margin:18px 0 12px}
+.cg-arrpg:not(.cg-p) .cg-paper:has(.cg-sfold) .cg-rs1{margin-top:14px;padding-top:12px}
+.cg-arrpg:not(.cg-p) .cg-paper:has(.cg-sfold) .cg-rsum.cg-tot + .cg-sfold{margin-top:18px}
+/* 분할 창도 1~2px */
+.cg-arrpg.cg-p .cg-paper .cg-ph b{font:700 34px/44px var(--cg-font)}
+.cg-arrpg.cg-p .cg-paper .cg-rrow .cg-k,.cg-arrpg.cg-p .cg-paper .cg-rrow .cg-v{font:400 30px/38px var(--cg-font)}
+.cg-arrpg.cg-p .cg-paper .cg-rsum{font:400 30px/38px var(--cg-font)}
+/* 종이(1.1초)가 거의 다 나온 1.0초부터 0.8초: 꺼짐 → 약한 깜빡임 세 번(지직) → 1.6초쯤 딱 켜지며 빛이 한 번 크게 번졌다 가라앉음 */
+.cg-arr.cg-print .cg-prn i::after{animation:cg-slot-on .8s linear 1s both}
+.cg-arr.cg-print .cg-tflip .cg-t1{animation:cg-tf-out .34s cubic-bezier(.55,0,.75,.2) 2.6s both}
+/* 11/9 명준: 배수 1.5초 유지(출력구 불 켜진 뒤) */
+.cg-arr.cg-print .cg-tflip .cg-t2{animation:cg-tf-in .42s cubic-bezier(.2,.8,.3,1) 2.8s both,cg-tf-mark .4s cubic-bezier(.3,.7,.3,1) 3.15s both}
+/* +1% 미만(D5): 1%가 안 되는 줄은 "+1% 미만"을 작은 글자로, 칸 폭은 그대로 */
+.cg-arrpg:not(.cg-p) .cg-paper .cg-rrow .cg-pc.cg-lt,.cg-paper .cg-rrow .cg-pc.cg-lt{font:var(--cg-label-m)}
+.cg-arrpg.cg-p .cg-paper .cg-rrow .cg-pc.cg-lt,.cg-p .cg-paper .cg-rrow .cg-pc.cg-lt{font:var(--cg-label-s)}

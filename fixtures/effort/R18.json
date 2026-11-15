@@ -1,0 +1,76 @@
+{
+  "id": "R18",
+  "title": "도착 상한 경계(같음 → 영수증): ETA 10분, 10:00→11:10(경과 70분), 맑음·낮, 2명",
+  "note": "상한 = max(10 × 2, 10 + 60) = 70분(짧은 길은 +60분 쪽이 큼). 경과 70 = 상한 → 영수증",
+  "input": {
+    "departed_at": "2026-11-17T10:00:00+09:00",
+    "arrived_at": "2026-11-17T11:10:00+09:00",
+    "rest_answer_min": 0,
+    "eta_s": 600,
+    "congestion_ratio": 0.0,
+    "congestion_m": 0.0,
+    "congestion_s": null,
+    "weather_dep": "none",
+    "weather_arr": "none",
+    "sunrise": "07:13",
+    "sunset": "17:20",
+    "n": 2,
+    "distance_km": null
+  },
+  "expected": {
+    "status": "ok",
+    "status_text": null,
+    "elapsed_limit_min": 70.0,
+    "elapsed_min": 70.0,
+    "drive_min": 70.0,
+    "rest_min": 0.0,
+    "fatigue_segments_min": [
+      70.0
+    ],
+    "congestion_min": 0.0,
+    "delay_min": 60.0,
+    "night_min": 0.0,
+    "rain_min": 0.0,
+    "snow_min": 0.0,
+    "fatigue_excess_min": 0.0,
+    "effort_min": 86.2,
+    "multiplier": 1.23,
+    "lines": [
+      {
+        "key": "delay",
+        "label": "예상보다 더",
+        "add_min": 16.2,
+        "pct": 23,
+        "pct_text": "+23%",
+        "detail_text": "+1시간",
+        "basis_text": "예상보다 늦어진 시간은 정체와 같은 값으로 쳐요 · 예상 못 한 지연이 더 힘들다는 통근 연구(Wener·Evans 2011)"
+      }
+    ],
+    "notes": [],
+    "footnote_text": null,
+    "drive_text": "1시간 10분",
+    "multiplier_text": "평소보다 1.23배 힘든 길",
+    "headline_text": "오늘 운전 1시간 10분 · 평소보다 1.23배 힘든 길",
+    "distance_text": null,
+    "proposal": {
+      "amount_krw": 15372.333333333334,
+      "amount_approx": 15000,
+      "amount_text": "약 1만 5천 원",
+      "per_person_krw": 7686.166666666667,
+      "per_person_approx": 8000,
+      "per_person_text": "약 8천 원",
+      "driver_share_krw": 7686.166666666667,
+      "a": {
+        "title_text": "오늘 운전을 챙긴다면",
+        "main_text": "한 사람 약 8천 원",
+        "basis_text": "운전 노고 약 1만 5천 원을 운전자 포함 2명이 나눈 값",
+        "wage_text": "최저임금 1분 178원 기준"
+      },
+      "b": {
+        "item": "coffee",
+        "text": "오늘은 커피값에서 운전자 빼는 게 어때요",
+        "item_examples": []
+      }
+    }
+  }
+}

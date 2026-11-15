@@ -1,0 +1,42 @@
+/* Design v2(운전 노고 정산) — 아티팩트 시안에서 옮김. 값은 tokens.css의 --cg-* 변수, 크기는 Connect-S 실제 픽셀(1dp = 1px). */
+.cg-car .cg-wh{transform-box:fill-box;transform-origin:center}
+.cg-car .cg-wh circle{fill:var(--cg-text-primary)}
+.cg-car .cg-wh rect{fill:var(--cg-surface-card)}
+/* ── 노고 카 v3.1 하이파이 (11/9): 코나 옆모습 · 차체 세로 그라데이션(하이라이트 → 기본 → 아래 그늘) · 유리 그라데이션 · Satin Silver 투톤 휠 ──
+   주간 = 딥 잉크 차체, 야간 = 라임 차체. 차체 색은 변수 한 벌(--k-*)로 바꿈 */
+.cg-car{overflow:visible;--k-body:var(--color-illust-car);--k-shade:var(--color-illust-car-shade);--k-hi:var(--color-illust-car-hi);--k-line:var(--color-illust-car-line);--k-glass:var(--color-illust-glass);--k-glass-top:var(--color-illust-glass-top);--k-trim:var(--color-illust-trim);--k-head:var(--color-illust-head)}
+.cg-car.cg-ink{--k-body:var(--color-illust-ink-car);--k-shade:var(--color-illust-ink-car-shade);--k-hi:var(--color-illust-ink-car-hi);--k-line:var(--color-illust-ink-car-line);--k-glass:var(--color-illust-ink-glass);--k-glass-top:var(--color-illust-ink-glass-top);--k-trim:var(--color-illust-ink-trim);--k-head:var(--color-illust-ink-head)}
+.cg-car.cg-other{--k-body:var(--color-illust-other);--k-shade:var(--color-illust-other-shade);--k-hi:var(--color-illust-other);--k-line:var(--color-illust-other-line);--k-glass:var(--color-illust-other-glass);--k-glass-top:var(--color-illust-other-glass);--k-trim:var(--color-illust-other-line);--k-head:var(--color-illust-other)}
+.cg-car .cg-s-hi{stop-color:var(--k-hi)}
+.cg-car .cg-s-bd{stop-color:var(--k-body)}
+.cg-car .cg-s-sh{stop-color:var(--k-shade)}
+.cg-car .cg-s-gl1{stop-color:var(--k-glass-top)}
+.cg-car .cg-s-gl2{stop-color:var(--k-glass)}
+.cg-car .cg-s-r1{stop-color:var(--color-illust-rim-hi)}
+.cg-car .cg-s-r2{stop-color:var(--color-illust-rim)}
+.cg-car .cg-s-r3{stop-color:var(--color-illust-rim-shade)}
+.cg-car .cg-s-gs{stop-color:var(--color-illust-ground)}
+.cg-car .cg-s-gs0{stop-color:var(--color-illust-ground);stop-opacity:0}
+.cg-car .cg-s-t1{stop-color:var(--color-illust-tail)}
+.cg-car .cg-s-t2{stop-color:var(--color-illust-tail-hi)}
+.cg-car .cg-ww{fill:var(--color-illust-well)}
+.cg-car .cg-sh2{fill:var(--k-shade);opacity:.55}
+.cg-car .cg-shl{fill:none;stroke:var(--k-hi);stroke-width:1;stroke-linecap:round;opacity:.9}
+.cg-car .cg-rf,.cg-car .cg-tr,.cg-car .cg-mr,.cg-car .cg-hlh{fill:var(--k-trim)}
+.cg-car .cg-gr{fill:var(--color-illust-glass-hi)}
+.cg-car .cg-chr{fill:none;stroke:var(--color-illust-rim);stroke-width:1.1;stroke-linejoin:round;stroke-linecap:round}
+.cg-car .cg-cr{fill:none;stroke:var(--k-hi);stroke-width:.9;stroke-linecap:round;opacity:.85}
+.cg-car .cg-crs{fill:none;stroke:var(--k-shade);stroke-width:.9;stroke-linecap:round;opacity:.9}
+.cg-car .cg-dl{fill:none;stroke:var(--k-line);stroke-width:.7;stroke-linecap:round}
+.cg-car .cg-dh{fill:var(--k-line)}
+.cg-car .cg-tlb{fill:none;stroke:var(--color-illust-tail);stroke-width:1.1;stroke-linecap:round}
+.cg-car .cg-lbar{fill:none;stroke:var(--k-head);stroke-width:1.2;stroke-linecap:round}
+.cg-car .cg-tire{fill:var(--color-illust-tire);stroke:var(--color-illust-tire-edge);stroke-width:.8}
+.cg-car .cg-tw{fill:none;stroke:var(--color-illust-tire-hi);stroke-width:.6;opacity:.7}
+.cg-car .cg-th{fill:none;stroke:var(--color-illust-tire-hi);stroke-width:1.3;stroke-linecap:round}
+.cg-car .cg-wh .cg-rid{fill:var(--color-illust-rim-dark)}
+.cg-car .cg-wh .cg-rbg{fill:var(--color-illust-rim-dark)}
+.cg-car .cg-wh .cg-nut{fill:var(--color-illust-rim-shade)}
+.cg-car .cg-wh .cg-hcap{fill:var(--color-illust-cap)}
+.cg-car.cg-other :is(.cg-gr,.cg-cr,.cg-crs,.cg-chr,.cg-shl){display:none}
+.cg-car.cg-other .cg-wh .cg-hcap{fill:var(--color-illust-rim)}

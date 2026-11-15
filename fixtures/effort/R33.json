@@ -1,0 +1,117 @@
+{
+  "id": "R33",
+  "title": "두 번 정산한 뒤 도착: R1과 같은 주행, settlements = [R27 정산(17:05), R32 정산(17:40)]",
+  "note": "장시간은 65 + 35 + 30분 → 줄 없음, 1.56배·금액 36,270.50(R28과 같음). 정산한 합 17,964.19 + 9,815.69 = 27,779.88(= R32 금액). 남은 36,270.50 − 27,779.88 = 8,490.62 → 한 사람 2,122.66 → 약 2천, 운전자 몫 6,367.97 → 커피",
+  "input": {
+    "departed_at": "2026-11-17T16:00:00+09:00",
+    "arrived_at": "2026-11-17T18:10:00+09:00",
+    "rest_answer_min": 0,
+    "eta_s": 6300,
+    "congestion_ratio": 0.36,
+    "congestion_m": 37548.0,
+    "congestion_s": null,
+    "weather_dep": "rain",
+    "weather_arr": "rain",
+    "sunrise": "07:13",
+    "sunset": "17:20",
+    "n": 4,
+    "distance_km": 104.3,
+    "settlements": [
+      {
+        "at": "2026-11-17T17:05:00+09:00",
+        "remain_krw": 17964.189306487697
+      },
+      {
+        "at": "2026-11-17T17:40:00+09:00",
+        "remain_krw": 9815.691677852345
+      }
+    ]
+  },
+  "expected": {
+    "status": "ok",
+    "status_text": null,
+    "elapsed_limit_min": 210.0,
+    "elapsed_min": 130.0,
+    "drive_min": 130.0,
+    "rest_min": 0.0,
+    "fatigue_segments_min": [
+      65.0,
+      35.0,
+      30.0
+    ],
+    "congestion_min": 46.8,
+    "delay_min": 25.0,
+    "night_min": 50.0,
+    "rain_min": 130.0,
+    "snow_min": 0.0,
+    "fatigue_excess_min": 0.0,
+    "effort_min": 203.386,
+    "multiplier": 1.56,
+    "lines": [
+      {
+        "key": "rain",
+        "label": "날씨",
+        "add_min": 52.0,
+        "pct": 40,
+        "pct_text": "+40%",
+        "detail_text": "비, 주행 내내",
+        "basis_text": "비 오는 날은 운전 부담이 40% 늘어요 · 시뮬레이터 30명 연구(Frontiers in Neuroscience 2026)"
+      },
+      {
+        "key": "congestion",
+        "label": "정체 구간",
+        "add_min": 12.636,
+        "pct": 10,
+        "pct_text": "+10%",
+        "detail_text": "38km (경로의 36%)",
+        "basis_text": "차가 붐비는 길은 운전 부담이 27% 늘어요 · 시뮬레이터 연구(Shakouri, LSU 2015)"
+      },
+      {
+        "key": "delay",
+        "label": "예상보다 더",
+        "add_min": 6.75,
+        "pct": 5,
+        "pct_text": "+5%",
+        "detail_text": "+25분",
+        "basis_text": "예상보다 늦어진 시간은 정체와 같은 값으로 쳐요 · 예상 못 한 지연이 더 힘들다는 통근 연구(Wener·Evans 2011)"
+      },
+      {
+        "key": "night",
+        "label": "밤길",
+        "add_min": 2.0,
+        "pct": 2,
+        "pct_text": "+2%",
+        "detail_text": "50분",
+        "basis_text": "밤 운전은 부담이 4% 늘어요 · 트럭 운전자 50명 시뮬레이터 연구(Fitri 2025)"
+      }
+    ],
+    "notes": [],
+    "footnote_text": "출발 때 내비가 안내한 경로의 36%가 붐볐어요",
+    "drive_text": "2시간 10분",
+    "multiplier_text": "평소보다 1.56배 힘든 길",
+    "headline_text": "오늘 운전 2시간 10분 · 평소보다 1.56배 힘든 길",
+    "distance_text": "104km",
+    "proposal": {
+      "amount_krw": 36270.503333333334,
+      "amount_approx": 36000,
+      "amount_text": "약 3만 6천 원",
+      "per_person_krw": 2122.655587248323,
+      "per_person_approx": 2000,
+      "per_person_text": "약 2천 원",
+      "driver_share_krw": 6367.9667617449695,
+      "a": {
+        "title_text": "오늘 운전을 챙긴다면",
+        "main_text": "한 사람 약 2천 원",
+        "basis_text": "남은 운전 노고 약 8천 원을 운전자 포함 4명이 나눈 값",
+        "wage_text": "최저임금 1분 178원 기준"
+      },
+      "b": {
+        "item": "coffee",
+        "text": "오늘은 커피값에서 운전자 빼는 게 어때요",
+        "item_examples": []
+      },
+      "settled_krw": 27779.88098434004,
+      "remain_krw": 8490.622348993293
+    }
+  }
+}

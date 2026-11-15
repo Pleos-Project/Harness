@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- debug 빌드에만 합쳐진다: 로컬 서버 cleartext 허용(res/xml/network_security_config.xml), 촬영용 도착 신호.
+     권한은 여기에 넣지 않는다 — 권한은 main 매니페스트 = contract/permissions.md(AC-N-7). -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application android:networkSecurityConfig="@xml/network_security_config">
+        <!-- 촬영용 도착 신호(시연 영상 5번 컷): adb shell am broadcast 로만 부른다.
+             android:permission은 보내는 쪽에 요구하는 권한이다(adb shell은 DUMP를 가짐). 앱 권한(uses-permission)을 더하지 않는다 -->
+        <receiver
+            android:name=".debug.ShootArriveReceiver"
+            android:exported="true"
+            android:permission="android.permission.DUMP" />
+    </application>
+</manifest>

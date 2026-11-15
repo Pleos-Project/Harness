@@ -1,0 +1,30 @@
+/* Design v2(운전 노고 정산) — 아티팩트 시안에서 옮김. 값은 tokens.css의 --cg-* 변수, 크기는 Connect-S 실제 픽셀(1dp = 1px). */
+/* 인원 확인 알림(11/8 명준 코멘트 2): 위 바 줄에 맞춰 높이 120으로 키우고 글자·간격 키움. 버튼은 면 없이 글자 색 위계만 — 확인 = 진한 색, 닫기 = 옅은 색 */
+.cg-pbar{position:absolute;z-index:10;top:40px;left:50%;width:1040px;margin-left:-520px;height:96px;border-radius:48px;background:var(--cg-surface-card);border:1px solid var(--cg-line-strong);box-shadow:var(--cg-shadow-2);display:flex;align-items:center;gap:28px;padding:0 20px 0 48px}
+.cg-play .cg-pbar{animation:cg-drop .42s cubic-bezier(.32,.72,0,1) both}
+.cg-play .cg-pbar.cg-still{animation:none}
+/* 11/8 명준: 인원 바꿀 때 다시 뜨는 효과 없음 · 처음 뜰 때만 */
+.cg-pbar .cg-pt{display:flex;flex-direction:column;gap:6px;margin-right:auto;min-width:0}
+.cg-pbar .cg-pt b{font:800 36px/44px var(--cg-font);white-space:nowrap}
+.cg-pbar .cg-pt small{font:var(--cg-label-s);color:var(--cg-text-tertiary);white-space:nowrap}
+.cg-pbar .cg-pst{display:flex;align-items:center;height:80px;border-radius:40px;background:var(--cg-btn-basic);flex:none}
+.cg-pbar .cg-pst .cg-btn.cg-ib{border-radius:40px}
+.cg-pbar .cg-pst .cg-v{min-width:96px;text-align:center;font:var(--cg-title-m)}
+.cg-pbar .cg-pdv{width:2px;height:56px;background:var(--cg-line);flex:none}
+.cg-pbar .cg-tbtn{height:80px;display:grid;place-items:center;padding:0 22px;border-radius:40px;font:var(--cg-title-s);color:var(--cg-text-tertiary);white-space:nowrap;cursor:pointer;flex:none}
+.cg-pbar .cg-tbtn.cg-pri{color:var(--cg-text-primary);font-weight:800}
+.cg-pbar .cg-tbtn:active{background:var(--cg-btn-basic-pressed)}
+.cg-pbar .cg-tbtn + .cg-tbtn{margin-left:-20px}
+.cg-a-p1 .cg-pbar{left:40px;right:40px;width:auto;margin-left:0;height:88px;border-radius:44px;padding:0 10px 0 26px;gap:12px}
+.cg-a-p1 .cg-pbar .cg-pt small{display:none}
+.cg-a-p1 .cg-pbar .cg-pt b{font:var(--cg-title-s)}
+.cg-a-p1 .cg-pbar .cg-pst{height:64px}
+.cg-a-p1 .cg-pbar .cg-pst .cg-btn.cg-ib{width:56px;min-width:56px;height:56px}
+.cg-a-p1 .cg-pbar .cg-pst .cg-btn.cg-ib .cg-ic{width:40px;height:40px}
+.cg-a-p1 .cg-pbar .cg-pst .cg-v{min-width:56px;font:var(--cg-body-l)}
+.cg-a-p1 .cg-pbar .cg-pdv{height:44px}
+.cg-a-p1 .cg-pbar .cg-tbtn{height:64px;padding:0 12px;font:var(--cg-body-l)}
+.cg-a-p1 .cg-pbar .cg-tbtn + .cg-tbtn{margin-left:-8px}
+.cg-pbar,.cg-toast{background:var(--color-surface-notification);border-color:var(--color-border-subtle)}
+/* 11/15(v193): 인원 1명이면 [−] 흐리게 잠금(투명도 .32 · 누를 수 없음, aria-disabled) */
+.cg-pbar .cg-pst .cg-btn.cg-ib.cg-dis{opacity:.32;pointer-events:none}

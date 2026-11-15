@@ -52,7 +52,7 @@
           "lat": 37.5363,
           "lng": 127.314
         },
-        "route_km": 52
+        "route_km": 37.2
       },
       "expected": {
         "output": {
@@ -76,7 +76,7 @@
               "lat": 37.5363,
               "lng": 127.314
             },
-            "route_km": 52,
+            "route_km": 37.2,
             "start_odometer_km": 10000,
             "departed_ts": "2026-11-08T09:02:00+09:00"
           },

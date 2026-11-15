@@ -1,0 +1,116 @@
+{
+  "id": "R23",
+  "title": "시간대별: 출발·도착 맑음, 중간에만 비 + 쉰 시간 30분. 13:00→17:00, ETA 210분, 2명",
+  "note": "경과 가운데 15:00. [13,14)·[14,15)는 출발 지점(맑음·비), [15,16)·[16,17)는 도착 지점(비·맑음) → 비 벽시계 120분. 강수 분 = 120 × T 210 ÷ 경과 240 = 105(밤길과 같은 방식) → 42 → +20%. 1회 관측으로는 0",
+  "input": {
+    "departed_at": "2026-11-17T13:00:00+09:00",
+    "arrived_at": "2026-11-17T17:00:00+09:00",
+    "rest_answer_min": 30,
+    "eta_s": 12600,
+    "congestion_ratio": 0.0,
+    "congestion_m": 0.0,
+    "congestion_s": null,
+    "weather_dep": "none",
+    "weather_arr": "none",
+    "sunrise": "07:13",
+    "sunset": "17:20",
+    "n": 2,
+    "distance_km": null,
+    "weather_trip": {
+      "status": "ok",
+      "dep": [
+        {
+          "hour": "2026-11-17T13:00:00+09:00",
+          "precip": "none"
+        },
+        {
+          "hour": "2026-11-17T14:00:00+09:00",
+          "precip": "rain"
+        },
+        {
+          "hour": "2026-11-17T15:00:00+09:00",
+          "precip": "none"
+        },
+        {
+          "hour": "2026-11-17T16:00:00+09:00",
+          "precip": "none"
+        }
+      ],
+      "arr": [
+        {
+          "hour": "2026-11-17T13:00:00+09:00",
+          "precip": "none"
+        },
+        {
+          "hour": "2026-11-17T14:00:00+09:00",
+          "precip": "none"
+        },
+        {
+          "hour": "2026-11-17T15:00:00+09:00",
+          "precip": "rain"
+        },
+        {
+          "hour": "2026-11-17T16:00:00+09:00",
+          "precip": "none"
+        }
+      ]
+    }
+  },
+  "expected": {
+    "status": "ok",
+    "status_text": null,
+    "elapsed_limit_min": 420.0,
+    "elapsed_min": 240.0,
+    "drive_min": 210.0,
+    "rest_min": 30.0,
+    "fatigue_segments_min": [
+      105.0,
+      105.0
+    ],
+    "congestion_min": 0.0,
+    "delay_min": 0.0,
+    "night_min": 0.0,
+    "rain_min": 105.0,
+    "snow_min": 0.0,
+    "fatigue_excess_min": 0.0,
+    "effort_min": 252.0,
+    "multiplier": 1.2,
+    "lines": [
+      {
+        "key": "rain",
+        "label": "날씨",
+        "add_min": 42.0,
+        "pct": 20,
+        "pct_text": "+20%",
+        "detail_text": "비",
+        "basis_text": "비 오는 날은 운전 부담이 40% 늘어요 · 시뮬레이터 30명 연구(Frontiers in Neuroscience 2026)"
+      }
+    ],
+    "notes": [],
+    "footnote_text": null,
+    "drive_text": "3시간 30분",
+    "multiplier_text": "평소보다 1.20배 힘든 길",
+    "headline_text": "오늘 운전 3시간 30분 · 평소보다 1.20배 힘든 길",
+    "distance_text": null,
+    "proposal": {
+      "amount_krw": 44940.0,
+      "amount_approx": 45000,
+      "amount_text": "약 4만 5천 원",
+      "per_person_krw": 22470.0,
+      "per_person_approx": 22000,
+      "per_person_text": "약 2만 2천 원",
+      "driver_share_krw": 22470.0,
+      "a": {
+        "title_text": "오늘 운전을 챙긴다면",
+        "main_text": "한 사람 약 2만 2천 원",
+        "basis_text": "운전 노고 약 4만 5천 원을 운전자 포함 2명이 나눈 값",
+        "wage_text": "최저임금 1분 178원 기준"
+      },
+      "b": {
+        "item": "meal",
+        "text": "오늘은 밥값에서 운전자 빼는 게 어때요",
+        "item_examples": []
+      }
+    }
+  }
+}

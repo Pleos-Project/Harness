@@ -1,13 +1,20 @@
-# docs/ — 동결된 기준 문서 (11/5)
+# docs/ — 기준 문서
 
-여기 문서는 고치지 않는다. 이후 바뀌는 건 `fixtures/`, `contract/`, `DECISIONS.md` 셋 중 하나이고, 거기에 없으면 안 바뀐 것이다.
-문서와 하네스가 다르면 **DECISIONS.md가 이긴다**(다르게 가는 이유가 거기 적혀 있어야 한다).
+**결정이 나면 여기 문서를 같이 고친다**(효성 11/14, DECISIONS 11/14 '문서 규칙'). 기준 문서와 다르게 정했으면 `DECISIONS.md`에 한 줄을 남기고, 같은 PR에서 PRD·명세의 해당 문장도 고친다.
+문서에 남은 옛 문장과 날짜가 뒤인 `DECISIONS.md` 확정 줄이 다르면 **확정 줄을 따르고 문서를 고친다.** 옛 문장을 이유로 구현을 막지 않는다.
+
+**11/7 운전 노고 정산으로 전면 피봇했다(#46).** 11/14에 기준 문서를 아래 두 개로 올렸다.
 
 | 파일 | 문서 | 기준 범위 |
 |---|---|---|
-| `PRD_v1.2.md` | 차곡 PRD v1.2 (명준, 11/4) | 기능·화면·문구·일정 |
-| `기능명세서_v0.4.md` | 차곡 기능 명세서 v0.4 (June, 11/5) | 구현 기준본. AC 번호 |
-| (링크) | [서버·추정 엔진 PRD v0.1](https://claude.ai/artifact/M6ZJW24C9XCv86MYzmskcf) (효성, 11/4) | 수식·API·fixture 원안. 이후 수식은 `server/chagok/engine.py` |
-| (링크) | [PRD v1.2 개발 가능성 검토](https://claude.ai/artifact/3tDCZKcGyEZwzwGSrRjWy1) (11/5) | 참고 |
+| `PRD_노고정산_v2.0.md` | 노고 PRD v2.0 (11/14. 같이 탄 사람이 먼저 [챙겨줄게요]를 누르는 흐름, 내비 도착 신호, 알림으로 열기. v1.2·v1.3은 `archive/`) | 기능·화면·문구·연산 로직 |
+| `기능명세서_v0.6.md` | 노고 기능 명세서 v0.6 (11/14. v0.5에서 바뀐 곳은 18절, v0.5는 `archive/`) | 구현 기준본. AC 번호(AC-F20-1~), fixture R1~ |
 
-레포를 공개(1차 제출용 깃)로 돌릴 때는 이 폴더를 다시 본다 — 내부 참고·결정 이력이 들어 있다(DECISIONS 열린 결정 19).
+**`archive/`** 에는 이전 판(노고 PRD v1.2·v1.3, 기능명세서 v0.5)과 피봇 전 문서(PRD v1.6, 기능명세서 v0.4)가 있다. 잔고 → 한 장 → 출발 흐름의 기존 코드(`server/chagok/engine.py`·`cards.py`, Kotlin `Engine.kt`·`DemoServer.kt`·`Ledger.kt`, fixture D·L·T)를 정리하기 전까지 그 코드의 주석·AC 번호가 가리키는 참고용으로만 둔다.
+
+| 피봇 전 참고 | |
+|---|---|
+| (링크) [서버·추정 엔진 PRD v0.1](https://claude.ai/artifact/M6ZJW24C9XCv86MYzmskcf) (효성, 11/4) | 피봇 전 수식·API·fixture 원안 |
+| (링크) [PRD v1.2 개발 가능성 검토](https://claude.ai/artifact/3tDCZKcGyEZwzwGSrRjWy1) (11/5) | 참고 |
+
+레포를 공개(1차 제출용 깃)로 돌릴 때는 이 폴더를 다시 본다. 내부 참고와 결정 이력이 들어 있다(DECISIONS 열린 결정 19).

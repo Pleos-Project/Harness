@@ -1,0 +1,63 @@
+# 차곡 서버 = api(FastAPI) + caddy(HTTPS 자동). Lightsail 인스턴스 1대.
+#
+# 서버 레이아웃 (CHAGOK_HOME, 기본 /opt/chagok)
+#   app/          코드. 배포할 때마다 통째로 바뀐다(deploy.sh). 이 파일은 app/deploy/compose.yaml
+#   .env          키(TOURAPI_SERVICE_KEY 등). 유지. 권한 600. 이미지에는 넣지 않는다
+#   compose.env   compose 변수(CHAGOK_DOMAIN). 비밀 아님. 유지. deploy.sh가 쓴다
+#   data/         SQLite(chagok.sqlite3). 유지
+#
+# 실행은 항상 --env-file 로 compose.env 를 넘긴다(README의 dc 별칭):
+#   docker compose --env-file /opt/chagok/compose.env -f /opt/chagok/app/deploy/compose.yaml up -d --build
+#
+# 주의: `docker compose config` 를 -q 없이 돌리면 .env 의 키 값이 펼쳐져 출력된다. 확인은 `config -q` 로만.
+
+name: chagok
+
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+services:
+  api:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    image: chagok-api:latest
+    env_file:
+      - ${CHAGOK_HOME:-/opt/chagok}/.env
+    environment:
+      # .env 에 개발용 경로가 섞여 있어도 컨테이너 안 경로가 이긴다(environment > env_file).
+      CHAGOK_FIXTURES: /app/fixtures
+      CHAGOK_DB: /data/chagok.sqlite3
+    volumes:
+      - ${CHAGOK_HOME:-/opt/chagok}/data:/data
+    # 포트는 밖으로 열지 않는다. caddy만 같은 네트워크에서 api:8000 으로 붙는다.
+    expose:
+      - "8000"
+    restart: unless-stopped
+    logging: *logging
+
+  caddy:
+    # 2.x 최신 안정판으로 고정(2026-11-05 Docker Hub 공식 이미지 기준). 올릴 때는 태그만 바꾼다.
+    image: caddy:2.11.8
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "80:80"        # ACME HTTP-01 인증, http → https 이동
+      - "443:443"
+      - "443:443/udp"  # HTTP/3
+    environment:
+      CHAGOK_DOMAIN: ${CHAGOK_DOMAIN:?CHAGOK_DOMAIN 이 없다. --env-file /opt/chagok/compose.env 를 넘겼는지 확인 (deploy/README.md)}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data      # 인증서·ACME 계정. 지우면 인증서를 다시 받는다(발급 횟수 제한 주의)
+      - caddy_config:/config
+    restart: unless-stopped
+    logging: *logging
+
+volumes:
+  caddy_data:
+  caddy_config:

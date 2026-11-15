@@ -1,0 +1,8 @@
+/* Design v2(운전 노고 정산) — 아티팩트 시안에서 옮김. 값은 tokens.css의 --cg-* 변수, 크기는 Connect-S 실제 픽셀(1dp = 1px). */
+.cg-ppl{display:inline-flex;align-items:center;gap:12px;height:64px;padding:0 22px 0 18px;border-radius:999px;background:var(--cg-btn-basic);font:var(--cg-body-l);white-space:nowrap;cursor:pointer}
+.cg-ppl .cg-ico{width:32px;height:32px;border-radius:50%}
+.cg-ppl .cg-chev{width:12px;height:12px;border-right:3px solid var(--cg-text-tertiary);border-bottom:3px solid var(--cg-text-tertiary);transform:rotate(45deg);margin:-6px 4px 0 2px}
+.cg-home.cg-p .cg-ppl{height:56px;padding:0 16px 0 12px;font:var(--cg-body-m-b);gap:8px}
+.cg-home.cg-p .cg-ppl .cg-ico{width:26px;height:26px}
+.cg-ppl,.cg-hsearch .cg-mic,.cg-pbar .cg-pst{background:var(--color-button-secondary-fill);color:var(--color-button-secondary-foreground)}
+.cg-ppl .cg-ico.cg-pi{width:34px;height:34px}

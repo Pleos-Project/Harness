@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 개발(debug) 빌드만: 에뮬에서 PC 로컬 서버(make dev, http://10.0.2.2:8000) cleartext 허용.
+     release 빌드에는 이 파일이 없어 cleartext가 기본 차단되고, 서버는 HTTPS 도메인 하나만 쓴다(AC-N-3). -->
+<network-security-config>
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="false">10.0.2.2</domain>
+    </domain-config>
+</network-security-config>

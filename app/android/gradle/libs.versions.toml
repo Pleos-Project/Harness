@@ -1,19 +1,32 @@
 # 버전은 H_Mate(11/4, June 에뮬에서 빌드·실행 확인)와 같게 맞춤. 올릴 때는 PR에 적는다.
 [versions]
 agp = "9.3.3"
+# AGP 9.3.3에 내장된 Kotlin(KGP) 버전. Compose 컴파일러 플러그인은 이 값과 같아야 한다(AGP를 올리면 같이 확인).
+kotlin = "2.2.10"
 pleosVehicle = "2.3.2"
 pleosNaviHelper = "3.0.5"
-webkit = "1.12.1"
+composeBom = "2026.06.01"
+activityCompose = "1.13.0"
+# activity-compose 1.13.0이 끌어오는 버전과 같게(화면 상태 저장·리스너 수명주기)
+lifecycle = "2.11.0"
 kotlinxSerialization = "1.6.3"
 junit = "4.13.2"
 
 [libraries]
 pleos-vehicle = { group = "ai.pleos.playground", name = "Vehicle", version.ref = "pleosVehicle" }
 pleos-navihelper = { group = "ai.pleos.playground", name = "NaviHelper", version.ref = "pleosNaviHelper" }
-androidx-webkit = { group = "androidx.webkit", name = "webkit", version.ref = "webkit" }
-# 내비 데이터(@Serializable)를 JSON으로 WebView에 넘길 때(H_Mate 브리지 방식)
+androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }
+androidx-compose-ui = { group = "androidx.compose.ui", name = "ui" }
+androidx-compose-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling" }
+androidx-compose-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview" }
+androidx-compose-material3 = { group = "androidx.compose.material3", name = "material3" }
+androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
+androidx-lifecycle-viewmodel-compose = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-compose", version.ref = "lifecycle" }
+androidx-lifecycle-runtime-compose = { group = "androidx.lifecycle", name = "lifecycle-runtime-compose", version.ref = "lifecycle" }
+# 엔진 JSON(계약·assets 데이터·장부 저장)
 kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinxSerialization" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
+kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }

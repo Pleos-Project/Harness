@@ -1,0 +1,465 @@
+"""노고 시연 리플레이 — Virtual Console로 차량 신호를, adb로 앱 화면을 확인하며 시연 순서를 한 바퀴 돈다.
+
+명세 v0.5 12절 '시연 순서'를 지금 앱(Design v2, 정차는 도착 때 한 번 묻기 #58)에 맞춘 순서다.
+12/3 PT 순서는 휴게소 중간 정산(운전자 교대)을 넣는다(명준 11/9 #86, 효성 제안). 11/10 공유회 순서는 --no-midway.
+
+  0 준비      콘솔: 기어 P · 4석 착석 / 앱: 데모 고정 모드 켜기
+  1 출발      앱: 출발하기 → 미리보기(태안 꽃지해수욕장 · 104km · 정체 경로의 36%) → [출발]
+  2 주행      콘솔: 기어 D → 1초 안에 화면 가림(AC-C-1) → 기어 P → 홈 복귀
+  2+ 휴게소   앱: 시동 버튼(지금까지의 노고 보기) → 쉰 시간 [없음] → 오늘 주행 영수증(아직 가는 중 · 1시간 5분 · 52km · 1.55배, 한 사람 약 4천 원)
+              → [좋아요]로 여기까지 정산 → [계속 가기] → 가는 중 홈(v3: "~까지 정산함" 표시 없음)
+              콘솔: 기어 D(가림) → 기어 P(같은 주행을 이어 감, [출발]을 다시 누르지 않음)
+  3 도착      앱: 가는 중 홈 [도착했어요] → 오늘 운전 돌아보기(약 10초) → [운전자 챙겨주기] → 쉰 시간 [없음] → 영수증(2시간 10분 · 1.56배, 휴게소에서 장시간이 끊김)
+              (운전석 문 열기는 도착 계기에서 뺐다, DECISIONS 11/13)
+              --no-midway면 1.57배(R1)
+  4 선택      앱: 영수증 하단 '중간 정산 있음' → [좋아요](방식 A, 남은 몫 한 사람 약 5천 원) 또는 첫 항목(방식 B) → 기록 → [닫기] → 홈 알림 종 → 알림 창 "○○ 기록을 남겼어요"
+
+사용
+  python -I scripts/demo_replay.py            # 리허설: 단계마다 엔터, 앱은 사람이 누른다
+  python -I scripts/demo_replay.py --auto     # 점검: 앱도 adb로 누르고 화면 글자를 확인(실패하면 종료 코드 1)
+  python -I scripts/demo_replay.py --auto --reset   # 시작 전에 기록 초기화
+  python -I scripts/demo_replay.py --no-midway      # 휴게소 중간 정산 없이(11/10 공유회 순서, 1.57배)
+
+필요한 것
+  - 에뮬레이터(Pleos_Connect_v2.1.0)에 앱 설치(사용자 10), Virtual Console 페이지(http://127.0.0.1:8088/)가 열려 있어 bridge_ready
+  - adb: 환경변수 ADB 또는 %LOCALAPPDATA%/Android/Sdk/platform-tools/adb.exe 또는 PATH
+  - 날씨 서버가 없어도 된다(AC-C-3): 시연 날씨는 demo.json 값이고, 날씨 조회가 실패해도 '정보 없음'으로 진행한다.
+    에뮬 네트워크를 끄면 콘솔도 끊기므로, 오프라인 점검은 서버 없는 빌드(기본 debug)로 돌린다.
+"""
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import re
+import shutil
+import subprocess
+import sys
+import threading
+import time
+import urllib.error
+import urllib.request
+import uuid
+
+VC = os.environ.get("VC", "http://127.0.0.1:8088")
+PKG = "com.mist.pleos_app"
+USER = "10"
+FOCUS = (1700, 1290)  # 앱 창 아래 여백. uiautomator가 앱 창을 덤프하도록 초점을 준다(버튼 없는 자리)
+
+# 화면에서 기대하는 글자(fixtures/effort/demo.json R1, strings.xml)
+DEST = "태안 꽃지해수욕장"
+EXPECT_PREVIEW = ["104km", "경로의 36%"]                  # 미리보기 정체는 비율만(시안 v104)
+EXPECT_DRIVING_HOME = [DEST, "으로 가는 중"]          # v32 홈: "○○으로 가는 중 · 16:00 출발 · 함께 4명". 장소 이름만 말줄임이라 두 조각(#118 D2)
+EXPECT_ARRIVE = [DEST, "에 도착했어요"]                   # 장소 이름만 말줄임이라 두 조각(#118 D2)
+EXPECT_RECEIPT = ["2시간 10분", "1.57배"]                 # 중간 정산 없음(R1)
+EXPECT_RECEIPT_MIDWAY = ["2시간 10분", "1.56배"]          # 휴게소 17:05 정산 뒤(demo.json midway_arrival = R28)
+EXPECT_MIDWAY = ["오늘 주행 영수증", "아직 가는 중", "1시간 5분", "52km", "1.55배", "한 사람 약 4천 원"]   # demo.json midway = R27
+EXPECT_MIDWAY_DONE = "도착하면 전체를 다시 세고, 이 몫은 빼고 알려 드려요"
+EXPECT_REMAIN = "한 사람 약 5천 원"                       # 정산 뒤 남은 몫(방식 A, 영수증 하단 포함 모드)
+EXPECT_FULL_AFTER_MIDWAY = "한 사람 약 9천 원"            # 영수증 하단 전체 모드(#118 arrive-mid-a, 처음 모습)
+
+
+# ------------------------------------------------------------ 콘솔
+def vc_get(path: str) -> dict:
+    with urllib.request.urlopen(VC + path, timeout=5) as r:
+        return json.load(r)
+
+
+def heartbeat_forever() -> None:
+    """콘솔 페이지가 1초마다 보내는 POST /browser/session을 대신 보낸다. 브라우저 창이 숨거나 내비가 뜨면
+    페이지 타이머가 느려져 emulator_inactive(503)로 떨어지는 것을 막는다(11/8 실측)."""
+    cid = "demo-replay-" + uuid.uuid4().hex[:8]
+    while True:
+        try:
+            urllib.request.urlopen(urllib.request.Request(f"{VC}/browser/session?client={cid}", method="POST"), timeout=3).read()
+        except (urllib.error.URLError, OSError):
+            pass
+        time.sleep(1)
+
+
+def vc_put(path: str) -> None:
+    req = urllib.request.Request(VC + path, method="PUT")
+    for attempt in range(10):                        # emulator_inactive면 하트비트가 살릴 때까지 최대 10초
+        try:
+            with urllib.request.urlopen(req, timeout=5) as r:
+                r.read()
+            print(f"    콘솔 PUT {path}")
+            return
+        except urllib.error.HTTPError as e:
+            body = e.read()[:120]
+            if e.code == 503 and attempt < 9:
+                time.sleep(1)
+                continue
+            raise SystemExit(f"콘솔 PUT {path} 실패: {e.code} {body!r} — 콘솔 페이지를 다시 열고 bridge_ready를 확인하세요")
+
+
+def gear(g: str) -> None: vc_put(f"/vehicle/gear?gear={g}")
+def seat(area: str, on: bool) -> None: vc_put(f"/vehicle/seat?kind=occupied&area={area}&value={'true' if on else 'false'}")
+
+
+def bridge_ready() -> bool:
+    end = time.time() + 10
+    while time.time() < end:
+        if _bridge_once():
+            return True
+        time.sleep(1)
+    return False
+
+
+def _bridge_once() -> bool:
+    try:
+        d = vc_get("/vehicle/odometer")
+        return bool(d.get("bridge_ready")) and bool(d.get("emulator_active", True))
+    except (urllib.error.URLError, OSError, ValueError):
+        return False
+
+
+# ------------------------------------------------------------ adb
+def adb_path() -> str:
+    if os.environ.get("ADB"):
+        return os.environ["ADB"]
+    local = os.path.join(os.environ.get("LOCALAPPDATA", ""), "Android", "Sdk", "platform-tools", "adb.exe")
+    if os.path.exists(local):
+        return local
+    return shutil.which("adb") or "adb"
+
+
+ADB = adb_path()
+
+
+def adb(*a: str) -> str:
+    r = subprocess.run([ADB, *a], capture_output=True)
+    return r.stdout.decode("utf-8", "replace")
+
+
+def texts() -> list[tuple[str, int, int]]:
+    """앱 창의 보이는 글자와 가운데 좌표."""
+    adb("shell", "input", "tap", str(FOCUS[0]), str(FOCUS[1]))
+    adb("shell", "uiautomator", "dump", "/sdcard/cg_ui.xml")
+    x = adb("shell", "cat", "/sdcard/cg_ui.xml")
+    out = []
+    for m in re.finditer(r'<node [^>]*?text="([^"]*)"[^>]*?content-desc="([^"]*)"[^>]*?bounds="\[(\d+),(\d+)\]\[(\d+),(\d+)\]"', x):
+        t, d, x1, y1, x2, y2 = m.groups()
+        t = (t or d).replace("&#10;", "\n")
+        if t:
+            out.append((t, (int(x1) + int(x2)) // 2, (int(y1) + int(y2)) // 2))
+    return out
+
+
+def has(want: str, ts=None) -> bool:
+    return any(want in t for t, _, _ in (ts if ts is not None else texts()))
+
+
+def wait_for(want: str | list[str], timeout: float = 8.0, gone: bool = False) -> bool:
+    wants = [want] if isinstance(want, str) else want
+    end = time.time() + timeout
+    while time.time() < end:
+        ts = texts()
+        ok = all(has(w, ts) for w in wants)
+        if ok != gone:
+            return True
+        time.sleep(0.4)
+    return False
+
+
+def tap(want: str, exact: bool = True, timeout: float = 6.0, last: bool = False) -> bool:
+    """글자가 같은(exact=False면 포함하는) 첫 요소를 누른다. last=True면 마지막 요소(시트 단추가 화면 글자와 겹칠 때)."""
+    end = time.time() + timeout
+    while time.time() < end:
+        ts = texts()
+        for t, x, y in (reversed(ts) if last else ts):
+            if (t == want) if exact else (want in t):
+                adb("shell", "input", "tap", str(x), str(y))
+                print(f"    앱 누름 '{t}'")
+                return True
+        time.sleep(0.4)
+    return False
+
+
+def bring_app_front() -> None:
+    adb("shell", "am", "start", "--user", USER, "-n", f"{PKG}/.MainActivity")
+    time.sleep(2.5)
+
+
+# ------------------------------------------------------------ 진행
+class Run:
+    def __init__(self, auto: bool):
+        self.auto = auto
+        self.results: list[tuple[str, bool, str]] = []
+
+    def check(self, name: str, ok: bool, note: str = "") -> bool:
+        self.results.append((name, ok, note))
+        print(f"  {'✅' if ok else '❌'} {name}{(' — ' + note) if note else ''}")
+        if not ok and self.auto:
+            self.report()
+            raise SystemExit(1)
+        return ok
+
+    def person(self, what: str) -> None:
+        """리허설 모드: 발표자가 할 일을 보여 주고 엔터를 기다린다."""
+        if not self.auto:
+            input(f"  [발표자] {what}  ↵ ")
+
+    def expect(self, name: str, want, timeout: float = 8.0) -> None:
+        if self.auto:
+            self.check(name, wait_for(want, timeout), "" if isinstance(want, str) else " · ".join(want))
+        else:
+            print(f"  기대: {want if isinstance(want, str) else ' · '.join(want)}")
+
+    def report(self) -> None:
+        ok = sum(1 for _, o, _ in self.results if o)
+        print(f"\n결과: {ok}/{len(self.results)} 통과")
+        for name, o, note in self.results:
+            if not o:
+                print(f"  실패: {name} {note}")
+
+
+def step0(r: Run, reset: bool) -> None:
+    print("\n0 준비")
+    r.check("콘솔 bridge_ready", bridge_ready(), "아니면 http://127.0.0.1:8088/ 을 브라우저로 다시 여세요")
+    gear("Park")
+    for a in ("driver", "passenger", "rear_left", "rear_right"):
+        seat(a, True)
+    if not r.auto:
+        r.person("앱 홈에서 설정 → 데모 고정 모드 '켜기' → 뒤로" + (" (기록 초기화도)" if reset else ""))
+        return
+    bring_app_front()
+    for _ in range(8):                                # 어느 화면에 있든 홈으로(지난 리허설이 남긴 영수증·시트·설정)
+        ts = texts()
+        if has("출발하기", ts) or has("으로 가는 중", ts) or has("로 가는 중", ts):
+            break
+        if has("중간에 쉰 시간이 있었나요?", ts):
+            tap("없음", last=True)
+        elif has("닫기", ts):
+            tap("닫기")
+        elif has("홈으로", ts):                        # 정리하지 못함 화면(F22)
+            tap("홈으로")
+        elif has("뒤로", ts):
+            tap("뒤로")
+        elif has("시연 고정 모드", ts):                # 설정 화면은 [뒤로] 단추가 없어 BACK 키(앱 BackHandler → 홈). 제안 방식 항목은 1차에서 숨김
+            adb("shell", "input", "keyevent", "4")
+        elif has("운전자 챙겨주기", ts):               # 고르기 전에 나간 도착 → 돌아보기에서 [운전자 챙겨주기]
+            tap("운전자 챙겨주기")
+        elif has("영수증 보기", ts):                   # 고르기 전에 나간 도착(v32 home-pending) → 영수증 열고 닫기
+            tap("영수증 보기")
+        time.sleep(0.8)
+    if has("로 가는 중") and tap("그만두기"):         # 지난 리허설이 남긴 진행 중 출발은 그만두기(확인 시트, 기록 안 남음)
+        r.check("남은 진행 중 출발 그만두기", tap("그만두기", last=True))
+        time.sleep(0.8)
+    r.check("홈 설정 단추", tap("설정"))
+    time.sleep(0.8)
+    # #75 v41 설정: 시연 고정 모드는 스위치(설명 줄이 "켜짐 · …"이면 이미 켜짐), 기록 초기화는 [지우기] → 확인 시트 [지우기]
+    ts = texts()
+    if not any(t.startswith("켜짐") for t, _, _ in ts):
+        tap("시연 고정 모드", last=True)                 # 제목과 스위치가 같은 이름 → 스위치(마지막)
+        time.sleep(0.6)
+    r.check("데모 고정 모드 켜기", any(t.startswith("켜짐") for t, _, _ in texts()))
+    if reset:
+        tap("지우기"); time.sleep(0.8)
+        sheet = has("기록을 모두 지울까요?")
+        if sheet:
+            tap("지우기", last=True); time.sleep(0.6)
+        r.check("기록 초기화", sheet or has("기록 0건"), "" if sheet else "지울 기록 없음")
+    tap("뒤로") or adb("shell", "input", "keyevent", "4")
+    time.sleep(0.8)
+
+
+def step1(r: Run) -> None:
+    print("\n1 출발")
+    if r.auto:
+        if all(has(w) for w in EXPECT_DRIVING_HOME):
+            r.check("진행 중 출발 없음", False, "이전 시연이 진행 중이에요. 홈 '›' → 그만두기 뒤 다시 돌리세요")
+        r.check("출발하기", tap("출발하기"))
+        time.sleep(1.0)
+        r.expect("인원 확인 알림(좌석 센서)", "4명이 탔어요")   # 출발 화면에 들어오면 바로(June 11/9)
+        r.check("인원 [확인]", tap("확인"))
+        time.sleep(0.6)
+        r.check(f"목적지 카드 '{DEST}'", tap(DEST))       # 시연 모드도 실제처럼 카드를 눌러 고름(June 11/9)
+    else:
+        r.person(f"홈 [출발하기] → 인원 알림 [확인] → 목적지 카드 '{DEST}'")
+    r.expect("출발 미리보기", [DEST] + EXPECT_PREVIEW)
+    # "시연용 값" 알약은 뺐다(#118 v122 명준 11/12, DECISIONS 11/13) → 화면에 없어야 한다
+    if r.auto:
+        r.check("시연용 값 알약 없음", not has("시연용 값"))
+    if r.auto:
+        r.check("[출발]", tap("출발"))
+        time.sleep(2)
+        bring_app_front()
+    else:
+        r.person("[출발] (순정 내비가 뜨면 앱으로 돌아오기)")
+    r.expect("홈 진행 중", EXPECT_DRIVING_HOME)
+
+
+def device_now() -> float:
+    try:
+        return float(adb("shell", "date", "+%s.%N").strip())
+    except ValueError:
+        return 0.0
+
+
+def hide_latency(since: float) -> float | None:
+    """콘솔 기어 D가 차에 들어간 시각 → 앱이 주행으로 바꾼 시각(logcat, 기기 시계 기준 초)."""
+    log = adb("logcat", "-d", "-v", "epoch")
+    set_at = hid_at = None
+    for line in log.splitlines():
+        m = re.match(r"\s*(\d+\.\d+)", line)
+        if not m or float(m.group(1)) < since:
+            continue
+        t = float(m.group(1))
+        if set_at is None and "VehicleApiDdsEmu" in line and "web-set" in line and "gear=Drive" in line:
+            set_at = t
+        if set_at is not None and hid_at is None and '"ev":"driving","on":true' in line:
+            hid_at = t
+    return None if set_at is None or hid_at is None else hid_at - set_at
+
+
+def step2(r: Run) -> None:
+    print("\n2 주행 (AC-C-1)")
+    r.person("주행 시작 — 콘솔 기어 D를 넣어요")
+    t0 = device_now()
+    gear("Drive")
+    if r.auto:
+        hidden = wait_for(EXPECT_DRIVING_HOME, timeout=4, gone=True)
+        r.check("기어 D → 화면 가림", hidden)
+        dt = hide_latency(t0)
+        r.check("1초 안에 가림(logcat: 기어 D → driving on)", dt is not None and dt <= 1.0, "로그 없음" if dt is None else f"{dt:.2f}초")
+    else:
+        print("  기대: 1초 안에 앱 화면 가림")
+        r.person("가려진 것 확인")
+    time.sleep(1.5)
+    r.person("정차 — 콘솔 기어 P를 넣어요")
+    gear("Park")
+    r.expect("기어 P → 홈 복귀", EXPECT_DRIVING_HOME, timeout=6)
+
+
+def step_midway(r: Run) -> None:
+    """휴게소 중간 정산(F27, 명준 11/9 #86): 운전자 교대로 쉬는 휴게소에서 출발~지금을 정산하고 같은 주행을 이어 간다."""
+    print("\n2+ 휴게소 중간 정산 (F27)")
+    if r.auto:
+        r.check("[지금까지의 노고 보기]", tap("지금까지의 노고 보기"))
+    else:
+        r.person("휴게소 — 홈 시동 버튼(지금까지의 노고 보기)")
+    # 중간 정산도 쉰 시간을 먼저 묻는다(#118 10-3 ⑥ 명준 11/12). 시연은 운전자 교대라 '없음'
+    r.expect("중간 정산 쉰 시간 질문", "중간에 쉰 시간이 있었나요?", timeout=10)
+    if r.auto:
+        r.check("중간 정산 쉰 시간 '없음'", tap("없음", last=True))
+        time.sleep(1)
+    else:
+        r.person("쉰 시간 [없음]")
+    r.expect("중간 정산 영수증", EXPECT_MIDWAY)
+    if r.auto:
+        ts = texts()
+        if has("좋아요", ts):
+            r.check("방식 A [좋아요]", tap("좋아요"))
+        else:                                        # 방식 B: 기본 항목
+            item = next((t for t, _, _ in ts if t in ("커피", "밥", "공동 경비")), None)
+            r.check("방식 B 항목", item is not None and tap(item), item or "항목 없음")
+    else:
+        r.person("[좋아요](A) 또는 항목(B)")
+    r.expect("여기까지 기록", EXPECT_MIDWAY_DONE)
+    if r.auto:
+        r.check("[계속 가기]", tap("계속 가기"))
+    else:
+        r.person("[계속 가기]")
+    r.expect("가는 중 홈으로 돌아옴", EXPECT_DRIVING_HOME)
+    r.person("다시 출발 — 콘솔 기어 D를 넣어요(운전자 교대, [출발]은 다시 누르지 않음)")
+    gear("Drive")
+    if r.auto:
+        r.check("기어 D → 화면 가림", wait_for(EXPECT_DRIVING_HOME, timeout=4, gone=True))
+    time.sleep(1.5)
+    r.person("정차 — 콘솔 기어 P를 넣어요")
+    gear("Park")
+    r.expect("기어 P → 가는 중 홈", EXPECT_DRIVING_HOME, timeout=6)
+
+
+def step3(r: Run, midway: bool = False) -> None:
+    print("\n3 도착")
+    # 운전석 문 열기는 도착 계기에서 뺐다(DECISIONS 11/13 '도착 계기: 운전석 문 빼기') → 시연은 [도착했어요]로만 도착
+    if r.auto:
+        r.check("[도착했어요]", tap("도착했어요"))
+    else:
+        r.person("도착 — 가는 중 홈 [도착했어요]를 눌러요")
+    # 오늘 운전 돌아보기(F29, 명준 11/14): 기준 5줄을 약 10초 동안 센 뒤 [운전자 챙겨주기] · [다음에]가 켜진다. 금액은 없다
+    r.expect("[도착했어요] → 오늘 운전 돌아보기", EXPECT_ARRIVE, timeout=8)
+    if r.auto:
+        ts = texts()
+        r.check("돌아보기에 금액 · 배수 없음(AC-F29-1)", not any(has(w, ts) for w in ("한 사람 약", "배 힘든 길", "평소보다")))
+    r.expect("다 셈 → [운전자 챙겨주기]", "운전자 챙겨주기", timeout=20)
+    if r.auto:
+        time.sleep(0.6)                                # 버튼이 올라오는 0.5초
+        r.check("[운전자 챙겨주기]", tap("운전자 챙겨주기"))
+    else:
+        r.person("같이 탄 사람 — [운전자 챙겨주기]를 눌러요")
+    # 그다음 '중간에 쉰 시간' 시트(F21)를 먼저 묻고, 고르면 영수증이 나온다(#118 10-3 ⑥). R1은 쉬지 않은 주행이라 '없음'
+    r.expect("쉰 시간 질문", "중간에 쉰 시간이 있었나요?", timeout=20)
+    if r.auto:
+        r.check("쉰 시간 '없음'", tap("없음", last=True))
+        time.sleep(1)
+    else:
+        r.person("쉰 시간 [없음]")
+    r.expect("영수증(쉰 시간 고른 뒤)", EXPECT_RECEIPT_MIDWAY if midway else EXPECT_RECEIPT, timeout=15)
+
+
+def step4(r: Run, midway: bool = False) -> None:
+    print("\n4 선택")
+    if not r.auto:
+        r.person("[좋아요](A) 또는 항목(B) → [닫기] → 홈 알림 종")
+        r.expect("알림 창 기록 저장", [DEST, "기록을 남겼어요"])   # 장소 이름만 말줄임이라 두 조각(#118 D2)
+        return
+    ts = texts()
+    if has("좋아요", ts):
+        if midway:
+            r.check("전체 모드(방식 A)", has(EXPECT_FULL_AFTER_MIDWAY, ts), EXPECT_FULL_AFTER_MIDWAY)
+            r.check("영수증 하단 '중간 정산 있음'", tap("중간 정산 있음"))
+            time.sleep(0.8)
+            r.check("남은 몫(방식 A)", has(EXPECT_REMAIN), EXPECT_REMAIN)
+        r.check("방식 A [좋아요]", tap("좋아요"))
+        r.expect("기록 남김", "오늘 기록에 남겼어요")
+    else:
+        item = next((t for t, _, _ in ts if t in ("커피", "밥", "공동 경비")), None)
+        r.check("방식 B 항목", item is not None and tap(item), item or "항목 없음")
+        r.expect("기록 남김", "오늘 기록에 남겼어요")
+    r.check("[닫기]", tap("닫기"))
+    # v104: 홈에 최근 기록 카드가 없다. 알림 종 → 알림 창 "○○ 기록을 남겼어요"로 확인
+    time.sleep(1.0)
+    r.check("알림 종", tap("알림"))
+    r.expect("알림 창 기록 저장", [DEST, "기록을 남겼어요"])   # 장소 이름만 말줄임이라 두 조각(#118 D2)
+    adb("shell", "input", "tap", str(FOCUS[0]), str(FOCUS[1] - 400))   # 바깥을 눌러 접기
+    r.check("진행 중 없음", not has(EXPECT_DRIVING_HOME[1]))
+
+
+def main() -> None:
+    sys.stdout.reconfigure(encoding="utf-8")
+    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("--auto", action="store_true", help="앱도 adb로 누르고 화면 글자를 확인한다")
+    ap.add_argument("--reset", action="store_true", help="시작 전에 기록 초기화")
+    ap.add_argument("--no-midway", action="store_true", help="휴게소 중간 정산 없이(11/10 공유회 순서, 1.57배)")
+    a = ap.parse_args()
+    threading.Thread(target=heartbeat_forever, daemon=True).start()
+    r = Run(a.auto)
+    t = time.time()
+    midway = not a.no_midway
+    # 점검은 '움직임 줄이기'(애니메이션 배율 0)로 돈다: 오늘 운전 돌아보기의 숨쉬기 · 버튼 물결은 늘 움직여서
+    # uiautomator가 화면 글자를 읽지 못한다("could not get idle state"). 배율 0이면 앱이 끝 모습으로 멈춘다(F29). 끝나면 되돌림
+    prev_scale = adb("shell", "settings", "get", "global", "animator_duration_scale").strip() if a.auto else ""
+    if a.auto:
+        adb("shell", "settings", "put", "global", "animator_duration_scale", "0")
+    try:
+        step0(r, a.reset); step1(r); step2(r)
+        if midway:
+            step_midway(r)
+        step3(r, midway); step4(r, midway)
+    finally:
+        if a.auto:
+            adb("shell", "settings", "put", "global", "animator_duration_scale", prev_scale if prev_scale not in ("", "null") else "1")
+    if not a.auto:
+        print(f"\n리허설 끝 ({time.time() - t:.0f}초)")
+        return
+    r.report()
+    print(f"걸린 시간 {time.time() - t:.0f}초")
+    if any(not o for _, o, _ in r.results):
+        raise SystemExit(1)
+
+
+if __name__ == "__main__":
+    main()

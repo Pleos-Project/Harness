@@ -1,12 +1,12 @@
 """차곡 추정 엔진 — 수식의 기준 구현(Python).
 
 기준: 서버·추정 엔진 PRD v0.1 4절, 기능 명세서 v0.4, PRD v1.2 5-3(표기)·5-4(계산).
-앱은 같은 수식을 app/shared/chagok-engine.js 로 갖는다. 둘 다 fixtures/ 를 통과해야 하고,
-이 파일을 바꾸면 `make fixtures` 로 fixture를 다시 만들고 JS도 같은 PR에서 고친다.
+앱은 같은 수식을 Kotlin(app/android/app/src/main/java/com/mist/pleos_app/engine/Engine.kt·Ledger.kt)으로 갖는다. 둘 다 fixtures/ 를 통과해야 하고,
+이 파일을 바꾸면 `make fixtures` 로 fixture를 다시 만들고 Kotlin도 같은 PR에서 고친다.
 
-포팅 규칙(JS와 숫자가 1원까지 같게):
+포팅 규칙(Kotlin과 숫자가 1원까지 같게):
 - 반올림은 round_half_up / round_to / round1 만 쓴다. 파이썬 내장 round()는 은행가 반올림이라 쓰지 않는다.
-- 나눗셈·곱셈 순서를 JS와 똑같이 적는다(부동소수 결과가 순서에 따라 달라진다).
+- 나눗셈·곱셈 순서를 Kotlin과 똑같이 적는다(부동소수 결과가 순서에 따라 달라진다).
 
 단위: 거리 km, 금액 원(정수), 전비 km/kWh, 연비 km/L(내연 SDK값 L/100km는 l_per_100km_to_km_per_l로 환산).
 """
@@ -372,6 +372,16 @@ def charge_amount(start_soc: float, end_soc: float, capacity_kwh: float, price: 
     return kwh, krw, text
 
 
+def full_tank_amount(start_level_pct: float, tank_l: float, price: float) -> tuple[float, int, str]:
+    """F9 내연 금액 시트의 '가득'(PRD v1.3 F9: 3만 / 5만 / 가득 + 1만 원 단위 ±).
+    주유 시작 때 연료 %에서 100%까지 채우는 양 × 단가. 기록·정산처럼 천 원 어림(PRD 5-3).
+    반환: (리터, 원, 문구 "약 7만 원"(그랜저 HEV 50L·25%·1,856원, fixture D11) / 어림이 0이면 "1천 원 미만")"""
+    liters = max(0.0, 100.0 - start_level_pct) / 100.0 * tank_l
+    krw, txt, under = approx(liters * price, 1_000)
+    text = txt if under else f"약 {txt}"
+    return liters, krw, text
+
+
 # ---------------------------------------------------------------- F8·F10·F17 로컬 기록(장부)
 def _dist_km(a: dict, b: dict) -> float:
     r = 6371.0
@@ -417,7 +427,8 @@ def ledger_step(state: dict, event: dict) -> tuple[dict, dict]:
     event.type:
       open   — 앱 실행·복귀(기어 P). {ts, odometer_km, seats, price, efficiency, price_source, recent_destination?}
       depart — F8 출발 1탭. {ts, odometer_km, place{id,name,lat,lng}, route_km}
-      arrive — F17 도착(기어 P + 운전석 문 / onDestinationArrived, 앱이 보일 때). {ts, odometer_km, seats, price, efficiency}
+      arrive — F17 도착(기어 P + 운전석 문 / onDestinationArrived, 앱이 보일 때). {ts, odometer_km, seats, price, efficiency, price_source}
+               price_source는 open과 같다(없으면 user). 도착이 남긴 스냅샷으로 다음 정산할 때 '(평균 단가)' 판단에 쓴다(fixture L6).
 
     규칙:
     - open: 직전 스냅샷 이후 주행거리로 정산(E4). 진행 중 trip이 있으면 그 trip을 이 정산으로 닫고

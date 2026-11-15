@@ -1,4 +1,415 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- 화면 문구는 여기에. scripts/lint_copy.py가 PRD 5-3 표기·AC-C-8 금지 문구를 검사한다. -->
 <resources>
-    <string name="app_name">차곡</string>
+    <!-- 앱 목록에 보이는 이름 = 서비스명 NOGO(#176, June 11/15). 화면 속 캐릭터 이름 '노고'는 그대로 -->
+    <string name="app_name">NOGO</string>
+
+    <!-- 공통 -->
+    <string name="back">뒤로</string>
+    <string name="preparing">준비 중이에요</string>
+    <!-- AC-C-7: 에뮬 임의 값(차종 표·모의 값)을 쓰는 동안 화면 구석에 고정 -->
+    <string name="demo_values">시연용 값</string>
+
+    <!-- 화면 이름(명세 3절) -->
+    <string name="screen_range">범위</string>
+    <string name="screen_card">한 장</string>
+    <string name="screen_record">기록</string>
+    <string name="screen_settings">설정</string>
+
+    <!-- 홈(F1·PRD v1.3 6-1) -->
+    <string name="balance_label">지금 차에 든 돈</string>
+    <string name="price_average">평균 단가</string>
+    <string name="today_pick">오늘의 한 곳</string>
+    <string name="today_pick_conditions">%1$s · 당일 · 인원 자동</string>
+    <string name="change_conditions">조건 바꾸기</string>
+
+    <!-- 범위(F2·F3) -->
+    <string name="range_extra_label">추가로 쓸 돈</string>
+    <!-- PRD v1.6 5-3: "추가 0원"은 내부 조건 이름, 화면은 "추가 주유 없이"(EV "추가 충전 없이") -->
+    <string name="zero_ice">추가 주유 없이</string>
+    <string name="zero_ev">추가 충전 없이</string>
+    <string name="preset_zero">%1$s · 약 %2$dkm</string>
+    <string name="preset_zero_only">%1$s</string>
+    <string name="range_preset_note">주유·충전 기준 · 통행료·주차 별도</string>
+    <string name="preset_10k">+1만 원 · 약 %1$dkm</string>
+    <string name="preset_30k">+3만 원 · 약 %1$dkm</string>
+    <string name="range_zero_unavailable">%1$s 갈 곳이 없어요. +1만 원부터 볼게요</string>
+    <string name="range_days_label">일정</string>
+    <string name="range_day_trip">당일</string>
+    <string name="range_overnight">1박</string>
+    <string name="range_people_label">인원</string>
+    <string name="range_people_auto">%1$d명 · 자동</string>
+    <string name="range_theme_label">테마 (0~2개)</string>
+    <string name="range_pick">한 장 뽑기</string>
+
+    <!-- 한 장(F5) -->
+    <string name="raised_10k">%1$s 갈 곳이 없어 +1만 원 기준이에요</string>
+    <string name="raised_30k">%1$s 갈 곳이 없어 +3만 원 기준이에요</string>
+    <string name="only_nearby">가까운 곳만 볼 수 있어요</string>
+    <string name="few_candidates">범위 안 후보가 적어요</string>
+    <string name="ask_theme">어떤 쪽으로 다시 볼까요?</string>
+    <string name="ask_theme_sub">조건을 바꾸면 다른 곳을 뽑아 볼게요</string>
+    <string name="swap_label">다른 곳 보기</string>
+    <string name="stack_left">다른 후보 %1$d</string>
+    <string name="swaps_left">교체 %1$d번 남음</string>
+    <string name="depart">출발</string>
+    <string name="depart_requesting">내비를 여는 중</string>
+    <!-- X2 서버 타임아웃·오류: 내장 후보로 보여 주고 스택 자리에 재시도 -->
+    <string name="server_retry">잠시 후 다시 볼까요?</string>
+    <string name="server_retry_button">다시 보기</string>
+    <string name="card_loading">갈 곳을 고르는 중</string>
+    <string name="locating">위치 확인 중</string>
+    <string name="navi_failed">내비를 열 수 없어요</string>
+    <!-- F11 인원 확인 토스트(PRD v1.5 6-3). "무게 감지" 표현 쓰지 않음 -->
+    <string name="payer_toast">%1$d명이 탔어요 · 나눠 낼 인원</string>
+    <string name="payer_minus">나눠 낼 인원 줄이기</string>
+    <string name="payer_plus">나눠 낼 인원 늘리기</string>
+    <string name="confirm">확인</string>
+    <string name="card_extra_costs">통행료 %1$s · 주차 %2$s</string>
+    <string name="cost_tap_hint">눌러서 비용 보기</string>
+    <string name="cost_fuel">연료</string>
+    <string name="cost_toll">통행료(왕복)</string>
+    <string name="cost_parking">주차</string>
+    <string name="cost_total">합계</string>
+    <string name="cost_per_person">1인</string>
+    <string name="cost_none">없음</string>
+    <string name="cost_unknown">정보 없음</string>
+
+    <!-- 기록·정산(F10·F17) -->
+    <string name="close">닫기</string>
+    <string name="record_no_place">목적지 없음</string>
+    <string name="record_meta">%1$s · %2$dkm</string>
+
+    <!-- X1 주행 중 가림: 금액·카드 없이 한 줄 -->
+    <string name="driving_hidden">정차하면 다시 보여 드릴게요</string>
+
+    <!-- X2 예외 -->
+    <string name="reading_vehicle">차량 정보를 읽는 중</string>
+
+    <!-- S1 설정 -->
+    <string name="settings_model">차종</string>
+    <string name="model_grandeur_25">그랜저 2.5</string>
+    <string name="model_grandeur_hev">그랜저 HEV</string>
+    <string name="model_avante_hev">아반떼 HEV</string>
+    <string name="model_tucson_hev">투싼 HEV</string>
+    <string name="model_ioniq5_lr">아이오닉 5 LR</string>
+    <string name="model_ioniq6_lr">아이오닉 6 LR</string>
+    <string name="settings_price">단가</string>
+    <string name="settings_price_gas">휘발유</string>
+    <string name="settings_price_home">집 충전</string>
+    <string name="settings_price_fast">급속 충전</string>
+    <string name="settings_price_default">평균 %1$s</string>
+    <string name="settings_price_hint">비워 두면 평균 단가로 계산해요</string>
+    <string name="unit_krw_per_l">원/L</string>
+    <string name="unit_krw_per_kwh">원/kWh</string>
+    <string name="settings_margin">안전 여유</string>
+    <string name="settings_margin_value">50km와 남은 거리의 15% 중 큰 값을 남겨 둬요</string>
+    <string name="settings_people">인원</string>
+    <string name="settings_people_value">좌석 센서로 감지해요. 나눠 낼 인원은 탈 때 위쪽 알림에서 확인해요</string>
+    <string name="settings_mock">시연용 값(에뮬)</string>
+    <string name="settings_mock_fuel">모의 연료 %</string>
+    <string name="settings_mock_fuel_minus">모의 연료 % 줄이기</string>
+    <string name="settings_mock_fuel_plus">모의 연료 % 늘리기</string>
+    <string name="settings_mock_fuel_hint">내연 차종인데 연료 %를 읽지 못할 때 써요</string>
+    <string name="settings_demo_fixed">데모 고정 모드</string>
+    <string name="settings_demo_fixed_hint">켜면 네트워크 없이 시연용 후보로 뽑아요. 끄면 서버에서 받아요</string>
+    <string name="settings_seat_invert">착석 값 반전</string>
+    <string name="on">켜기</string>
+    <string name="off">끄기</string>
+    <string name="settings_records">기록</string>
+    <string name="settings_reset">기록 초기화</string>
+    <string name="settings_reset_title">기록을 지울까요?</string>
+    <string name="settings_reset_body">지난번 정산 기준, 정산 기록, 목적지 핀, 최근 방문이 지워져요</string>
+    <string name="settings_reset_confirm">지우기</string>
+    <string name="settings_reset_done">기록을 지웠어요</string>
+    <string name="cancel">취소</string>
+
+    <!-- F9 충전·주유 직후 -->
+    <string name="charge_card">%1$s → 갈 곳 한 장 볼까요?</string>
+    <string name="charge_done_only">충전 끝났어요</string>
+    <string name="refuel_title">얼마 넣었어요?</string>
+    <string name="refuel_full">가득 약 %1$s</string>
+    <string name="refuel_minus">1만 원 줄이기</string>
+    <string name="refuel_plus">1만 원 늘리기</string>
+    <string name="refuel_skip">건너뛰기</string>
+    <string name="refuel_confirm">갈 곳 보기</string>
+
+    <!-- 노고 정산(명세 v0.5 3절·F20·F26·S20). 영수증·제안 문구는 constants.json effort.copy(엔진)에서 온다 -->
+    <string name="effort_depart_start">동승 출발</string>
+    <string name="effort_driving">%1$s 가는 중</string>
+    <string name="effort_driving_hint">도착하면 오늘 운전을 정리해 드릴게요</string>
+    <string name="effort_arrived">%1$s 도착</string>
+    <string name="effort_discard">멈추기</string>
+    <!-- #68 5번: 내비가 안내를 끝내지 않아도 직접 도착 처리. 글자는 명준 확정 전 임시 -->
+    <string name="effort_arrive_now">도착했어요</string>
+    <string name="effort_recent">최근 기록</string>
+    <string name="effort_recent_empty">아직 기록이 없어요</string>
+    <string name="effort_record_line">%1$s · %2$s</string>
+    <string name="effort_depart_title">어디로 갈까요?</string>
+    <string name="effort_depart_people">나눠 낼 인원 %1$d명</string>
+    <string name="effort_depart_go">안내 시작</string>
+    <string name="effort_depart_no_demo">시연 데이터가 없어요. 설정에서 데모 고정 모드를 끄면 실제로 출발할 수 있어요</string>
+    <string name="effort_search_hint">목적지 검색</string>
+    <string name="effort_search">검색</string>
+    <string name="effort_searching">찾는 중</string>
+    <string name="effort_search_empty">검색 결과 없음</string>
+    <string name="effort_offline_banner">인터넷이 연결되지 않았어요 · 검색 대신 아래 목적지에서 골라 주세요</string>
+    <string name="effort_search_unavailable">지금은 검색이 안 돼요. 아래 최근 목적지·즐겨찾기에서 골라 주세요</string>
+    <string name="effort_navi_places">즐겨찾기 · 최근</string>
+    <string name="effort_navi_loading">불러오는 중이에요</string>
+    <string name="effort_navi_empty">최근 목적지·즐겨찾기가 없어요</string>
+    <string name="effort_kind_home">집</string>
+    <string name="effort_kind_office">회사</string>
+    <string name="effort_kind_bookmark">즐겨찾기</string>
+    <string name="effort_kind_recent">최근</string>
+    <string name="effort_selected">가는 곳</string>
+    <string name="effort_checking_route">경로를 확인하고 있어요</string>
+    <string name="effort_preview_route">예상 %1$s · %2$s</string>
+    <string name="effort_preview_congestion">정체 구간 %1$s</string>
+    <!-- #132 · #118 E1 depart-route-fail: 출발 화면 미리보기 칸 -->
+    <string name="effort_route_send_failed">내비로 길을 보내지 못했어요</string>
+    <string name="effort_route_send_failed_note">아직 출발 전이에요. 다시 시도하면 바로 안내를 시작해요</string>
+    <string name="effort_route_retry">다시 시도</string>
+    <string name="effort_receipt_open">영수증 보기</string>
+    <string name="effort_receipt_none">아직 도착 전이에요</string>
+    <string name="effort_weather_pending">도착 날씨를 확인하고 있어요</string>
+    <string name="effort_home">홈으로</string>
+    <!-- 도착 화면(Design v2 screens/arrive.html, #75). 고정 문구는 명준 확정 전 임시(시안 글자 그대로) -->
+    <string name="effort_arrive_title">%1$s에 도착했어요</string>
+    <string name="effort_arrive_people">함께 탄 사람 %1$d명</string>
+    <string name="effort_arrive_solo">혼자 운전</string>
+    <string name="effort_receipt_title">오늘 운전, 고생했어요</string>
+    <string name="effort_receipt_sub_place">%1$s · %2$s</string>
+    <!-- 정리하지 못함 이유 · 안내(#118 arrive-unsettled 시안 문구) -->
+    <string name="effort_unsettled_why_late">출발하고 %1$s이 지나서 열었어요</string>
+    <string name="effort_unsettled_why_time">도착한 시간을 알 수 없어 이번에는 세지 않았어요</string>
+    <string name="effort_unsettled_hint">도착해서 바로 열거나, 가는 중에 [도착했어요]를 누르면 정리할 수 있어요</string>
+    <string name="effort_receipt_sub_people">%1$s · %2$s · %3$d명</string>
+    <string name="effort_receipt_sub_solo">%1$s · %2$s · 혼자</string>
+    <string name="effort_receipt_col_item">항목</string>
+    <string name="effort_receipt_col_add">더한 몫</string>
+    <string name="effort_receipt_plain">비·정체·밤길 없이 달렸어요</string>
+    <string name="effort_receipt_plain_sub">더할 조건은 없고, 운전한 시간만큼 셌어요</string>
+    <string name="effort_receipt_na_weather_label">날씨</string>
+    <string name="effort_receipt_na_weather">정보 없음</string>
+    <string name="effort_receipt_na_weather_why">날씨를 불러오지 못해 이번에는 더하지 않았어요</string>
+    <string name="effort_receipt_na_jam_label">정체 구간</string>
+    <string name="effort_receipt_na_jam">정체 정보 없음</string>
+    <string name="effort_receipt_na_jam_why">출발 때 내비에서 정체 정보를 받지 못해 이번에는 더하지 않았어요</string>
+    <string name="effort_offer_none_settled">"중간 정산에서 이미 챙겼어요. "</string>
+    <string name="effort_receipt_drive">운전 시간</string>
+    <string name="effort_receipt_rest">중간에 쉰 시간</string>
+    <string name="effort_receipt_rest_change_label">중간에 쉰 시간 바꾸기</string>
+    <string name="effort_receipt_distance">거리</string>
+    <string name="effort_receipt_total">합계</string>
+    <string name="effort_rest_sheet_title">중간에 쉰 시간이 있었나요?</string>
+    <string name="effort_rest_sheet_sub">고르면 운전 시간에서 빼고 영수증을 고쳐요</string>
+    <!-- #118 10-3 ⑥: 쉰 시간을 고르기 전 영수증 · 제안 자리 -->
+    <string name="effort_rest_pending_arrive">오늘 운전을 정리하는 중이에요</string>
+    <string name="effort_rest_pending_mid">지금까지 운전을 정리하는 중이에요</string>
+    <string name="effort_rest_pending_offer">확인 중</string>
+    <!-- 홈(Design v2 screens/home.html, #75) 임시 문구. 앱 이름은 가제(시안 "Nogo") -->
+    <string name="effort_home_logo">Nogo</string>
+    <string name="effort_home_loading">준비하고 있어요</string>
+    <string name="effort_home_sub">도착하면 운전한 만큼 계산해 살짝 알려 드릴게요</string>
+    <string name="effort_home_head">오늘도 함께\n달려 볼까요?</string>
+    <string name="effort_home_go">출발하기</string>
+    <string name="effort_home_progress_sub">%1$s 가는 중 · %2$s 출발 · 함께 %3$d명</string>
+    <string name="effort_home_progress_head">잠깐 멈췄네요\n여기까지 운전을 세어 볼까요?</string>
+    <string name="effort_home_arrived_sub">%1$s에 도착했어요 · %2$s</string>
+    <string name="effort_home_arrived_head">오늘 운전 영수증이\n여기 있어요</string>
+    <string name="effort_home_arrived_pin">도착</string>
+    <string name="effort_quit_title">이번 출발을 그만둘까요?</string>
+    <string name="effort_quit_sub">지금까지 운전은 기록에 남지 않아요</string>
+    <string name="effort_quit_keep">계속 가기</string>
+    <!-- 알림 종 · 알림 창(#118 v93~v96, 시안 문구) -->
+    <string name="effort_noti_open">알림</string>
+    <string name="effort_noti_head">알림</string>
+    <string name="effort_noti_new">새 알림 %1$d</string>
+    <!-- v123: 이름 뒤 첫 띄어쓰기는 줄바꿈 없는 공백(이름만 말줄임할 때 "이름기록을"처럼 붙지 않게) -->
+    <string name="effort_noti_saved">%1$s\u00A0기록을 남겼어요</string>
+    <string name="effort_noti_foot">기록은 왼쪽 위에서 볼 수 있어요</string>
+
+    <!-- 주행 중 포그라운드 서비스 알림(DECISIONS 11/12, F22). Pleos는 카테고리 navigation·msg만 보여 준다 -->
+    <string name="trip_channel_trip">가는 중</string>
+    <string name="trip_channel_arrive">도착 확인</string>
+    <string name="trip_noti_title">%1$s 가는 중</string>
+    <string name="trip_noti_text">안내가 끝나면 도착했는지 여쭤볼게요</string>
+    <string name="trip_noti_arrive_title">도착했나요?</string>
+    <string name="trip_noti_arrive_text">눌러서 오늘 운전 노고를 확인해 보세요</string>
+    <string name="trip_noti_arrive_title_arrived">목적지에 도착했어요</string>
+    <string name="trip_noti_arrive_text_arrived">%1$s · %2$s 도착\n오늘 운전 기록을 볼 수 있어요</string>
+    <string name="trip_noti_dest_fallback">목적지</string>
+    <string name="trip_noti_open">열기</string>
+    <string name="trip_noti_close">닫기</string>
+    <!-- #145 "도착했나요?" 시트(홈). 예 = [도착했어요], 아니요 = 계속 가는 중 -->
+    <string name="effort_arrive_ask_title">도착했나요?</string>
+    <string name="effort_arrive_ask_cancelled">내비 안내가 %1$s에 끝났어요. 도착했다면 그때까지 운전을 세어 볼게요</string>
+    <string name="effort_arrive_ask_arrived">내비가 %1$s에 도착을 알렸어요. 도착했다면 그때까지 운전을 세어 볼게요</string>
+    <string name="effort_arrive_ask_interrupted">주행 기록이 잠시 끊겼어요. 도착했다면 지금까지 운전을 세어 볼게요</string>
+    <string name="effort_arrive_ask_no">아직이에요</string>
+    <string name="effort_home_just_now">방금</string>
+    <string name="effort_home_rec_per">한 사람 %1$s</string>
+    <string name="effort_home_rec_closed">닫음</string>
+    <string name="effort_home_rec_unsettled">영수증 없이 기록만</string>
+    <string name="effort_home_rec_item">%1$s에서 운전자 빼기</string>
+    <string name="effort_recent_empty_hint">첫 출발을 마치면 여기에 차곡차곡 쌓여요</string>
+    <!-- 출발 화면(Design v2 screens/depart.html·search.html, #75) 임시 문구 -->
+    <string name="effort_depart_people_pill">함께 %1$d명</string>
+    <string name="effort_depart_people_check">인원 확인 필요</string>
+    <string name="effort_depart_people_check_short">확인 필요</string>
+    <string name="effort_depart_people_checking">확인 중</string>
+    <string name="effort_depart_people_solo">혼자 운전</string>
+    <string name="effort_depart_sending">내비로 보내는 중</string>
+    <string name="effort_kind_search">검색</string>
+    <string name="effort_navi_empty_title">아직 고를 목적지가 없어요</string>
+    <string name="effort_navi_empty_hint">위에서 검색하거나, 순정 내비에 집·회사를 등록하면 여기에 보여요</string>
+    <string name="effort_preview_empty">목적지를 고르면 도착 예상과 정체를 미리 보여 드려요</string>
+    <string name="effort_preview_failed">도착 예상을 불러오지 못했어요</string>
+    <string name="effort_preview_fail_note">출발은 할 수 있어요. 이번엔 정체·예상보다 더 없이 정리해 드려요</string>
+    <string name="effort_preview_eta">도착 예상</string>
+    <string name="effort_preview_distance">거리</string>
+    <string name="effort_preview_jam">정체</string>
+    <string name="effort_preview_note">도착하면 오늘 운전을 정리해 드려요</string>
+    <string name="effort_search_clear">지우기</string>
+    <string name="effort_search_results">검색 결과</string>
+    <string name="effort_search_empty_title">‘%1$s’ 결과가 없어요</string>
+    <string name="effort_search_empty_hint">검색어를 바꿔 보세요. 띄어쓰기나 받침을 확인해도 좋아요</string>
+    <string name="effort_search_fail_title">검색이 잠시 안 돼요</string>
+    <string name="effort_search_fail_hint">최근 목적지에서 골라 주세요</string>
+    <string name="effort_search_noloc">현재 위치를 받지 못해 정확도순으로 보여 드려요</string>
+    <string name="payer_bar_title">%1$d명이 탔어요</string>
+    <string name="payer_bar_title_manual">%1$d명이 낼게요</string>
+    <string name="payer_bar_title_unknown">몇 명이 함께 타나요?</string>
+    <string name="payer_bar_hint_unknown">좌석 센서를 읽지 못했어요 · 나눠 낼 인원을 골라 주세요</string>
+    <string name="payer_bar_hint_manual">감지는 %1$d명 · %2$d명으로 나눠요</string>
+    <string name="payer_bar_hint_picked">직접 고른 인원으로 나눠요</string>
+    <string name="payer_bar_hint">좌석 센서로 감지했어요 · 나눠 낼 인원을 맞춰 주세요</string>
+    <string name="payer_bar_solo">혼자 운전하면 제안 없이 영수증만 보여 드려요</string>
+    <string name="payer_bar_value">%1$d명</string>
+    <!-- 계산 연출(Design v2 screens/calc.html, 프로토타입 문구 그대로 · 임시) -->
+    <string name="effort_calc_loading">도착한 곳의 날씨를 확인하고 있어요</string>
+    <string name="effort_calc_start">오늘 운전의 노고를 하나씩 세어 볼게요</string>
+    <string name="effort_calc_skip">건너뛰기</string>
+    <!-- 오늘 운전 돌아보기(F29, 명준 11/14 아티팩트 rv-start ~ rv-solo) -->
+    <string name="effort_review_done">오늘 운전 %1$s · %2$s</string>
+    <string name="effort_review_people">%1$d명</string>
+    <string name="effort_review_solo">혼자</string>
+    <string name="effort_review_consent">운전자 챙겨주기</string>
+    <string name="effort_review_later">다음에</string>
+    <string name="effort_review_receipt">영수증 보기</string>
+    <string name="effort_review_whole">%1$s · 내내</string>
+    <string name="effort_review_dep_only">출발할 때 %1$s</string>
+    <string name="effort_review_long_over">2시간 넘게</string>
+    <string name="effort_review_late_eta">예상 %1$s</string>
+    <string name="effort_review_alt_focus">집중한 표정의 노고</string>
+    <string name="effort_review_alt_shy">머리를 긁적이며 멋쩍게 웃는 노고</string>
+    <string name="effort_review_alt_relief">땀을 닦으며 웃는 노고</string>
+    <string name="effort_review_alt_proud">뿌듯하게 웃는 노고</string>
+    <string name="effort_review_alt_rainall">비 오는 길에 한숨 쉬는 노고</string>
+    <string name="effort_review_alt_rain">젖은 머리를 짚으며 비를 맞는 노고</string>
+    <string name="effort_review_alt_jam">막힌 길에 두 손을 들어 으쓱하는 노고</string>
+    <string name="effort_review_alt_late">예상보다 길어진 길에 지친 노고</string>
+    <string name="effort_review_alt_night">졸린 눈으로 밤길을 달리는 노고</string>
+    <string name="effort_review_alt_long">오래 달려 한숨 쉬는 노고</string>
+    <string name="effort_calc_none">없음</string>
+    <string name="effort_calc_unknown">정보 없음</string>
+    <string name="effort_calc_say_rain">쏟아지는 비를 뚫고 달린 시간 세는 중…</string>
+    <string name="effort_calc_say_snow">미끄러운 눈길을 조심조심 달린 시간 세는 중…</string>
+    <string name="effort_calc_say_weather_none">날씨는 이번엔 확인하지 못했어요</string>
+    <string name="effort_calc_say_clear">맑은 하늘 확인 중… 오늘은 날씨가 도와줬네요</string>
+    <string name="effort_calc_say_jam">꽉 막힌 길에서 지루함을 꾹 참은 시간 세는 중…</string>
+    <string name="effort_calc_say_jam_none">막힘 없이 달렸는지 확인 중…</string>
+    <string name="effort_calc_say_late">예상보다 길어진 운전을 버틴 시간 세는 중…</string>
+    <string name="effort_calc_say_late_none">예상한 시간 안에 왔는지 확인 중…</string>
+    <string name="effort_calc_say_night">어두운 밤길에 눈을 부릅뜬 시간 세는 중…</string>
+    <string name="effort_calc_say_night_none">밤길이 있었는지 확인 중…</string>
+    <string name="effort_calc_say_long">쉬지 않고 2시간 넘게 핸들을 잡은 시간 세는 중…</string>
+    <string name="effort_calc_say_long_none">쉬지 않고 오래 달렸는지 확인 중…</string>
+    <!-- F24 방식 A 버튼: PRD 5-2 "[받아들이기] 글자는 디자인 확인" → 시안 [좋아요] -->
+    <string name="effort_offer_like">좋아요</string>
+    <string name="effort_offer_a_done">좋아요, 오늘 기록에 남겼어요</string>
+    <!-- 최종 영수증 하단 중간 정산 줄(#118 arrive-mid-*, 명준 11/9 시안 문구) -->
+    <string name="effort_settle_all_a">운전 노고 전체</string>
+    <string name="effort_settle_inc_a">중간 정산 포함</string>
+    <string name="effort_settle_all_b">운전 시간 전체</string>
+    <string name="effort_settle_inc_b">중간 정산 포함 운전</string>
+    <string name="effort_settle_has">중간 정산 있음</string>
+    <string name="effort_settle_to_inc">중간 정산 포함으로 보기</string>
+    <string name="effort_settle_to_all">운전 노고 전체로 보기</string>
+    <string name="effort_settle_b_note"> · 중간 정산 몫은 빼고 골랐어요</string>
+    <string name="effort_offer_b_sub">기본은 %1$s. 고른 항목을 나눌 때 운전자는 한 번 빠져요</string>
+    <string name="effort_offer_b_done_head">오늘은</string>
+    <string name="effort_offer_b_done">%1$s에서 운전자 빼기로 했어요</string>
+    <string name="effort_offer_b_done_sub">오늘 기록에 남겼어요</string>
+    <string name="effort_offer_done_note">더 할 일은 없어요</string>
+    <!-- 중간 정산(F27, Design v2 v41 screens/midway.html). 문구는 시안 그대로(임시, 명준) -->
+    <string name="effort_mid_open">지금까지의 노고 보기</string>
+    <string name="effort_mid_receipt_title">오늘 주행 영수증</string>
+    <string name="effort_mid_receipt_sub">%1$s 출발 · 아직 가는 중 · %2$d명</string>
+    <string name="effort_mid_receipt_sub_solo">%1$s 출발 · 아직 가는 중 · 혼자</string>
+    <string name="effort_mid_cap_short">지금까지</string>
+    <string name="effort_mid_solo_note">혼자 운전이라 영수증만 보여 드려요</string>
+    <string name="effort_mid_short">여기까지도 수고하셨어요</string>
+    <string name="effort_mid_short_note">아직 짧아서 따로 제안하지 않아요</string>
+    <string name="effort_mid_a_title">지금까지를 챙긴다면</string>
+    <string name="effort_mid_note">좋아요를 누르면 여기까지 기록해 두고, 도착하면 이 몫은 빼고 알려 드려요</string>
+    <string name="effort_mid_b_sub">기본은 %1$s. 고르면 여기까지 기록해 두고, 도착하면 이 몫은 빼고 알려 드려요</string>
+    <string name="effort_mid_a_done">좋아요, 여기까지 기록해 뒀어요</string>
+    <string name="effort_mid_b_done">여기까지는 %1$s에서 운전자 빼기로 했어요</string>
+    <string name="effort_mid_done_note">도착하면 전체를 다시 세고,\n이 몫은 빼고 알려 드려요</string>
+    <string name="effort_mid_keep">계속 가기</string>
+    <string name="effort_mid_none">여기까지는 영수증만 보여 드릴게요</string>
+    <string name="effort_mid_none_why">도착하면 전체를 세어 알려 드려요</string>
+    <string name="effort_mid_pending">지금까지를 세고 있어요</string>
+    <string name="effort_mid_failed">지금은 내비에서 남은 거리를 읽지 못했어요</string>
+    <string name="effort_mid_failed_why">내비 안내 중일 때 다시 열어 주세요. 도착하면 전체를 세어 알려 드려요</string>
+    <string name="effort_record_midway">중간 정산 %1$s · %2$s</string>
+    <string name="effort_offer_plain_head">오늘 운전</string>
+    <string name="effort_offer_none">오늘 주행도 수고하셨어요</string>
+    <string name="effort_offer_none_why">이번 주행은 기록만 남겨 둘게요</string>
+    <string name="effort_offer_solo">혼자 운전했어요</string>
+    <string name="effort_offer_solo_why">나눌 사람이 없어 제안은 하지 않아요</string>
+    <string name="effort_settings_method_now">도착 화면에서 보여 드릴 제안이에요 · 지금은 %1$s</string>
+    <string name="effort_settings_a_short">방식 A</string>
+    <string name="effort_settings_b_short">방식 B</string>
+    <string name="effort_settings_demo">시연 고정 모드</string>
+    <string name="effort_settings_demo_off">켜면 시연용 값으로 고정해요</string>
+    <string name="effort_settings_demo_off_scene">켜면 시연용 값(%1$s · %2$s)으로 고정해요</string>
+    <string name="effort_settings_demo_on">켜짐 · %1$s · %2$s 값으로 고정해요</string>
+    <string name="effort_settings_demo_on_plain">켜짐 · 시연용 값으로 고정해요</string>
+    <string name="effort_settings_wage_show_only">금액은 보여 드리기만 하고 결제·송금으로 이어지지 않아요</string>
+    <string name="effort_settings_wage_open">단가 출처 펼치기</string>
+    <string name="effort_settings_wage_close">단가 출처 접기</string>
+    <string name="effort_settings_wipe_sub">이 차에 남은 주행 기록 %1$d건을 지워요</string>
+    <string name="effort_settings_wipe_none">남은 기록이 없어요</string>
+    <string name="effort_settings_wipe_title">기록을 모두 지울까요?</string>
+    <string name="effort_settings_wipe_body">지운 기록은 되돌릴 수 없어요</string>
+    <string name="effort_settings_method">제안 방식</string>
+    <string name="effort_settings_method_a">방식 A · 돈으로 환산</string>
+    <string name="effort_settings_method_b">방식 B · 한 번 빼 주기</string>
+    <string name="effort_settings_wage">단가 출처</string>
+    <!-- 앰비언트 라이트(F28, 임시 문구 — 명준) -->
+    <string name="effort_settings_ambient">앰비언트 라이트</string>
+    <string name="effort_settings_ambient_on">앱을 쓰는 동안 실내 조명을 브랜드 색으로 켜 둬요 · 주행 중에는 원래대로</string>
+    <string name="effort_settings_ambient_off">꺼짐 · 실내 조명을 건드리지 않아요</string>
+    <string name="effort_settings_wage_how">%1$s 시급 %2$s을 60분으로 나눈 값이에요(1분 %3$s)</string>
+    <string name="effort_log_open">기록 전체</string>
+    <string name="effort_log_title">주행 기록</string>
+    <string name="effort_log_note">좌표 없이 수치와 고른 것만 이 차에 남아요</string>
+    <string name="effort_record_title">%1$s · %2$s</string>
+    <string name="effort_record_day_cap">그날의 노고</string>
+    <string name="effort_record_choice_cap">그날 고른 것</string>
+    <string name="effort_record_note">좌표 없이 이 차에만 남아요</string>
+    <string name="effort_record_amount">운전 노고 %1$s</string>
+    <string name="effort_record_drive">운전 %1$s</string>
+    <string name="effort_record_people">함께 %1$d명</string>
+    <string name="effort_record_method_a">방식 A</string>
+    <string name="effort_record_method_b">방식 B</string>
+    <string name="effort_record_choice_none">제안 없이 기록만 남겼어요</string>
+    <string name="effort_record_choice_unsettled">도착이 늦게 잡혀 영수증 없이 기록만 남겼어요</string>
+    <string name="effort_record_choice_accept">%1$s · 좋아요를 눌렀어요</string>
+    <string name="effort_record_choice_close">제안은 닫았어요</string>
+    <string name="effort_record_choice_solo">혼자 운전해서 제안은 없었어요</string>
+    <string name="effort_record_choice_item">%1$s에서 운전자 빼기로 했어요</string>
 </resources>

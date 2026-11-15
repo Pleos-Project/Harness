@@ -1,0 +1,31 @@
+{
+  "status": "unavailable",
+  "dep": [
+    {
+      "hour": "2026-11-07T14:00:00+09:00",
+      "precip": "unknown"
+    },
+    {
+      "hour": "2026-11-07T15:00:00+09:00",
+      "precip": "unknown"
+    },
+    {
+      "hour": "2026-11-07T16:00:00+09:00",
+      "precip": "unknown"
+    }
+  ],
+  "arr": [
+    {
+      "hour": "2026-11-07T14:00:00+09:00",
+      "precip": "unknown"
+    },
+    {
+      "hour": "2026-11-07T15:00:00+09:00",
+      "precip": "unknown"
+    },
+    {
+      "hour": "2026-11-07T16:00:00+09:00",
+      "precip": "unknown"
+    }
+  ]
+}

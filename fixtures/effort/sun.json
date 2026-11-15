@@ -1,0 +1,54 @@
+{
+  "id": "SUN",
+  "title": "일출·일몰: 서울시청(37.566667, 126.978333), KST",
+  "note": "expected = 엔진 계산값(분 단위 반올림, 두 벌이 같아야 함). kasi = 한국천문연구원 출몰시각(참고, ±1분). 출처: 천문연 월별 해/달 출몰시각(astro.kasi.re.kr/life/pageView/6, location=서울)·2026 천문력",
+  "lat": 37.566667,
+  "lng": 126.978333,
+  "tz_offset_min": 540,
+  "cases": [
+    {
+      "date": "2026-03-20",
+      "expected": {
+        "sunrise": "06:36",
+        "sunset": "18:44"
+      },
+      "kasi": {
+        "sunrise": "06:36",
+        "sunset": "18:44"
+      }
+    },
+    {
+      "date": "2026-06-21",
+      "expected": {
+        "sunrise": "05:11",
+        "sunset": "19:57"
+      },
+      "kasi": {
+        "sunrise": "05:11",
+        "sunset": "19:57"
+      }
+    },
+    {
+      "date": "2026-11-07",
+      "expected": {
+        "sunrise": "07:03",
+        "sunset": "17:28"
+      },
+      "kasi": {
+        "sunrise": "07:03",
+        "sunset": "17:28"
+      }
+    },
+    {
+      "date": "2026-12-03",
+      "expected": {
+        "sunrise": "07:30",
+        "sunset": "17:14"
+      },
+      "kasi": {
+        "sunrise": "07:30",
+        "sunset": "17:14"
+      }
+    }
+  ]
+}

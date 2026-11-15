@@ -1,0 +1,118 @@
+{
+  "id": "R24",
+  "title": "시간대별 partial(unknown 섞임): 출발 눈 → 그침, 도착 지점 일부 정보 없음. 14:20→16:45, ETA 140분, 2명",
+  "note": "[14,15) 출발 지점 눈 40분, [15,16) 출발 지점 맑음, [16,17) 도착 지점 unknown(45분, 가산 0) → 눈 40분 → 0.49 × 40 = 19.6 → +14%. 겹친 조각에 unknown이 있어 '일부 시간은 날씨 정보 없음'(effort.copy 임시)",
+  "input": {
+    "departed_at": "2026-11-17T14:20:00+09:00",
+    "arrived_at": "2026-11-17T16:45:00+09:00",
+    "rest_answer_min": 0,
+    "eta_s": 8400,
+    "congestion_ratio": 0.0,
+    "congestion_m": 0.0,
+    "congestion_s": null,
+    "weather_dep": "snow",
+    "weather_arr": "none",
+    "sunrise": "07:13",
+    "sunset": "17:20",
+    "n": 2,
+    "distance_km": null,
+    "weather_trip": {
+      "status": "partial",
+      "dep": [
+        {
+          "hour": "2026-11-17T14:00:00+09:00",
+          "precip": "snow"
+        },
+        {
+          "hour": "2026-11-17T15:00:00+09:00",
+          "precip": "none"
+        },
+        {
+          "hour": "2026-11-17T16:00:00+09:00",
+          "precip": "none"
+        }
+      ],
+      "arr": [
+        {
+          "hour": "2026-11-17T14:00:00+09:00",
+          "precip": "none"
+        },
+        {
+          "hour": "2026-11-17T15:00:00+09:00",
+          "precip": "unknown"
+        },
+        {
+          "hour": "2026-11-17T16:00:00+09:00",
+          "precip": "unknown"
+        }
+      ]
+    }
+  },
+  "expected": {
+    "status": "ok",
+    "status_text": null,
+    "elapsed_limit_min": 280.0,
+    "elapsed_min": 145.0,
+    "drive_min": 145.0,
+    "rest_min": 0.0,
+    "fatigue_segments_min": [
+      145.0
+    ],
+    "congestion_min": 0.0,
+    "delay_min": 0.0,
+    "night_min": 0.0,
+    "rain_min": 0.0,
+    "snow_min": 40.0,
+    "fatigue_excess_min": 25.0,
+    "effort_min": 167.725,
+    "multiplier": 1.16,
+    "lines": [
+      {
+        "key": "snow",
+        "label": "날씨",
+        "add_min": 19.6,
+        "pct": 14,
+        "pct_text": "+14%",
+        "detail_text": "눈",
+        "basis_text": "눈 오는 날은 운전 부담이 49% 늘어요 · 시뮬레이터 30명 연구(Frontiers in Neuroscience 2026)"
+      },
+      {
+        "key": "fatigue",
+        "label": "장시간",
+        "add_min": 3.125,
+        "pct": 2,
+        "pct_text": "+2%",
+        "detail_text": "2시간 넘긴 25분",
+        "basis_text": "2시간을 넘겨 이어서 운전한 시간에 더해요 · 2시간 운전하면 15분 쉬도록 한 법령 기준(화물자동차 운수사업법 시행규칙)"
+      }
+    ],
+    "notes": [
+      "일부 시간은 날씨 정보 없음"
+    ],
+    "footnote_text": null,
+    "drive_text": "2시간 25분",
+    "multiplier_text": "평소보다 1.16배 힘든 길",
+    "headline_text": "오늘 운전 2시간 25분 · 평소보다 1.16배 힘든 길",
+    "distance_text": null,
+    "proposal": {
+      "amount_krw": 29910.958333333332,
+      "amount_approx": 30000,
+      "amount_text": "약 3만 원",
+      "per_person_krw": 14955.479166666666,
+      "per_person_approx": 15000,
+      "per_person_text": "약 1만 5천 원",
+      "driver_share_krw": 14955.479166666666,
+      "a": {
+        "title_text": "오늘 운전을 챙긴다면",
+        "main_text": "한 사람 약 1만 5천 원",
+        "basis_text": "운전 노고 약 3만 원을 운전자 포함 2명이 나눈 값",
+        "wage_text": "최저임금 1분 178원 기준"
+      },
+      "b": {
+        "item": "meal",
+        "text": "오늘은 밥값에서 운전자 빼는 게 어때요",
+        "item_examples": []
+      }
+    }
+  }
+}

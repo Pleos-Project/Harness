@@ -1,0 +1,8 @@
+/* Design v2(운전 노고 정산) — 아티팩트 시안에서 옮김. 값은 tokens.css의 --cg-* 변수, 크기는 Connect-S 실제 픽셀(1dp = 1px). */
+/* Stepper — 에셋 ivi_stepper 420×100 */
+.cg-stepper{display:flex;align-items:center;gap:24px;width:420px;height:100px;padding:0 22px;flex:none;background:var(--cg-surface-card);border:2px solid var(--cg-line);border-radius:24px;box-shadow:var(--cg-shadow-1)}
+.cg-stepper .cg-btn.cg-ib{width:64px;min-width:64px;height:64px;border-radius:16px;background:transparent}
+.cg-stepper .cg-btn.cg-ib:active{background:var(--cg-btn-basic-pressed)}
+.cg-stepper .cg-btn.cg-ib .cg-ic{width:44px;height:44px}
+.cg-stepper .cg-dv2{width:2px;height:64px;background:var(--cg-line);flex:none}
+.cg-stepper .cg-val{flex:1;min-width:0;text-align:center;font:700 36px/44px var(--cg-font);white-space:nowrap}

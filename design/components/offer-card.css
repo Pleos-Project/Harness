@@ -1,0 +1,35 @@
+/* Design v2(운전 노고 정산) — 아티팩트 시안에서 옮김. 값은 tokens.css의 --cg-* 변수, 크기는 Connect-S 실제 픽셀(1dp = 1px). */
+.cg-offer{flex:1;display:flex;flex-direction:column;gap:20px;padding:40px;min-width:0;min-height:0}
+.cg-offer .cg-cap2{font:var(--cg-body-m);color:var(--cg-text-tertiary)}
+.cg-offer .cg-head{font:var(--cg-headline-s);text-wrap:balance;word-break:keep-all}
+/* 11/9 명준: 넘치면 어절 단위로 고르게 줄바꿈 */
+.cg-offer .cg-note,.cg-offer .cg-why{text-wrap:balance;word-break:keep-all}
+/* 11/9: 한 글자·한 어절만 아랫줄로 떨어지지 않게 */
+.cg-offer .cg-head.cg-dim{color:var(--cg-text-tertiary)}
+.cg-offer .cg-big{font:var(--cg-headline-l);white-space:nowrap}
+.cg-offer .cg-why{font:var(--cg-body-m);color:var(--cg-text-secondary)}
+.cg-offer .cg-note{font:var(--cg-body-m);color:var(--cg-text-tertiary)}
+/* 11/9 명준: 제안 카드 위계 · 간격 — 묻는 줄(작게) + 결과 숫자(크게)는 한 덩어리, 근거는 한 칸 띄움. 방식 B는 제목+설명 한 덩어리, 항목과는 띄움 */
+.cg-offer .cg-head:has(+ .cg-big){font:var(--cg-title-m);color:var(--cg-text-secondary)}
+.cg-offer .cg-head + .cg-big{margin-top:-12px}
+.cg-offer .cg-big + .cg-why{margin-top:8px}
+.cg-offer .cg-cap2 + .cg-head{margin-top:-10px}
+.cg-offer .cg-head + .cg-note{margin-top:-6px}
+.cg-offer .cg-bts{display:flex;gap:16px}
+.cg-offer .cg-bts .cg-btn{flex:1}
+.cg-p .cg-offer{flex:1;padding:22px 24px;gap:12px}
+.cg-p .cg-offer .cg-head{font:var(--cg-title-l)}
+.cg-p .cg-offer .cg-big{font:var(--cg-headline-s)}
+.cg-p .cg-offer .cg-why,.cg-p .cg-offer .cg-note,.cg-p .cg-offer .cg-cap2{font:var(--cg-label-m)}
+.cg-p .cg-offer .cg-bts .cg-btn.cg-l{height:80px;border-radius:24px;font:var(--cg-body-l)}
+.cg-p .cg-offer .cg-head:has(+ .cg-big){font:var(--cg-body-l)}
+.cg-p .cg-offer .cg-head + .cg-big{margin-top:-8px}
+.cg-p .cg-offer .cg-big + .cg-why{margin-top:4px}
+.cg-p .cg-offer .cg-cap2 + .cg-head{margin-top:-6px}
+.cg-p .cg-offer .cg-head + .cg-note{margin-top:-4px}
+.cg-odiv{display:block;height:2px;background:var(--cg-line);margin:14px 0;flex:none}
+.cg-play .cg-offer.cg-still .cg-why .cg-ul{animation:none}
+.cg-offer .cg-head.cg-ok{color:var(--color-text-primary)}
+/* 큰 숫자 길이 규칙(D4): 표시 금액 10만 원 이상 또는 큰 숫자 줄 15자 이상 → 한 단계 작게(가로 Headline M · 분할 Title L) */
+.cg-offer .cg-big.cg-sm{font:var(--cg-headline-m)}
+.cg-p .cg-offer .cg-big.cg-sm{font:var(--cg-title-l)}

@@ -1,0 +1,43 @@
+/* Design v2(운전 노고 정산) — 아티팩트 시안에서 옮김. 값은 tokens.css의 --cg-* 변수, 크기는 Connect-S 실제 픽셀(1dp = 1px). */
+.cg-hbar-rg{display:flex;align-items:center;gap:12px;flex:none}
+.cg-ndot{display:block;width:18px;height:18px;border-radius:50%;background:var(--color-notification-dot);box-shadow:0 0 0 4px var(--color-background-canvas);flex:none}
+/* ── 알림 창(11/9 명준): 종 아래로 내려오는 아코디언 · 두 겹 테(바깥 테 + 안쪽 판) · 넓게 번지는 옅은 그림자 · 확인만 ── */
+.cg-ncatch{position:absolute;inset:0;z-index:6}
+.cg-npanel{--nr:40px;position:absolute;z-index:7;top:132px;right:40px;width:600px;padding:8px;border-radius:var(--nr);
+  background:color-mix(in srgb,var(--color-surface-raised) 62%,transparent);box-shadow:0 0 0 1px #2421350F,0 48px 96px -28px #2421354D,0 14px 28px -10px #24213524;transform-origin:calc(100% - 132px) 0}
+.cg-npanel .cg-ncaret{position:absolute;top:-9px;right:120px;width:24px;height:24px;border-radius:5px;transform:rotate(45deg);background:inherit;box-shadow:-1px -1px 0 0 #2421350F}
+.cg-npanel .cg-nin{position:relative;border-radius:calc(var(--nr) - 8px);background:var(--color-surface-raised);padding:28px 30px 22px;box-shadow:inset 0 1px 1px #FFFFFFB3}
+.cg-npanel .cg-nhd{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 4px 14px}
+.cg-npanel .cg-nhd b{font:700 26px/32px var(--cg-font);color:var(--color-text-tertiary);letter-spacing:.02em}
+.cg-npanel .cg-nnew{height:40px;padding:0 16px;border-radius:999px;display:inline-flex;align-items:center;background:var(--color-selection-background);color:var(--color-selection-foreground);font:700 22px/28px var(--cg-font)}
+.cg-npanel .cg-nul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.cg-npanel .cg-nit{display:flex;align-items:center;gap:20px;padding:18px 4px}
+.cg-npanel .cg-nit + .cg-nit{box-shadow:0 -1px 0 0 var(--color-divider-default)}
+.cg-npanel .cg-nic{width:60px;height:60px;border-radius:50%;flex:none;display:grid;place-items:center;background:var(--color-background-subtle)}
+.cg-npanel .cg-nic .cg-ico.cg-pi{width:30px;height:30px;color:var(--color-icon-secondary)}
+.cg-npanel .cg-nt{display:flex;flex-direction:column;gap:4px;min-width:0}
+.cg-npanel .cg-nt b{font:600 28px/36px var(--cg-font);color:var(--color-text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* 한 줄 고정 · 긴 장소 이름은 말줄임 */
+.cg-npanel .cg-nt small{display:flex;align-items:center;gap:8px;font:400 22px/28px var(--cg-font);color:var(--color-text-tertiary)}
+.cg-npanel .cg-nt .cg-ndot{width:12px;height:12px;box-shadow:none}
+.cg-npanel .cg-nit.cg-new .cg-nt b{font-weight:800}
+.cg-npanel .cg-nit.cg-new .cg-nt small{color:var(--color-text-primary);font-weight:700}
+.cg-npanel .cg-nit.cg-new .cg-nic{background:var(--color-selection-background)}
+.cg-npanel .cg-nit.cg-new .cg-nic .cg-ico.cg-pi{color:var(--color-selection-foreground)}
+.cg-npanel .cg-nft{margin:10px 4px 0;padding-top:16px;box-shadow:0 -1px 0 0 var(--color-divider-default);font:400 22px/28px var(--cg-font);color:var(--color-text-tertiary)}
+/* 분할 창(840) */
+.cg-home.cg-p .cg-npanel{--nr:34px;top:128px;right:32px;width:520px;padding:6px}
+.cg-home.cg-p .cg-npanel .cg-nin{padding:22px 22px 18px}
+.cg-home.cg-p .cg-npanel .cg-nit{gap:16px;padding:14px 2px}
+.cg-home.cg-p .cg-npanel .cg-nic{width:52px;height:52px}
+.cg-home.cg-p .cg-npanel .cg-nic .cg-ico.cg-pi{width:26px;height:26px}
+.cg-home.cg-p .cg-npanel .cg-nt b{font:600 24px/32px var(--cg-font)}
+.cg-home.cg-p .cg-npanel .cg-nit.cg-new .cg-nt b{font-weight:800}
+.cg-home.cg-p .cg-npanel .cg-nt small,.cg-home.cg-p .cg-npanel .cg-nft{font:400 20px/26px var(--cg-font)}
+.cg-home.cg-p .cg-npanel .cg-nhd b{font:700 22px/28px var(--cg-font)}
+/* 움직임: 종에서 아래로 펼쳐짐(0.42초, 무게 있는 곡선) → 줄이 차례로 떠오름(0.05초 간격) · 접기는 0.2초로 빠르게 */
+.cg-play .cg-npanel{animation:cg-np-in .42s cubic-bezier(.32,.72,0,1) both}
+.cg-play .cg-npanel .cg-nit,.cg-play .cg-npanel .cg-nhd,.cg-play .cg-npanel .cg-nft{animation:cg-np-row .5s cubic-bezier(.32,.72,0,1) calc(.08s + var(--i,0) * .05s) both}
+.cg-play .cg-npanel .cg-nft{--i:4}
+.cg-play .cg-npanel.cg-out{animation:cg-np-out .2s cubic-bezier(.4,0,1,1) both}
+.cg-npanel .cg-nt b{display:flex;min-width:0}
