@@ -159,6 +159,9 @@ class TripService : Service() {
          * 도착 확인 알림(디자인 v2 arr-noti). OS(Pleos)가 그리고, 앱은 아이콘·제목·본문·버튼·누르면 갈 곳만 정한다.
          * 도착 신호면 "목적지에 도착했어요"와 장소·신호 시각을 보여 주고, 안내 종료(도착이 아닐 수 있음)는 "도착했나요?"를 유지한다.
          * 버튼은 [열기](= 알림 누름과 같음) · [닫기](알림만 지움). 앱을 스스로 띄우지 않는다(F22 '알림과 열기').
+         * 본문은 두 줄을 contentText에 그대로 넣는다(Pleos 팝업·알림 센터는 contentText만 그리고 줄바꿈은 지킨다, 에뮬 11/15 #191).
+         * 버튼: Pleos는 오른쪽 버튼을 채워 그리고, 팝업은 addAction 순서를 거꾸로·알림 센터는 그대로 놓는다(에뮬 11/15 #191).
+         * 그래서 [열기]를 왼쪽에 두면 팝업에서 [닫기]가 채워진다. 팝업에서 [열기]가 채워지도록 [열기] → [닫기] 순서로 넣는다.
          */
         private fun arriveNotification(context: Context, kind: String, at: String, dest: String?): Notification {
             val arrived = kind == GUIDE_ARRIVED
@@ -168,7 +171,7 @@ class TripService : Service() {
             val b = Notification.Builder(context, CH_ARRIVE)
                 .setSmallIcon(R.mipmap.ic_launcher)
                 .setContentTitle(title)
-                .setContentText(text.substringBefore("\n"))
+                .setContentText(text)
                 .setStyle(Notification.BigTextStyle().bigText(text))
                 .setCategory(Notification.CATEGORY_MESSAGE)
                 .setAutoCancel(true)
