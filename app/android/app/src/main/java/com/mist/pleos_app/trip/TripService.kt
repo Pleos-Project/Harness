@@ -121,6 +121,88 @@ class TripService : Service() {
 
         @Volatile private var running = false
         @Volatile private var current: String? = null
+
+        /**
+         * 받은 안내 끝(종류·시각)을 기기에 남긴다. 앱이 다시 보일 때 [takeGuideEnd]로 1번 넘긴다.
+         * 도착이 안내 종료보다 강한 근거라 이미 남은 도착은 덮어쓰지 않는다.
+         * 서비스가 부르고, debug 빌드의 촬영용 도착 신호(src/debug ShootArriveReceiver)도 같은 자리를 쓴다.
+         */
+        fun keepGuideEnd(context: Context, kind: String, at: String) {
+            val p = prefs(context)
+            if (p.getString(K_KIND, null) != GUIDE_ARRIVED) p.edit().putString(K_KIND, kind).putString(K_AT, at).apply()
+        }
+
+        /** 도착 확인 알림을 올린다. 누르면 노고가 열린다(스스로 앞으로 띄우지 않음, F22). 채널이 없으면 먼저 만든다. */
+        fun notifyArrive(context: Context, kind: String, at: String, dest: String?) {
+            channels(context)
+            context.getSystemService(NotificationManager::class.java).notify(ID_ARRIVE, arriveNotification(context, kind, at, dest))
+        }
+
+        private fun channels(context: Context) {
+            context.getSystemService(NotificationManager::class.java).createNotificationChannels(listOf(
+                NotificationChannel(CH_TRIP, context.getString(R.string.trip_channel_trip), NotificationManager.IMPORTANCE_MIN),
+                NotificationChannel(CH_ARRIVE, context.getString(R.string.trip_channel_arrive), NotificationManager.IMPORTANCE_HIGH),
+            ))
+        }
+
+        /**
+         * 누르면 노고를 연다. 이미 있는 화면을 앞으로 가져온다(CLEAR_TOP·SINGLE_TOP).
+         * 런처 인텐트를 그대로 쓰면 같은 작업 위에 MainActivity가 하나 더 쌓였다(11/12 에뮬).
+         */
+        private fun openApp(context: Context): PendingIntent =
+            PendingIntent.getActivity(context, 0, openIntent(context), PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
+
+        private fun openIntent(context: Context): Intent = Intent(context, MainActivity::class.java)
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+
+        /**
+         * 도착 확인 알림(디자인 v2 arr-noti). OS(Pleos)가 그리고, 앱은 아이콘·제목·본문·버튼·누르면 갈 곳만 정한다.
+         * 도착 신호면 "목적지에 도착했어요"와 장소·신호 시각을 보여 주고, 안내 종료(도착이 아닐 수 있음)는 "도착했나요?"를 유지한다.
+         * 버튼은 [열기](= 알림 누름과 같음) · [닫기](알림만 지움). 앱을 스스로 띄우지 않는다(F22 '알림과 열기').
+         * 본문은 두 줄을 contentText에 그대로 넣는다(Pleos 팝업·알림 센터는 contentText만 그리고 줄바꿈은 지킨다, 에뮬 11/15 #191).
+         * 버튼: Pleos는 오른쪽 버튼을 채워 그리고, 팝업은 addAction 순서를 거꾸로·알림 센터는 그대로 놓는다(에뮬 11/15 #191).
+         * 그래서 [열기]를 왼쪽에 두면 팝업에서 [닫기]가 채워진다. 팝업에서 [열기]가 채워지도록 [열기] → [닫기] 순서로 넣는다.
+         */
+        private fun arriveNotification(context: Context, kind: String, at: String, dest: String?): Notification {
+            val arrived = kind == GUIDE_ARRIVED
+            val title = context.getString(if (arrived) R.string.trip_noti_arrive_title_arrived else R.string.trip_noti_arrive_title)
+            val text = if (arrived) context.getString(R.string.trip_noti_arrive_text_arrived, dest?.takeIf { it.isNotBlank() } ?: context.getString(R.string.trip_noti_dest_fallback), clock(at))
+            else context.getString(R.string.trip_noti_arrive_text)
+            val b = Notification.Builder(context, CH_ARRIVE)
+                .setSmallIcon(R.mipmap.ic_launcher)
+                .setContentTitle(title)
+                .setContentText(text)
+                .setStyle(Notification.BigTextStyle().bigText(text))
+                .setCategory(Notification.CATEGORY_MESSAGE)
+                .setAutoCancel(true)
+                .setContentIntent(openApp(context))
+                .addAction(Notification.Action.Builder(null, context.getString(R.string.trip_noti_open), openApp(context)).build())
+                .addAction(Notification.Action.Builder(null, context.getString(R.string.trip_noti_close), dismissArrive(context)).build())
+            largeIcon(context)?.let { b.setLargeIcon(it) }
+            return b.build()
+        }
+
+        private fun dismissArrive(context: Context): PendingIntent =
+            PendingIntent.getService(context, 1, Intent(context, TripService::class.java).setAction(ACTION_DISMISS_ARRIVE), PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
+
+        /** 신호 받은 시각(ISO)을 기기 시간대 기준 HH:mm으로. 읽지 못하면 지금 시각. */
+        private fun clock(at: String): String {
+            val fmt = DateTimeFormatter.ofPattern("HH:mm")
+            return runCatching { OffsetDateTime.parse(at).atZoneSameInstant(java.time.ZoneId.systemDefault()).format(fmt) }
+                .getOrElse { java.time.LocalTime.now().format(fmt) }
+        }
+
+        /**
+         * 큰 아이콘 100px = 노고 앱 아이콘 단색(로고 v2): 주간 lime-solid · 야간 ink-solid. 알림에는 그라데이션을 쓰지 않는다(HANDOFF_v4 2 · 5절).
+         * 주간 · 야간은 화면 테마와 같은 시스템 야간 모드로 고른다.
+         */
+        private fun largeIcon(context: Context): Bitmap? = runCatching {
+            val res = context.resources
+            val night = (res.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
+            val d = context.getDrawable(if (night) R.drawable.nogo_icon_ink_solid else R.drawable.nogo_icon_lime_solid) ?: return null
+            val px = (100 * res.displayMetrics.density).toInt().coerceAtLeast(1)
+            Bitmap.createBitmap(px, px, Bitmap.Config.ARGB_8888).also { bm -> d.setBounds(0, 0, px, px); d.draw(Canvas(bm)) }
+        }.getOrNull()
     }
 
     private val main = Handler(Looper.getMainLooper())
@@ -156,7 +238,7 @@ class TripService : Service() {
 
     override fun onCreate() {
         super.onCreate()
-        channels()
+        channels(this)
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -248,11 +330,10 @@ class TripService : Service() {
             return
         }
         if (appVisible) return
-        val p = prefs(this)
-        if (p.getString(K_KIND, null) != GUIDE_ARRIVED) p.edit().putString(K_KIND, kind).putString(K_AT, at).apply()   // 도착이 안내 종료보다 강한 근거라 덮어쓰지 않는다
+        keepGuideEnd(this, kind, at)
         if (!notified) {
             notified = true
-            nm().notify(ID_ARRIVE, arriveNotification(kind, at))      // 누르면 노고가 열리고, 남긴 신호 시각으로 도착한다
+            notifyArrive(this, kind, at, current)                     // 누르면 노고가 열리고, 남긴 신호 시각으로 도착한다
         }
     }
 
@@ -264,7 +345,7 @@ class TripService : Service() {
         if (opened || appVisible) return
         opened = true
         try {
-            startActivity(openIntent())
+            startActivity(openIntent(this))
             ChagokLog.event("trip_service_open", "ok" to true)
         } catch (e: Exception) {
             ChagokLog.event("trip_service_open", "ok" to false, "err" to e.javaClass.simpleName)
@@ -272,23 +353,6 @@ class TripService : Service() {
     }
 
     private fun nm() = getSystemService(NotificationManager::class.java)
-
-    private fun channels() {
-        nm().createNotificationChannels(listOf(
-            NotificationChannel(CH_TRIP, getString(R.string.trip_channel_trip), NotificationManager.IMPORTANCE_MIN),
-            NotificationChannel(CH_ARRIVE, getString(R.string.trip_channel_arrive), NotificationManager.IMPORTANCE_HIGH),
-        ))
-    }
-
-    /**
-     * 누르면 노고를 연다. 이미 있는 화면을 앞으로 가져온다(CLEAR_TOP·SINGLE_TOP).
-     * 런처 인텐트를 그대로 쓰면 같은 작업 위에 MainActivity가 하나 더 쌓였다(11/12 에뮬).
-     */
-    private fun openApp(): PendingIntent =
-        PendingIntent.getActivity(this, 0, openIntent(), PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
-
-    private fun openIntent(): Intent = Intent(this, MainActivity::class.java)
-        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
 
     /**
      * 포그라운드 서비스에 꼭 필요한 상주 알림. Pleos 알림 센터·팝업은 카테고리 navigation·msg만 보여 주는데(11/12 실측),
@@ -303,51 +367,6 @@ class TripService : Service() {
             .setCategory(Notification.CATEGORY_SERVICE)
             .setOngoing(true)
             .setOnlyAlertOnce(true)
-            .setContentIntent(openApp())
+            .setContentIntent(openApp(this))
             .build()
-
-    /**
-     * 도착 확인 알림(디자인 v2 arr-noti). OS(Pleos)가 그리고, 앱은 아이콘·제목·본문·버튼·누르면 갈 곳만 정한다.
-     * 도착 신호면 "목적지에 도착했어요"와 장소·신호 시각을 보여 주고, 안내 종료(도착이 아닐 수 있음)는 "도착했나요?"를 유지한다.
-     * 버튼은 [열기](= 알림 누름과 같음) · [닫기](알림만 지움). 앱을 스스로 띄우지 않는다(F22 '알림과 열기').
-     */
-    private fun arriveNotification(kind: String, at: String): Notification {
-        val arrived = kind == GUIDE_ARRIVED
-        val title = getString(if (arrived) R.string.trip_noti_arrive_title_arrived else R.string.trip_noti_arrive_title)
-        val text = if (arrived) getString(R.string.trip_noti_arrive_text_arrived, current?.takeIf { it.isNotBlank() } ?: getString(R.string.trip_noti_dest_fallback), clock(at))
-        else getString(R.string.trip_noti_arrive_text)
-        val b = Notification.Builder(this, CH_ARRIVE)
-            .setSmallIcon(R.mipmap.ic_launcher)
-            .setContentTitle(title)
-            .setContentText(text.substringBefore("\n"))
-            .setStyle(Notification.BigTextStyle().bigText(text))
-            .setCategory(Notification.CATEGORY_MESSAGE)
-            .setAutoCancel(true)
-            .setContentIntent(openApp())
-            .addAction(Notification.Action.Builder(null, getString(R.string.trip_noti_open), openApp()).build())
-            .addAction(Notification.Action.Builder(null, getString(R.string.trip_noti_close), dismissArrive()).build())
-        largeIcon()?.let { b.setLargeIcon(it) }
-        return b.build()
-    }
-
-    private fun dismissArrive(): PendingIntent =
-        PendingIntent.getService(this, 1, Intent(this, TripService::class.java).setAction(ACTION_DISMISS_ARRIVE), PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
-
-    /** 신호 받은 시각(ISO)을 기기 시간대 기준 HH:mm으로. 읽지 못하면 지금 시각. */
-    private fun clock(at: String): String {
-        val fmt = DateTimeFormatter.ofPattern("HH:mm")
-        return runCatching { OffsetDateTime.parse(at).atZoneSameInstant(java.time.ZoneId.systemDefault()).format(fmt) }
-            .getOrElse { java.time.LocalTime.now().format(fmt) }
-    }
-
-    /**
-     * 큰 아이콘 100px = 노고 앱 아이콘 단색(로고 v2): 주간 lime-solid · 야간 ink-solid. 알림에는 그라데이션을 쓰지 않는다(HANDOFF_v4 2 · 5절).
-     * 주간 · 야간은 화면 테마와 같은 시스템 야간 모드로 고른다.
-     */
-    private fun largeIcon(): Bitmap? = runCatching {
-        val night = (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
-        val d = getDrawable(if (night) R.drawable.nogo_icon_ink_solid else R.drawable.nogo_icon_lime_solid) ?: return null
-        val px = (100 * resources.displayMetrics.density).toInt().coerceAtLeast(1)
-        Bitmap.createBitmap(px, px, Bitmap.Config.ARGB_8888).also { bm -> d.setBounds(0, 0, px, px); d.draw(Canvas(bm)) }
-    }.getOrNull()
 }

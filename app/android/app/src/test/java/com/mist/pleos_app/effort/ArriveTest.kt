@@ -30,6 +30,20 @@ class ArriveTest {
     }
 
     @Test
+    fun demoShootArrivalOnlyForDemoTripOnTheWay() {
+        // 촬영용 도착 신호(debug 빌드, 시연 영상 5번 컷): 시연 주행이 가는 중이고 도착 신호일 때만 그 시각으로 도착 대기
+        val src = DemoEffortSource(parseDemoScene(demoText))
+        val trip = src.demoTrip("d1")!!
+        val e = GuideEnd(GUIDE_ARRIVED, src.arrivedAt())
+        assertEquals("2026-11-10T18:10:00+09:00", demoShootArrival(trip, e))
+        assertNull(demoShootArrival(trip, GuideEnd(GUIDE_CANCELLED, src.arrivedAt())))     // 안내 종료는 아님
+        assertNull(demoShootArrival(trip.copy(arrivedAt = src.arrivedAt()), e))            // 이미 도착
+        assertNull(demoShootArrival(trip.copy(demo = false), e))                           // 실제 주행은 guideEndAction이 맡음
+        // 실제 경로(guideEndAction)는 시연 주행을 그대로 건너뛴다(release 동작)
+        assertTrue(guideEndAction(trip, GUIDE_ARRIVED, src.arrivedAt()) is GuideEndAction.Skip)
+    }
+
+    @Test
     fun demoTripReceiptMatchesDemoFixture() {
         // 시연 순서(명세 12절): demo.json으로 출발 → 도착 → 영수증이 fixture 기대값과 같다
         val src = DemoEffortSource(parseDemoScene(demoText))

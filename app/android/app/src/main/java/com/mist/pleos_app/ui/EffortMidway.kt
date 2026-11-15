@@ -68,8 +68,9 @@ internal fun EffortMidwayScreen(ui: EffortUi, onPick: (String) -> Unit, onClose:
     // "14:20 출발 · 아직 가는 중 · 4명"(혼자면 "· 혼자", 아티팩트 receipt 2061)
     val since = if (trip.n >= 2) stringResource(R.string.effort_mid_receipt_sub, clockText(trip.departedAt), trip.n)
     else stringResource(R.string.effort_mid_receipt_sub_solo, clockText(trip.departedAt))
-    // #118 10-3 ⑥(명준 11/12): 중간 정산도 도착과 같은 시트로 쉰 시간을 묻는다. 고르기 전에는 "지금까지 운전을 정리하는 중이에요" · "확인 중"
-    // HANDOFF_v4 7-1: 쉰 시간을 고르기 전에도 도착과 같이 영수증(쉰 시간 '없음' 기준)과 카드를 먼저 보여 주고, 출력이 끝난 뒤 시트가 늦게 올라온다
+    // #118 10-3 ⑥(명준 11/12): 중간 정산도 도착과 같은 시트로 쉰 시간을 묻는다.
+    // 순서는 도착과 다르다(DECISIONS 11/15 '쉰 시간을 묻는 순서', #190): 중간 정산은 영수증(쉰 시간 '없음' 기준)과 카드를 먼저 출력하고
+    // 출력이 끝난 뒤 0.2초에 시트를 올린다(HANDOFF_v4 7-1). 쉰 시간을 먼저 묻는 것("정리하는 중이에요" · "확인 중")은 도착뿐이다
     var sheet by rememberSaveable(m.at) { mutableStateOf(false) }
     // 위 바("지금까지의 노고")는 없앴다(Design v2). 시스템 뒤로는 그대로 닫기
     BackHandler { onClose() }

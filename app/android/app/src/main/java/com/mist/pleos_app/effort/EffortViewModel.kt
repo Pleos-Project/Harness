@@ -489,6 +489,16 @@ class EffortViewModel(app: Application, private val saved: SavedStateHandle) : A
         val ended = keeper?.takeGuideEnd()
         // 경로 요청 실패(#132): 노고가 가려진 뒤 서비스가 알아챔 → 출발 화면으로
         if (live && ended?.kind == GUIDE_ROUTE_FAILED) { ChagokLog.event("effort_guide_end", "kind" to ended.kind, "from" to "service"); onRouteFailed(); return }
+        // 촬영용 도착 신호(debug 빌드만, 시연 영상 5번 컷): 에뮬은 내비 도착 신호를 못 내서 debug 훅(src/debug ShootArriveReceiver)이
+        // 서비스와 같은 자리에 도착 신호를 남긴다. 시연 주행이면 실제 도착 신호처럼 기어 P에서 도착한다(도착 시각은 arrive()가 시연 값으로).
+        // release에서는 이 분기가 없고 시연은 [도착했어요]로만 도착한다(DECISIONS 11/13 '도착 계기: 운전석 문 빼기')
+        if (BuildConfig.DEBUG && !live && ended != null && trip != null && flow.phase == EffortPhase.DRIVING) {
+            demoShootArrival(trip, ended)?.let { at ->
+                pendingArrival = at; resumeCheck = false
+                ChagokLog.event("effort_guide_end", "kind" to ended.kind, "from" to "debug_shoot")
+                refresh()
+            }
+        }
         val interrupted = live && keeper != null && !keeper.running
         if (live && ended != null) {
             ChagokLog.event("effort_guide_end", "kind" to ended.kind, "from" to "service", "interrupted" to interrupted)
