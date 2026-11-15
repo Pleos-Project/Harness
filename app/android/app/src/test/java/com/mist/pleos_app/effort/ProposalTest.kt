@@ -97,6 +97,33 @@ class ProposalTest {
     }
 
     @Test
+    fun laterLeavesOneRecordWithZeroRestAndNoAmount() {
+        // AC-F29-2: [다음에] = 쉰 시간 0(묻지 않음) + choice = later 기록 1건, 상세에서도 금액을 보이지 않음.
+        // 뷰모델(AndroidViewModel)은 JVM 단위 테스트로 띄울 수 없어(Robolectric 없음) later()가 부르는 저장 경로를
+        // 같은 순서로 따라 단언한다: answerRest(0) → receiptOf → recordOf(CHOICE_LATER) → finish.
+        val store = MemoryEffortStore()
+        val f = EffortFlow(store)
+        val trip = r1Trip()
+        f.depart(trip.copy(arrivedAt = null, weatherArr = null, restAnswerMin = null))
+        f.arrive(trip.arrivedAt!!, "rain")
+        assertNull(f.state.openTrip?.restAnswerMin)           // 쉰 시간을 묻지 않은 상태
+        f.answerRest(0)                                       // later()가 비어 있으면 '없음'(0)으로 채움
+        val cur = f.state.openTrip!!
+        assertEquals(0, cur.restAnswerMin)
+        val r = receiptOf(cur, c)!!
+        val v = proposalViewOf(r, Settings.METHOD_A, c.items)
+        assertTrue(f.finish(recordOf(cur, r, v, Settings.METHOD_A, CHOICE_LATER)))
+        assertEquals(EffortPhase.IDLE, f.phase)
+        val rec = EffortFlow(store).recent().single()         // 재시작 뒤에도 1건
+        assertEquals(CHOICE_LATER, rec.choice)
+        assertEquals("later", rec.choice)
+        assertEquals(0, rec.trip?.restAnswerMin)              // 쉰 시간 0
+        assertTrue(isClosedChoice(rec.choice))
+        assertFalse(recordShowsAmount(rec))                   // 기록 상세 합계는 배수까지만
+        assertFalse(rec.toJson().toString().contains("lat\""))
+    }
+
+    @Test
     fun methodARecordKeepsPerPersonText() {
         val r = receiptOf(r1Trip(), c)!!
         val v = proposalViewOf(r, Settings.METHOD_A, c.items)
