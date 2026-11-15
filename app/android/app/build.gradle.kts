@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
@@ -19,6 +21,22 @@ android {
         buildConfigField("String", "API_BASE_URL", "\"https://api.rangeleft.com\"")
     }
 
+    // release 서명(#176): app/android/keystore.properties(커밋 안 함)가 있을 때만 쓴다.
+    // 없으면(CI 등) 서명 없는 release가 나온다. 키·비밀번호는 저장소에 넣지 않는다.
+    val keystoreProps = rootProject.file("keystore.properties").takeIf { it.exists() }?.let { f ->
+        Properties().apply { f.inputStream().use { load(it) } }
+    }
+    signingConfigs {
+        if (keystoreProps != null) {
+            create("release") {
+                storeFile = rootProject.file(keystoreProps.getProperty("storeFile"))
+                storePassword = keystoreProps.getProperty("storePassword")
+                keyAlias = keystoreProps.getProperty("keyAlias")
+                keyPassword = keystoreProps.getProperty("keyPassword")
+            }
+        }
+    }
+
     buildTypes {
         debug {
             // 에뮬 → PC 로컬 서버(make dev). 배포 서버로 시험할 때만 -PchagokApi=https://api.rangeleft.com
@@ -26,6 +44,7 @@ android {
             buildConfigField("String", "API_BASE_URL", "\"$api\"")
         }
         release {
+            signingConfigs.findByName("release")?.let { signingConfig = it }
             optimization {
                 enable = false
             }

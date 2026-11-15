@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- 화면 문구는 여기에. scripts/lint_copy.py가 PRD 5-3 표기·AC-C-8 금지 문구를 검사한다. -->
 <resources>
-    <string name="app_name">노고</string>
+    <!-- 앱 목록에 보이는 이름 = 서비스명 NOGO(#176, June 11/15). 화면 속 캐릭터 이름 '노고'는 그대로 -->
+    <string name="app_name">NOGO</string>
 
     <!-- 공통 -->
     <string name="back">뒤로</string>
