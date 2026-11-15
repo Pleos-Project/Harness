@@ -22,6 +22,8 @@ import android.os.Looper
 import com.mist.pleos_app.MainActivity
 import com.mist.pleos_app.R
 import com.mist.pleos_app.effort.GUIDE_ARRIVED
+import com.mist.pleos_app.effort.GUIDE_CANCELLED
+import com.mist.pleos_app.effort.ROUTE_FAIL_WINDOW_S
 import com.mist.pleos_app.effort.GUIDE_ROUTE_FAILED
 import com.mist.pleos_app.effort.GuideEnd
 import com.mist.pleos_app.effort.RouteStart
@@ -39,6 +41,7 @@ import java.time.format.DateTimeFormatter
  * - 안내가 끝났는데 앱이 안 보이면 도착 확인 알림(카테고리 msg)을 1번 올린다. 누르면 노고가 열린다.
  *   도착 신호든 안내 종료든 **노고를 스스로 앞으로 띄우지 않는다**(명세 v0.6 F22 '알림과 열기', DECISIONS 11/14 '여는 방법').
  *   계산은 열린 뒤 화면 쪽 기어 리스너가 P에서 시작한다. 예외는 경로 요청 실패(F20 예외, #132) 하나: [출발] 직후 정차 중이라 출발 화면으로 되돌린다.
+ *   "직후"는 출발 뒤 [ROUTE_FAIL_WINDOW_S](뷰모델과 같은 2분) 안이다. 그 뒤의 취소는 안내 종료로 본다([judgeGuideEnd], R-1).
  * - 내비 이벤트만 받는다. 차량값(기어 포함)·위치를 읽지 않고, 폴링·타이머가 없다(명세 v0.6 F22 '주행 중 서비스').
  */
 class TripService : Service() {
@@ -65,6 +68,8 @@ class TripService : Service() {
         /**
          * 길을 보내기 전에 내비가 이미 안내 중이었다(뷰모델이 읽어 넣음, #132). 곧 오는 첫 취소는 이전 안내의 것이라 실패로 보지 않는다.
          * 11/13 에뮬: 이전 안내 취소는 요청 0.2~0.3초, 경로 요청 실패의 취소는 약 3.4초(이미 내비가 노고를 덮은 뒤)에 온다.
+         * 서비스 리스너가 붙기 전에 그 취소가 지나가 쓰이지 않으면 남는다(R-3). 그래서 이번 출발의 안내가 시작되거나
+         * 경로 요청 실패 창([ROUTE_FAIL_WINDOW_S])이 지난 뒤 안내 끝을 받으면 지운다. 뷰모델은 길을 보낼 때마다 다시 넣는다.
          */
         @Volatile var expectOldCancel = false
 
@@ -217,6 +222,11 @@ class TripService : Service() {
     private var routeStarted = false
     /** 경로 요청 실패를 이미 넘겼다(내비가 취소를 두 번 보내도 한 번만). */
     private var failedSent = false
+    /**
+     * 이번 [출발]으로 서비스를 fresh로 띄운 시각(ms). 안내 끝을 받는 순간 이 값과 비교해 경로 요청 실패 창 안인지 본다([judgeGuideEnd]).
+     * 이어 가는 주행이면 null(이미 시작된 안내로 둠). 타이머는 쓰지 않는다.
+     */
+    private var departedAtMs: Long? = null
 
     private val listener = object : NaviHelperEventListener {
         override fun onRouteStarted(routeStartInfo: RouteStartInfo) {
@@ -229,9 +239,9 @@ class TripService : Service() {
         override fun onWaypointChanged(waypointChangedInfo: WaypointChangedInfo) { main.post { guideRestarted("waypoint") } }
 
         // 이벤트가 두 번씩 와도(11/7 실측) 알림은 안내 한 번에 1번. 받은 시각은 콜백이 온 때(#145)
-        override fun onDestinationArrived(destinationArrivedInfo: DestinationArrivedInfo) { val at = isoNow(); main.post { guideEnded(GUIDE_ARRIVED, at) } }
+        override fun onDestinationArrived(destinationArrivedInfo: DestinationArrivedInfo) { val at = isoNow(); val ms = System.currentTimeMillis(); main.post { guideEnded(GUIDE_ARRIVED, at, ms) } }
 
-        override fun onRouteCancelled() { val at = isoNow(); main.post { guideEnded("cancelled", at) } }
+        override fun onRouteCancelled() { val at = isoNow(); val ms = System.currentTimeMillis(); main.post { guideEnded(GUIDE_CANCELLED, at, ms) } }
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
@@ -258,7 +268,7 @@ class TripService : Service() {
         val first = !running
         running = true; current = dest
         val fresh = intent.getBooleanExtra(EXTRA_FRESH, false)
-        if (fresh) { routeStarted = false; failedSent = false }
+        if (fresh) { routeStarted = false; failedSent = false; departedAtMs = System.currentTimeMillis() }
         else if (first) {
             // 이어 가는 주행(#145 추가): 순정 내비는 시동을 껐다 켜도 도착 전이면 안내를 이어 주는데, 그 안내의 시작은 서비스가 뜨기 전에 지나갔다.
             // 시작을 기다리면 이어진 안내의 도착 신호를 버리고 [안내 종료]를 경로 요청 실패로 잘못 본다(#132 판단은 방금 출발에만).
@@ -296,6 +306,7 @@ class TripService : Service() {
     /** 새 안내가 시작됨(목적지를 바꿈 · 다시 안내 · 경유지 변경) → 앞서 받은 안내 끝과 도착 확인 알림을 지운다. */
     private fun guideRestarted(kind: String) {
         clearGuideEnd(this); notified = false; opened = false; routeStarted = true
+        expectOldCancel = false                                       // 안내가 시작됐으니 기다리던 이전 안내 취소는 더 볼 일이 없다(R-3)
         nm().cancel(ID_ARRIVE)
         ChagokLog.event("trip_service_guide", "kind" to kind)
     }
@@ -314,20 +325,30 @@ class TripService : Service() {
         runCatching { nm().notify(ID_TRIP, tripNotification(name)) }
     }
 
-    /** 안내 끝. 앱이 보이면 화면 쪽(NaviRepository → 뷰모델)이 처리하니 기억·알림 없이 넘긴다. */
-    private fun guideEnded(kind: String, at: String) {
-        ChagokLog.event("trip_service_guide", "kind" to kind, "visible" to appVisible, "started" to routeStarted)
-        if (!routeStarted) {
-            // 이번 출발의 안내가 시작되기 전의 취소: 이전 안내의 것이거나 경로 요청 실패(#132)
-            if (kind != "cancelled") return
-            if (expectOldCancel) { expectOldCancel = false; return }
-            if (appVisible) return                                    // 보이면 화면 쪽(NaviRepository)이 처리
-            if (failedSent) return
-            failedSent = true
-            prefs(this).edit().putString(K_KIND, GUIDE_ROUTE_FAILED).putString(K_AT, at).apply()
-            ChagokLog.event("trip_service_route_failed")
-            open()                                                    // 노고를 앞으로: 출발 화면 "내비로 길을 보내지 못했어요" · [다시 시도]
-            return
+    /**
+     * 안내 끝. 앱이 보이면 화면 쪽(NaviRepository → 뷰모델)이 처리하니 기억·알림 없이 넘긴다.
+     * [nowMs]는 이벤트를 받은 시각. 경로 요청 실패인지는 받는 순간 출발 시각과 비교해 [judgeGuideEnd]로 정한다.
+     */
+    private fun guideEnded(kind: String, at: String, nowMs: Long) {
+        val verdict = judgeGuideEnd(kind, routeStarted, departedAtMs, nowMs, expectOldCancel)
+        ChagokLog.event("trip_service_guide", "kind" to kind, "visible" to appVisible, "started" to routeStarted, "verdict" to verdict.name)
+        when (verdict) {
+            GuideEndVerdict.IGNORE -> return                          // 이번 안내가 시작되기 전의 도착 신호
+            GuideEndVerdict.OLD_CANCEL -> { expectOldCancel = false; return }
+            GuideEndVerdict.ROUTE_FAILED -> {
+                // 출발 뒤 창 안, 이번 출발의 안내가 시작되기 전의 취소 = 경로 요청 실패(#132)
+                if (appVisible) return                                // 보이면 화면 쪽(NaviRepository)이 처리
+                if (failedSent) return
+                failedSent = true
+                prefs(this).edit().putString(K_KIND, GUIDE_ROUTE_FAILED).putString(K_AT, at).apply()
+                ChagokLog.event("trip_service_route_failed")
+                open()                                                // 노고를 앞으로: 출발 화면 "내비로 길을 보내지 못했어요" · [다시 시도]
+                return
+            }
+            GuideEndVerdict.GUIDE_END -> {
+                // 창이 지났으면 쓰이지 않은 이전 안내 취소 기다림은 버린다(R-3). 앱은 띄우지 않고 알림만(F22)
+                if (!routeStarted) expectOldCancel = false
+            }
         }
         if (appVisible) return
         keepGuideEnd(this, kind, at)

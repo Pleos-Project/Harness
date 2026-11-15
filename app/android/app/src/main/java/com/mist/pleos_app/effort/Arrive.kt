@@ -113,6 +113,9 @@ const val GUIDE_ARRIVED = "arrived"       // onDestinationArrived
 const val GUIDE_CANCELLED = "cancelled"   // onRouteCancelled([안내 종료] 등)
 const val GUIDE_ROUTE_FAILED = "route_failed"   // 출발 뒤 우리 안내가 시작되기 전에 온 취소 = 경로 요청 실패(#132, 서비스가 판단)
 
+/** 경로 요청 실패로 볼 수 있는 출발 뒤 시간(초). 뷰모델 `onRouteFailed`와 서비스 판정(trip/RouteFail.kt)이 같이 쓴다. */
+const val ROUTE_FAIL_WINDOW_S = 120
+
 /** 내비 안내 끝을 받은 뒤 할 일(#145, DECISIONS 11/13 '도착 판정: 내비 도착 신호'). */
 sealed interface GuideEndAction {
     /** 기어 P에서 [at](신호를 받은 시각)으로 바로 도착 처리. 내비 상태를 다시 묻지 않는다. */
