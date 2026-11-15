@@ -888,7 +888,6 @@ class EffortViewModel(app: Application, private val saved: SavedStateHandle) : A
         const val KEY_RECORD = "effort_record"
         const val DEMO_ASSET = "data/effort/demo.json"
         const val ASK_INTERRUPTED = "interrupted"
-        const val ROUTE_FAIL_WINDOW_S = 120
 
         fun readAsset(app: Application, path: String): String? =
             runCatching { app.assets.open(path).bufferedReader().use { it.readText() } }
