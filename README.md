@@ -1,6 +1,59 @@
-# 노고 (코드 이름 Chagok) — 정산 기준을 차가 대신 잡아 준다
+# NOGO(노고)
 
-현대자동차그룹 Pleos Connect 차량용 앱 공모전 출품작. 차 앱(AAOS·Kotlin·Jetpack Compose) + 보조 서버 모노레포.
+함께 탄 여행이 끝나면 차가 운전자의 운전 노고를 세어 보여 주고, 동승자가 운전자를 "챙기겠다"고 선택하면 얼마쯤이 그 노고에 알맞은지에 대한 기준을 제안하는 차량용 앱입니다.
+
+현대자동차그룹 Pleos Connect 차량용 앱 공모전 출품작 · 팀 NOGO · 차 앱(AAOS · Kotlin · Jetpack Compose) + 보조 서버
+
+## APK
+
+- 위치: [`apk/NOGO_NOGO_release.apk`](apk/NOGO_NOGO_release.apk) (서명된 release 빌드, 약 28MB)
+- 패키지: `com.mist.pleos_app` · 버전 0.1.0
+
+## 개발·테스트 환경
+
+| 항목 | 값 |
+|---|---|
+| 에뮬레이터 | **Pleos Connect v2.1.0** 시스템 이미지(`android-34/pleos_car_emulator/x86_64`, Android 14 · API 34, Automotive) |
+| 화면 규격 | **2560 × 1440**, 160dpi (AVD 기기 `Pleos_Connect_v2_0`) |
+| Android Emulator | 36.6.11.0 |
+| Pleos SDK | Vehicle 2.3.2 · NaviHelper 3.0.5 |
+| 빌드 | AGP 9.3.3 · Gradle 9.5.0 · JDK 21 · compileSdk 37 · targetSdk 36 · minSdk 28 |
+| 차량값 조작 | Pleos Virtual Console(기어 · 좌석 착석) |
+
+## 실행 방법
+
+### 1. 설치
+Pleos Connect v2.1.0 에뮬레이터를 켠 뒤:
+```bash
+adb install -r -g apk/NOGO_NOGO_release.apk
+```
+`-g`는 권한(위치 · 차량 정보 · 알림 등)을 설치할 때 미리 줍니다. 앱 목록에서 **NOGO** 아이콘을 눌러 엽니다.
+
+### 2. 시연 고정 모드 (서버 · 네트워크 없이 한 바퀴)
+설치하면 **시연 고정 모드가 켜진 채로** 시작합니다. 이 모드에서는 서버를 부르지 않고, 경로 · 날씨 · 출발 · 도착 시각을 앱에 들어 있는 시연용 값(태안 꽃지해수욕장, 16:00 → 18:10, 비, 정체 경로의 36%, 4명)으로 고정합니다. 그래서 인터넷이나 서버 없이도 처음부터 끝까지 돌릴 수 있습니다.
+- 켜고 끄기: 앱 오른쪽 위 **설정** → **시연 고정 모드** 스위치. 스위치 설명에 "태안 꽃지해수욕장 · 1.57배"가 보이면 켜진 상태입니다.
+- 끄면 실제 내비 경로와 날씨 서버(`https://api.rangeleft.com`)를 씁니다.
+
+### 3. 한 바퀴 돌려 보기 (시연 고정 모드)
+1. 홈 **[출발하기]** → 인원 확인. 인원은 좌석 착석 센서로 셉니다. Virtual Console 없이 열면 1명으로 나오니 **[+]로 4명**을 맞추고 **[확인]**(1명이면 제안 없이 영수증만 보여 줍니다).
+2. 최근 목적지 **태안 꽃지해수욕장** → 미리보기(1시간 45분 · 104km · 정체 경로의 36%) → **[안내 시작]**.
+3. 홈이 "태안 꽃지해수욕장으로 가는 중"으로 바뀝니다. (선택) Virtual Console에서 기어 D로 바꾸면 주행 중에는 앱이 화면을 쓰지 않습니다. 다시 P로.
+4. **[도착했어요]** → 도착 화면(오늘 운전 2시간 10분 · 4명, 날씨 · 정체 구간 · 예상보다 더 · 밤길 · 장시간을 하나씩 셈) → **[운전자 챙겨주기]** → "중간에 쉰 시간이 있었나요?" **[없음]** → 영수증(줄별 +40% · +10% · +5% · +2% · +1%, 합계 약 3만 6천 원)과 **한 사람 약 9천 원** → **[좋아요]** → 기록.
+
+위 순서는 이 저장소의 `apk/NOGO_NOGO_release.apk`를 Pleos Connect v2.1.0 에뮬레이터에 설치해 확인했습니다(11/15).
+
+### 4. 소스에서 빌드
+```bash
+cd app/android
+./gradlew assembleDebug test      # 윈도우는 gradlew.bat. JDK 21 + Android SDK 필요
+```
+release 서명은 `app/android/keystore.properties`(커밋하지 않음)가 있을 때만 붙습니다. 보조 서버(날씨 · 목적지 검색)는 아래 개발 안내의 `make dev`와 `deploy/README.md`를 봅니다.
+
+---
+
+# 팀 개발 안내
+
+아래는 팀 내부 작업용 안내입니다. 기여 규칙은 `CONTRIBUTING.md`에 있습니다.
 
 **11/7 운전 노고 정산으로 전면 피봇했다(#46).**
 - 동승 주행이 끝나면 도착 확인 알림으로 열고, "오늘 운전 돌아보기" 화면에서 오늘 운전의 조건을 하나씩 세어 보여 준다.
@@ -37,7 +90,7 @@ adb forward tcp:8088 tcp:8088 && make replay   # Virtual Console로 PT 6단계 �
 | `design/illustrations/`, `icons/`, `brand/` | 테마 일러스트 `<theme>-<n>.svg`, 아이콘, 로고·앱 아이콘. 앱이 쓰는 내보낸 파일(SVG·PNG)만, 원본은 레포 밖 | BX 디자이너(제작) · 명준(레포 반영) |
 | `scripts/gen_fixtures.py`, `lint_copy.py`, `check_permissions.py` | fixture 생성 · 문구 검사 · 권한 대조 | 효성 |
 | `scripts/replay.sh` | Virtual Console PT 6단계 주입 | June |
-| `docs/` | 기준 문서: 노고 정산 PRD v1.3(명준·효성), 기능 명세서 v0.5(효성), 11/7. 고치지 않음. 피봇 전 문서는 `docs/archive/` | — |
+| `docs/` | 기준 문서: 노고 정산 PRD v2.0(명준·효성), 기능 명세서 v0.6(효성). 결정이 나면 같이 고친다(DECISIONS 11/14). 이전 판은 `docs/archive/` | — |
 | `DECISIONS.md` | 한 줄 결정 로그 + **열린 결정**(담당·기한) | 모두 적고, 명준(PM)이 정리 |
 
 ## 규칙

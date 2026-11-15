@@ -22,3 +22,7 @@ local.properties
 captures/
 .externalNativeBuild/
 .cxx/
+# release 서명 키(#176). 키 파일과 비밀번호는 커밋하지 않는다
+*.jks
+*.keystore
+keystore.properties
