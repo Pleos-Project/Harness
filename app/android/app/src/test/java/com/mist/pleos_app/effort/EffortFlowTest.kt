@@ -108,6 +108,22 @@ class EffortFlowTest {
     }
 
     @Test
+    fun stopLeavesNoRecord() {
+        // AC-F27-1: [멈추기] 뒤 기록이 0건. 멈추기는 EffortViewModel.discardTrip() → EffortFlow.discardTrip()이다.
+        val store = MemoryEffortStore()
+        val f = EffortFlow(store)
+        f.depart(trip())
+        f.discardTrip()
+        assertEquals(EffortPhase.IDLE, f.phase)
+        assertNull(f.state.openTrip)
+        assertEquals(0, f.state.records.size)
+        assertTrue(f.recent().isEmpty())
+        val again = EffortFlow(store)                         // 재시작 뒤에도 0건
+        assertEquals(0, again.state.records.size)
+        assertEquals(EffortPhase.IDLE, again.phase)
+    }
+
+    @Test
     fun stateJsonRoundTripHasNoCoordinates() {
         // AC-F20-4·AC-N-4: 저장 JSON에 좌표 필드가 없다
         val s = EffortState(
